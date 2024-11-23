@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Giant Hunters</title>
+    <script src="processing.js"></script>
+  </head>
+  <body>
+    <h1>Giant Hunters</h1>
+    <script type="text/processing" data-processing-target="mycanvas">
+
+/* 
+@pjs globalKeyEvents="true"; 
+     pauseOnBlur="true";
+*/
+
+//VARIABLES
+var starX = 157;
+var starY = 307;
+var starHeight = 100;
+var starWidth = 75;
+var giantX = 162;
+var giantY = 25;
+var giantHeight = 100;
+var giantWidth = 75;
+var direction = 1;
+var score = 0;
+var lives = 0;
+var highScore = 0;
+var alreadyUp = 0;
+var drawShot = 0;
+var hit = 0;
+textSize(20);
+
+//GIANT
+var giant = loadImage("robot.png");
+
+//STAR
+var star = loadImage("star.png");
+
+void setup()
+{
+  size( screen.width - 15, screen.height - 200 );
+  starY = height - starHeight - 25;
+  textSize( 14 );
+}
+
+void draw() 
+{
+  if (drawShot > 0)
+  {
+    stroke(255, 0, 0);
+    strokeWeight(10);
+    var starMiddle = starX + (starWidth / 2);
+    var giantMiddle = giantY + (giantHeight / 2);
+    line(starMiddle, starY + 20, starMiddle, giantMiddle);
+    drawShot--;
+  }
+  else
+  {
+    if (hit === 1)
+    {
+      starX = random(0, width - starWidth);
+      hit = 0;
+    }
+    direction = giantX <= 0 ? 1 : 
+      giantX >= width - giantWidth ? 0 : direction;
+    giantX = giantX + (direction === 0 ? (5 + score) * -1 : (5 + score));
+    background (0, 0, 0);
+	textSize(20);
+    text("Score: " + score + "   Lives: " + lives  + "   High score: " + highScore, 0, 0, width, 25);
+    
+	var d = day(); 
+	var m = month();
+	var y = year();
+	var hh = hour();
+	var mm = minute();
+	var ss = second();
+	mm = mm == 0 ? "00" : mm < 10 ? "0" + mm : mm;
+	ss = ss == 0 ? "00" : ss < 10 ? "0" + ss : ss;
+	text(m + "/" + d + "/" + y + " " + hh + ":" + mm + ":" + ss, width - 175, 25);
+	
+	if (lives > 0)
+    {
+      image(giant, giantX, giantY, giantWidth, giantHeight);
+      image(star, starX, starY, starWidth, starHeight);
+    }
+    else
+    {
+      textSize(14);
+      fill(255, 0, 0);
+      text("2014", 83, 580, 50, 20);
+      text("GibbitGaming", 0, 600, 200, 20);
+      text("Game Over", width / 2 - 30, height / 2 - 40, 300, 20);
+      text("Left and Right arrows to move the star", width / 2 - 110, height / 2 - 15, 300, 20);
+      text("Up arrow to shoot", width / 2 - 50, height / 2 + 15, 300, 20);
+      text("PRESS THE DOWN ARROW TO START", width / 2 - 110, height / 2 + 40, 300, 20);
+      noFill();
+    }
+  }
+};    
+
+
+//CONTROLS TO MOVE
+void keyPressed() 
+{
+  if (lives > 0) 
+  {
+    if (keyCode === LEFT && starX >= 0)
+    {
+      starX = starX - 10;
+    }
+    if (keyCode === RIGHT && starX <= (width - starWidth))
+    {
+      starX = starX + 10;
+    }
+    if (keyCode === UP && alreadyUp === 0)
+    {
+      alreadyUp = 1;
+      drawShot = 2;
+      var starMiddle = starX + (starWidth / 2);
+      if (starMiddle >= giantX && starMiddle <= giantX + giantWidth)
+      {
+  
+        hit = 1;
+        score++;
+        highScore = highScore < score ? score : highScore;
+      }
+      else 
+      {
+        lives--;
+      }
+    }
+  }
+  if (keyCode === DOWN && lives === 0)
+  {
+    score = 0;
+    lives = 5;    
+  }
+  if (key.code === 84 || key.code === 116) 
+  {
+    title = 120;
+  }
+};
+
+void keyReleased() 
+{
+  if (keyCode === UP)
+  {
+    alreadyUp = 0;
+  }
+};   
+
+    </script>
+    <canvas id="mycanvas" width="100%"></canvas>	
+  </body>
+</html>
