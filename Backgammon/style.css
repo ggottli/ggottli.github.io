@@ -1,154 +1,159 @@
-/* Simple CSS reset */
+/* style.css */
+
+/* Reset */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  /* Body styling */
-  body {
-    font-family: sans-serif;
-    background: linear-gradient(to right, #ffefba, #ffffff);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  header {
-    margin: 20px 0;
-    text-align: center;
-  }
-  
-  h1 {
-    color: #ff5722;
-    margin-bottom: 10px;
-  }
-  
-  #gameModeSelect {
-    margin-bottom: 20px;
-  }
-  
-  #startGameBtn {
-    margin-left: 10px;
-    padding: 6px 12px;
-    cursor: pointer;
-    background-color: #4caf50;
-    color: #fff;
-    border: none;
-  }
-  
-  /* Board container */
-  #backgammonBoard {
-    display: flex;
-    flex-direction: column;
-    width: 900px;
-    border: 2px solid #444;
-    background-color: #f0e0c0;
-    margin-bottom: 20px;
-  }
-  
-  /* Each row (top or bottom) */
-  .row {
-    display: flex;
-    width: 100%;
-    height: 200px; /* half the total board height */
-    position: relative;
-    align-items: center; /* center content vertically */
-  }
-  
-  /* Each quadrant of 6 points */
-  .section {
-    display: flex;
-    flex-wrap: nowrap;
-    flex: 1;
-    position: relative;
-  }
-  
-  /* Gap between the quadrants */
-  .board-gap {
-    width: 10px;
-    background-color: #d2b48c;
-    height: 100%;
-  }
-  
-  /* The triangular points */
-  .point {
-    flex: 1;
-    position: relative;
-    border: 1px solid #444;
-    cursor: pointer;
-    overflow: hidden;
-  }
-  
-  /* Alternate colors for the points */
-  .point:nth-child(odd) {
-    background-color: #ffcccb; /* pinkish color */
-  }
-  .point:nth-child(even) {
-    background-color: #afdfff; /* light blue color */
-  }
-  
-  /* Checker styling */
-  .checker {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-weight: bold;
-  }
-  
-  .checker.player1 {
-    background-color: #f44336; /* red */
-  }
-  
-  .checker.player2 {
-    background-color: #2196f3; /* blue */
-  }
-  
-  /* Highlighting valid/invalid moves */
-  .highlight-valid {
-    outline: 3px solid limegreen;
-  }
-  
-  .highlight-invalid {
-    outline: 3px solid red;
-  }
-  
-  /* Game Info section */
-  #gameInfo {
-    margin: 20px 0;
-    text-align: center;
-  }
-  
-  #rollDiceBtn {
-    padding: 8px 16px;
-    cursor: pointer;
-    background-color: #ef6c00;
-    color: #fff;
-    border: none;
-    margin: 10px;
-  }
-  
-  #diceRollResult {
-    display: inline-flex;
-    gap: 10px;
-  }
-  
-  .die {
-    width: 40px;
-    height: 40px;
-    background-color: #ddd;
-    color: #444;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-  
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+  background: linear-gradient(to right, #ffefba, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header */
+header {
+  margin: 20px 0;
+  text-align: center;
+}
+
+h1 {
+  color: #ff5722;
+  margin-bottom: 10px;
+}
+
+#gameModeSelect {
+  margin-bottom: 20px;
+}
+
+#startGameBtn {
+  margin-left: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+}
+
+/* Main Board Container */
+#boardContainer {
+  width: 900px;
+  border: 2px solid #444;
+  background-color: #f0e0c0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+/* Each row is basically a horizontal strip of 12 points */
+#topRow, 
+#bottomRow {
+  display: flex;
+  height: 200px; /* half of your total board height, for example */
+}
+
+/* The center bar (vertical) */
+#centerBar {
+  width: 100%;
+  height: 10px;   /* thickness of the bar */
+  background-color: #d2b48c;
+  border-top: 1px solid #444;
+  border-bottom: 1px solid #444;
+}
+
+/* Points within a row */
+.point {
+  flex: 1;
+  border: 1px solid #444;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* Alternate coloring of points for visual clarity */
+.point:nth-child(odd) {
+  background-color: #ffcccb;
+}
+.point:nth-child(even) {
+  background-color: #afdfff;
+}
+
+/* Checker styling */
+.checker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+}
+.checker.player1 {
+  background-color: #f44336; /* red */
+}
+.checker.player2 {
+  background-color: #2196f3; /* blue */
+}
+
+/* Highlighting valid/invalid moves */
+.highlight-valid {
+  outline: 3px solid limegreen;
+}
+.highlight-invalid {
+  outline: 3px solid red;
+}
+
+/* Game Info section */
+#gameInfo {
+  margin: 20px 0;
+  text-align: center;
+}
+
+#rollDiceBtn {
+  padding: 8px 16px;
+  cursor: pointer;
+  background-color: #ef6c00;
+  color: #fff;
+  border: none;
+  margin: 10px;
+}
+
+#diceRollResult {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.die {
+  width: 40px;
+  height: 40px;
+  background-color: #ddd;
+  color: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.point {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+  /* example: half the row's height is the point's vertical dimension */
+  height: 100%;
+  /* Triangular shape pointing downward for the top row: */
+  clip-path: polygon(50% 0%, 100% 100%, 0 100%);
+}
+
+#bottomRow .point {
+  clip-path: polygon(0 0%, 100% 0%, 50% 100%);
+}

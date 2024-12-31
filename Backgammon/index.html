@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Backgammon</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-  <!-- Title / Game Mode Selection -->
   <header>
     <h1>Backgammon</h1>
     <div id="gameModeSelect">
@@ -21,30 +20,19 @@
     </div>
   </header>
 
-  <!-- Backgammon Board -->
-  <div id="backgammonBoard">
-    <!-- Top row, from index 0 to index 11 (right -> left) split into two sections of 6 points each -->
-    <div class="row">
-      <!-- Right side: indices 0..5 (top-right quadrant) -->
-      <div class="section" id="topRight"></div>
-      <!-- Gap between quadrants -->
-      <div class="board-gap"></div>
-      <!-- Left side: indices 6..11 (top-left quadrant) -->
-      <div class="section" id="topLeft"></div>
-    </div>
+  <!-- Main Board Container -->
+  <div id="boardContainer">
+    <!-- Top row of 12 points -->
+    <div id="topRow"></div>
 
-    <!-- Bottom row, from index 12 to index 23 (left -> right) split into two sections of 6 points each -->
-    <div class="row">
-      <!-- Left side: indices 12..17 (bottom-left quadrant) -->
-      <div class="section" id="bottomLeft"></div>
-      <!-- Gap between quadrants -->
-      <div class="board-gap"></div>
-      <!-- Right side: indices 18..23 (bottom-right quadrant) -->
-      <div class="section" id="bottomRight"></div>
-    </div>
+    <!-- Vertical bar in the center of the board -->
+    <div id="centerBar"></div>
+
+    <!-- Bottom row of 12 points -->
+    <div id="bottomRow"></div>
   </div>
 
-  <!-- Dice and Player Info -->
+  <!-- Dice & Player Info -->
   <div id="gameInfo">
     <div id="playerTurn">
       Current Player: <span id="playerName">Player 1</span>
