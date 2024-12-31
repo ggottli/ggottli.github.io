@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Backgammon Game</title>
+  <title>Backgammon</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <!-- Title / Game Mode Selection -->
   <header>
-    <h1>Colorful Backgammon</h1>
+    <h1>Backgammon</h1>
     <div id="gameModeSelect">
       <label for="gameMode">Select Game Mode:</label>
       <select id="gameMode">
@@ -23,12 +23,24 @@
 
   <!-- Backgammon Board -->
   <div id="backgammonBoard">
-    <!-- We'll dynamically draw the board here with JavaScript or static HTML. -->
+    <!-- Top row: 12 points, split into two sections (each section has 6 points) -->
+    <div class="row" id="topRow">
+      <div class="section" id="topRight"></div>
+      <div class="section" id="topLeft"></div>
+    </div>
+
+    <!-- Bottom row: 12 points, split into two sections (each section has 6 points) -->
+    <div class="row" id="bottomRow">
+      <div class="section" id="bottomLeft"></div>
+      <div class="section" id="bottomRight"></div>
+    </div>
   </div>
 
   <!-- Dice and Player Info -->
   <div id="gameInfo">
-    <div id="playerTurn">Current Player: <span id="playerName">Player 1</span></div>
+    <div id="playerTurn">
+      Current Player: <span id="playerName">Player 1</span>
+    </div>
     <button id="rollDiceBtn">Roll Dice</button>
     <div id="diceRollResult">
       <div class="die" id="die1">-</div>

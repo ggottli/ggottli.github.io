@@ -1,229 +1,345 @@
-// Game Variables
+// script.js
+
+// Global game variables
 let currentPlayer = 1; // 1 or 2
 let diceValues = [0, 0];
-let boardState = []; // e.g., an array of 24 points, each containing how many checkers belong to Player1 or Player2
+let boardState = []; 
 const totalPoints = 24;
-
-// For CPU mode
-let gameMode = "pass"; // default pass mode
+let gameMode = "pass"; 
 let isGameActive = false;
 
+// Tracking which point is selected
+let selectedPointIndex = null;
+
+/**
+ * On page load, attach event listeners
+ */
 window.onload = () => {
-    document.getElementById("startGameBtn").addEventListener("click", startGame);
-    document.getElementById("rollDiceBtn").addEventListener("click", rollDice);
-  };
+  document.getElementById("startGameBtn").addEventListener("click", startGame);
+  document.getElementById("rollDiceBtn").addEventListener("click", rollDice);
+};
+
+/**
+ * Start (or restart) a game
+ */
+function startGame() {
+  gameMode = document.getElementById("gameMode").value;
+  isGameActive = true;
+  currentPlayer = 1;
   
-  function startGame() {
-    // Get the selected mode
-    gameMode = document.getElementById("gameMode").value;
-    isGameActive = true;
-  
-    // Initialize the board, place checkers
-    initBoard();
-    renderBoard();
-  
-    // Reset current player
-    currentPlayer = 1;
-    updatePlayerDisplay();
-  }
-  
-  function rollDice() {
-    if (!isGameActive) return;
-  
-    // Generate dice values (1 - 6)
-    diceValues[0] = Math.floor(Math.random() * 6) + 1;
-    diceValues[1] = Math.floor(Math.random() * 6) + 1;
-  
-    // Display dice
-    document.getElementById("die1").innerText = diceValues[0];
-    document.getElementById("die2").innerText = diceValues[1];
-  
-    // Now handle possible moves...
-    handleMoves(currentPlayer, diceValues);
+  initBoard();
+  renderBoard();
+  updatePlayerDisplay();
+}
+
+/**
+ * Initialize boardState with the standard backgammon setup
+ * For demonstration, we’ll use indexes:
+ *   topRight:   23 -> 18
+ *   topLeft:    17 -> 12
+ *   bottomLeft: 11 -> 6
+ *   bottomRight: 5 -> 0
+ */
+function initBoard() {
+  boardState = new Array(totalPoints).fill(null).map(() => {
+    return { player: 0, count: 0 };
+  });
+
+  // Player 1 (commonly starts on top right / top left)
+  boardState[23] = { player: 1, count: 2 }; // 24-point
+  boardState[12] = { player: 1, count: 5 }; // 13-point
+  boardState[7]  = { player: 1, count: 3 }; // 8-point
+  boardState[5]  = { player: 1, count: 5 }; // 6-point
+
+  // Player 2 (mirrored on the other side)
+  boardState[0]  = { player: 2, count: 2 };  // 1-point
+  boardState[11] = { player: 2, count: 5 };  // 12-point
+  boardState[16] = { player: 2, count: 3 };  // 17-point
+  boardState[18] = { player: 2, count: 5 };  // 19-point
+}
+
+/**
+ * Render the board into the DOM
+ */
+function renderBoard() {
+  clearHighlights();
+
+  // Clear each section
+  document.getElementById("topRight").innerHTML = "";
+  document.getElementById("topLeft").innerHTML = "";
+  document.getElementById("bottomLeft").innerHTML = "";
+  document.getElementById("bottomRight").innerHTML = "";
+
+  // TopRight: indexes 23 down to 18
+  for (let i = 23; i >= 18; i--) {
+    const pointEl = createPointElement(i);
+    document.getElementById("topRight").appendChild(pointEl);
   }
 
-  function initBoard() {
-    boardState = new Array(totalPoints).fill(null).map(() => {
-      return { player: 0, count: 0 };
-    });
-  
-    // For player 1 (example layout)
-    boardState[23] = { player: 1, count: 2 }; // 24-point
-    boardState[12] = { player: 1, count: 5 }; // 13-point
-    boardState[7]  = { player: 1, count: 3 }; // 8-point
-    boardState[5]  = { player: 1, count: 5 }; // 6-point
-  
-    // For player 2 (mirrored positions in typical backgammon)
-    boardState[0]  = { player: 2, count: 2 };  // 1-point
-    boardState[11] = { player: 2, count: 5 };  // 12-point
-    boardState[16] = { player: 2, count: 3 };  // 17-point
-    boardState[18] = { player: 2, count: 5 };  // 19-point
+  // TopLeft: indexes 17 down to 12
+  for (let i = 17; i >= 12; i--) {
+    const pointEl = createPointElement(i);
+    document.getElementById("topLeft").appendChild(pointEl);
   }
-  function renderBoard() {
-    const boardEl = document.getElementById("backgammonBoard");
-    boardEl.innerHTML = ""; // clear any existing elements
-  
-    // We can split the board into two halves (points 0-11, 12-23)
-    const leftHalf = document.createElement("div");
-    leftHalf.classList.add("board-half");
-  
-    for (let i = 11; i >= 0; i--) {
-      const pointEl = createPointElement(i);
-      leftHalf.appendChild(pointEl);
-    }
-  
-    const rightHalf = document.createElement("div");
-    rightHalf.classList.add("board-half");
-  
-    for (let i = 12; i < 24; i++) {
-      const pointEl = createPointElement(i);
-      rightHalf.appendChild(pointEl);
-    }
-  
-    boardEl.appendChild(leftHalf);
-    boardEl.appendChild(rightHalf);
-  }
-  
-  /**
-   * Creates a point (triangle) element with checkers inside
-   * @param {number} index - the index of the point in boardState
-   */
-  function createPointElement(index) {
-    const point = document.createElement("div");
-    point.classList.add("point");
-    point.dataset.index = index;
-  
-    // If there are checkers, create them
-    const pointData = boardState[index];
-    if (pointData && pointData.count > 0) {
-      for (let i = 0; i < pointData.count; i++) {
-        const checker = document.createElement("div");
-        checker.classList.add("checker");
-        checker.classList.add(pointData.player === 1 ? "player1" : "player2");
-        checker.innerText = pointData.player === 1 ? "1" : "2";
-  
-        // Position the checkers (simple vertical stacking)
-        checker.style.top = `${i * 45}px`; // Adjust for spacing
-        point.appendChild(checker);
-      }
-    }
-  
-    // Add event listener to allow moves
-    point.addEventListener("click", () => onPointClick(index));
-    return point;
-  }
-  let selectedPointIndex = null;
 
-  function onPointClick(index) {
-    if (!isGameActive) return;
-  
-    // If we haven’t selected a point yet, select it if it’s the current player’s point
-    if (selectedPointIndex === null) {
-      if (boardState[index].player === currentPlayer && boardState[index].count > 0) {
-        selectedPointIndex = index;
+  // BottomLeft: indexes 11 down to 6
+  for (let i = 11; i >= 6; i--) {
+    const pointEl = createPointElement(i);
+    document.getElementById("bottomLeft").appendChild(pointEl);
+  }
+
+  // BottomRight: indexes 5 down to 0
+  for (let i = 5; i >= 0; i--) {
+    const pointEl = createPointElement(i);
+    document.getElementById("bottomRight").appendChild(pointEl);
+  }
+}
+
+/**
+ * Create the DOM element for a point (triangle)
+ */
+function createPointElement(index) {
+  const point = document.createElement("div");
+  point.classList.add("point");
+  point.dataset.index = index;
+
+  // If there are checkers, create them
+  const pointData = boardState[index];
+  if (pointData && pointData.count > 0) {
+    for (let i = 0; i < pointData.count; i++) {
+      const checker = document.createElement("div");
+      checker.classList.add("checker");
+      checker.classList.add(pointData.player === 1 ? "player1" : "player2");
+      checker.innerText = pointData.player === 1 ? "1" : "2";
+      // Vertical stacking
+      checker.style.top = `${i * 45}px`; 
+      point.appendChild(checker);
+    }
+  }
+
+  // Add an event listener for clicks
+  point.addEventListener("click", () => onPointClick(index));
+  return point;
+}
+
+/**
+ * Handle a click on a point
+ */
+function onPointClick(index) {
+  if (!isGameActive) return;
+
+  // If no point selected yet...
+  if (selectedPointIndex === null) {
+    // Only select if this point belongs to the current player
+    if (boardState[index].player === currentPlayer && boardState[index].count > 0) {
+      selectedPointIndex = index;
+      highlightPossibleDestinations(index);
+    }
+  } else {
+    // Attempt a move from the selected point to this new point
+    attemptMove(selectedPointIndex, index);
+    // Reset selection
+    selectedPointIndex = null;
+    clearHighlights();
+  }
+}
+
+/**
+ * Highlight valid / invalid moves for a selected point
+ */
+function highlightPossibleDestinations(fromIndex) {
+  // First clear any old highlights
+  clearHighlights();
+
+  // Get all points
+  const allPoints = document.querySelectorAll(".point");
+
+  // Calculate all potential moves from the dice values
+  const possibleMoves = getValidDestinations(fromIndex, diceValues, currentPlayer);
+
+  // If there are no valid moves, highlight the current point in red
+  if (possibleMoves.length === 0) {
+    const fromPointEl = document.querySelector(`.point[data-index='${fromIndex}']`);
+    fromPointEl.classList.add("highlight-invalid");
+    return;
+  }
+
+  // Mark each valid move in green
+  possibleMoves.forEach(destIndex => {
+    const pointEl = document.querySelector(`.point[data-index='${destIndex}']`);
+    if (pointEl) {
+      pointEl.classList.add("highlight-valid");
+    }
+  });
+}
+
+/**
+ * Returns an array of valid destinations given the current dice
+ */
+function getValidDestinations(fromIndex, dice, player) {
+  const validDestinations = [];
+
+  dice.forEach(d => {
+    if (d <= 0) return; // skip any used dice
+
+    let target;
+    // Player 1 typically moves from a higher index to a lower index
+    // Player 2 from a lower index to a higher index (depending on setup)
+    if (player === 1) {
+      target = fromIndex - d; 
+      if (target >= 0) {
+        // Check if capturing is allowed or if open
+        const spot = boardState[target];
+        if (spot.player === 0 || spot.player === 1 || (spot.player !== 1 && spot.count === 1)) {
+          validDestinations.push(target);
+        }
       }
     } else {
-      // Try to move from selectedPointIndex to the new index
-      attemptMove(selectedPointIndex, index);
-      selectedPointIndex = null;
-    }
-  }
-  
-  function attemptMove(from, to) {
-    // Calculate the distance
-    const distance = Math.abs(to - from);
-  
-    // Check if distance matches any of the dice values
-    if (!diceValues.includes(distance)) {
-      alert("Move not allowed. Distance not matching the dice roll.");
-      return;
-    }
-  
-    // Check if movement direction is correct depending on the player
-    // e.g., Player 1 moves from high index to low index, Player 2 vice versa in this example
-    if (currentPlayer === 1 && to > from) {
-      alert("Invalid direction for Player 1.");
-      return;
-    }
-    if (currentPlayer === 2 && to < from) {
-      alert("Invalid direction for Player 2.");
-      return;
-    }
-  
-    // If valid, move the checker
-    if (boardState[from].count > 0) {
-      boardState[from].count--;
-      // If it’s capturing
-      if (boardState[to].player !== currentPlayer && boardState[to].count === 1) {
-        // Send the single checker to bar or handle logic
-        // For simplicity, just remove it
-        boardState[to] = { player: currentPlayer, count: 1 };
-      } else if (boardState[to].player === currentPlayer) {
-        boardState[to].count++;
-      } else {
-        // If empty or belongs to the other player with 0 checkers
-        boardState[to] = { player: currentPlayer, count: 1 };
-      }
-  
-      // Remove the used dice value
-      // If the player rolled, for example, diceValues = [3, 5] and we used 3:
-      let usedIndex = diceValues.indexOf(distance);
-      if (usedIndex !== -1) {
-        diceValues.splice(usedIndex, 1);
-        diceValues.push(0); // Or remove it entirely if you don't want leftover dice
-      }
-  
-      // Re-render
-      renderBoard();
-  
-      // If both dice used or no further valid moves, switch player
-      if (diceValues[0] === 0 && diceValues[1] === 0) {
-        switchPlayer();
+      target = fromIndex + d;
+      if (target < totalPoints) {
+        // Check capture / open
+        const spot = boardState[target];
+        if (spot.player === 0 || spot.player === 2 || (spot.player !== 2 && spot.count === 1)) {
+          validDestinations.push(target);
+        }
       }
     }
+  });
+
+  // Remove duplicates if both dice are the same
+  return [...new Set(validDestinations)];
+}
+
+/**
+ * Attempt to move from one point to another
+ */
+function attemptMove(fromIndex, toIndex) {
+  // Make sure this move is valid based on the dice
+  const distance = Math.abs(toIndex - fromIndex);
+  if (!diceValues.includes(distance)) {
+    alert("Move not allowed. Distance must match a dice roll.");
+    return;
   }
-  
-  function switchPlayer() {
-    currentPlayer = currentPlayer === 1 ? 2 : 1;
-    updatePlayerDisplay();
-  
-    if (gameMode === "cpu" && currentPlayer === 2) {
-      // CPU's turn
-      cpuTurn();
+
+  // Check direction
+  if (currentPlayer === 1 && toIndex > fromIndex) {
+    alert("Invalid direction for Player 1.");
+    return;
+  }
+  if (currentPlayer === 2 && toIndex < fromIndex) {
+    alert("Invalid direction for Player 2.");
+    return;
+  }
+
+  // If fromIndex has checkers of the current player
+  if (boardState[fromIndex].player === currentPlayer && boardState[fromIndex].count > 0) {
+    // Move the checker
+    boardState[fromIndex].count--;
+
+    // Capturing logic (very simplified)
+    if (boardState[toIndex].player !== currentPlayer && boardState[toIndex].count === 1) {
+      // In real backgammon, you'd move the captured checker to the bar
+      // For now, just wipe it
+      boardState[toIndex] = { player: currentPlayer, count: 1 };
+    } else if (boardState[toIndex].player === currentPlayer) {
+      boardState[toIndex].count++;
+    } else {
+      // If empty or belongs to other but 0 count
+      boardState[toIndex] = { player: currentPlayer, count: 1 };
+    }
+
+    // Remove used dice
+    let usedIndex = diceValues.indexOf(distance);
+    if (usedIndex !== -1) {
+      diceValues.splice(usedIndex, 1);
+      diceValues.push(0); 
+    }
+
+    // Re-render
+    renderBoard();
+
+    // If dice are used up or no further moves, switch player
+    if (diceValues[0] === 0 && diceValues[1] === 0) {
+      switchPlayer();
     }
   }
-  function cpuTurn() {
-    setTimeout(() => {
-      // Roll dice for CPU
-      rollDice();
-  
-      // Naive approach: just pick the first possible move
-      // This is obviously not a strong AI, but it demonstrates the idea.
-      let madeAMove = false;
-      for (let i = 0; i < totalPoints; i++) {
-        const pointData = boardState[i];
-        if (pointData.player === 2 && pointData.count > 0) {
-          // Check for possible dice moves
-          for (let d = 0; d < diceValues.length; d++) {
-            let distance = diceValues[d];
-            if (distance > 0) {
-              let target = i + distance; // Player 2 moves from low to high in this example
-              if (target < totalPoints) {
-                attemptMove(i, target);
-                madeAMove = true;
-                break;
-              }
+}
+
+/**
+ * Roll the dice
+ */
+function rollDice() {
+  if (!isGameActive) return;
+
+  diceValues[0] = Math.floor(Math.random() * 6) + 1;
+  diceValues[1] = Math.floor(Math.random() * 6) + 1;
+
+  // Update the UI
+  document.getElementById("die1").innerText = diceValues[0];
+  document.getElementById("die2").innerText = diceValues[1];
+}
+
+/**
+ * Switch to the other player
+ */
+function switchPlayer() {
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  updatePlayerDisplay();
+
+  if (gameMode === "cpu" && currentPlayer === 2) {
+    // CPU turn - naive
+    cpuTurn();
+  }
+}
+
+/**
+ * Very basic CPU turn
+ */
+function cpuTurn() {
+  setTimeout(() => {
+    rollDice();
+
+    // Try a naive move for CPU
+    let madeAMove = false;
+    for (let i = 0; i < totalPoints; i++) {
+      if (boardState[i].player === 2 && boardState[i].count > 0) {
+        // Check dice for possible move
+        for (let d = 0; d < diceValues.length; d++) {
+          let dist = diceValues[d];
+          if (dist > 0) {
+            let target = i + dist; // CPU is player 2
+            if (target < totalPoints) {
+              // Attempt move
+              // We'll re-use the attemptMove, but it alerts on invalid moves
+              // For a real CPU, you'd handle it more gracefully
+              attemptMove(i, target);
+              madeAMove = true;
+              break;
             }
           }
         }
-        if (madeAMove) break;
       }
-  
-      // Switch back to Player 1 if the CPU can’t move or used up the dice
-      switchPlayer();
-    }, 1000); // CPU reaction delay
-  }
-  function updatePlayerDisplay() {
-    document.getElementById("playerName").innerText = currentPlayer === 1 ? "Player 1" : "Player 2";
-  }
-            
+      if (madeAMove) break;
+    }
+
+    // Switch back
+    switchPlayer();
+  }, 1000);
+}
+
+/**
+ * Clear all highlight classes
+ */
+function clearHighlights() {
+  document.querySelectorAll(".point").forEach(point => {
+    point.classList.remove("highlight-valid");
+    point.classList.remove("highlight-invalid");
+  });
+}
+
+/**
+ * Update the display of which player's turn it is
+ */
+function updatePlayerDisplay() {
+  document.getElementById("playerName").innerText = currentPlayer === 1 ? "Player 1" : "Player 2";
+}
