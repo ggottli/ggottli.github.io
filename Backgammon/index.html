@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Backgammon Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Title / Game Mode Selection -->
+  <header>
+    <h1>Colorful Backgammon</h1>
+    <div id="gameModeSelect">
+      <label for="gameMode">Select Game Mode:</label>
+      <select id="gameMode">
+        <option value="pass">Pass to Play (Local)</option>
+        <option value="cpu">Play vs CPU</option>
+      </select>
+      <button id="startGameBtn">Start Game</button>
+    </div>
+  </header>
+
+  <!-- Backgammon Board -->
+  <div id="backgammonBoard">
+    <!-- We'll dynamically draw the board here with JavaScript or static HTML. -->
+  </div>
+
+  <!-- Dice and Player Info -->
+  <div id="gameInfo">
+    <div id="playerTurn">Current Player: <span id="playerName">Player 1</span></div>
+    <button id="rollDiceBtn">Roll Dice</button>
+    <div id="diceRollResult">
+      <div class="die" id="die1">-</div>
+      <div class="die" id="die2">-</div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
