@@ -2,8 +2,18 @@
  * script.js
  ******************************************************/
 
+// Define our clockwise/counterclockwise rings (24 points)
+const redRing = [
+  0, 1, 2, 3, 4, 5,    // top-right, left→right
+  23, 22, 21, 20, 19, 18, // bottom-right, right→left
+  17, 16, 15, 14, 13, 12, // bottom-left, left→right
+  11, 10, 9, 8, 7, 6      // top-left, right→left
+];
+// Reverse of redRing for Blue (counterclockwise)
+const blueRing = [...redRing].reverse();
+
 // Global game variables
-let currentPlayer = 1; // Player 1 = Red, Player 2 = Blue
+let currentPlayer = 1; // 1 = Red, 2 = Blue
 let diceValues = [0, 0];
 let boardState = [];
 const totalPoints = 24;
@@ -43,23 +53,19 @@ function startGame() {
 
 /*******************************************************
  * Initialize boardState with standard start positions
- * for a two-row layout:
- *  - Top row:  indexes 0..11
- *  - Bottom row: indexes 12..23
- *  Player 1 (Red) moves "forward" (index + dice).
- *  Player 2 (Blue) moves "backward" (index - dice).
+ * (You can adjust these to suit your preferred layout)
  *******************************************************/
 function initBoard() {
   boardState = new Array(totalPoints).fill(null).map(() => {
     return { player: 0, count: 0 };
   });
 
-  // Example distribution (you can tweak these indexes):
+  // Example: 2,5,3,5 for each player
   // Player 1 (Red)
-  boardState[0]  = { player: 1, count: 2 };  // 2 checkers
-  boardState[11] = { player: 1, count: 5 }; // 5 checkers
-  boardState[16] = { player: 1, count: 3 }; // 3 checkers
-  boardState[18] = { player: 1, count: 5 }; // 5 checkers
+  boardState[0]  = { player: 1, count: 2 };
+  boardState[11] = { player: 1, count: 5 };
+  boardState[16] = { player: 1, count: 3 };
+  boardState[18] = { player: 1, count: 5 };
 
   // Player 2 (Blue)
   boardState[23] = { player: 2, count: 2 };
@@ -70,7 +76,7 @@ function initBoard() {
 
 /*******************************************************
  * Render the board by populating the topRow (0..11)
- * and bottomRow (12..23) with point divs
+ * and bottomRow (12..23) with point divs.
  *******************************************************/
 function renderBoard() {
   clearHighlights();
@@ -113,8 +119,13 @@ function createPointElement(index) {
       );
       checker.innerText = pointData.player === 1 ? "1" : "2";
 
-      // Simple vertical stacking
-      checker.style.top = `${c * 45}px`;
+      // *** Smaller size: about 30px instead of 40px
+      checker.style.width = "30px";
+      checker.style.height = "30px";
+
+      // Stack them a bit tighter
+      checker.style.top = `${c * 35}px`;
+
       point.appendChild(checker);
     }
   }
@@ -157,61 +168,82 @@ function onPointClick(index) {
 
 /*******************************************************
  * Attempt a move from fromIndex to toIndex
+ * using our ring logic for each player
  *******************************************************/
 function attemptMove(fromIndex, toIndex) {
-  const distance = Math.abs(toIndex - fromIndex);
+  // Determine how far in the ring we are moving
+  // based on the player's ring
+  const ring = (currentPlayer === 1) ? redRing : blueRing;
 
-  // Must match a remaining die
-  if (!diceValues.includes(distance)) {
+  // Position of fromIndex in the ring
+  const fromPos = ring.indexOf(fromIndex);
+  // Position of toIndex in the ring
+  const toPos   = ring.indexOf(toIndex);
+
+  if (fromPos === -1 || toPos === -1) {
+    alert("Invalid move: index not in ring.");
+    return;
+  }
+
+  // The "distance" in ring steps might be positive (red forward) or negative (blue forward).
+  // But we've structured it so:
+  //   - Red’s ring is in clockwise order
+  //   - Blue’s ring is in counterclockwise order
+  // So for Red, distance = (toPos - fromPos).
+  // For Blue, also (toPos - fromPos).
+  // Then we check if that distance matches a remaining die (like 1..6).
+  let rawDistance = toPos - fromPos; 
+  // Because ring is reversed for Blue, a forward move is + for Red, also + for Blue in that ring ordering.
+  if (rawDistance < 0) {
+    // if we "wrapped" around (like ring index overflow), we can do modulo
+    rawDistance = rawDistance + 24; 
+  }
+
+  // rawDistance is how many steps around the ring we moved
+  // Must match a die
+  if (!diceValues.includes(rawDistance)) {
     alert("Move not allowed: must match one of the dice.");
     return;
   }
 
-  // Check direction
-  if (currentPlayer === 1 && toIndex < fromIndex) {
-    alert("Invalid direction for Player 1.");
-    return;
-  }
-  if (currentPlayer === 2 && toIndex > fromIndex) {
-    alert("Invalid direction for Player 2.");
-    return;
-  }
-
-  // Confirm fromIndex belongs to current player
+  // Check fromIndex belongs to current player
   if (
-    boardState[fromIndex].player === currentPlayer &&
-    boardState[fromIndex].count > 0
+    boardState[fromIndex].player !== currentPlayer ||
+    boardState[fromIndex].count <= 0
   ) {
-    // Move 1 checker
-    boardState[fromIndex].count--;
+    alert("No checker to move from that point.");
+    return;
+  }
 
-    // Capture logic (simplified)
-    if (
-      boardState[toIndex].player !== currentPlayer &&
-      boardState[toIndex].count === 1
-    ) {
-      // In a full game, you'd put that checker on the bar
-      boardState[toIndex] = { player: currentPlayer, count: 1 };
-    } else if (boardState[toIndex].player === currentPlayer) {
-      boardState[toIndex].count++;
-    } else {
-      // If empty or belongs to other with 0 checkers
-      boardState[toIndex] = { player: currentPlayer, count: 1 };
-    }
+  // Move 1 checker
+  boardState[fromIndex].count--;
 
-    // Mark the used die as 0 (used)
-    const usedIndex = diceValues.indexOf(distance);
-    if (usedIndex !== -1) {
-      diceValues[usedIndex] = 0;
-    }
+  // If capturing (simplified)
+  if (
+    boardState[toIndex].player !== currentPlayer &&
+    boardState[toIndex].count === 1
+  ) {
+    // In a full game, you'd place that checker on the bar
+    boardState[toIndex] = { player: currentPlayer, count: 1 };
+  } else if (boardState[toIndex].player === currentPlayer) {
+    boardState[toIndex].count++;
+  } else {
+    // Empty or belongs to other with 0 checkers
+    boardState[toIndex] = { player: currentPlayer, count: 1 };
+  }
 
-    // Re-render
-    renderBoard();
+  // Mark the used die as 0
+  const usedDieIndex = diceValues.indexOf(rawDistance);
+  if (usedDieIndex !== -1) {
+    diceValues[usedDieIndex] = 0;
+  }
 
-    // If both dice are used up (0,0), or no moves left, switch player
-    if (diceValues[0] === 0 && diceValues[1] === 0) {
-      switchPlayer();
-    }
+  // Re-render
+  renderBoard();
+
+  // If dice are fully used, switch
+  if (diceValues[0] === 0 && diceValues[1] === 0) {
+    switchPlayer();
   }
 }
 
@@ -221,59 +253,53 @@ function attemptMove(fromIndex, toIndex) {
 function highlightPossibleDestinations(fromIndex) {
   clearHighlights();
 
-  const possibleMoves = getValidDestinations(
-    fromIndex,
-    diceValues,
-    currentPlayer
-  );
+  const validSpots = getValidDestinations(fromIndex, diceValues, currentPlayer);
 
   // If no valid moves, highlight fromIndex in red
-  if (possibleMoves.length === 0) {
+  if (validSpots.length === 0) {
     const fromPointEl = document.querySelector(
       `.point[data-index='${fromIndex}']`
     );
-    fromPointEl.classList.add("highlight-invalid");
+    fromPointEl?.classList.add("highlight-invalid");
     return;
   }
 
   // Otherwise highlight each valid target in green
-  possibleMoves.forEach((target) => {
+  validSpots.forEach((target) => {
     const pointEl = document.querySelector(`.point[data-index='${target}']`);
-    if (pointEl) {
-      pointEl.classList.add("highlight-valid");
-    }
+    pointEl?.classList.add("highlight-valid");
   });
 }
 
 /*******************************************************
- * Returns array of valid destinations for fromIndex
- * given the current dice & player direction
+ * Get all valid destinations from a given index,
+ * given the dice and the player's ring
  *******************************************************/
 function getValidDestinations(fromIndex, dice, player) {
+  const ring = (player === 1) ? redRing : blueRing;
+  const fromPos = ring.indexOf(fromIndex);
+  if (fromPos === -1) return [];
+
   const valid = [];
 
-  dice.forEach((d) => {
-    if (d <= 0) return; // already used
-    let target;
-    if (player === 1) {
-      // Player 1 moves up in index
-      target = fromIndex + d;
-      if (target > 23) return;
-    } else {
-      // Player 2 moves down in index
-      target = fromIndex - d;
-      if (target < 0) return;
+  dice.forEach((die) => {
+    if (die <= 0) return; // already used
+
+    let targetPos = fromPos + die;
+    // If we exceed the ring length, wrap around
+    if (targetPos >= 24) {
+      targetPos = targetPos - 24;
     }
 
+    const toIndex = ring[targetPos];
     // Check occupant
-    const spot = boardState[target];
-    // If empty, or belongs to same player, or has only 1 opposing checker
+    const spot = boardState[toIndex];
     if (
       spot.player === 0 ||
       spot.player === player ||
       (spot.player !== player && spot.count === 1)
     ) {
-      valid.push(target);
+      valid.push(toIndex);
     }
   });
 
@@ -313,13 +339,14 @@ function switchPlayer() {
   document.getElementById("die2").innerText = "-";
   hasRolledThisTurn = false;
 
+  // CPU turn?
   if (gameMode === "cpu" && currentPlayer === 2) {
     cpuTurn();
   }
 }
 
 /*******************************************************
- * Very naive CPU turn
+ * Simple CPU turn (naive)
  *******************************************************/
 function cpuTurn() {
   setTimeout(() => {
@@ -330,20 +357,26 @@ function cpuTurn() {
       const dist = diceValues[d];
       if (dist > 0) {
         // find a checker for Player 2
-        let moved = false;
-        for (let i = 0; i < totalPoints; i++) {
-          if (boardState[i].player === 2 && boardState[i].count > 0) {
-            const target = i - dist; // CPU is player 2
-            if (target >= 0) {
-              // Check if valid
-              if (getValidDestinations(i, [dist], 2).includes(target)) {
-                attemptMove(i, target);
-                moved = true;
-                break;
-              }
+        // Because we’re using the ring, let's just brute-force from ring[0..23]
+        const ring = blueRing;
+        let madeMove = false;
+
+        for (let i = 0; i < 24; i++) {
+          const idx = ring[i];
+          if (boardState[idx].player === 2 && boardState[idx].count > 0) {
+            // try moving dist steps forward in the ring
+            let targetPos = i + dist;
+            if (targetPos >= 24) targetPos -= 24;
+            const toIdx = ring[targetPos];
+
+            // check if it’s valid
+            if (getValidDestinations(idx, [dist], 2).includes(toIdx)) {
+              attemptMove(idx, toIdx);
+              madeMove = true;
+              break;
             }
           }
-          if (moved) break;
+          if (madeMove) break;
         }
       }
     }
