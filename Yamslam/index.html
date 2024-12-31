@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Yamslam Dice Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>Yamslam Dice Game</h1>
+  
+  <!-- Section to control number of players -->
+  <div class="player-setup">
+    <label for="playerCount">Number of Players:</label>
+    <input type="number" id="playerCount" value="2" min="1" max="6" />
+    <button id="startGameBtn">Start Game</button>
+  </div>
+
+  <!-- Main Game Container -->
+  <div id="gameContainer" class="hidden">
+    <!-- Displays current player and instructions -->
+    <div id="statusPanel">
+      <h2 id="currentPlayer"></h2>
+      <div id="rollInfo">Roll #<span id="rollCount">1</span> of 3</div>
+    </div>
+
+    <!-- Dice Container -->
+    <div id="diceContainer"></div>
+
+    <!-- Buttons to roll and confirm -->
+    <div class="controls">
+      <button id="rollDiceBtn">Roll Dice</button>
+      <button id="confirmRollBtn" disabled>Take Chip</button>
+    </div>
+
+    <!-- Display available chips and scores -->
+    <div id="chipsContainer">
+      <h3>Available Chips</h3>
+      <ul id="chipList"></ul>
+    </div>
+
+    <!-- Display scoreboard -->
+    <div id="scoreboard">
+      <h3>Scoreboard</h3>
+      <table id="scoreTable">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Score</th>
+            <th>Chips Taken</th>
+          </tr>
+        </thead>
+        <tbody id="scoreTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
