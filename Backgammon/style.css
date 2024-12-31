@@ -51,15 +51,24 @@
   .row {
     display: flex;
     width: 100%;
-    height: 200px; /* each row is half of the total board height */
+    height: 200px; /* half the total board height */
+    position: relative;
+    align-items: center; /* center content vertically */
+  }
+  
+  /* Each quadrant of 6 points */
+  .section {
+    display: flex;
+    flex-wrap: nowrap;
+    flex: 1;
     position: relative;
   }
   
-  /* Each section of 6 points */
-  .section {
-    display: flex;
-    flex: 1;
-    position: relative;
+  /* Gap between the quadrants */
+  .board-gap {
+    width: 10px;
+    background-color: #d2b48c;
+    height: 100%;
   }
   
   /* The triangular points */

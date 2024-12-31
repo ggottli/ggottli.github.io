@@ -23,15 +23,23 @@
 
   <!-- Backgammon Board -->
   <div id="backgammonBoard">
-    <!-- Top row: 12 points, split into two sections (each section has 6 points) -->
-    <div class="row" id="topRow">
+    <!-- Top row, from index 0 to index 11 (right -> left) split into two sections of 6 points each -->
+    <div class="row">
+      <!-- Right side: indices 0..5 (top-right quadrant) -->
       <div class="section" id="topRight"></div>
+      <!-- Gap between quadrants -->
+      <div class="board-gap"></div>
+      <!-- Left side: indices 6..11 (top-left quadrant) -->
       <div class="section" id="topLeft"></div>
     </div>
 
-    <!-- Bottom row: 12 points, split into two sections (each section has 6 points) -->
-    <div class="row" id="bottomRow">
+    <!-- Bottom row, from index 12 to index 23 (left -> right) split into two sections of 6 points each -->
+    <div class="row">
+      <!-- Left side: indices 12..17 (bottom-left quadrant) -->
       <div class="section" id="bottomLeft"></div>
+      <!-- Gap between quadrants -->
+      <div class="board-gap"></div>
+      <!-- Right side: indices 18..23 (bottom-right quadrant) -->
       <div class="section" id="bottomRight"></div>
     </div>
   </div>
