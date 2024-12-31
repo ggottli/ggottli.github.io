@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Euchre Game</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Euchre Game</h1>
+  </header>
+
+  <main id="game-area">
+    <section id="table">
+      <!-- Played cards go here -->
+      <div id="played-cards"></div>
+    </section>
+    
+    <section id="player-hand" class="hand-area">
+      <!-- Player's cards displayed here, clickable to select a card. -->
+    </section>
+    
+    <!-- Opponents' hands (face-down or simplified) -->
+    <section id="opponent1-hand" class="hand-area opponent-hand"></section>
+    <section id="opponent2-hand" class="hand-area opponent-hand"></section>
+    <section id="opponent3-hand" class="hand-area opponent-hand"></section>
+
+    <!-- Bidding UI / Turn-up card area -->
+    <section id="bidding-area"></section>
+
+    <section id="scoreboard">
+      <div id="team1-score">Team1: 0</div>
+      <div id="team2-score">Team2: 0</div>
+      <div id="round-info"></div>
+    </section>
+  </main>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
