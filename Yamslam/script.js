@@ -18,13 +18,13 @@ let consecutiveNoPointsRounds = 0;
 
 // Chips config
 const CHIPS = [
-  { type: "twoPairs", label: "2 Pairs", points: 10, remaining: 4 },
-  { type: "threeOfAKind", label: "3 of a Kind", points: 15, remaining: 4 },
+  { type: "twoPairs", label: "2 Pairs", points: 5, remaining: 4 },
+  { type: "threeOfAKind", label: "3 of a Kind", points: 10, remaining: 4 },
   { type: "smallStraight", label: "Small Straight", points: 20, remaining: 4 },
   { type: "flush", label: "Flush", points: 25, remaining: 4 },
   { type: "fullHouse", label: "Full House", points: 30, remaining: 4 },
-  { type: "fourOfAKind", label: "4 of a Kind", points: 35, remaining: 4 },
-  { type: "largeStraight", label: "Large Straight", points: 40, remaining: 4 }
+  { type: "fourOfAKind", label: "4 of a Kind", points: 40, remaining: 4 },
+  { type: "largeStraight", label: "Large Straight", points: 50, remaining: 4 }
 ];
 
 // --------------------------------------------------------------------
@@ -226,139 +226,141 @@ function endGame() {
 // Main Game Flow
 // --------------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
-  const startGameBtn = document.getElementById("startGameBtn");
-  const rollDiceBtn = document.getElementById("rollDiceBtn");
-  const confirmRollBtn = document.getElementById("confirmRollBtn");
-  const playerCountInput = document.getElementById("playerCount");
+    const startGameBtn = document.getElementById("startGameBtn");
+    const rollDiceBtn = document.getElementById("rollDiceBtn");
+    const confirmRollBtn = document.getElementById("confirmRollBtn");
+    const playerCountInput = document.getElementById("playerCount");
   
-  startGameBtn.addEventListener("click", () => {
-    // Set up players
-    const numPlayers = parseInt(playerCountInput.value, 10);
-    if (numPlayers <= 0) return;
-    setupPlayers(numPlayers);
-
-    // Reset game variables
-    currentPlayerIndex = 0;
-    rollCount = 1;
-    diceValues = Array(totalDice).fill(null);
-    diceColors = Array(totalDice).fill(null);
-    lockedDice = Array(totalDice).fill(false);
-    consecutiveNoPointsRounds = 0;
-
-    document.getElementById("gameContainer").classList.remove("hidden");
-    document.getElementById("currentPlayer").textContent = 
-      `${players[currentPlayerIndex].name}'s Turn!`;
-    document.getElementById("rollCount").textContent = rollCount;
-
-    updateDiceUI();
-    updateChipList();
-    updateScoreboard();
-  });
-
-  // Rolling the dice
-  rollDiceBtn.addEventListener("click", () => {
-    if (rollCount <= maxRolls) {
-      rollDice();
+    startGameBtn.addEventListener("click", () => {
+      // Set up players
+      const numPlayers = parseInt(playerCountInput.value, 10);
+      if (numPlayers <= 0) return;
+      setupPlayers(numPlayers);
+  
+      // Reset game variables
+      currentPlayerIndex = 0;
+      rollCount = 1;
+      diceValues = Array(totalDice).fill(null);
+      diceColors = Array(totalDice).fill(null);
+      lockedDice = Array(totalDice).fill(false);
+      consecutiveNoPointsRounds = 0;
+  
+      // Show the game container
+      document.getElementById("gameContainer").classList.remove("hidden");
+      document.getElementById("currentPlayer").textContent = 
+        `${players[currentPlayerIndex].name}'s Turn!`;
+      document.getElementById("rollCount").textContent = rollCount;
+  
+      // Initially disable confirm since no dice have been rolled yet
+      confirmRollBtn.disabled = true;
+  
       updateDiceUI();
-      rollCount++;
-      // Show how many rolls have happened; we cap at maxRolls for display
-      document.getElementById("rollCount").textContent = 
-        rollCount > maxRolls ? maxRolls : rollCount;
-
-      // If we've used all rolls, enable confirm
-      if (rollCount > maxRolls) {
+      updateChipList();
+      updateScoreboard();
+    });
+  
+    // Rolling the dice
+    rollDiceBtn.addEventListener("click", () => {
+      if (rollCount <= maxRolls) {
+        rollDice();
+        updateDiceUI();
+  
+        // After each roll, increment rollCount
+        rollCount++;
+        document.getElementById("rollCount").textContent = 
+          rollCount > maxRolls ? maxRolls : rollCount;
+  
+        // **Enable confirm** so the user can stop rolling and take a chip if they want
         confirmRollBtn.disabled = false;
       }
-    }
-  });
-
-  // Confirm and take chip
-  confirmRollBtn.addEventListener("click", () => {
-    const { isYamslam, possible } = evaluateDiceForChips();
-
-    let claimedChip = null;
-    let bestPoints = 0;
-
-    if (isYamslam) {
-      // If it's a yamslam, the player can pick ANY available chip
-      // We'll pick the highest-point chip that still has remaining > 0
-      CHIPS.forEach(chip => {
-        if (chip.remaining > 0 && chip.points > bestPoints) {
-          claimedChip = chip;
-          bestPoints = chip.points;
+    });
+  
+    // Confirm and take chip
+    confirmRollBtn.addEventListener("click", () => {
+      // Evaluate the dice
+      const { isYamslam, possible } = evaluateDiceForChips();
+  
+      let claimedChip = null;
+      let bestPoints = 0;
+  
+      if (isYamslam) {
+        // Yamslam logic: can choose any chip (we choose highest available by default)
+        CHIPS.forEach(chip => {
+          if (chip.remaining > 0 && chip.points > bestPoints) {
+            claimedChip = chip;
+            bestPoints = chip.points;
+          }
+        });
+  
+        if (claimedChip) {
+          claimedChip.remaining--;
+          players[currentPlayerIndex].score += claimedChip.points;
+          players[currentPlayerIndex].chipsTaken.push(claimedChip.label);
+          alert(
+            `${players[currentPlayerIndex].name} rolled a Yamslam! ` +
+            `They choose "${claimedChip.label}" for ${claimedChip.points} points!`
+          );
+        } else {
+          alert("All chips are gone—no chip to take, so 0 points!");
         }
-      });
-
-      if (claimedChip) {
-        claimedChip.remaining--;
-        players[currentPlayerIndex].score += claimedChip.points;
-        players[currentPlayerIndex].chipsTaken.push(claimedChip.label);
-        alert(
-          `${players[currentPlayerIndex].name} rolled a Yamslam! ` +
-          `They choose "${claimedChip.label}" for ${claimedChip.points} points!`
-        );
       } else {
-        alert("All chips are gone—no chip to take, so 0 points!");
-      }
-    } else {
-      // If not Yamslam, find the best possible chip from the evaluateDiceForChips
-      possible.forEach(chipType => {
-        const chipObj = CHIPS.find(ch => ch.type === chipType && ch.remaining > 0);
-        if (chipObj && chipObj.points > bestPoints) {
-          claimedChip = chipObj;
-          bestPoints = chipObj.points;
+        // Normal logic: pick the best chip from the possible ones
+        possible.forEach(chipType => {
+          const chipObj = CHIPS.find(ch => ch.type === chipType && ch.remaining > 0);
+          if (chipObj && chipObj.points > bestPoints) {
+            claimedChip = chipObj;
+            bestPoints = chipObj.points;
+          }
+        });
+  
+        if (claimedChip) {
+          claimedChip.remaining--;
+          players[currentPlayerIndex].score += claimedChip.points;
+          players[currentPlayerIndex].chipsTaken.push(claimedChip.label);
+          alert(`${players[currentPlayerIndex].name} takes "${claimedChip.label}" for ${claimedChip.points} points!`);
+        } else {
+          // No valid chip => 0 points
+          alert(`No available chip for this dice combination—0 points this round.`);
         }
-      });
-
-      if (claimedChip) {
-        claimedChip.remaining--;
-        players[currentPlayerIndex].score += claimedChip.points;
-        players[currentPlayerIndex].chipsTaken.push(claimedChip.label);
-        alert(`${players[currentPlayerIndex].name} takes "${claimedChip.label}" for ${claimedChip.points} points!`);
-      } else {
-        // No valid chip => 0 points
-        alert(`No available chip for this dice combination—0 points this round.`);
       }
-    }
-
-    // Check how many points the player got this round
-    let earnedPointsThisRound = claimedChip ? claimedChip.points : 0;
-    if (isYamslam && claimedChip) {
-      earnedPointsThisRound = claimedChip.points;
-    }
-
-    // If 0 points, increment the consecutiveNoPointsRounds
-    // Otherwise, reset it to 0
-    if (!earnedPointsThisRound) {
-      consecutiveNoPointsRounds++;
-    } else {
-      consecutiveNoPointsRounds = 0;
-    }
-
-    // Update scoreboard and chip list
-    updateScoreboard();
-    updateChipList();
-
-    // Check if the game should end:
-    // 1) All chips are gone
-    // 2) Or if consecutiveNoPointsRounds >= number of players
-    if (allChipsGone() || consecutiveNoPointsRounds >= players.length) {
-      endGame();
-      return;
-    }
-
-    // Move to next player
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    rollCount = 1;
-    diceValues = Array(totalDice).fill(null);
-    diceColors = Array(totalDice).fill(null);
-    lockedDice = Array(totalDice).fill(false);
-
-    document.getElementById("currentPlayer").textContent = 
-      `${players[currentPlayerIndex].name}'s Turn!`;
-    document.getElementById("rollCount").textContent = rollCount;
-    confirmRollBtn.disabled = true;
-
-    updateDiceUI();
+  
+      // Determine how many points the player earned
+      let earnedPointsThisRound = claimedChip ? claimedChip.points : 0;
+      if (isYamslam && claimedChip) {
+        earnedPointsThisRound = claimedChip.points;
+      }
+  
+      // Track consecutive no-point rounds
+      if (earnedPointsThisRound === 0) {
+        consecutiveNoPointsRounds++;
+      } else {
+        consecutiveNoPointsRounds = 0;
+      }
+  
+      // Update UI
+      updateScoreboard();
+      updateChipList();
+  
+      // Check end-game conditions
+      if (allChipsGone() || consecutiveNoPointsRounds >= players.length) {
+        endGame();
+        return;
+      }
+  
+      // Move to next player
+      currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+      rollCount = 1;
+      diceValues = Array(totalDice).fill(null);
+      diceColors = Array(totalDice).fill(null);
+      lockedDice = Array(totalDice).fill(false);
+  
+      document.getElementById("currentPlayer").textContent = 
+        `${players[currentPlayerIndex].name}'s Turn!`;
+      document.getElementById("rollCount").textContent = rollCount;
+  
+      // Disable confirm until the new player rolls at least once
+      confirmRollBtn.disabled = true;
+  
+      updateDiceUI();
+    });
   });
-});
