@@ -1,112 +1,111 @@
 body {
-    font-family: "Arial", sans-serif;
-    background: linear-gradient(180deg, #ffefba 0%, #ffffff 100%);
-    margin: 0;
-    padding: 20px;
-    text-align: center;
-  }
-  
-  h1 {
-    color: #d35400;
-    margin-bottom: 10px;
-  }
-  
-  .player-setup {
-    margin-bottom: 20px;
-  }
-  
-  .hidden {
-    display: none;
-  }
-  
-  #gameContainer {
-    background: #f9f9f9;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    display: inline-block;
-    width: 80%;
-    max-width: 900px;
-  }
-  
-  #diceContainer {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0;
-  }
-  
-  .die {
-    width: 60px;
-    height: 60px;
-    border: 2px solid #222;
-    border-radius: 4px;
-    background-color: #fff;
-    cursor: pointer;
-    transition: transform 0.2s;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 20px;
-  }
-  
-  .die.locked {
-    border-color: #e74c3c;
-    transform: scale(0.95);
-    background-color: #ffe6e6;
-  }
-  
-  .die:active {
-    transform: scale(0.85);
-  }
-  
-  /* Red/Black Dice Classes */
-  .red-die {
-    color: red;
-  }
-  .black-die {
-    color: black;
-  }
-  
-  .controls {
-    margin: 20px 0;
-  }
-  
-  #rollDiceBtn,
-  #confirmRollBtn {
-    padding: 10px 20px;
-    font-size: 16px;
-    margin: 0 10px;
-    cursor: pointer;
-  }
-  
-  #confirmRollBtn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  
-  #chipsContainer, #scoreboard {
-    text-align: left;
-    margin: 20px auto;
-    width: 60%;
-  }
-  
-  #chipList li {
-    padding: 5px 0;
-    font-weight: bold;
-  }
-  
-  #scoreTable {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  #scoreTable th,
-  #scoreTable td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-  }
-  
+  font-family: "Arial", sans-serif;
+  background: linear-gradient(180deg, #ffefba 0%, #ffffff 100%);
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+}
+
+h1 {
+  color: #d35400;
+  margin-bottom: 10px;
+}
+
+.player-setup {
+  margin-bottom: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+#gameContainer {
+  background: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  display: inline-block;
+  width: 80%;
+  max-width: 900px;
+}
+
+#diceContainer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.die {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #222;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.die.locked {
+  border-color: #e74c3c;
+  transform: scale(0.95);
+  background-color: #ffe6e6;
+}
+
+.die:active {
+  transform: scale(0.85);
+}
+
+/* Red/Black Dice Classes */
+.red-die {
+  color: red;
+}
+.black-die {
+  color: black;
+}
+
+.controls {
+  margin: 20px 0;
+}
+
+#rollDiceBtn,
+#confirmRollBtn {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+#confirmRollBtn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+#chipsContainer, #scoreboard {
+  text-align: left;
+  margin: 20px auto;
+  width: 60%;
+}
+
+#chipList li {
+  padding: 5px 0;
+  font-weight: bold;
+}
+
+#scoreTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#scoreTable th,
+#scoreTable td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
