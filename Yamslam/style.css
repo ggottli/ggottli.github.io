@@ -109,3 +109,10 @@ h1 {
   padding: 8px;
   text-align: center;
 }
+
+/* Discard Container styling similar to chipsContainer */
+#discardContainer {
+  text-align: left;
+  margin: 20px auto;
+  width: 60%;
+}

@@ -13,17 +13,14 @@ let diceValues = Array(totalDice).fill(null);
 let diceColors = Array(totalDice).fill(null);
 let lockedDice = Array(totalDice).fill(false);
 
-// Keep track of how many players have taken a turn in the current round
-// Once this equals players.length, a full round has passed.
-let playersThisRound = 0;
-// Keep track if someone scored this round
+// Track round info
+let playersThisRound = 0;        // How many players have gone this round
 let someoneScoredThisRound = false;
 
-// The discard pile for chips removed from the game
+// Discard pile
 let DISCARD_PILE = [];
 
 // Chips config
-// We'll track how many remain in the game. Once remain=0, that chip is effectively gone unless resurrected from discard (in Yamslam).
 const CHIPS = [
   { type: "twoPairs",      label: "2 Pairs",        points: 10, remaining: 4 },
   { type: "threeOfAKind",  label: "3 of a Kind",    points: 15, remaining: 4 },
@@ -35,7 +32,7 @@ const CHIPS = [
 ];
 
 // --------------------------------------------------------------------
-// Setup
+// Player Setup
 // --------------------------------------------------------------------
 function setupPlayers(num) {
   players = [];
@@ -49,12 +46,12 @@ function setupPlayers(num) {
 }
 
 // --------------------------------------------------------------------
-// Dice Rolling & UI
+// Rolling Dice & UI
 // --------------------------------------------------------------------
 function rollDice() {
   for (let i = 0; i < totalDice; i++) {
     if (!lockedDice[i]) {
-      const value = Math.floor(Math.random() * 6) + 1; // 1-6
+      const value = Math.floor(Math.random() * 6) + 1;
       diceValues[i] = value;
       diceColors[i] = (value % 2 === 0) ? "red" : "black";
     }
@@ -68,24 +65,23 @@ function updateDiceUI() {
   for (let i = 0; i < totalDice; i++) {
     const die = document.createElement("div");
     die.classList.add("die");
-    
-    // Add color class
+
+    // Color class
     if (diceColors[i] === "red") {
       die.classList.add("red-die");
     } else {
       die.classList.add("black-die");
     }
-    
-    // Show the die face value
-    die.textContent = diceValues[i] !== null ? diceValues[i] : "?";
 
-    // If this die is locked
+    // Show value or "?"
+    die.textContent = (diceValues[i] !== null) ? diceValues[i] : "?";
+
+    // Locked?
     if (lockedDice[i]) {
       die.classList.add("locked");
     }
 
-    // Clicking toggles locked state, but only if at least 1 roll has occurred
-    // and we have not exceeded maxRolls.
+    // Clicking toggles lock (if allowed)
     die.addEventListener("click", () => {
       if (rollCount <= maxRolls && rollCount > 1) {
         lockedDice[i] = !lockedDice[i];
@@ -104,6 +100,18 @@ function updateChipList() {
     const li = document.createElement("li");
     li.textContent = `${chip.label} (${chip.points} points) - Remaining: ${chip.remaining}`;
     chipList.appendChild(li);
+  });
+}
+
+// NEW FUNCTION: Update the Discard Pile UI
+function updateDiscardList() {
+  const discardList = document.getElementById("discardList");
+  discardList.innerHTML = "";
+
+  DISCARD_PILE.forEach((chip) => {
+    const li = document.createElement("li");
+    li.textContent = `${chip.label} (${chip.points} points)`;
+    discardList.appendChild(li);
   });
 }
 
@@ -131,12 +139,10 @@ function updateScoreboard() {
 }
 
 // --------------------------------------------------------------------
-// Chip & Round Logic
+// Core Chip Logic
 // --------------------------------------------------------------------
-
-// Discard the highest remaining chip (by points) to the discard pile
 function discardHighestChip() {
-  // Find the chip in CHIPS that has the largest 'points' with remaining > 0
+  // Find the highest-point chip in CHIPS with remaining > 0
   let highestChip = null;
   for (let chip of CHIPS) {
     if (chip.remaining > 0) {
@@ -145,8 +151,6 @@ function discardHighestChip() {
       }
     }
   }
-
-  // If we found one, remove one from 'remaining' and push it onto discard
   if (highestChip) {
     highestChip.remaining--;
     DISCARD_PILE.push({
@@ -155,10 +159,13 @@ function discardHighestChip() {
       points: highestChip.points
     });
     alert(`No one scored this round. Discarding the highest chip: ${highestChip.label} (${highestChip.points} pts).`);
+    
+    // Update Discard Pile UI
+    updateDiscardList();
   }
 }
 
-// Returns true if all CHIPS.remain are 0
+// Check if all CHIPS have 0 remaining
 function allChipsGone() {
   let sum = 0;
   for (let chip of CHIPS) {
@@ -167,26 +174,25 @@ function allChipsGone() {
   return sum === 0;
 }
 
-// Evaluate dice to see which chips are possible (same as before)
+// Evaluate dice for possible chips
 function evaluateDiceForChips() {
-  // Check if all dice have the same value => Yamslam
+  // Check Yamslam
   const firstValue = diceValues[0];
   const isYamslam = diceValues.every(val => val === firstValue);
-
   if (isYamslam) {
     return { isYamslam: true, possible: [] };
   }
 
+  // Otherwise check other combos
   const possibleChips = [];
-  // freq count
   const freq = {};
   diceValues.forEach(val => {
     freq[val] = (freq[val] || 0) + 1;
   });
 
-  // Flush = all dice same color
+  // Flush
   const firstColor = diceColors[0];
-  const isFlush = diceColors.every(c => c === firstColor);
+  const isFlush = diceColors.every(color => color === firstColor);
   if (isFlush) {
     possibleChips.push("flush");
   }
@@ -210,7 +216,7 @@ function evaluateDiceForChips() {
     possibleChips.push("fourOfAKind");
   }
 
-  // Full House (3 + 2)
+  // Full House
   let hasThree = Object.values(freq).some(count => count === 3);
   let hasTwo = Object.values(freq).some(count => count === 2);
   if (hasThree && hasTwo) {
@@ -229,7 +235,6 @@ function evaluateDiceForChips() {
   return { isYamslam: false, possible: possibleChips };
 }
 
-// Helper to check consecutive runs
 function checkConsecutive(arr, n) {
   for (let i = 0; i <= arr.length - n; i++) {
     let isConsecutive = true;
@@ -244,13 +249,13 @@ function checkConsecutive(arr, n) {
   return false;
 }
 
-// Find the single highest chip among both the CHIPS (where remaining>0) and DISCARD_PILE
+// Find the highest chip among both remaining CHIPS and DISCARD_PILE
 function findHighestChipAmongAll() {
   let bestChip = null;
   let bestPoints = 0;
   let fromDiscard = false;
 
-  // 1) Check CHIPS with remain > 0
+  // Check CHIPS
   for (let chip of CHIPS) {
     if (chip.remaining > 0 && chip.points > bestPoints) {
       bestChip = chip;
@@ -258,7 +263,7 @@ function findHighestChipAmongAll() {
       fromDiscard = false;
     }
   }
-  // 2) Check DISCARD_PILE
+  // Check DISCARD_PILE
   for (let dChip of DISCARD_PILE) {
     if (dChip.points > bestPoints) {
       bestChip = dChip;
@@ -280,26 +285,22 @@ window.addEventListener("DOMContentLoaded", () => {
   const playerCountInput = document.getElementById("playerCount");
   
   startGameBtn.addEventListener("click", () => {
-    // Set up players
     const numPlayers = parseInt(playerCountInput.value, 10);
     if (numPlayers <= 0) return;
     setupPlayers(numPlayers);
 
-    // Reset game variables
+    // Reset
     currentPlayerIndex = 0;
     rollCount = 1;
     diceValues = Array(totalDice).fill(null);
     diceColors = Array(totalDice).fill(null);
     lockedDice = Array(totalDice).fill(false);
 
-    // Round tracking
     playersThisRound = 0;
     someoneScoredThisRound = false;
-
-    // Discard pile
     DISCARD_PILE = [];
 
-    // Reset chip remain (optional if you want a "fresh" game every time)
+    // (Optional) Reset chips if you want a fresh game
     // CHIPS.forEach(ch => ch.remaining = 4);
 
     document.getElementById("gameContainer").classList.remove("hidden");
@@ -312,10 +313,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     updateDiceUI();
     updateChipList();
+    updateDiscardList(); // Show empty at start
     updateScoreboard();
   });
 
-  // Rolling the dice
   rollDiceBtn.addEventListener("click", () => {
     if (rollCount <= maxRolls) {
       rollDice();
@@ -323,12 +324,11 @@ window.addEventListener("DOMContentLoaded", () => {
       rollCount++;
       document.getElementById("rollCount").textContent = (rollCount > maxRolls) ? maxRolls : rollCount;
 
-      // Enable confirm so user can stop rolling early
+      // Now the user can confirm at any time
       confirmRollBtn.disabled = false;
     }
   });
 
-  // Confirm and take chip
   confirmRollBtn.addEventListener("click", () => {
     const { isYamslam, possible } = evaluateDiceForChips();
 
@@ -336,21 +336,19 @@ window.addEventListener("DOMContentLoaded", () => {
     let earnedPoints = 0;
 
     if (isYamslam) {
-      // 1) For Yamslam, find the single highest chip among CHIPS + DISCARD_PILE
+      // Yamslam => highest chip among CHIPS + DISCARD_PILE
       let { chip: highestChip, fromDiscard } = findHighestChipAmongAll();
       if (highestChip) {
-        // If fromDiscard = true, remove it from the discard pile
+        // remove from discard or decrement remaining
         if (fromDiscard) {
-          // remove 1 instance from DISCARD_PILE
-          const idx = DISCARD_PILE.indexOf(highestChip);
+          let idx = DISCARD_PILE.indexOf(highestChip);
           if (idx !== -1) {
             DISCARD_PILE.splice(idx, 1);
           }
+          updateDiscardList();
         } else {
-          // Decrement remain in CHIPS
           highestChip.remaining--;
         }
-        // Player claims it
         claimedChip = highestChip;
         earnedPoints = highestChip.points;
 
@@ -358,16 +356,15 @@ window.addEventListener("DOMContentLoaded", () => {
         players[currentPlayerIndex].chipsTaken.push(highestChip.label);
 
         alert(
-          `${players[currentPlayerIndex].name} rolled a Yamslam! They claim the highest chip: ` +
-          `"${highestChip.label}" (${highestChip.points} pts).`
+          `${players[currentPlayerIndex].name} rolled a Yamslam! 
+           They claim "${highestChip.label}" for ${highestChip.points} points!`
         );
       } else {
-        // If no chip available at all (should be rare if the game hasn't ended),
-        // then it's 0 points.
-        alert("No chips left to claim (all gone or discarded) — 0 points!");
+        // No chips to take
+        alert("No chips left anywhere — 0 points!");
       }
     } else {
-      // Normal logic: pick the best possible chip from `possible`
+      // Normal logic => best possible chip from `possible`
       let bestPoints = 0;
       possible.forEach(chipType => {
         const chipObj = CHIPS.find(ch => ch.type === chipType && ch.remaining > 0);
@@ -382,30 +379,28 @@ window.addEventListener("DOMContentLoaded", () => {
         players[currentPlayerIndex].score += claimedChip.points;
         players[currentPlayerIndex].chipsTaken.push(claimedChip.label);
         earnedPoints = claimedChip.points;
-
         alert(`${players[currentPlayerIndex].name} takes "${claimedChip.label}" for ${claimedChip.points} points!`);
       } else {
-        // No valid chip => 0 points
         alert(`No available chip for this dice combination—0 points this turn.`);
       }
     }
 
-    // Update scoreboard & chipList
+    // Update scoreboard and chip list
     updateScoreboard();
     updateChipList();
 
-    // If the user earned > 0, they scored
+    // Did they score?
     if (earnedPoints > 0) {
       someoneScoredThisRound = true;
     }
 
-    // Check if all chips are gone => game ends
+    // Check if all chips are gone
     if (allChipsGone()) {
       endGame();
       return;
     }
 
-    // Because we confirmed, the turn is over. We reset dice for the next turn.
+    // Reset for next turn
     rollCount = 1;
     diceValues = Array(totalDice).fill(null);
     diceColors = Array(totalDice).fill(null);
@@ -413,14 +408,12 @@ window.addEventListener("DOMContentLoaded", () => {
     confirmRollBtn.disabled = true;
     updateDiceUI();
 
-    // SPECIAL CASE: Yamslam => same player goes again
-    // so we do NOT increment playersThisRound or currentPlayerIndex.
-    // They get a fresh 3 rolls in their extra turn.
+    // If Yamslam => same player goes again
     if (isYamslam) {
       document.getElementById("currentPlayer").textContent = 
         `${players[currentPlayerIndex].name}'s EXTRA TURN (Yamslam)!`;
       document.getElementById("rollCount").textContent = rollCount;
-      return; // Stop here—same player goes again
+      return; // same player, new turn
     }
 
     // Otherwise, move to next player
@@ -429,23 +422,13 @@ window.addEventListener("DOMContentLoaded", () => {
       `${players[currentPlayerIndex].name}'s Turn!`;
     document.getElementById("rollCount").textContent = rollCount;
 
-    // Increment how many players have gone in this round
+    // Increment how many have gone in this round
     playersThisRound++;
-
-    // If we've reached the end of the round (all players had 1 turn)
     if (playersThisRound === players.length) {
-      // Check if no one scored
+      // End of round
       if (!someoneScoredThisRound) {
-        // Discard highest chip
         discardHighestChip();
-        updateChipList();
-        // Check if that discard ended the game
-        if (allChipsGone()) {
-          endGame();
-          return;
-        }
       }
-
       // Start a new round
       playersThisRound = 0;
       someoneScoredThisRound = false;
@@ -453,9 +436,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// End the game
+// --------------------------------------------------------------------
+// End Game
+// --------------------------------------------------------------------
 function endGame() {
-  // Tally up final scores
   let winner = players[0];
   for (let p of players) {
     if (p.score > winner.score) {
@@ -463,6 +447,4 @@ function endGame() {
     }
   }
   alert(`Game Over! The winner is ${winner.name} with ${winner.score} points!`);
-
-  // Optionally, you can hide or disable game UI here
 }
