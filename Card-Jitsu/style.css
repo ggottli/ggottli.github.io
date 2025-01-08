@@ -11,6 +11,7 @@ body {
   color: #333;
   min-height: 100vh;
   text-align: center;
+  /* Let the page be scrollable if needed */
 }
 
 /* Top Corner Trackers */
@@ -18,11 +19,12 @@ body {
 #player-tracker {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.8);
-  padding: 10px;
+  padding: 0.5rem;
   border: 2px solid #ccc;
   border-radius: 8px;
-  width: 150px;
+  width: 140px;
   top: 10px;
+  z-index: 10;
 }
 
 #cpu-tracker {
@@ -36,49 +38,52 @@ body {
 #cpu-wins-display,
 #player-wins-display {
   margin-top: 5px;
-  min-height: 50px;
+  min-height: 40px;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
 }
 
-/* Header */
+/* Heading */
 header {
-  padding: 20px;
+  padding: 1rem;
 }
 
 /* Main Container */
 main {
   max-width: 1000px;
   margin: 0 auto;
-  padding-top: 80px; /* so trackers aren't overlapped */
+  padding-top: 80px; /* So trackers aren't overlapped */
 }
 
 /* Battlefield */
 #battlefield {
   position: relative;
-  width: 100%;
-  height: 300px;
-  margin: 20px auto;
+  width: 90vw;           /* 90% of viewport width */
+  max-width: 700px;      /* limit on larger screens */
+  aspect-ratio: 16 / 9;  /* maintain a ratio, or use a different ratio */
+  margin: 1rem auto;
   background: #f8fafc;
   border: 2px solid #ccc;
   border-radius: 10px;
 }
 
-/* CPU on the LEFT */
+/* CPU on the LEFT - use % or a smaller offset so it scales */
 #cpu-penguin {
   position: absolute;
-  bottom: 0;
-  left: 20px;
-  width: 120px;
+  bottom: 2%;
+  left: 2%;
+  width: 20%; /* or 15% */
+  max-width: 120px;
 }
 
-/* PLAYER on the RIGHT */
+/* Player on the RIGHT */
 #player-penguin {
   position: absolute;
-  bottom: 0;
-  right: 20px;
-  width: 120px;
+  bottom: 2%;
+  right: 2%;
+  width: 20%;
+  max-width: 120px;
 }
 
 /* Selected Cards (center) */
@@ -86,7 +91,8 @@ main {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 400px; 
+  width: 80%;
+  max-width: 500px;
   transform: translate(-50%, -50%);
   display: flex;
   justify-content: space-between;
@@ -94,35 +100,43 @@ main {
 }
 
 .selected-slot {
-  width: 100px;
-  height: 150px;
+  flex: 1;
+  margin: 0 0.5rem;
+  aspect-ratio: 2 / 3;       /* keep card proportion */
   border: 2px dashed #888;
   border-radius: 8px;
   background-color: #fafafa;
   position: relative;
+  min-width: 60px;           /* ensure a minimum size */
+  max-width: 100px;
 }
 
-/* Hands Container */
+/* Hands Container - also responsive */
 #hands-container {
   display: flex;
+  flex-wrap: wrap;        /* let them wrap on smaller screens */
   justify-content: space-between;
-  margin: 20px;
+  margin: 1rem;
 }
 
+/* .hand containers share space */
 .hand {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
-  flex-wrap: wrap;
-  width: 45%;
+  flex-wrap: wrap;     /* wrap cards if needed */
+  margin: 0.5rem;
+  flex: 1 1 0;         /* each hand can grow/shrink */
+  min-height: 120px;  
 }
 
 /* Card base */
 .card {
-  width: 80px;
-  height: 120px;
-  margin: 0 5px;
+  /* Use vw for the card width and a max width for large screens */
+  width: 15vw;
+  max-width: 80px;
+  aspect-ratio: 2 / 3;
+  margin: 0.5rem;
   border-radius: 8px;
   background-size: cover;
   background-position: center;
@@ -142,29 +156,33 @@ main {
   right: 5px;
   font-weight: bold;
   color: #333;
+  font-size: calc(0.8rem + 0.3vw); /* scale text with viewport */
 }
 
 /* Round Result */
 #result-container {
-  margin-top: 20px;
-  min-height: 60px;
+  margin-top: 1rem;
+  min-height: 50px;
 }
 
 #round-result {
-  font-size: 1.2rem;
+  font-size: calc(1rem + 0.3vw);
   font-weight: bold;
 }
 
 #next-round-btn {
-  margin-top: 10px;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: calc(0.8rem + 0.2vw);
 }
 
 /* Animated card clone */
 .animated-card {
   position: absolute;
   transition: transform 0.8s ease;
-  width: 80px;
-  height: 120px;
+  width: 15vw;
+  max-width: 80px;
+  aspect-ratio: 2 / 3;
   border-radius: 8px;
   z-index: 9999;
   background-size: cover;
@@ -174,23 +192,45 @@ main {
 
 /* The final card that sits in the center slot after animation */
 .center-card {
-  /* same size as normal cards */
-  width: 80px;
-  height: 120px;
+  width: 100%;
+  height: 100%; /* fill the slot's space */
   border-radius: 8px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
-  margin: 0 auto;
-  /* optional border or styling */
+  /* We keep the parent's border or apply our own */
   border: 4px solid #000;
+  /* If you want the slot to define the size, let the slot do it. */
 }
 
 .center-card .card-number {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
+  bottom: 5%;
+  right: 5%;
   font-weight: bold;
   color: #333;
+  font-size: calc(0.7rem + 0.2vw);
+}
+
+/* ----- Optional Media Queries for further fine-tuning ----- */
+
+/* For very narrow screens, adjust sizes further if needed */
+@media (max-width: 480px) {
+  #battlefield {
+    width: 95vw;
+    max-width: 400px;
+    aspect-ratio: 3 / 2;
+  }
+  .card {
+    width: 22vw;
+    max-width: 70px;
+  }
+  .selected-slot {
+    max-width: 80px;
+  }
+  #cpu-penguin, #player-penguin {
+    width: 25%;
+    max-width: 90px;
+  }
 }
