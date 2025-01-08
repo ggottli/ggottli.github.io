@@ -42,16 +42,16 @@ body {
   align-items: flex-start;
 }
 
-/* Heading */
+/* Header */
 header {
   padding: 20px;
 }
 
-/* Main container */
+/* Main Container */
 main {
   max-width: 1000px;
   margin: 0 auto;
-  padding-top: 80px;
+  padding-top: 80px; /* so trackers aren't overlapped */
 }
 
 /* Battlefield */
@@ -73,7 +73,7 @@ main {
   width: 120px;
 }
 
-/* Player on the RIGHT */
+/* PLAYER on the RIGHT */
 #player-penguin {
   position: absolute;
   bottom: 0;
@@ -131,7 +131,7 @@ main {
   cursor: pointer;
 }
 
-/* Player face-up styling */
+/* Player face-up card styling */
 .card-faceup {
   border: 4px solid #000;
 }
@@ -170,4 +170,27 @@ main {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* The final card that sits in the center slot after animation */
+.center-card {
+  /* same size as normal cards */
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  margin: 0 auto;
+  /* optional border or styling */
+  border: 4px solid #000;
+}
+
+.center-card .card-number {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-weight: bold;
+  color: #333;
 }
