@@ -1,22 +1,22 @@
-/* Reset / Box Sizing */
+/* Reset */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Body & Basic Font */
+/* Basic Body */
 body {
   background: linear-gradient(to bottom, #72cef3, #ffffff);
   font-family: sans-serif;
   color: #333;
   min-height: 100vh;
   text-align: center;
-  position: relative;
 }
 
 /* Top Corner Trackers */
-#cpu-tracker, #player-tracker {
+#cpu-tracker, 
+#player-tracker {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.8);
   padding: 10px;
@@ -34,47 +34,26 @@ body {
   right: 10px;
 }
 
+/* For the small squares that show won cards */
 #cpu-wins-display,
 #player-wins-display {
   margin-top: 5px;
   min-height: 50px;
-
-  /* This will allow side-by-side type columns */
   display: flex;
   flex-direction: row;
-  justify-content: flex-start;
   align-items: flex-start;
 }
 
-/* Each type column displayed horizontally in the tracker */
-.type-column {
-  display: flex;
-  flex-direction: column;
-  margin-right: 10px; /* space between different element columns */
-}
-
-/* The small squares for each card win */
-.win-square {
-  width: 30px;
-  height: 30px;
-  margin-bottom: 5px;
-  border: 2px solid #00000055; /* slight border */
-  border-radius: 4px;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-/* Header */
+/* Title */
 header {
   padding: 20px;
 }
 
-/* Main Container */
+/* Main container */
 main {
   max-width: 1000px;
   margin: 0 auto;
-  padding-top: 80px; /* So trackers aren't overlapped */
+  padding-top: 80px; /* so the trackers are visible */
 }
 
 /* Battlefield */
@@ -83,7 +62,6 @@ main {
   width: 100%;
   height: 300px;
   margin: 20px auto;
-  overflow: hidden;
   background: #f8fafc;
   border: 2px solid #ccc;
   border-radius: 10px;
@@ -105,59 +83,69 @@ main {
   width: 120px;
 }
 
-/* Center "Played" Cards */
-#played-cards {
+/* Selected Cards Container (Center or near each penguin) */
+#selected-cards {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 300px;
+  width: 400px; 
   transform: translate(-50%, -50%);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.played-card-slot {
+/* Each selected card slot */
+.selected-slot {
   width: 100px;
   height: 150px;
   border: 2px dashed #888;
   border-radius: 8px;
-  margin: 0 10px;
-  background-color: #f0f0f0;
+  background-color: #fafafa;
   position: relative;
 }
 
-/* Player Hand (Cards) */
-#player-hand {
-  margin: 20px auto;
+/* Hands Container */
+#hands-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px;
 }
 
-/* Card Styles */
+/* CPU Hand on the left, Player Hand on the right */
+.hand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px; /* Enough height for the cards */
+  flex-wrap: wrap;
+  width: 45%;
+}
+
+/* Cards face-up or face-down */
 .card {
-  display: inline-block;
   width: 80px;
   height: 120px;
   margin: 0 5px;
-  border: 5px solid #000;
   border-radius: 8px;
-  cursor: pointer;
-  position: relative;
-  background-size: contain;
+  background-size: cover;
+  background-position: center center;
   background-repeat: no-repeat;
-  background-position: center;
-  transition: transform 0.2s;
+  position: relative;
+
+  /* For potential hover or pointer events */
+  cursor: pointer;
 }
 
-.card:hover {
-  transform: scale(1.05);
+/* Player's face-up card border & number position */
+.card-faceup {
+  border: 4px solid #000;
 }
 
-/* Number displayed in bottom-right corner */
 .card-number {
   position: absolute;
   bottom: 5px;
   right: 5px;
-  font-size: 1rem;
   font-weight: bold;
   color: #333;
 }
@@ -171,9 +159,29 @@ main {
 #round-result {
   font-size: 1.2rem;
   font-weight: bold;
-  color: #333;
 }
 
+/* Next Round Button */
 #next-round-btn {
   margin-top: 10px;
 }
+
+/* ----- Animation Classes & Transitions ----- */
+
+/* We'll make an absolutely positioned clone on the page 
+   to smoothly animate from hand to selected slot. */
+.animated-card {
+  position: absolute;
+  transition: transform 0.8s ease; /* adjust duration/easing as desired */
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  z-index: 9999;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* If you want a short "pop" scale effect, you could do: 
+   .animated-card:active { transform: scale(1.1); } 
+   or add a small keyframe animation. */

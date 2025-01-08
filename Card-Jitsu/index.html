@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Card-Jitsu Inspired Game</title>
+  <title>Card Jitsu</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -20,27 +20,33 @@
   </div>
 
   <header>
-    <h1>Card-Jitsu Inspired Game</h1>
+    <h1>Card Jitsu</h1>
   </header>
 
   <main>
-    <!-- BATTLEFIELD SECTION -->
+    <!-- BATTLEFIELD -->
     <div id="battlefield">
       <!-- CPU Penguin on the LEFT -->
       <img id="cpu-penguin" src="assets/cpu-penguin.png" alt="CPU Penguin" />
       
-      <!-- Played Cards in the center -->
-      <div id="played-cards">
-        <div id="cpu-played-card" class="played-card-slot"></div>
-        <div id="player-played-card" class="played-card-slot"></div>
+      <!-- SELECTED CARD SLOTS in the center or near each penguin -->
+      <div id="selected-cards">
+        <div id="cpu-selected-slot" class="selected-slot"></div>
+        <div id="player-selected-slot" class="selected-slot"></div>
       </div>
 
       <!-- Player Penguin on the RIGHT -->
       <img id="player-penguin" src="assets/player-penguin.png" alt="Player Penguin" />
     </div>
 
-    <!-- PLAYER HAND (bottom) -->
-    <div id="player-hand"></div>
+    <!-- HANDS -->
+    <div id="hands-container">
+      <!-- CPU HAND (face-down) on the LEFT -->
+      <div id="cpu-hand" class="hand"></div>
+
+      <!-- PLAYER HAND (face-up) on the RIGHT -->
+      <div id="player-hand" class="hand"></div>
+    </div>
 
     <!-- ROUND RESULT & NEXT ROUND -->
     <div id="result-container">
