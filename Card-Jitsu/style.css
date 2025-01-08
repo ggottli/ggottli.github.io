@@ -1,0 +1,153 @@
+/* style.css */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    background: linear-gradient(to bottom, #72cef3, #ffffff);
+    font-family: sans-serif;
+    text-align: center;
+    color: #333;
+    min-height: 100vh;
+  }
+  
+  header {
+    padding: 20px;
+    background-color: #ffffff99;
+  }
+  
+  main {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+  }
+  
+  /* BATTLEFIELD */
+  #battlefield {
+    position: relative;
+    margin: 20px auto;
+    width: 100%;
+    height: 300px; /* Adjust as needed */
+    overflow: hidden; /* Hide penguins as they walk in */
+    background: #f8fafc; /* A simple background for the battlefield */
+    border: 2px solid #ccc;
+    border-radius: 10px;
+  }
+  
+  #player-penguin,
+  #cpu-penguin {
+    position: absolute;
+    bottom: 0;
+    width: 120px; /* Adjust to your asset size */
+    transition: transform 2s;
+  }
+  
+  /* Position them off-screen initially */
+  #player-penguin {
+    left: -150px;
+  }
+  
+  #cpu-penguin {
+    right: -150px;
+  }
+  
+  /* The VS text in the center */
+  #versus {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    font-weight: bold;
+  }
+  
+  /* ANIMATION STATES */
+  /* Add classes via JavaScript to animate */
+  .walk-in-left {
+    transform: translateX(200px);
+  }
+  
+  .walk-in-right {
+    transform: translateX(-200px);
+  }
+  
+  .bow {
+    animation: bowAnim 1s forwards;
+  }
+  
+  @keyframes bowAnim {
+    0% {
+      transform: translateY(0) rotate(0);
+    }
+    50% {
+      transform: translateY(10px) rotate(10deg);
+    }
+    100% {
+      transform: translateY(0) rotate(0);
+    }
+  }
+  
+  /* CARD SELECTION */
+  #player-hand {
+    margin-top: 20px;
+  }
+  
+  /* Example card styling */
+  .card {
+    display: inline-block;
+    width: 80px;
+    height: 120px;
+    margin: 0 5px;
+    background-color: #fff;
+    border: 2px solid #000;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s;
+  }
+  .card:hover {
+    transform: scale(1.05);
+  }
+  
+  .card-element {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  .card-number {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  /* RESULT CONTAINER */
+  #result-container {
+    margin-top: 20px;
+    min-height: 50px;
+  }
+  
+  #round-result {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* SCOREBOARD */
+  #scoreboard {
+    margin-top: 20px;
+    background-color: #fff;
+    padding: 10px;
+    border: 2px solid #ccc;
+    display: inline-block;
+    border-radius: 8px;
+  }
+  

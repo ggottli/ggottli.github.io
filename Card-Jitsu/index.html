@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+  <title>Card-Jitsu Clone</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Card-Jitsu Clone</h1>
+  </header>
+
+  <main>
+    <!-- PENGUINS / BATTLEFIELD -->
+    <div id="battlefield">
+      <img id="player-penguin" src="assets/player-penguin.png" alt="Player Penguin" />
+      <img id="cpu-penguin" src="assets/cpu-penguin.png" alt="CPU Penguin" />
+      <div id="versus">VS</div>
+    </div>
+
+    <!-- CARD SELECTION AREA -->
+    <div id="player-hand">
+      <!-- Cards displayed here from JS -->
+    </div>
+
+    <!-- DISPLAY RESULTS -->
+    <div id="result-container">
+      <p id="round-result"></p>
+      <button id="next-round-btn" style="display: none;">Next Round</button>
+    </div>
+
+    <!-- SCOREBOARD -->
+    <div id="scoreboard">
+      <p>Player Wins: <span id="player-score">0</span></p>
+      <p>CPU Wins: <span id="cpu-score">0</span></p>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
