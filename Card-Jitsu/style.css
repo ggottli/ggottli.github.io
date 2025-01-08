@@ -59,56 +59,65 @@ main {
 /* Battlefield */
 #battlefield {
   position: relative;
-  width: 90vw;           /* 90% of viewport width */
-  max-width: 700px;      /* limit on larger screens */
-  aspect-ratio: 16 / 9;  /* maintain a ratio, or use a different ratio */
+  width: 90vw;               /* e.g., 90% of the viewport width */
+  max-width: 900px;          /* optional max width on large screens */
+  aspect-ratio: 16 / 9;      /* keep a wide aspect ratio */
   margin: 1rem auto;
   background: #f8fafc;
   border: 2px solid #ccc;
   border-radius: 10px;
 }
 
-/* CPU on the LEFT - use % or a smaller offset so it scales */
 #cpu-penguin {
   position: absolute;
-  bottom: 2%;
+  top: 50%;
   left: 2%;
-  width: 20%; /* or 15% */
+  width: 15%;         /* or whatever size works */
   max-width: 120px;
+  transform: translateY(-50%); /* center vertically */
+  z-index: 2;
 }
-
-/* Player on the RIGHT */
 #player-penguin {
   position: absolute;
-  bottom: 2%;
+  top: 50%;
   right: 2%;
-  width: 20%;
+  width: 15%;
   max-width: 120px;
+  transform: translateY(-50%);
+  z-index: 2;
 }
 
-/* Selected Cards (center) */
+/* Center slots container: 
+   place it horizontally between penguins, same vertical center. */
 #selected-cards {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 80%;
-  max-width: 500px;
+  /* Translate to truly center horizontally AND vertically */
   transform: translate(-50%, -50%);
+  
+  /* We'll fix a width that accommodates the two dashed slots side by side. */
+  width: 30%;    /* try 30% of battlefield or a fixed px value */
+  min-width: 200px;
+  max-width: 400px;
+  
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/* Each dashed slot side by side */
 .selected-slot {
   flex: 1;
   margin: 0 0.5rem;
-  aspect-ratio: 2 / 3;       /* keep card proportion */
+  aspect-ratio: 2 / 3;       /* keep a card-like shape */
   border: 2px dashed #888;
   border-radius: 8px;
   background-color: #fafafa;
+  min-width: 70px;           /* ensure a minimum size */
+  max-width: 120px;          /* optional maximum so they don't get too big */
   position: relative;
-  min-width: 60px;           /* ensure a minimum size */
-  max-width: 100px;
+  z-index: 1;
 }
 
 /* Hands Container - also responsive */
