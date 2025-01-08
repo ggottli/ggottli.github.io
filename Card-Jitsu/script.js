@@ -1,42 +1,48 @@
-// script.js
-
-// 1. Wait for the page to load
 document.addEventListener("DOMContentLoaded", () => {
+    // DOM Elements
     const playerPenguin = document.getElementById("player-penguin");
     const cpuPenguin = document.getElementById("cpu-penguin");
     const playerHandContainer = document.getElementById("player-hand");
     const roundResult = document.getElementById("round-result");
     const nextRoundBtn = document.getElementById("next-round-btn");
-    const playerScoreDisplay = document.getElementById("player-score");
-    const cpuScoreDisplay = document.getElementById("cpu-score");
   
-    // Scores
-    let playerScore = 0;
-    let cpuScore = 0;
-    let roundActive = true; // to prevent picking multiple times
+    const playerWinsDisplay = document.getElementById("player-wins-display");
+    const cpuWinsDisplay = document.getElementById("cpu-wins-display");
   
-    // 2. Trigger the initial animations
+    // Track the Rounds each has won (store the card: { type, color })
+    let playerWins = [];
+    let cpuWins = [];
+  
+    // Controls whether a round is active (so player can't click multiple cards)
+    let roundActive = false;
+  
+    // 1. Trigger the initial animations
     walkInPenguins();
   
-    // After they walk in, make them bow
+    // After they walk in, make them bow, then create the first hand
     setTimeout(() => {
       bowPenguins();
-      // After bow, create the deck & deal the first hand
       setTimeout(() => {
         createPlayerHand();
       }, 1200);
     }, 2000);
   
-    // 3. Generate a deck
-    // Let's define possible elements and numbers
-    // For simplicity, 3 elements: Fire, Water, Snow
-    // Numbers: 1-5
+    // 2. Generate a deck
+    // For example, 3 types x 3 colors x 5 numbers = 45 cards
     function generateDeck() {
-      const elements = ["Fire", "Water", "Snow"];
+      const types = ["Fire", "Water", "Snow"];
+      const colors = ["Red", "Blue", "Green"];
       const deck = [];
-      for (let elem of elements) {
-        for (let num = 1; num <= 5; num++) {
-          deck.push({ element: elem, number: num });
+  
+      for (let type of types) {
+        for (let color of colors) {
+          for (let num = 1; num <= 5; num++) {
+            deck.push({ 
+              type: type, 
+              color: color, 
+              number: num 
+            });
+          }
         }
       }
       return deck;
@@ -44,16 +50,18 @@ document.addEventListener("DOMContentLoaded", () => {
   
     const deck = generateDeck();
   
-    // 4. Create the player's hand (random 5 cards)
+    // 3. Create player's hand (e.g., 5 random cards)
     function createPlayerHand() {
-      // Clear previous hand if any
+      // Reset the round state
       playerHandContainer.innerHTML = "";
       roundResult.textContent = "";
       nextRoundBtn.style.display = "none";
       roundActive = true;
   
-      const playerHand = [];
-      for (let i = 0; i < 5; i++) {
+      // Generate 5 random cards for player's hand
+      const handSize = 5;
+      let playerHand = [];
+      for (let i = 0; i < handSize; i++) {
         const randomIndex = Math.floor(Math.random() * deck.length);
         playerHand.push(deck[randomIndex]);
       }
@@ -63,7 +71,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const cardDiv = document.createElement("div");
         cardDiv.className = "card";
         cardDiv.innerHTML = `
-          <div class="card-element">${card.element}</div>
+          <div class="card-element">${card.type}</div>
+          <div class="card-color">${card.color}</div>
           <div class="card-number">${card.number}</div>
         `;
         cardDiv.addEventListener("click", () => {
@@ -76,44 +85,45 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   
-    // 5. CPU picks a random card
+    // 4. CPU picks a random card
     function getCpuCard() {
       const randomIndex = Math.floor(Math.random() * deck.length);
       return deck[randomIndex];
     }
   
-    // 6. Compare the cards and determine winner
+    // 5. Compare the cards (Fire > Snow, Snow > Water, Water > Fire)
     function playRound(playerCard) {
       const cpuCard = getCpuCard();
   
-      // Calculate winner
-      const winner = determineWinner(playerCard, cpuCard);
+      // Determine winner
+      const winner = determineRoundWinner(playerCard, cpuCard);
   
-      // Display result
-      let resultText = `You played ${playerCard.element} ${playerCard.number}. CPU played ${cpuCard.element} ${cpuCard.number}. `;
+      let resultText = `You played ${playerCard.type} (${playerCard.color}) ${playerCard.number}. 
+                        CPU played ${cpuCard.type} (${cpuCard.color}) ${cpuCard.number}. `;
+  
       if (winner === "Player") {
-        playerScore++;
+        // Store the winning card's type/color for the player
+        playerWins.push({ type: playerCard.type, color: playerCard.color });
+        updateWinsDisplay(playerWinsDisplay, playerWins);
         resultText += "You win this round!";
       } else if (winner === "CPU") {
-        cpuScore++;
+        // Store the winning card's type/color for the CPU
+        cpuWins.push({ type: cpuCard.type, color: cpuCard.color });
+        updateWinsDisplay(cpuWinsDisplay, cpuWins);
         resultText += "CPU wins this round!";
       } else {
         resultText += "It's a tie!";
       }
   
-      // Update scoreboard
-      playerScoreDisplay.textContent = playerScore;
-      cpuScoreDisplay.textContent = cpuScore;
-  
       roundResult.textContent = resultText;
   
-      // Check if game is over
-      if (playerScore === 3) {
-        roundResult.textContent = "You win the game!";
+      // Check if there's a game winner
+      if (checkForGameWin(playerWins)) {
+        roundResult.textContent = "You have achieved victory!";
         endGame();
         return;
-      } else if (cpuScore === 3) {
-        roundResult.textContent = "CPU wins the game!";
+      } else if (checkForGameWin(cpuWins)) {
+        roundResult.textContent = "CPU has achieved victory!";
         endGame();
         return;
       }
@@ -122,53 +132,99 @@ document.addEventListener("DOMContentLoaded", () => {
       nextRoundBtn.style.display = "inline-block";
     }
   
-    // 7. Determine winner based on Card-Jitsu rules
-    function determineWinner(playerCard, cpuCard) {
-      // If same element, compare numbers
-      if (playerCard.element === cpuCard.element) {
+    // Round outcome based on Card-Jitsu rules
+    function determineRoundWinner(playerCard, cpuCard) {
+      // If same type, compare numbers
+      if (playerCard.type === cpuCard.type) {
         if (playerCard.number > cpuCard.number) return "Player";
-        else if (playerCard.number < cpuCard.number) return "CPU";
-        else return "Tie";
+        if (playerCard.number < cpuCard.number) return "CPU";
+        return "Tie";
       }
   
-      // If different elements, apply elemental hierarchy
       // Fire > Snow, Snow > Water, Water > Fire
-      if (playerCard.element === "Fire" && cpuCard.element === "Snow") return "Player";
-      if (playerCard.element === "Snow" && cpuCard.element === "Fire") return "CPU";
+      if (playerCard.type === "Fire" && cpuCard.type === "Snow") return "Player";
+      if (playerCard.type === "Snow" && cpuCard.type === "Fire") return "CPU";
   
-      if (playerCard.element === "Snow" && cpuCard.element === "Water") return "Player";
-      if (playerCard.element === "Water" && cpuCard.element === "Snow") return "CPU";
+      if (playerCard.type === "Snow" && cpuCard.type === "Water") return "Player";
+      if (playerCard.type === "Water" && cpuCard.type === "Snow") return "CPU";
   
-      if (playerCard.element === "Water" && cpuCard.element === "Fire") return "Player";
-      if (playerCard.element === "Fire" && cpuCard.element === "Water") return "CPU";
+      if (playerCard.type === "Water" && cpuCard.type === "Fire") return "Player";
+      if (playerCard.type === "Fire" && cpuCard.type === "Water") return "CPU";
     }
   
-    // 8. Next round
+    // 6. Check if a player has 3 distinct types OR 3 distinct colors of the same type
+    function checkForGameWin(winsArray) {
+      // We only check if they have at least 3 round-wins total
+      if (winsArray.length < 3) return false;
+  
+      // 6.1 Check for 3 distinct types
+      // Gather unique types from wins
+      const uniqueTypes = new Set(winsArray.map(win => win.type));
+      if (uniqueTypes.size >= 3) {
+        return true;
+      }
+  
+      // 6.2 Check for 3 wins of the same type with 3 distinct colors
+      // Group by type -> then check if that type has at least 3 distinct colors
+      // Example: { Fire: Set(["Red","Blue"]), Water: Set([...]) }
+      const typeColorMap = {};
+      for (let w of winsArray) {
+        const t = w.type;
+        if (!typeColorMap[t]) typeColorMap[t] = new Set();
+        typeColorMap[t].add(w.color);
+      }
+      // Now check if any type has 3 distinct colors
+      for (let t in typeColorMap) {
+        if (typeColorMap[t].size >= 3) return true;
+      }
+  
+      // If neither condition is met, return false
+      return false;
+    }
+  
+    // 7. Update the visual display of wins (top corners)
+    function updateWinsDisplay(container, winsArray) {
+      // Clear out the old content
+      container.innerHTML = "";
+  
+      // For each round won, show an icon or a short label (type/color)
+      // e.g., "F-Red", "W-Blue", ...
+      winsArray.forEach((win) => {
+        const winDiv = document.createElement("div");
+        winDiv.style.margin = "0 5px";
+        winDiv.textContent = `${win.type[0]}-${win.color[0]}`;
+        /*
+          If you want to show an icon:
+          - You could create an <img> based on the type or color
+          - Or use a custom mini-badge or sprite
+        */
+        container.appendChild(winDiv);
+      });
+    }
+  
+    // 8. Next round button -> create new hand
     nextRoundBtn.addEventListener("click", () => {
       createPlayerHand();
     });
   
-    // 9. End game (optional: reload the page or do something else)
+    // 9. End game (disable interactions, show final message)
     function endGame() {
       // Hide next round button
       nextRoundBtn.style.display = "none";
-  
-      // You could show a "Play Again" button and reset scores
-      // or just let them refresh the page
+      roundActive = false;
+      // Optionally, you could create a "Play Again" button 
+      // or automatically reload the page.
     }
   
-    /* ANIMATION FUNCTIONS */
+    /* ANIMATION HELPERS */
     function walkInPenguins() {
-      // Add classes that move them inside
       playerPenguin.classList.add("walk-in-left");
       cpuPenguin.classList.add("walk-in-right");
     }
   
     function bowPenguins() {
-      // Add bow animation
       playerPenguin.classList.add("bow");
       cpuPenguin.classList.add("bow");
-      // Remove the bow animation after it finishes so it can replay if needed
       setTimeout(() => {
         playerPenguin.classList.remove("bow");
         cpuPenguin.classList.remove("bow");

@@ -1,60 +1,88 @@
-/* style.css */
+/* Reset / Box Sizing */
 * {
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
   }
   
+  /* Body & Basic Font */
   body {
     background: linear-gradient(to bottom, #72cef3, #ffffff);
     font-family: sans-serif;
-    text-align: center;
     color: #333;
     min-height: 100vh;
+    text-align: center;
+    position: relative;
   }
   
+  /* Top Corner Trackers */
+  #player-tracker, #cpu-tracker {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    width: 150px;
+  }
+  
+  #player-tracker {
+    top: 10px;
+    left: 10px;
+  }
+  
+  #cpu-tracker {
+    top: 10px;
+    right: 10px;
+  }
+  
+  #player-wins-display, #cpu-wins-display {
+    margin-top: 5px;
+    min-height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Header */
   header {
     padding: 20px;
-    background-color: #ffffff99;
   }
   
+  /* Main Container */
   main {
-    width: 100%;
     max-width: 1000px;
     margin: 0 auto;
-    position: relative;
+    padding-top: 80px; /* so we don't overlap with corner trackers */
   }
   
-  /* BATTLEFIELD */
+  /* Battlefield */
   #battlefield {
     position: relative;
-    margin: 20px auto;
     width: 100%;
-    height: 300px; /* Adjust as needed */
-    overflow: hidden; /* Hide penguins as they walk in */
-    background: #f8fafc; /* A simple background for the battlefield */
+    height: 300px;
+    margin: 20px auto;
+    overflow: hidden;
+    background: #f8fafc;
     border: 2px solid #ccc;
     border-radius: 10px;
   }
   
-  #player-penguin,
-  #cpu-penguin {
+  #player-penguin {
     position: absolute;
     bottom: 0;
-    width: 120px; /* Adjust to your asset size */
+    left: -150px; /* Start off-screen left */
+    width: 120px;
     transition: transform 2s;
   }
   
-  /* Position them off-screen initially */
-  #player-penguin {
-    left: -150px;
-  }
-  
   #cpu-penguin {
-    right: -150px;
+    position: absolute;
+    bottom: 0;
+    right: -150px; /* Start off-screen right */
+    width: 120px;
+    transition: transform 2s;
   }
   
-  /* The VS text in the center */
   #versus {
     position: absolute;
     top: 40%;
@@ -64,14 +92,13 @@
     font-weight: bold;
   }
   
-  /* ANIMATION STATES */
-  /* Add classes via JavaScript to animate */
+  /* Walking Animations */
   .walk-in-left {
-    transform: translateX(200px);
+    transform: translateX(220px);
   }
   
   .walk-in-right {
-    transform: translateX(-200px);
+    transform: translateX(-220px);
   }
   
   .bow {
@@ -90,12 +117,12 @@
     }
   }
   
-  /* CARD SELECTION */
+  /* Player Hand (Cards) */
   #player-hand {
-    margin-top: 20px;
+    margin: 20px auto;
   }
   
-  /* Example card styling */
+  /* Card Styles */
   .card {
     display: inline-block;
     width: 80px;
@@ -114,40 +141,41 @@
   
   .card-element {
     position: absolute;
-    top: 10px;
+    top: 5px;
     left: 0;
     right: 0;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
+  }
+  
+  .card-color {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-size: 0.9rem;
   }
   
   .card-number {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
-    font-size: 1.2rem;
+    bottom: 5px;
+    right: 5px;
+    font-size: 1rem;
     font-weight: bold;
   }
   
-  /* RESULT CONTAINER */
+  /* Round Result */
   #result-container {
     margin-top: 20px;
-    min-height: 50px;
+    min-height: 60px;
   }
   
   #round-result {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: bold;
     color: #333;
   }
   
-  /* SCOREBOARD */
-  #scoreboard {
-    margin-top: 20px;
-    background-color: #fff;
-    padding: 10px;
-    border: 2px solid #ccc;
-    display: inline-block;
-    border-radius: 8px;
+  #next-round-btn {
+    margin-top: 10px;
   }
   
