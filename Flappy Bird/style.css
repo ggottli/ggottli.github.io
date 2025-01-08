@@ -1,0 +1,17 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Hide scrollbars */
+    background: linear-gradient(to bottom, #87CEEB, #FFA500);
+    /* The linear gradient above is just an example (sky-blue to orange). */
+    height: 100%;
+    width: 100%;
+  }
+  
+  #gameCanvas {
+    display: block;
+    /* Make the canvas fill the browser window */
+    width: 100vw;
+    height: 100vh;
+  }
+  
