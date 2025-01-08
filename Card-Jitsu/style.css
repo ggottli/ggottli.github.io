@@ -1,181 +1,157 @@
 /* Reset / Box Sizing */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  /* Body & Basic Font */
-  body {
-    background: linear-gradient(to bottom, #72cef3, #ffffff);
-    font-family: sans-serif;
-    color: #333;
-    min-height: 100vh;
-    text-align: center;
-    position: relative;
-  }
-  
-  /* Top Corner Trackers */
-  #player-tracker, #cpu-tracker {
-    position: absolute;
-    background-color: rgba(255, 255, 255, 0.8);
-    padding: 10px;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    width: 150px;
-  }
-  
-  #player-tracker {
-    top: 10px;
-    left: 10px;
-  }
-  
-  #cpu-tracker {
-    top: 10px;
-    right: 10px;
-  }
-  
-  #player-wins-display, #cpu-wins-display {
-    margin-top: 5px;
-    min-height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  /* Header */
-  header {
-    padding: 20px;
-  }
-  
-  /* Main Container */
-  main {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding-top: 80px; /* so we don't overlap with corner trackers */
-  }
-  
-  /* Battlefield */
-  #battlefield {
-    position: relative;
-    width: 100%;
-    height: 300px;
-    margin: 20px auto;
-    overflow: hidden;
-    background: #f8fafc;
-    border: 2px solid #ccc;
-    border-radius: 10px;
-  }
-  
-  #player-penguin {
-    position: absolute;
-    bottom: 0;
-    left: -150px; /* Start off-screen left */
-    width: 120px;
-    transition: transform 2s;
-  }
-  
-  #cpu-penguin {
-    position: absolute;
-    bottom: 0;
-    right: -150px; /* Start off-screen right */
-    width: 120px;
-    transition: transform 2s;
-  }
-  
-  #versus {
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 3rem;
-    font-weight: bold;
-  }
-  
-  /* Walking Animations */
-  .walk-in-left {
-    transform: translateX(220px);
-  }
-  
-  .walk-in-right {
-    transform: translateX(-220px);
-  }
-  
-  .bow {
-    animation: bowAnim 1s forwards;
-  }
-  
-  @keyframes bowAnim {
-    0% {
-      transform: translateY(0) rotate(0);
-    }
-    50% {
-      transform: translateY(10px) rotate(10deg);
-    }
-    100% {
-      transform: translateY(0) rotate(0);
-    }
-  }
-  
-  /* Player Hand (Cards) */
-  #player-hand {
-    margin: 20px auto;
-  }
-  
-  /* Card Styles */
-  .card {
-    display: inline-block;
-    width: 80px;
-    height: 120px;
-    margin: 0 5px;
-    background-color: #fff;
-    border: 2px solid #000;
-    border-radius: 8px;
-    cursor: pointer;
-    position: relative;
-    transition: transform 0.2s;
-  }
-  .card:hover {
-    transform: scale(1.05);
-  }
-  
-  .card-element {
-    position: absolute;
-    top: 5px;
-    left: 0;
-    right: 0;
-    font-size: 1.1rem;
-    font-weight: bold;
-  }
-  
-  .card-color {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    font-size: 0.9rem;
-  }
-  
-  .card-number {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    font-size: 1rem;
-    font-weight: bold;
-  }
-  
-  /* Round Result */
-  #result-container {
-    margin-top: 20px;
-    min-height: 60px;
-  }
-  
-  #round-result {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-  }
-  
-  #next-round-btn {
-    margin-top: 10px;
-  }
-  
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body & Basic Font */
+body {
+  background: linear-gradient(to bottom, #72cef3, #ffffff);
+  font-family: sans-serif;
+  color: #333;
+  min-height: 100vh;
+  text-align: center;
+  position: relative;
+}
+
+/* Top Corner Trackers */
+#cpu-tracker, #player-tracker {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  width: 150px;
+  top: 10px;
+}
+
+#cpu-tracker {
+  left: 10px;
+}
+
+#player-tracker {
+  right: 10px;
+}
+
+#cpu-wins-display, #player-wins-display {
+  margin-top: 5px;
+  min-height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Header */
+header {
+  padding: 20px;
+}
+
+/* Main Container */
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-top: 80px; /* So trackers aren't overlapped */
+}
+
+/* Battlefield */
+#battlefield {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  margin: 20px auto;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+}
+
+/* CPU on the LEFT */
+#cpu-penguin {
+  position: absolute;
+  bottom: 0;
+  left: 20px; /* Slightly in from edge */
+  width: 120px;
+}
+
+/* PLAYER on the RIGHT */
+#player-penguin {
+  position: absolute;
+  bottom: 0;
+  right: 20px; /* Slightly in from edge */
+  width: 120px;
+}
+
+/* CENTER "Played" Cards */
+#played-cards {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Each side's played card container */
+.played-card-slot {
+  width: 100px;
+  height: 150px;
+  border: 2px dashed #888;
+  border-radius: 8px;
+  margin: 0 10px;
+  background-color: #f0f0f0;
+  position: relative;
+}
+
+/* Player Hand (Cards) */
+#player-hand {
+  margin: 20px auto;
+}
+
+/* Card Styles */
+.card {
+  display: inline-block;
+  width: 80px;
+  height: 120px;
+  margin: 0 5px;
+  border: 5px solid #000; /* We'll override color in JS */
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+/* Number placed in bottom-right corner */
+.card-number {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Round Result */
+#result-container {
+  margin-top: 20px;
+  min-height: 60px;
+}
+
+#round-result {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+#next-round-btn {
+  margin-top: 10px;
+}

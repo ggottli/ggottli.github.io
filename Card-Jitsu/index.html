@@ -7,31 +7,35 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- TOP CORNER TRACKERS -->
-  <div id="player-tracker">
-    <h2>Player Wins</h2>
-    <div id="player-wins-display">
-      <!-- We can dynamically show icons or text for each win here -->
-    </div>
-  </div>
-
+  <!-- TRACKERS (OPTIONAL) -->
   <div id="cpu-tracker">
     <h2>CPU Wins</h2>
-    <div id="cpu-wins-display">
-      <!-- We can dynamically show icons or text for each win here -->
-    </div>
+    <div id="cpu-wins-display"></div>
+  </div>
+
+  <div id="player-tracker">
+    <h2>Player Wins</h2>
+    <div id="player-wins-display"></div>
   </div>
 
   <header>
-    <h1>Card-Jitsu</h1>
+    <h1>Card-Jitsu Inspired Game</h1>
   </header>
 
   <main>
     <!-- BATTLEFIELD SECTION -->
     <div id="battlefield">
-      <img id="player-penguin" src="assets/player-penguin.png" alt="Player Penguin" />
-      <div id="versus">VS</div>
+      <!-- CPU Penguin on the LEFT -->
       <img id="cpu-penguin" src="assets/cpu-penguin.png" alt="CPU Penguin" />
+      
+      <!-- CARDS PLAYED IN THE CENTER -->
+      <div id="played-cards">
+        <div id="cpu-played-card" class="played-card-slot"></div>
+        <div id="player-played-card" class="played-card-slot"></div>
+      </div>
+
+      <!-- PLAYER Penguin on the RIGHT -->
+      <img id="player-penguin" src="assets/player-penguin.png" alt="Player Penguin" />
     </div>
 
     <!-- PLAYER HAND (CARDS) -->

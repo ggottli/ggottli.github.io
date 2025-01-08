@@ -1,234 +1,288 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // DOM Elements
-    const playerPenguin = document.getElementById("player-penguin");
-    const cpuPenguin = document.getElementById("cpu-penguin");
-    const playerHandContainer = document.getElementById("player-hand");
-    const roundResult = document.getElementById("round-result");
-    const nextRoundBtn = document.getElementById("next-round-btn");
-  
-    const playerWinsDisplay = document.getElementById("player-wins-display");
-    const cpuWinsDisplay = document.getElementById("cpu-wins-display");
-  
-    // Track the Rounds each has won (store the card: { type, color })
-    let playerWins = [];
-    let cpuWins = [];
-  
-    // Controls whether a round is active (so player can't click multiple cards)
-    let roundActive = false;
-  
-    // 1. Trigger the initial animations
-    walkInPenguins();
-  
-    // After they walk in, make them bow, then create the first hand
-    setTimeout(() => {
-      bowPenguins();
-      setTimeout(() => {
-        createPlayerHand();
-      }, 1200);
-    }, 2000);
-  
-    // 2. Generate a deck
-    // For example, 3 types x 3 colors x 5 numbers = 45 cards
-    function generateDeck() {
-      const types = ["Fire", "Water", "Snow"];
-      const colors = ["Red", "Blue", "Green"];
-      const deck = [];
-  
-      for (let type of types) {
-        for (let color of colors) {
-          for (let num = 1; num <= 5; num++) {
-            deck.push({ 
-              type: type, 
-              color: color, 
-              number: num 
-            });
-          }
+  // DOM Elements
+  const cpuPenguin = document.getElementById("cpu-penguin");
+  const playerPenguin = document.getElementById("player-penguin");
+  const playerHandContainer = document.getElementById("player-hand");
+  const roundResult = document.getElementById("round-result");
+  const nextRoundBtn = document.getElementById("next-round-btn");
+
+  const cpuWinsDisplay = document.getElementById("cpu-wins-display");
+  const playerWinsDisplay = document.getElementById("player-wins-display");
+
+  const cpuPlayedCardSlot = document.getElementById("cpu-played-card");
+  const playerPlayedCardSlot = document.getElementById("player-played-card");
+
+  // Track the Rounds each side has won (store the { type, color })
+  let cpuWins = [];
+  let playerWins = [];
+
+  // Keep track of player's hand (5 cards). We'll store them globally.
+  let playerHand = [];
+
+  // For controlling clicks during a round
+  let roundActive = false;
+
+  // 1. Generate the deck
+  function generateDeck() {
+    const types = ["Fire", "Water", "Snow"];
+    const colors = ["Red", "Blue", "Green"];
+    const deck = [];
+
+    // 3 types x 3 colors x 5 numbers = 45 cards
+    for (let type of types) {
+      for (let color of colors) {
+        for (let num = 1; num <= 5; num++) {
+          deck.push({ 
+            type: type, 
+            color: color, 
+            number: num 
+          });
         }
       }
-      return deck;
     }
-  
-    const deck = generateDeck();
-  
-    // 3. Create player's hand (e.g., 5 random cards)
-    function createPlayerHand() {
-      // Reset the round state
-      playerHandContainer.innerHTML = "";
-      roundResult.textContent = "";
-      nextRoundBtn.style.display = "none";
-      roundActive = true;
-  
-      // Generate 5 random cards for player's hand
-      const handSize = 5;
-      let playerHand = [];
-      for (let i = 0; i < handSize; i++) {
-        const randomIndex = Math.floor(Math.random() * deck.length);
-        playerHand.push(deck[randomIndex]);
-      }
-  
-      // Render the cards
-      playerHand.forEach((card, index) => {
-        const cardDiv = document.createElement("div");
-        cardDiv.className = "card";
-        cardDiv.innerHTML = `
-          <div class="card-element">${card.type}</div>
-          <div class="card-color">${card.color}</div>
-          <div class="card-number">${card.number}</div>
-        `;
-        cardDiv.addEventListener("click", () => {
-          if (roundActive) {
-            roundActive = false;
-            playRound(card);
-          }
-        });
-        playerHandContainer.appendChild(cardDiv);
+    return deck;
+  }
+
+  const deck = generateDeck();
+
+  // 2. Shuffle deck helper (optional, or just random picks each time)
+  // Here we’ll just pick random from the deck if needed.
+
+  // 3. Initial setup: create player's first 5 cards & show them
+  function initGame() {
+    // CPU/Player can “walk in” if you’d like, or remove that logic if not needed
+    // Let's just deal the player's initial 5 cards:
+    playerHand = drawMultipleCards(5);
+    renderPlayerHand();
+
+    roundResult.textContent = "Choose a card to begin!";
+    nextRoundBtn.style.display = "none";
+    roundActive = true;
+  }
+
+  // Draw multiple cards from deck at random
+  function drawMultipleCards(amount) {
+    const drawn = [];
+    for (let i = 0; i < amount; i++) {
+      drawn.push(drawOneCard());
+    }
+    return drawn;
+  }
+
+  // Draw a single random card from deck
+  function drawOneCard() {
+    const randomIndex = Math.floor(Math.random() * deck.length);
+    return deck[randomIndex];
+  }
+
+  // 4. Render player's hand
+  function renderPlayerHand() {
+    playerHandContainer.innerHTML = "";
+
+    playerHand.forEach((card, index) => {
+      const cardDiv = document.createElement("div");
+      cardDiv.className = "card";
+
+      // Set the border color
+      cardDiv.style.borderColor = getColorCode(card.color);
+
+      // Set background image based on type
+      cardDiv.style.backgroundImage = `url('assets/${card.type.toLowerCase()}.png')`;
+
+      // Display the number
+      const numberDiv = document.createElement("div");
+      numberDiv.className = "card-number";
+      numberDiv.textContent = card.number;
+      cardDiv.appendChild(numberDiv);
+
+      // On click, play round with this card
+      cardDiv.addEventListener("click", () => {
+        if (roundActive) {
+          roundActive = false;
+          playRound(index); // pass the index of the chosen card
+        }
       });
+
+      playerHandContainer.appendChild(cardDiv);
+    });
+  }
+
+  // Utility to translate color strings to actual CSS color codes
+  function getColorCode(colorName) {
+    switch (colorName) {
+      case "Red": return "red";
+      case "Blue": return "blue";
+      case "Green": return "green";
+      default: return "black";
     }
-  
-    // 4. CPU picks a random card
-    function getCpuCard() {
-      const randomIndex = Math.floor(Math.random() * deck.length);
-      return deck[randomIndex];
+  }
+
+  // 5. Play a round (player picks a card from their hand)
+  function playRound(playerCardIndex) {
+    // Get the chosen card from player's hand
+    const playerCard = playerHand[playerCardIndex];
+
+    // CPU picks a random card from the deck
+    const cpuCard = drawOneCard();
+
+    // Display these cards in the center
+    showPlayedCards(cpuCard, playerCard);
+
+    // Determine round winner
+    const winner = determineRoundWinner(cpuCard, playerCard);
+    let resultText = `CPU played ${cpuCard.type} ${cpuCard.number}. 
+                      You played ${playerCard.type} ${playerCard.number}. `;
+
+    if (winner === "CPU") {
+      cpuWins.push({ type: cpuCard.type, color: cpuCard.color });
+      updateWinsDisplay(cpuWinsDisplay, cpuWins);
+      resultText += "CPU wins this round!";
+    } else if (winner === "Player") {
+      playerWins.push({ type: playerCard.type, color: playerCard.color });
+      updateWinsDisplay(playerWinsDisplay, playerWins);
+      resultText += "You win this round!";
+    } else {
+      resultText += "It's a tie!";
     }
-  
-    // 5. Compare the cards (Fire > Snow, Snow > Water, Water > Fire)
-    function playRound(playerCard) {
-      const cpuCard = getCpuCard();
-  
-      // Determine winner
-      const winner = determineRoundWinner(playerCard, cpuCard);
-  
-      let resultText = `You played ${playerCard.type} (${playerCard.color}) ${playerCard.number}. 
-                        CPU played ${cpuCard.type} (${cpuCard.color}) ${cpuCard.number}. `;
-  
-      if (winner === "Player") {
-        // Store the winning card's type/color for the player
-        playerWins.push({ type: playerCard.type, color: playerCard.color });
-        updateWinsDisplay(playerWinsDisplay, playerWins);
-        resultText += "You win this round!";
-      } else if (winner === "CPU") {
-        // Store the winning card's type/color for the CPU
-        cpuWins.push({ type: cpuCard.type, color: cpuCard.color });
-        updateWinsDisplay(cpuWinsDisplay, cpuWins);
-        resultText += "CPU wins this round!";
-      } else {
-        resultText += "It's a tie!";
-      }
-  
-      roundResult.textContent = resultText;
-  
-      // Check if there's a game winner
-      if (checkForGameWin(playerWins)) {
-        roundResult.textContent = "You have achieved victory!";
-        endGame();
-        return;
-      } else if (checkForGameWin(cpuWins)) {
-        roundResult.textContent = "CPU has achieved victory!";
-        endGame();
-        return;
-      }
-  
-      // Show next round button
+
+    roundResult.textContent = resultText;
+
+    // Check if game is won
+    if (checkForGameWin(cpuWins)) {
+      roundResult.textContent = "CPU has achieved victory!";
+      endGame();
+      return;
+    } else if (checkForGameWin(playerWins)) {
+      roundResult.textContent = "You have achieved victory!";
+      endGame();
+      return;
+    }
+
+    // Remove the used card from the player's hand
+    playerHand.splice(playerCardIndex, 1);
+
+    // Draw a new card for the player to maintain 5 cards total
+    const newCard = drawOneCard();
+    playerHand.push(newCard);
+
+    // Wait a moment, then show "Next Round" button
+    setTimeout(() => {
       nextRoundBtn.style.display = "inline-block";
+    }, 1000);
+  }
+
+  // Show the CPU card in the left slot, the Player card in the right slot
+  function showPlayedCards(cpuCard, playerCard) {
+    // Clear any previous played cards
+    cpuPlayedCardSlot.innerHTML = "";
+    playerPlayedCardSlot.innerHTML = "";
+
+    // CPU's card
+    const cpuCardDiv = document.createElement("div");
+    cpuCardDiv.className = "card";
+    cpuCardDiv.style.borderColor = getColorCode(cpuCard.color);
+    cpuCardDiv.style.backgroundImage = `url('assets/${cpuCard.type.toLowerCase()}.png')`;
+    const cpuNum = document.createElement("div");
+    cpuNum.className = "card-number";
+    cpuNum.textContent = cpuCard.number;
+    cpuCardDiv.appendChild(cpuNum);
+    cpuPlayedCardSlot.appendChild(cpuCardDiv);
+
+    // Player's card
+    const playerCardDiv = document.createElement("div");
+    playerCardDiv.className = "card";
+    playerCardDiv.style.borderColor = getColorCode(playerCard.color);
+    playerCardDiv.style.backgroundImage = `url('assets/${playerCard.type.toLowerCase()}.png')`;
+    const playerNum = document.createElement("div");
+    playerNum.className = "card-number";
+    playerNum.textContent = playerCard.number;
+    playerCardDiv.appendChild(playerNum);
+    playerPlayedCardSlot.appendChild(playerCardDiv);
+  }
+
+  // Round outcome based on Card-Jitsu rules (Fire > Snow, Snow > Water, Water > Fire)
+  function determineRoundWinner(cpuCard, playerCard) {
+    // If same type, compare numbers
+    if (cpuCard.type === playerCard.type) {
+      if (cpuCard.number > playerCard.number) return "CPU";
+      if (cpuCard.number < playerCard.number) return "Player";
+      return "Tie";
     }
-  
-    // Round outcome based on Card-Jitsu rules
-    function determineRoundWinner(playerCard, cpuCard) {
-      // If same type, compare numbers
-      if (playerCard.type === cpuCard.type) {
-        if (playerCard.number > cpuCard.number) return "Player";
-        if (playerCard.number < cpuCard.number) return "CPU";
-        return "Tie";
+
+    // Fire > Snow, Snow > Water, Water > Fire
+    if (cpuCard.type === "Fire" && playerCard.type === "Snow") return "CPU";
+    if (cpuCard.type === "Snow" && playerCard.type === "Fire") return "Player";
+
+    if (cpuCard.type === "Snow" && playerCard.type === "Water") return "CPU";
+    if (cpuCard.type === "Water" && playerCard.type === "Snow") return "Player";
+
+    if (cpuCard.type === "Water" && playerCard.type === "Fire") return "CPU";
+    if (cpuCard.type === "Fire" && playerCard.type === "Water") return "Player";
+  }
+
+  // 6. Check if a player has 3 distinct types OR 3 distinct colors of the same type
+  function checkForGameWin(winsArray) {
+    if (winsArray.length < 3) return false;
+
+    // Check for 3 distinct types
+    const uniqueTypes = new Set(winsArray.map(win => win.type));
+    if (uniqueTypes.size >= 3) {
+      return true;
+    }
+
+    // Check for same type but 3 distinct colors
+    const typeColorMap = {};
+    for (let w of winsArray) {
+      if (!typeColorMap[w.type]) {
+        typeColorMap[w.type] = new Set();
       }
-  
-      // Fire > Snow, Snow > Water, Water > Fire
-      if (playerCard.type === "Fire" && cpuCard.type === "Snow") return "Player";
-      if (playerCard.type === "Snow" && cpuCard.type === "Fire") return "CPU";
-  
-      if (playerCard.type === "Snow" && cpuCard.type === "Water") return "Player";
-      if (playerCard.type === "Water" && cpuCard.type === "Snow") return "CPU";
-  
-      if (playerCard.type === "Water" && cpuCard.type === "Fire") return "Player";
-      if (playerCard.type === "Fire" && cpuCard.type === "Water") return "CPU";
+      typeColorMap[w.type].add(w.color);
     }
-  
-    // 6. Check if a player has 3 distinct types OR 3 distinct colors of the same type
-    function checkForGameWin(winsArray) {
-      // We only check if they have at least 3 round-wins total
-      if (winsArray.length < 3) return false;
-  
-      // 6.1 Check for 3 distinct types
-      // Gather unique types from wins
-      const uniqueTypes = new Set(winsArray.map(win => win.type));
-      if (uniqueTypes.size >= 3) {
+    for (let t in typeColorMap) {
+      if (typeColorMap[t].size >= 3) {
         return true;
       }
-  
-      // 6.2 Check for 3 wins of the same type with 3 distinct colors
-      // Group by type -> then check if that type has at least 3 distinct colors
-      // Example: { Fire: Set(["Red","Blue"]), Water: Set([...]) }
-      const typeColorMap = {};
-      for (let w of winsArray) {
-        const t = w.type;
-        if (!typeColorMap[t]) typeColorMap[t] = new Set();
-        typeColorMap[t].add(w.color);
-      }
-      // Now check if any type has 3 distinct colors
-      for (let t in typeColorMap) {
-        if (typeColorMap[t].size >= 3) return true;
-      }
-  
-      // If neither condition is met, return false
-      return false;
     }
-  
-    // 7. Update the visual display of wins (top corners)
-    function updateWinsDisplay(container, winsArray) {
-      // Clear out the old content
-      container.innerHTML = "";
-  
-      // For each round won, show an icon or a short label (type/color)
-      // e.g., "F-Red", "W-Blue", ...
-      winsArray.forEach((win) => {
-        const winDiv = document.createElement("div");
-        winDiv.style.margin = "0 5px";
-        winDiv.textContent = `${win.type[0]}-${win.color[0]}`;
-        /*
-          If you want to show an icon:
-          - You could create an <img> based on the type or color
-          - Or use a custom mini-badge or sprite
-        */
-        container.appendChild(winDiv);
-      });
-    }
-  
-    // 8. Next round button -> create new hand
-    nextRoundBtn.addEventListener("click", () => {
-      createPlayerHand();
+    return false;
+  }
+
+  // 7. Update the visual display of wins (top corners)
+  function updateWinsDisplay(container, winsArray) {
+    container.innerHTML = "";
+
+    // Example: show small text "F-R" for Fire-Red, etc.
+    winsArray.forEach((win) => {
+      const winDiv = document.createElement("div");
+      winDiv.style.margin = "0 5px";
+      winDiv.textContent = `${win.type[0]}-${win.color[0]}`;
+      container.appendChild(winDiv);
     });
-  
-    // 9. End game (disable interactions, show final message)
-    function endGame() {
-      // Hide next round button
-      nextRoundBtn.style.display = "none";
-      roundActive = false;
-      // Optionally, you could create a "Play Again" button 
-      // or automatically reload the page.
-    }
-  
-    /* ANIMATION HELPERS */
-    function walkInPenguins() {
-      playerPenguin.classList.add("walk-in-left");
-      cpuPenguin.classList.add("walk-in-right");
-    }
-  
-    function bowPenguins() {
-      playerPenguin.classList.add("bow");
-      cpuPenguin.classList.add("bow");
-      setTimeout(() => {
-        playerPenguin.classList.remove("bow");
-        cpuPenguin.classList.remove("bow");
-      }, 1000);
-    }
+  }
+
+  // 8. Next round button -> re-render the player's hand and prompt
+  nextRoundBtn.addEventListener("click", () => {
+    // Hide the button
+    nextRoundBtn.style.display = "none";
+
+    // Clear center slots from last round
+    cpuPlayedCardSlot.innerHTML = "";
+    playerPlayedCardSlot.innerHTML = "";
+
+    // Re-draw player's hand with updated cards
+    renderPlayerHand();
+
+    // Let the player pick again
+    roundResult.textContent = "Pick a card for the next round!";
+    roundActive = true;
   });
-  
+
+  // 9. End game (disable interactions, show final message)
+  function endGame() {
+    nextRoundBtn.style.display = "none";
+    roundActive = false;
+    // Optionally, show a "Play Again" button or reload the page.
+  }
+
+  // Initialize the game on page load
+  initGame();
+});
