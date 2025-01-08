@@ -1,4 +1,4 @@
-// Grabbing elements
+// References to DOM elements
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -6,18 +6,18 @@ const titleScreen = document.getElementById("titleScreen");
 const gameContainer = document.getElementById("gameContainer");
 const gameOverScreen = document.getElementById("gameOverScreen");
 
-const startBtn = document.getElementById("startBtn");
-const playAgainBtn = document.getElementById("playAgainBtn");
+const startBtn = document.getElementById("startBtn");       // Title screen button
+const startBtnEnd = document.getElementById("startBtnEnd"); // Game Over screen button
 
 const playerScoreEl = document.getElementById("playerScore");
 const cpuScoreEl = document.getElementById("cpuScore");
 const winnerText = document.getElementById("winnerText");
 
 // Game settings
-let gameState = "title"; // can be "title", "playing", "gameover"
+let gameState = "title"; // can be "title", "playing", or "gameover"
 const winningScore = 5;
 
-// Canvas resizing
+// Resize the canvas to the window size
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -29,11 +29,11 @@ window.addEventListener('resize', resizeCanvas);
 let playerScore = 0;
 let cpuScore = 0;
 
-// Dimensions
+// Paddles & puck
 const paddleRadius = 40;
 const puckRadius = 20;
 
-// Positions and speeds
+// Positions
 let playerX, playerY;
 let cpuX, cpuY;
 let puckX, puckY;
@@ -47,11 +47,11 @@ let isPointerDown = false;
 // CPU speed
 const cpuSpeed = 5;
 
-// Event Listeners for Buttons
+// Button event listeners
 startBtn.addEventListener("click", startGame);
-playAgainBtn.addEventListener("click", playAgain);
+startBtnEnd.addEventListener("click", startGame);
 
-// Event listeners for mouse/touch
+// Mouse & touch events
 canvas.addEventListener('mousedown', (e) => {
   if (gameState === "playing") {
     isPointerDown = true;
@@ -68,8 +68,6 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseup', () => {
   isPointerDown = false;
 });
-
-// Touch events
 canvas.addEventListener('touchstart', (e) => {
   if (gameState === "playing") {
     isPointerDown = true;
@@ -89,11 +87,12 @@ canvas.addEventListener('touchend', () => {
   isPointerDown = false;
 });
 
-// Start & Reset Logic
+// Start game
 function startGame() {
-  // Switch to playing state
+  // Reset game state to playing
   gameState = "playing";
-  // Hide title screen, show game
+
+  // Hide title and game over screens, show the game container
   titleScreen.style.display = "none";
   gameOverScreen.style.display = "none";
   gameContainer.style.display = "block";
@@ -108,20 +107,16 @@ function startGame() {
   initPositions();
 }
 
-function playAgain() {
-  // Same as startGame, but we come from "gameover"
-  startGame();
-}
-
-// Init positions
+// Initialize paddles/puck positions
 function initPositions() {
   playerX = canvas.width / 2;
-  playerY = canvas.height - 100; // near bottom
+  playerY = canvas.height - 100;
   cpuX = canvas.width / 2;
-  cpuY = 100;                    // near top
+  cpuY = 100;
   puckX = canvas.width / 2;
   puckY = canvas.height / 2;
-  // Random direction for puck
+
+  // Random direction for the puck
   puckSpeedX = (Math.random() * 4 - 2) * 2;
   puckSpeedY = (Math.random() * 4 - 2) * 2;
 }
@@ -133,19 +128,19 @@ function distance(x1, y1, x2, y2) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Game loop
+// Animation loop
 function gameLoop() {
-  // Only update/draw if game is in "playing" state
   if (gameState === "playing") {
     update();
     draw();
   }
   requestAnimationFrame(gameLoop);
 }
-gameLoop(); // start the animation loop once
+gameLoop();
 
+// Update positions and check collisions
 function update() {
-  // Move player paddle
+  // Player paddle movement
   if (isPointerDown) {
     playerX = pointerX;
     playerY = pointerY;
@@ -155,8 +150,8 @@ function update() {
   if (playerX < paddleRadius) playerX = paddleRadius;
   if (playerX > canvas.width - paddleRadius) playerX = canvas.width - paddleRadius;
 
-  // Lock player to bottom half
-  if (playerY < canvas.height / 2 + paddleRadius) {
+  // Lock player in bottom half
+  if (playerY < (canvas.height / 2 + paddleRadius)) {
     playerY = canvas.height / 2 + paddleRadius;
   }
   if (playerY > canvas.height - paddleRadius) {
@@ -179,41 +174,38 @@ function update() {
   puckX += puckSpeedX;
   puckY += puckSpeedY;
 
-  // Check collisions with walls (left/right)
+  // Left/right wall collision
   if (puckX < puckRadius) {
     puckX = puckRadius;
     puckSpeedX = Math.abs(puckSpeedX);
-  }
-  if (puckX > canvas.width - puckRadius) {
+  } else if (puckX > canvas.width - puckRadius) {
     puckX = canvas.width - puckRadius;
     puckSpeedX = -Math.abs(puckSpeedX);
   }
 
-  // Check goal (top/bottom)
+  // Goal check (top/bottom)
   if (puckY < puckRadius) {
-    // Player scores
     playerScore++;
     playerScoreEl.textContent = playerScore;
-    checkWinCondition();
+    checkWinCondition("Player");
     if (gameState === "playing") initPositions();
     return;
   }
   if (puckY > canvas.height - puckRadius) {
-    // CPU scores
     cpuScore++;
     cpuScoreEl.textContent = cpuScore;
-    checkWinCondition();
+    checkWinCondition("CPU");
     if (gameState === "playing") initPositions();
     return;
   }
 
-  // Collisions with paddles
+  // Paddle collisions
   checkPaddleCollision(playerX, playerY);
   checkPaddleCollision(cpuX, cpuY);
 }
 
-// Check if anyone reached 5 points
-function checkWinCondition() {
+// Check if either reached winningScore
+function checkWinCondition(scorer) {
   if (playerScore >= winningScore) {
     endGame("Player");
   } else if (cpuScore >= winningScore) {
@@ -221,41 +213,48 @@ function checkWinCondition() {
   }
 }
 
+// End the game, show game over screen
 function endGame(winner) {
-  // Switch to gameover
   gameState = "gameover";
-  // Show final score
-  winnerText.innerText = `${winner} wins!\nFinal Score: ${playerScore} - ${cpuScore}`;
+
   // Hide the game container
   gameContainer.style.display = "none";
+
+  // Show final score + winner text
+  winnerText.innerText = `${winner} wins!\nFinal Score: ${playerScore} - ${cpuScore}`;
+
   // Show the game over screen
   gameOverScreen.style.display = "flex";
 }
 
-// Paddle collision
+// Handle puck collisions with a paddle
 function checkPaddleCollision(paddleX, paddleY) {
   let dist = distance(paddleX, paddleY, puckX, puckY);
   let sumRadius = paddleRadius + puckRadius;
+
   if (dist < sumRadius) {
     // Basic collision response
     let angle = Math.atan2(puckY - paddleY, puckX - paddleX);
-    // Move puck to the edge of the paddle to avoid overlap
+
+    // Reposition puck to avoid overlap
     puckX = paddleX + Math.cos(angle) * sumRadius;
     puckY = paddleY + Math.sin(angle) * sumRadius;
-    // Reflect puck velocity, add bounce
+
+    // Reflect puck velocity
     let speed = Math.sqrt(puckSpeedX * puckSpeedX + puckSpeedY * puckSpeedY);
     const minSpeed = 2;
     speed = Math.max(speed, minSpeed);
 
     puckSpeedX = Math.cos(angle) * speed;
     puckSpeedY = Math.sin(angle) * speed;
-    // Increase speed slightly
+
+    // Slightly increase speed
     puckSpeedX *= 1.05;
     puckSpeedY *= 1.05;
   }
 }
 
-// Draw
+// Draw everything
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
