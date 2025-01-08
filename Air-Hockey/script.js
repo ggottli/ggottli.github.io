@@ -1,5 +1,3 @@
-// script.js
-
 // Get canvas and context
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -113,11 +111,22 @@ function update() {
     playerY = pointerY;
   }
 
-  // Bound the player's paddle within the canvas
+  // Bound the player's paddle within the canvas horizontally
   if (playerX < paddleRadius) playerX = paddleRadius;
   if (playerX > canvas.width - paddleRadius) playerX = canvas.width - paddleRadius;
-  if (playerY < paddleRadius) playerY = paddleRadius;
-  if (playerY > canvas.height - paddleRadius) playerY = canvas.height - paddleRadius;
+
+  // -------------------------
+  // Prevent player from crossing into CPU side
+  // Player must stay in bottom half of the screen.
+  // We'll clamp so player cannot go above canvas.height/2.
+  if (playerY < canvas.height / 2 + paddleRadius) {
+    playerY = canvas.height / 2 + paddleRadius;
+  }
+  // Also clamp bottom edge.
+  if (playerY > canvas.height - paddleRadius) {
+    playerY = canvas.height - paddleRadius;
+  }
+  // -------------------------
 
   // CPU tries to move paddle towards the puck, limited by cpuSpeed
   if (puckX < cpuX) {
@@ -125,28 +134,20 @@ function update() {
   } else if (puckX > cpuX) {
     cpuX += Math.min(cpuSpeed, puckX - cpuX);
   }
-  // Bound CPU
+  // Bound CPU horizontally
   if (cpuX < paddleRadius) cpuX = paddleRadius;
   if (cpuX > canvas.width - paddleRadius) cpuX = canvas.width - paddleRadius;
-
-  // The CPU only moves vertically a little bit if you want:
-  // If you want CPU to also chase puck on Y-axis, add logic similar to X:
-  // if (puckY < cpuY) {
-  //   cpuY -= Math.min(cpuSpeed, cpuY - puckY);
-  // } else if (puckY > cpuY) {
-  //   cpuY += Math.min(cpuSpeed, puckY - cpuY);
-  // }
-  // For a simpler approach, keep it near the top:
+  // CPU stays near the top
   cpuY = 100;
 
   // Move the puck
   puckX += puckSpeedX;
   puckY += puckSpeedY;
 
-  // Collide with walls (left/right)
-  if (puckX < puckRadius || puckX > canvas.width - puckRadius) {
-    puckSpeedX *= -1;
-  }
+  // -------------------------
+  // Handle collisions with left/right walls *before* checking goals
+  handleWallCollision();
+  // -------------------------
 
   // Check if puck hits top/bottom edges = goal
   if (puckY < puckRadius) {
@@ -169,19 +170,37 @@ function update() {
   checkPaddleCollision(cpuX, cpuY);
 }
 
+// -------------------------
+// New function to handle the puck + walls properly
+function handleWallCollision() {
+  // Left or right wall
+  if (puckX < puckRadius) {
+    puckX = puckRadius;           // force back into bounds
+    puckSpeedX = Math.abs(puckSpeedX); // reverse speed if needed
+  }
+  if (puckX > canvas.width - puckRadius) {
+    puckX = canvas.width - puckRadius; // force back into bounds
+    puckSpeedX = -Math.abs(puckSpeedX); // reverse speed if needed
+  }
+}
+// -------------------------
+
 // Check collision with a paddle
 function checkPaddleCollision(paddleX, paddleY) {
   let dist = distance(paddleX, paddleY, puckX, puckY);
   let sumRadius = paddleRadius + puckRadius;
   if (dist < sumRadius) {
     // Basic collision response
-    // We find the angle between puck and paddle center, and “push” out
     let angle = Math.atan2(puckY - paddleY, puckX - paddleX);
     // Move puck to the edge of the paddle to avoid overlap
     puckX = paddleX + Math.cos(angle) * sumRadius;
     puckY = paddleY + Math.sin(angle) * sumRadius;
     // Reflect puck’s velocity, add a bit of “bounce”
     let speed = Math.sqrt(puckSpeedX * puckSpeedX + puckSpeedY * puckSpeedY);
+    // We ensure speed is not zero to avoid the puck "freezing" against the wall
+    let minSpeed = 2; // or any small positive number
+    speed = Math.max(speed, minSpeed);
+
     puckSpeedX = Math.cos(angle) * speed;
     puckSpeedY = Math.sin(angle) * speed;
     // Increase speed slightly after each collision for fun
