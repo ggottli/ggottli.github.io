@@ -34,12 +34,35 @@ body {
   right: 10px;
 }
 
-#cpu-wins-display, #player-wins-display {
+#cpu-wins-display,
+#player-wins-display {
   margin-top: 5px;
   min-height: 50px;
+
+  /* This will allow side-by-side type columns */
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+/* Each type column displayed horizontally in the tracker */
+.type-column {
+  display: flex;
+  flex-direction: column;
+  margin-right: 10px; /* space between different element columns */
+}
+
+/* The small squares for each card win */
+.win-square {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 5px;
+  border: 2px solid #00000055; /* slight border */
+  border-radius: 4px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Header */
@@ -70,7 +93,7 @@ main {
 #cpu-penguin {
   position: absolute;
   bottom: 0;
-  left: 20px; /* Slightly in from edge */
+  left: 20px;
   width: 120px;
 }
 
@@ -78,11 +101,11 @@ main {
 #player-penguin {
   position: absolute;
   bottom: 0;
-  right: 20px; /* Slightly in from edge */
+  right: 20px;
   width: 120px;
 }
 
-/* CENTER "Played" Cards */
+/* Center "Played" Cards */
 #played-cards {
   position: absolute;
   top: 50%;
@@ -94,7 +117,6 @@ main {
   align-items: center;
 }
 
-/* Each side's played card container */
 .played-card-slot {
   width: 100px;
   height: 150px;
@@ -116,7 +138,7 @@ main {
   width: 80px;
   height: 120px;
   margin: 0 5px;
-  border: 5px solid #000; /* We'll override color in JS */
+  border: 5px solid #000;
   border-radius: 8px;
   cursor: pointer;
   position: relative;
@@ -130,7 +152,7 @@ main {
   transform: scale(1.05);
 }
 
-/* Number placed in bottom-right corner */
+/* Number displayed in bottom-right corner */
 .card-number {
   position: absolute;
   bottom: 5px;

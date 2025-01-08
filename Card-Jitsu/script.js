@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const cpuPlayedCardSlot = document.getElementById("cpu-played-card");
   const playerPlayedCardSlot = document.getElementById("player-played-card");
 
-  // Track the Rounds each side has won (store the { type, color })
+  // Track the Rounds each side has won (store { type, color })
   let cpuWins = [];
   let playerWins = [];
 
@@ -45,13 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const deck = generateDeck();
 
-  // 2. Shuffle deck helper (optional, or just random picks each time)
-  // Here we’ll just pick random from the deck if needed.
-
-  // 3. Initial setup: create player's first 5 cards & show them
+  // 2. Initialize the game: player's initial 5 cards
   function initGame() {
-    // CPU/Player can “walk in” if you’d like, or remove that logic if not needed
-    // Let's just deal the player's initial 5 cards:
     playerHand = drawMultipleCards(5);
     renderPlayerHand();
 
@@ -60,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     roundActive = true;
   }
 
-  // Draw multiple cards from deck at random
+  // Draw multiple cards from the deck
   function drawMultipleCards(amount) {
     const drawn = [];
     for (let i = 0; i < amount; i++) {
@@ -69,13 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return drawn;
   }
 
-  // Draw a single random card from deck
+  // Draw a single random card from the deck
   function drawOneCard() {
     const randomIndex = Math.floor(Math.random() * deck.length);
     return deck[randomIndex];
   }
 
-  // 4. Render player's hand
+  // Render player's hand
   function renderPlayerHand() {
     playerHandContainer.innerHTML = "";
 
@@ -83,23 +78,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const cardDiv = document.createElement("div");
       cardDiv.className = "card";
 
-      // Set the border color
+      // Border color
       cardDiv.style.borderColor = getColorCode(card.color);
 
-      // Set background image based on type
+      // Background image based on type
       cardDiv.style.backgroundImage = `url('assets/${card.type.toLowerCase()}.png')`;
 
-      // Display the number
+      // Card number in bottom-right
       const numberDiv = document.createElement("div");
       numberDiv.className = "card-number";
       numberDiv.textContent = card.number;
       cardDiv.appendChild(numberDiv);
 
-      // On click, play round with this card
+      // Click -> Play round
       cardDiv.addEventListener("click", () => {
         if (roundActive) {
           roundActive = false;
-          playRound(index); // pass the index of the chosen card
+          playRound(index);
         }
       });
 
@@ -107,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Utility to translate color strings to actual CSS color codes
+  // Map "Red"/"Blue"/"Green" to real colors
   function getColorCode(colorName) {
     switch (colorName) {
       case "Red": return "red";
@@ -117,18 +112,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 5. Play a round (player picks a card from their hand)
+  // Play a round
   function playRound(playerCardIndex) {
-    // Get the chosen card from player's hand
+    // Player's chosen card
     const playerCard = playerHand[playerCardIndex];
 
-    // CPU picks a random card from the deck
+    // CPU picks a random card
     const cpuCard = drawOneCard();
 
-    // Display these cards in the center
+    // Show them in the center
     showPlayedCards(cpuCard, playerCard);
 
-    // Determine round winner
+    // Determine winner
     const winner = determineRoundWinner(cpuCard, playerCard);
     let resultText = `CPU played ${cpuCard.type} ${cpuCard.number}. 
                       You played ${playerCard.type} ${playerCard.number}. `;
@@ -147,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     roundResult.textContent = resultText;
 
-    // Check if game is won
+    // Check if CPU or Player has achieved overall victory
     if (checkForGameWin(cpuWins)) {
       roundResult.textContent = "CPU has achieved victory!";
       endGame();
@@ -158,26 +153,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Remove the used card from the player's hand
+    // Remove used card from player's hand
     playerHand.splice(playerCardIndex, 1);
 
-    // Draw a new card for the player to maintain 5 cards total
-    const newCard = drawOneCard();
-    playerHand.push(newCard);
+    // Draw a new card (so player stays at 5)
+    playerHand.push(drawOneCard());
 
-    // Wait a moment, then show "Next Round" button
+    // Show "Next Round" button after a short delay
     setTimeout(() => {
       nextRoundBtn.style.display = "inline-block";
     }, 1000);
   }
 
-  // Show the CPU card in the left slot, the Player card in the right slot
+  // Display the CPU's and player's chosen cards in center
   function showPlayedCards(cpuCard, playerCard) {
-    // Clear any previous played cards
+    // Clear previous played cards
     cpuPlayedCardSlot.innerHTML = "";
     playerPlayedCardSlot.innerHTML = "";
 
-    // CPU's card
+    // CPU card
     const cpuCardDiv = document.createElement("div");
     cpuCardDiv.className = "card";
     cpuCardDiv.style.borderColor = getColorCode(cpuCard.color);
@@ -188,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cpuCardDiv.appendChild(cpuNum);
     cpuPlayedCardSlot.appendChild(cpuCardDiv);
 
-    // Player's card
+    // Player card
     const playerCardDiv = document.createElement("div");
     playerCardDiv.className = "card";
     playerCardDiv.style.borderColor = getColorCode(playerCard.color);
@@ -200,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     playerPlayedCardSlot.appendChild(playerCardDiv);
   }
 
-  // Round outcome based on Card-Jitsu rules (Fire > Snow, Snow > Water, Water > Fire)
+  // Card-Jitsu rules (Fire > Snow, Snow > Water, Water > Fire)
   function determineRoundWinner(cpuCard, playerCard) {
     // If same type, compare numbers
     if (cpuCard.type === playerCard.type) {
@@ -220,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cpuCard.type === "Fire" && playerCard.type === "Water") return "Player";
   }
 
-  // 6. Check if a player has 3 distinct types OR 3 distinct colors of the same type
+  // Check for 3 distinct types OR 3 distinct colors of the same type
   function checkForGameWin(winsArray) {
     if (winsArray.length < 3) return false;
 
@@ -246,43 +240,71 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // 7. Update the visual display of wins (top corners)
+  // UPDATED: Display wins as small squares grouped by type
   function updateWinsDisplay(container, winsArray) {
+    // Clear old content
     container.innerHTML = "";
 
-    // Example: show small text "F-R" for Fire-Red, etc.
-    winsArray.forEach((win) => {
-      const winDiv = document.createElement("div");
-      winDiv.style.margin = "0 5px";
-      winDiv.textContent = `${win.type[0]}-${win.color[0]}`;
-      container.appendChild(winDiv);
+    // Group wins by type
+    const types = ["Fire", "Water", "Snow"];
+    const typeMap = {
+      Fire: [],
+      Water: [],
+      Snow: [],
+    };
+
+    // Populate typeMap with the colors of each win
+    for (let w of winsArray) {
+      typeMap[w.type].push(w.color);
+    }
+
+    // For each type in order, create a column if that type has any wins
+    types.forEach((type) => {
+      const colorsWon = typeMap[type];
+      if (colorsWon.length > 0) {
+        // Create a vertical column for this element type
+        const typeColumn = document.createElement("div");
+        typeColumn.classList.add("type-column");
+
+        // For each color in this type, create a win-square
+        colorsWon.forEach((color) => {
+          const winSquare = document.createElement("div");
+          winSquare.classList.add("win-square");
+          // Make square the color of the card
+          winSquare.style.backgroundColor = getColorCode(color);
+          // Set the PNG in the center
+          winSquare.style.backgroundImage = `url('assets/${type.toLowerCase()}.png')`;
+          typeColumn.appendChild(winSquare);
+        });
+
+        // Add this type column to the corner tracker container
+        container.appendChild(typeColumn);
+      }
     });
   }
 
-  // 8. Next round button -> re-render the player's hand and prompt
+  // Next round -> re-render hand, let the player choose again
   nextRoundBtn.addEventListener("click", () => {
-    // Hide the button
     nextRoundBtn.style.display = "none";
 
-    // Clear center slots from last round
+    // Clear center slots
     cpuPlayedCardSlot.innerHTML = "";
     playerPlayedCardSlot.innerHTML = "";
 
-    // Re-draw player's hand with updated cards
+    // Re-draw player's hand
     renderPlayerHand();
 
-    // Let the player pick again
     roundResult.textContent = "Pick a card for the next round!";
     roundActive = true;
   });
 
-  // 9. End game (disable interactions, show final message)
+  // End game
   function endGame() {
     nextRoundBtn.style.display = "none";
     roundActive = false;
-    // Optionally, show a "Play Again" button or reload the page.
+    // Optionally show "Play Again" or reload the page
   }
 
-  // Initialize the game on page load
+  // Initialize on page load
   initGame();
 });
