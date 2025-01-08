@@ -19,22 +19,45 @@ document.addEventListener("DOMContentLoaded", () => {
   let cpuHand = [];
   let playerHand = [];
 
+  // Track the last played cards for removal later
+  let lastCpuCardIndex = null;
+  let lastPlayerCardIndex = null;
+
+  let lastCpuCardData = null;
+  let lastPlayerCardData = null;
+
   // For controlling the flow (prevent multiple clicks during animation)
   let roundActive = false;
 
-  // Generate deck
+  // 1. Generate deck with inverse odds for numbers 2..10
+  // 2 -> 9 occurrences, 3 -> 8, ..., 10 -> 1
+  // Summation = 45 per type/color => 3 types x 3 colors = 405 total
   function generateDeck() {
     const types = ["Fire", "Water", "Snow"];
     const colors = ["Red", "Blue", "Green"];
+
+    // Weighted occurrences
+    const numberOccurrences = {
+      2: 9,
+      3: 8,
+      4: 7,
+      5: 6,
+      6: 5,
+      7: 4,
+      8: 3,
+      9: 2,
+      10: 1
+    };
+
     const deck = [];
     for (let type of types) {
       for (let color of colors) {
-        for (let num = 1; num <= 5; num++) {
-          deck.push({
-            type,
-            color,
-            number: num
-          });
+        for (let num = 2; num <= 10; num++) {
+          const count = numberOccurrences[num];
+          // push this card 'count' times
+          for (let i = 0; i < count; i++) {
+            deck.push({ type, color, number: num });
+          }
         }
       }
     }
@@ -43,15 +66,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const fullDeck = generateDeck();
 
-  // Shuffle or random pick helper
+  // Shuffle pick helpers
   function drawOneCard() {
     const idx = Math.floor(Math.random() * fullDeck.length);
     return fullDeck[idx];
   }
 
+  function drawMultipleCards(n) {
+    const drawn = [];
+    for (let i = 0; i < n; i++) {
+      drawn.push(drawOneCard());
+    }
+    return drawn;
+  }
+
   // Initialize the game
   function initGame() {
-    // Let's give each side 5 random cards
     cpuHand = drawMultipleCards(5);
     playerHand = drawMultipleCards(5);
 
@@ -63,28 +93,14 @@ document.addEventListener("DOMContentLoaded", () => {
     roundResult.textContent = "Pick a card to begin!";
   }
 
-  function drawMultipleCards(n) {
-    const drawn = [];
-    for (let i = 0; i < n; i++) {
-      drawn.push(drawOneCard());
-    }
-    return drawn;
-  }
-
   // Render CPU hand (face-down)
   function renderCPUHand() {
     cpuHandContainer.innerHTML = "";
     cpuHand.forEach((card, index) => {
       const cardDiv = document.createElement("div");
       cardDiv.classList.add("card");
-      // Face-down image
       cardDiv.style.backgroundImage = "url('assets/cpu-card.png')";
-
-      // We'll store data so we know which card this is
       cardDiv.dataset.index = index;
-
-      // The CPU doesn't need a click event. We pick randomly in code.
-
       cpuHandContainer.appendChild(cardDiv);
     });
   }
@@ -97,11 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
       cardDiv.classList.add("card", "card-faceup");
       cardDiv.dataset.index = index;
 
-      // Show element image + border color
       cardDiv.style.backgroundImage = `url('assets/${card.type.toLowerCase()}.png')`;
       cardDiv.style.borderColor = getColorCode(card.color);
 
-      // Number label
       const numDiv = document.createElement("div");
       numDiv.classList.add("card-number");
       numDiv.textContent = card.number;
@@ -111,92 +125,47 @@ document.addEventListener("DOMContentLoaded", () => {
       cardDiv.addEventListener("click", () => {
         if (roundActive) {
           roundActive = false;
-          // Animate the player's chosen card & CPU's chosen card
           selectCards(index);
         }
       });
-
       playerHandContainer.appendChild(cardDiv);
     });
   }
 
-  // Animate and then do round logic
+  // Animate selection & do round logic
   function selectCards(playerIndex) {
-    // CPU picks random card from its hand
+    // CPU picks random from its hand
     const cpuIndex = Math.floor(Math.random() * cpuHand.length);
+
+    // Save these for next round removal
+    lastCpuCardIndex = cpuIndex;
+    lastPlayerCardIndex = playerIndex;
 
     // The actual card data
     const playerCardData = playerHand[playerIndex];
     const cpuCardData = cpuHand[cpuIndex];
 
+    lastCpuCardData = cpuCardData;
+    lastPlayerCardData = playerCardData;
+
     // DOM elements
     const playerCardElem = playerHandContainer.querySelector(`[data-index='${playerIndex}']`);
     const cpuCardElem = cpuHandContainer.querySelector(`[data-index='${cpuIndex}']`);
 
-    // Animate player's card
-    animateCardToSlot(playerCardElem, playerSelectedSlot, playerCardData, () => {
-      // After player's card arrives
-    });
+    // Animate to center
+    animateCardToSlot(playerCardElem, playerSelectedSlot, playerCardData, () => {});
+    animateCardToSlot(cpuCardElem, cpuSelectedSlot, cpuCardData, () => {});
 
-    // Animate CPU's card
-    animateCardToSlot(cpuCardElem, cpuSelectedSlot, cpuCardData, () => {
-      // After CPU's card arrives
-    });
-
-    // After both animations end, we do the round logic.
-    // We'll wait a bit for animations (0.8s + buffer).
+    // After the animation, do the round logic
     setTimeout(() => {
-      playRound(cpuCardData, playerCardData, cpuIndex, playerIndex);
+      doRoundLogic(cpuCardData, playerCardData);
     }, 900);
   }
 
-  // Moves a card from the hand to the selected slot with a smooth transition
-  function animateCardToSlot(cardElem, targetSlot, cardData, onComplete) {
-    // 1. Get the starting position
-    const startRect = cardElem.getBoundingClientRect();
-    // 2. Clone the card to animate
-    const clone = document.createElement("div");
-    clone.classList.add("animated-card");
-    // If it's CPU card, use cpu-card.png; if it's player card, show the type image
-    if (cardData.type) {
-      // It's a face-up card (player's) if it has a .type property
-      clone.style.backgroundImage = `url('assets/${cardData.type.toLowerCase()}.png')`;
-      clone.style.border = `4px solid ${getColorCode(cardData.color)}`;
-    } else {
-      // fallback check: if you store CPU data differently, adjust
-      clone.style.backgroundImage = "url('assets/cpu-card.png')";
-    }
-    // Set initial position
-    clone.style.left = startRect.left + "px";
-    clone.style.top = startRect.top + "px";
-    document.body.appendChild(clone);
-
-    // Force reflow so transition can happen
-    clone.getBoundingClientRect();
-
-    // 3. Get target slot position
-    const endRect = targetSlot.getBoundingClientRect();
-    const offsetX = endRect.left - startRect.left;
-    const offsetY = endRect.top - startRect.top;
-
-    // 4. Animate via transform
-    clone.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-
-    // On transition end, remove clone & run callback
-    clone.addEventListener("transitionend", () => {
-      clone.remove();
-      if (onComplete) onComplete();
-    });
-  }
-
-  // Once animations are done, handle the round logic
-  function playRound(cpuCard, playerCard, cpuIndex, playerIndex) {
-    // Remove the used card from CPU hand & Player hand
-    cpuHand.splice(cpuIndex, 1);
-    playerHand.splice(playerIndex, 1);
-
-    // Determine winner
+  // Round logic (but don't remove/replace cards from hands yet)
+  function doRoundLogic(cpuCard, playerCard) {
     const winner = determineWinner(cpuCard, playerCard);
+
     let resultText = `CPU played ${cpuCard.type} ${cpuCard.number}. 
                       You played ${playerCard.type} ${playerCard.number}. `;
 
@@ -211,6 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       resultText += "It's a tie!";
     }
+
     roundResult.textContent = resultText;
 
     // Check for overall game win
@@ -224,20 +194,68 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Next round: draw a new card for CPU & Player to maintain 5 (optional)
+    // Show Next Round button
+    nextRoundBtn.style.display = "inline-block";
+  }
+
+  // Next Round
+  nextRoundBtn.addEventListener("click", () => {
+    nextRoundBtn.style.display = "none";
+
+    // 1) Remove the used cards from each hand
+    cpuHand.splice(lastCpuCardIndex, 1);
+    playerHand.splice(lastPlayerCardIndex, 1);
+
+    // 2) Draw new card(s) to maintain 5 each
     cpuHand.push(drawOneCard());
     playerHand.push(drawOneCard());
 
-    // Re-render
+    // 3) Clear the center slots
+    cpuSelectedSlot.innerHTML = "";
+    playerSelectedSlot.innerHTML = "";
+
+    // 4) Re-render
     renderCPUHand();
     renderPlayerHand();
 
-    // Show next round button
-    setTimeout(() => {
-      nextRoundBtn.style.display = "inline-block";
-    }, 500);
+    roundResult.textContent = "Pick a card for the next round!";
+    roundActive = true;
+  });
+
+  // Animate card from hand to slot
+  function animateCardToSlot(cardElem, targetSlot, cardData, onComplete) {
+    const startRect = cardElem.getBoundingClientRect();
+    const clone = document.createElement("div");
+    clone.classList.add("animated-card");
+
+    if (cardData.type) {
+      // It's a player card (face-up)
+      clone.style.backgroundImage = `url('assets/${cardData.type.toLowerCase()}.png')`;
+      clone.style.border = `4px solid ${getColorCode(cardData.color)}`;
+    } else {
+      // If CPU card data is stored similarly, you'll have .type, 
+      // but let's assume "cpu-card" if we want it face-down
+      clone.style.backgroundImage = "url('assets/cpu-card.png')";
+    }
+
+    clone.style.left = startRect.left + "px";
+    clone.style.top = startRect.top + "px";
+    document.body.appendChild(clone);
+    // force reflow
+    clone.getBoundingClientRect();
+
+    const endRect = targetSlot.getBoundingClientRect();
+    const offsetX = endRect.left - startRect.left;
+    const offsetY = endRect.top - startRect.top;
+    clone.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+
+    clone.addEventListener("transitionend", () => {
+      clone.remove();
+      if (onComplete) onComplete();
+    });
   }
 
+  // Determine round winner
   function determineWinner(cpuCard, playerCard) {
     // If same type, compare numbers
     if (cpuCard.type === playerCard.type) {
@@ -245,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (cpuCard.number < playerCard.number) return "Player";
       return "Tie";
     }
+
     // Fire > Snow, Snow > Water, Water > Fire
     if (cpuCard.type === "Fire" && playerCard.type === "Snow") return "CPU";
     if (cpuCard.type === "Snow" && playerCard.type === "Fire") return "Player";
@@ -256,31 +275,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cpuCard.type === "Fire" && playerCard.type === "Water") return "Player";
   }
 
-  function getColorCode(colorName) {
-    switch (colorName) {
-      case "Red": return "red";
-      case "Blue": return "blue";
-      case "Green": return "green";
-      default: return "black";
-    }
-  }
-
-  // Check if a side has 3 distinct types OR 3 distinct colors of the same type
+  // Check for overall victory condition
   function checkForGameWin(winsArray) {
     if (winsArray.length < 3) return false;
 
-    // 3 distinct types?
+    // 3 distinct types
     const uniqueTypes = new Set(winsArray.map(win => win.type));
     if (uniqueTypes.size >= 3) {
       return true;
     }
 
-    // or 3 distinct colors in the same type
+    // or 3 distinct colors of the same type
     const typeColorMap = {};
     for (let w of winsArray) {
-      if (!typeColorMap[w.type]) {
-        typeColorMap[w.type] = new Set();
-      }
+      if (!typeColorMap[w.type]) typeColorMap[w.type] = new Set();
       typeColorMap[w.type].add(w.color);
     }
     for (let t in typeColorMap) {
@@ -291,11 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // Display each win as a small square
+  // Update the corner trackers
   function updateWinsDisplay(container, winsArray) {
     container.innerHTML = "";
 
-    // group by type
     const types = ["Fire", "Water", "Snow"];
     const typeMap = { Fire: [], Water: [], Snow: [] };
     for (let w of winsArray) {
@@ -304,7 +311,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     types.forEach((type) => {
       if (typeMap[type].length > 0) {
-        // create a column for this type
         const typeColumn = document.createElement("div");
         typeColumn.style.display = "flex";
         typeColumn.style.flexDirection = "column";
@@ -325,28 +331,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
           typeColumn.appendChild(square);
         });
-
         container.appendChild(typeColumn);
       }
     });
   }
 
-  // Next round
-  nextRoundBtn.addEventListener("click", () => {
-    nextRoundBtn.style.display = "none";
-    roundResult.textContent = "Pick a card to begin!";
-    roundActive = true;
-
-    // Clear selected slots
-    cpuSelectedSlot.innerHTML = "";
-    playerSelectedSlot.innerHTML = "";
-  });
+  // Utility for color -> CSS
+  function getColorCode(colorName) {
+    switch (colorName) {
+      case "Red": return "red";
+      case "Blue": return "blue";
+      case "Green": return "green";
+      default: return "black";
+    }
+  }
 
   // End game
   function endGame() {
     roundActive = false;
     nextRoundBtn.style.display = "none";
-    // Optionally add a "Play Again" button or reload.
+    // Optionally add a "Play Again" or reload
   }
 
   // Start
