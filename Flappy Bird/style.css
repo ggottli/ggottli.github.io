@@ -3,14 +3,43 @@ html, body {
     padding: 0;
     overflow: hidden; /* Hide scrollbars */
     background: linear-gradient(to bottom, #87CEEB, #FFA500);
-    /* The linear gradient above is just an example (sky-blue to orange). */
     height: 100%;
     width: 100%;
   }
   
+  #startScreen {
+    /* Make the start screen cover the entire viewport */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6); /* Dark overlay */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10; /* Ensure start screen is on top of the canvas */
+  }
+  
+  #startScreen h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+  
+  #startBtn {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background-color: #28a745;
+    color: #fff;
+  }
+  
   #gameCanvas {
     display: block;
-    /* Make the canvas fill the browser window */
     width: 100vw;
     height: 100vh;
   }

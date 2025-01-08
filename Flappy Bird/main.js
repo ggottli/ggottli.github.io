@@ -1,8 +1,13 @@
-// Select the canvas and get the drawing context
+// Select DOM elements
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('startScreen');
+const startBtn = document.getElementById('startBtn');
 
-// Adjust the canvas size to fill the screen
+// Track whether the game has started
+let gameStarted = false;
+
+// Resize canvas to fill the screen
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -10,7 +15,7 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas(); // initial size
 
-// Game Variables
+// Bird variables
 let birdX = 50;
 let birdY = canvas.height / 2;
 let birdSize = 20;
@@ -18,21 +23,19 @@ let gravity = 0.5;
 let velocity = 0;
 let jumpStrength = -8;
 
-// Pipe Variables
+// Pipe variables (closer, faster = harder)
 const pipeWidth = 60;
-let pipeSpeed = 3;
-let gap = 150; // space between top pipe and bottom pipe
-
-// We'll store pipes in an array
+let pipeSpeed = 4;   // Increased speed from 3 to 4
+let gap = 120;       // Reduced gap from 150 to 120
 let pipes = [];
 
 // Score
 let score = 0;
 let highScore = 0;
 
-// Create an initial set of pipes
+// Create a pipe
 function createPipe() {
-  // random gap position
+  // Random gap position
   let topHeight = Math.random() * (canvas.height - gap - 50) + 50;
   let bottomHeight = canvas.height - topHeight - gap;
   
@@ -43,21 +46,53 @@ function createPipe() {
   });
 }
 
-// Initialize first pipe
-createPipe();
+// Reset game
+function resetGame() {
+  birdY = canvas.height / 2;
+  velocity = 0;
+  score = 0;
+  pipes = [];
+  createPipe();
+}
 
-// Game Loop
+// Function to start the game
+function startGame() {
+  // Hide start screen
+  startScreen.style.display = 'none';
+  // Begin game
+  gameStarted = true;
+  resetGame();
+}
+
+// Attach click & touch events to the start button
+startBtn.addEventListener('click', startGame);
+// Some mobile browsers only fire 'touchstart' or fire both. Add it to be safe.
+startBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault(); // Prevent double event on some browsers
+  startGame();
+});
+
+// Main game loop
+function gameLoop() {
+  if (gameStarted) {
+    update();
+    draw();
+  }
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+// Update game logic
 function update() {
   // Bird gravity
   velocity += gravity;
   birdY += velocity;
 
-  // Pipe movement
+  // Move pipes
   for (let i = 0; i < pipes.length; i++) {
     pipes[i].x -= pipeSpeed;
 
-    // Check collision with bird
-    // 1. Collision with top pipe
+    // Check top pipe collision
     if (
       birdX + birdSize > pipes[i].x &&
       birdX < pipes[i].x + pipeWidth &&
@@ -65,8 +100,7 @@ function update() {
     ) {
       resetGame();
     }
-
-    // 2. Collision with bottom pipe
+    // Check bottom pipe collision
     if (
       birdX + birdSize > pipes[i].x &&
       birdX < pipes[i].x + pipeWidth &&
@@ -75,7 +109,7 @@ function update() {
       resetGame();
     }
 
-    // If pipe goes off screen, remove it and add a new one
+    // If pipe goes off screen, remove it and create a new one
     if (pipes[i].x + pipeWidth < 0) {
       pipes.splice(i, 1);
       i--;
@@ -85,27 +119,26 @@ function update() {
     }
   }
 
-  // If bird hits the ground or goes above the canvas, reset game
+  // Check if bird hits the ground or the top
   if (birdY + birdSize > canvas.height || birdY < 0) {
     resetGame();
   }
 }
 
-// Draw everything
+// Draw the game
 function draw() {
-  // Clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw the bird
+  // Draw Bird
   ctx.fillStyle = 'yellow';
   ctx.fillRect(birdX, birdY, birdSize, birdSize);
 
-  // Draw the pipes
+  // Draw Pipes
   ctx.fillStyle = 'green';
   for (let pipe of pipes) {
-    // top pipe
+    // Top pipe
     ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
-    // bottom pipe
+    // Bottom pipe
     ctx.fillRect(
       pipe.x,
       canvas.height - pipe.bottomHeight,
@@ -121,14 +154,8 @@ function draw() {
   ctx.fillText(`High Score: ${highScore}`, 20, 70);
 }
 
-function gameLoop() {
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
-gameLoop();
-
-// Listen for jump (space bar or click)
+// Listen for jump events on desktop and mobile
+// Desktop: Space or Mouse Down
 window.addEventListener('keydown', function (e) {
   if (e.code === 'Space') {
     velocity = jumpStrength;
@@ -138,14 +165,11 @@ window.addEventListener('mousedown', function () {
   velocity = jumpStrength;
 });
 
-// Reset the game
-function resetGame() {
-  // Reset bird position and velocity
-  birdY = canvas.height / 2;
-  velocity = 0;
-  score = 0;
-
-  // Clear pipes and create a new one
-  pipes = [];
-  createPipe();
-}
+// Mobile: Touch Start
+window.addEventListener('touchstart', function (e) {
+  // If we’re on the start screen, it might overlap. 
+  // We can ignore if gameStarted is false because the Start button listener handles that.
+  if (gameStarted) {
+    velocity = jumpStrength;
+  }
+});
