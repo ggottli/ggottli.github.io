@@ -1,13 +1,14 @@
-// Select DOM elements
+// DOM elements
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const startBtn = document.getElementById('startBtn');
+const scoreInfo = document.getElementById('scoreInfo');
 
-// Track whether the game has started
+// Game state
 let gameStarted = false;
 
-// Resize canvas to fill the screen
+// Canvas resize
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -23,30 +24,30 @@ let gravity = 0.5;
 let velocity = 0;
 let jumpStrength = -8;
 
-// Pipe variables (closer, faster = harder)
+// Pipes
 const pipeWidth = 60;
-let pipeSpeed = 4;   // Increased speed from 3 to 4
-let gap = 120;       // Reduced gap from 150 to 120
+let pipeSpeed = 4;   // Faster
+let gap = 120;       // Closer gap
 let pipes = [];
 
-// Score
+// Scores
 let score = 0;
 let highScore = 0;
+let lastScore = 0;  // We'll display this after a round
 
 // Create a pipe
 function createPipe() {
-  // Random gap position
   let topHeight = Math.random() * (canvas.height - gap - 50) + 50;
   let bottomHeight = canvas.height - topHeight - gap;
   
   pipes.push({
     x: canvas.width,
-    topHeight: topHeight,
-    bottomHeight: bottomHeight
+    topHeight,
+    bottomHeight
   });
 }
 
-// Reset game
+// Reset game variables
 function resetGame() {
   birdY = canvas.height / 2;
   velocity = 0;
@@ -55,24 +56,36 @@ function resetGame() {
   createPipe();
 }
 
-// Function to start the game
+// End the game, show title screen with last/high scores
+function endGame() {
+  gameStarted = false;
+  lastScore = score;
+  
+  // Check if this is a new high score
+  if (lastScore > highScore) {
+    highScore = lastScore;
+  }
+  
+  // Display the start screen with new info
+  scoreInfo.textContent = `Last Score: ${lastScore}\nHigh Score: ${highScore}`;
+  startScreen.style.display = 'flex';
+}
+
+// Start the game
 function startGame() {
-  // Hide start screen
-  startScreen.style.display = 'none';
-  // Begin game
+  startScreen.style.display = 'none'; // Hide start screen
   gameStarted = true;
   resetGame();
 }
 
-// Attach click & touch events to the start button
+// Attach events to the start button (desktop + mobile)
 startBtn.addEventListener('click', startGame);
-// Some mobile browsers only fire 'touchstart' or fire both. Add it to be safe.
 startBtn.addEventListener('touchstart', (e) => {
-  e.preventDefault(); // Prevent double event on some browsers
+  e.preventDefault();
   startGame();
 });
 
-// Main game loop
+// Main loop
 function gameLoop() {
   if (gameStarted) {
     update();
@@ -98,42 +111,45 @@ function update() {
       birdX < pipes[i].x + pipeWidth &&
       birdY < pipes[i].topHeight
     ) {
-      resetGame();
+      endGame();
+      return; // Stop checking collisions this frame
     }
+
     // Check bottom pipe collision
     if (
       birdX + birdSize > pipes[i].x &&
       birdX < pipes[i].x + pipeWidth &&
       birdY + birdSize > canvas.height - pipes[i].bottomHeight
     ) {
-      resetGame();
+      endGame();
+      return;
     }
 
-    // If pipe goes off screen, remove it and create a new one
+    // Pipe goes off screen
     if (pipes[i].x + pipeWidth < 0) {
       pipes.splice(i, 1);
       i--;
       score++;
-      if (score > highScore) highScore = score;
       createPipe();
     }
   }
 
-  // Check if bird hits the ground or the top
+  // Check ground or ceiling collision
   if (birdY + birdSize > canvas.height || birdY < 0) {
-    resetGame();
+    endGame();
+    return;
   }
 }
 
-// Draw the game
+// Draw game elements
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw Bird
+  // Bird
   ctx.fillStyle = 'yellow';
   ctx.fillRect(birdX, birdY, birdSize, birdSize);
 
-  // Draw Pipes
+  // Pipes
   ctx.fillStyle = 'green';
   for (let pipe of pipes) {
     // Top pipe
@@ -147,29 +163,23 @@ function draw() {
     );
   }
 
-  // Draw Score
+  // Score
   ctx.fillStyle = 'white';
   ctx.font = '24px Arial';
   ctx.fillText(`Score: ${score}`, 20, 40);
-  ctx.fillText(`High Score: ${highScore}`, 20, 70);
+  ctx.fillText(`High: ${highScore}`, 20, 70);
 }
 
-// Listen for jump events on desktop and mobile
-// Desktop: Space or Mouse Down
-window.addEventListener('keydown', function (e) {
+// Listen for jump (desktop + mobile)
+window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     velocity = jumpStrength;
   }
 });
-window.addEventListener('mousedown', function () {
-  velocity = jumpStrength;
+window.addEventListener('mousedown', () => {
+  if (gameStarted) velocity = jumpStrength;
 });
-
-// Mobile: Touch Start
-window.addEventListener('touchstart', function (e) {
-  // If we’re on the start screen, it might overlap. 
-  // We can ignore if gameStarted is false because the Start button listener handles that.
-  if (gameStarted) {
-    velocity = jumpStrength;
-  }
+window.addEventListener('touchstart', (e) => {
+  // If game hasn't started, the start screen handles that
+  if (gameStarted) velocity = jumpStrength;
 });

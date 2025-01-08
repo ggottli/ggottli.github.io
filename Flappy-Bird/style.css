@@ -21,11 +21,18 @@ html, body {
     justify-content: center;
     align-items: center;
     z-index: 10; /* Ensure start screen is on top of the canvas */
+    text-align: center;
   }
   
   #startScreen h1 {
     font-size: 3rem;
     margin-bottom: 20px;
+  }
+  
+  #startScreen h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    white-space: pre-line; /* So if we use \n in text, it renders on a new line */
   }
   
   #startBtn {
