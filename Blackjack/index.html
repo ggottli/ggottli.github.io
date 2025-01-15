@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blackjack</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Top bar: total chips -->
+  <!-- Top bar with total chips -->
   <div class="top-bar">
     <div class="chips-balance">
       <span>Total Chips: </span>
@@ -18,28 +18,39 @@
 
   <h1>Blackjack</h1>
 
-  <!-- Dealer area (on top) -->
+  <!-- Dealer area -->
   <div class="dealer-area">
     <h2>Dealer</h2>
     <div id="dealer-cards" class="card-container"></div>
     <p id="dealer-score">Score: 0</p>
   </div>
 
-  <!-- Player area (below dealer) -->
+  <!-- Player area -->
   <div class="player-area">
     <h2>You</h2>
     <div id="player-cards" class="card-container"></div>
     <p id="player-score">Score: 0</p>
   </div>
 
-  <!-- Betting & Controls (below player area) -->
+  <!-- Gameplay Controls (Hit / Stand) -->
+  <div class="gameplay-controls">
+    <button id="btn-hit" disabled>Hit</button>
+    <button id="btn-stand" disabled>Stand</button>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages">
+    <p id="message"></p>
+  </div>
+
+  <!-- Betting Area (below gameplay controls) -->
   <div class="betting-area">
     <div class="current-bet">
       <span>Bet: </span>
       <span id="current-bet">0</span>
     </div>
 
-    <!-- Chips to click for betting -->
+    <!-- Chips row -->
     <div class="chips-row">
       <div class="chip" data-value="5">5</div>
       <div class="chip" data-value="10">10</div>
@@ -48,21 +59,11 @@
       <div class="chip" data-value="100">100</div>
     </div>
 
+    <!-- Bet Controls -->
     <div class="controls">
       <button id="btn-clear">Clear</button>
       <button id="btn-deal">Deal</button>
     </div>
-  </div>
-
-  <!-- Gameplay controls (Hit / Stand) -->
-  <div class="gameplay-controls">
-    <button id="btn-hit" disabled>Hit</button>
-    <button id="btn-stand" disabled>Stand</button>
-  </div>
-
-  <!-- Message area -->
-  <div class="messages">
-    <p id="message"></p>
   </div>
 
   <script src="script.js"></script>

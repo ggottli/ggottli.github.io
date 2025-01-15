@@ -8,7 +8,7 @@
   /* Body & Background */
   body {
     background-color: #35654d; /* greenish table color */
-    font-family: 'Arial', sans-serif;
+    font-family: Arial, sans-serif;
     color: #fff;
     text-align: center;
     padding: 20px;
@@ -28,20 +28,20 @@
     border-radius: 8px;
   }
   
-  /* Main Heading */
+  /* Title */
   h1 {
     font-size: 3rem;
     margin: 10px 0;
-    color: #ffdd00;  /* Golden accent color */
+    color: #ffdd00;  /* gold accent */
   }
   
   /* Dealer & Player Areas */
   .dealer-area, .player-area {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0,0,0,0.2);
     border: 2px solid #fff;
     border-radius: 10px;
     width: 70%;
-    margin: 0 auto 20px auto;
+    margin: 0 auto 20px;
     padding: 20px;
   }
   .card-container {
@@ -51,7 +51,7 @@
     margin: 10px auto;
   }
   
-  /* Card Styling */
+  /* Card styling */
   .card {
     background-color: #fff;
     color: #000;
@@ -60,17 +60,31 @@
     margin: 5px;
     border-radius: 5px;
     border: 2px solid #ccc;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
     font-weight: bold;
     font-size: 1.1rem;
     position: relative;
     padding: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
   }
   .card .suit {
     font-size: 1.4rem;
+  }
+  
+  /* Simple deal animation - feel free to adjust */
+  .deal-animation {
+    /* Position the card initially off to the top-right, then animate into place */
+    transform: translate(300px, -200px) rotate(30deg);
+    opacity: 0;
+    animation: deal 0.5s forwards ease;
+  }
+  @keyframes deal {
+    to {
+      transform: translate(0, 0) rotate(0deg);
+      opacity: 1;
+    }
   }
   
   /* Scores */
@@ -79,50 +93,9 @@
     margin-top: 10px;
   }
   
-  /* Betting Area */
-  .betting-area {
-    width: 70%;
-    margin: 0 auto;
-    background-color: rgba(0,0,0,0.3);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-  }
-  
-  /* Current Bet Display */
-  .current-bet {
-    font-size: 1.4rem;
+  /* Gameplay Controls */
+  .gameplay-controls {
     margin-bottom: 10px;
-  }
-  
-  /* Chips Row */
-  .chips-row {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-  .chip {
-    background-color: #fa8128; /* example chip color */
-    border: 2px solid #fff;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    margin: 0 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    cursor: pointer;
-    transition: transform 0.1s;
-    user-select: none;
-  }
-  .chip:hover {
-    transform: scale(1.1);
-  }
-  
-  /* Buttons */
-  .controls, .gameplay-controls {
-    margin: 10px 0;
   }
   button {
     background-color: #c9302c;
@@ -150,5 +123,47 @@
   #message {
     font-size: 1.3rem;
     font-weight: bold;
+  }
+  
+  /* Betting Area */
+  .betting-area {
+    width: 70%;
+    margin: 0 auto;
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .current-bet {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+  }
+  .chips-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .chip {
+    background-color: #fa8128; /* chip color */
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    margin: 0 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+    user-select: none;
+  }
+  .chip:hover {
+    transform: scale(1.1);
+  }
+  
+  /* Additional spacing for the controls */
+  .controls {
+    margin-top: 10px;
   }
   
