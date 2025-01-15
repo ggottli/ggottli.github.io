@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>London Blackjack</title>
+  <title>Blackjack</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -14,38 +14,32 @@
       <span>Total Chips: </span>
       <span id="total-chips">2000</span>
     </div>
-    <div class="deck-info">
-      <span id="deck-cards-remaining">Cards left: 0</span>
-    </div>
   </div>
 
-  <h1>London Blackjack</h1>
+  <h1>Blackjack</h1>
 
-  <!-- The main game area -->
-  <div class="table-container">
-    <!-- Dealer area -->
-    <div class="dealer-area">
-      <h2>Dealer</h2>
-      <div id="dealer-cards" class="card-container"></div>
-      <p id="dealer-score">Score: 0</p>
-    </div>
-
-    <!-- Player area -->
-    <div class="player-area">
-      <h2>You</h2>
-      <div id="player-cards" class="card-container"></div>
-      <p id="player-score">Score: 0</p>
-    </div>
+  <!-- Dealer area (on top) -->
+  <div class="dealer-area">
+    <h2>Dealer</h2>
+    <div id="dealer-cards" class="card-container"></div>
+    <p id="dealer-score">Score: 0</p>
   </div>
 
-  <!-- Betting & Controls -->
+  <!-- Player area (below dealer) -->
+  <div class="player-area">
+    <h2>You</h2>
+    <div id="player-cards" class="card-container"></div>
+    <p id="player-score">Score: 0</p>
+  </div>
+
+  <!-- Betting & Controls (below player area) -->
   <div class="betting-area">
     <div class="current-bet">
       <span>Bet: </span>
       <span id="current-bet">0</span>
     </div>
 
-    <!-- Chips the player can tap to increment their bet -->
+    <!-- Chips to click for betting -->
     <div class="chips-row">
       <div class="chip" data-value="5">5</div>
       <div class="chip" data-value="10">10</div>
@@ -54,22 +48,21 @@
       <div class="chip" data-value="100">100</div>
     </div>
 
-    <!-- Bet controls -->
     <div class="controls">
       <button id="btn-clear">Clear</button>
       <button id="btn-deal">Deal</button>
     </div>
   </div>
 
-  <!-- Messages -->
-  <div class="messages">
-    <p id="message"></p>
-  </div>
-
-  <!-- Hit & Stand only visible once the cards are dealt -->
+  <!-- Gameplay controls (Hit / Stand) -->
   <div class="gameplay-controls">
     <button id="btn-hit" disabled>Hit</button>
     <button id="btn-stand" disabled>Stand</button>
+  </div>
+
+  <!-- Message area -->
+  <div class="messages">
+    <p id="message"></p>
   </div>
 
   <script src="script.js"></script>

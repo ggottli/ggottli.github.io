@@ -11,6 +11,7 @@ let totalChips = 2000;     // Player starts with 2000 chips
 let currentBet = 0;
 
 let gameOver = false;
+let dealerRevealed = false; // Tracks if dealer’s hidden card is revealed yet
 
 // HTML Elements
 const dealerCardsDiv = document.getElementById("dealer-cards");
@@ -22,24 +23,19 @@ const totalChipsSpan = document.getElementById("total-chips");
 const currentBetSpan = document.getElementById("current-bet");
 const messageP = document.getElementById("message");
 
-const deckCardsRemainingSpan = document.getElementById("deck-cards-remaining");
-
 // Buttons
 const clearBtn = document.getElementById("btn-clear");
 const dealBtn = document.getElementById("btn-deal");
 const hitBtn = document.getElementById("btn-hit");
 const standBtn = document.getElementById("btn-stand");
 
-// Chips for betting
+// Betting chips
 const chipElements = document.querySelectorAll(".chip");
 
 // -------------------------------------
 // Functions
 // -------------------------------------
 
-/**
- * Creates a deck combining 3 standard decks (3 x 52 = 156 cards).
- */
 function createDeck() {
   deck = [];
   const suits = ["♠", "♥", "♦", "♣"];
@@ -59,9 +55,6 @@ function createDeck() {
   }
 }
 
-/**
- * Shuffle the global deck in place.
- */
 function shuffleDeck() {
   for (let i = 0; i < deck.length; i++) {
     let swapIdx = Math.floor(Math.random() * deck.length);
@@ -69,9 +62,6 @@ function shuffleDeck() {
   }
 }
 
-/**
- * Returns integer value of a given card (Ace special-case is handled in getHandValue).
- */
 function getCardValue(card) {
   if (card.value === "A") {
     return 1; 
@@ -82,9 +72,6 @@ function getCardValue(card) {
   }
 }
 
-/**
- * Returns total hand value (handling Ace as 1 or 11).
- */
 function getHandValue(hand) {
   let total = 0;
   let hasAce = false;
@@ -96,7 +83,6 @@ function getHandValue(hand) {
     }
   }
   
-  // If there's an Ace and it won't bust, add 10
   if (hasAce && total + 10 <= 21) {
     total += 10;
   }
@@ -104,39 +90,50 @@ function getHandValue(hand) {
 }
 
 /**
- * Visually display a hand’s cards in the given container.
+ * Display the player's hand normally, but display the dealer's second card face-down if dealerRevealed is false.
  */
-function displayHand(hand, container) {
+function displayHand(hand, container, isDealer = false) {
   container.innerHTML = "";
-  for (let card of hand) {
+  hand.forEach((card, index) => {
     const cardDiv = document.createElement("div");
     cardDiv.classList.add("card");
-    cardDiv.innerHTML = `
-      <div>${card.value}</div>
-      <div class="suit">${card.suit}</div>
-    `;
+
+    // If this is the dealer's second card and we have not revealed it yet, show a "face-down" card
+    if (isDealer && index === 1 && !dealerRevealed) {
+      // Face-down card
+      cardDiv.style.backgroundColor = "#333";
+      cardDiv.style.color = "#333";
+      cardDiv.textContent = "???";
+    } else {
+      // Normal face-up card
+      cardDiv.innerHTML = `
+        <div>${card.value}</div>
+        <div class="suit">${card.suit}</div>
+      `;
+    }
     container.appendChild(cardDiv);
-  }
+  });
 }
 
-/**
- * Update both player and dealer score text.
- */
 function updateScores() {
+  // If dealer card is not revealed, only show the first card's value
+  if (!dealerRevealed) {
+    // show partial dealer score
+    if (dealerHand.length > 0) {
+      const firstCardValue = getCardValue(dealerHand[0]);
+      const showValue = (dealerHand[0].value === "A") ? 11 : firstCardValue; 
+      dealerScoreP.textContent = `Score: ${showValue}+`;
+    } else {
+      dealerScoreP.textContent = "Score: 0";
+    }
+  } else {
+    dealerScoreP.textContent = `Score: ${getHandValue(dealerHand)}`;
+  }
+
+  // Player score always face-up
   playerScoreP.textContent = `Score: ${getHandValue(playerHand)}`;
-  dealerScoreP.textContent = `Score: ${getHandValue(dealerHand)}`;
 }
 
-/**
- * Updates deck-cards-remaining display.
- */
-function updateDeckInfo() {
-  deckCardsRemainingSpan.textContent = `Cards left: ${deck.length}`;
-}
-
-/**
- * Check for the end of the game (bust or stand), update chips, show message, etc.
- */
 function checkForEndOfGame() {
   const playerValue = getHandValue(playerHand);
   const dealerValue = getHandValue(dealerHand);
@@ -161,7 +158,6 @@ function checkForEndOfGame() {
       totalChips -= currentBet;
     } else {
       messageP.textContent = "It's a tie!";
-      // Tie = push, no chip change
     }
     endRound();
   }
@@ -176,9 +172,6 @@ function checkForEndOfGame() {
   }
 }
 
-/**
- * Called when the round is over (bust or stand scenario).
- */
 function endRound() {
   dealBtn.disabled = false;
   clearBtn.disabled = false;
@@ -189,21 +182,18 @@ function endRound() {
   gameOver = true;
 }
 
-/**
- * Begin a new round (deal).
- */
 function startNewGame() {
-  // If we have fewer than, say, 10 cards left, let's reshuffle to ensure we have enough
-  // Or you can decide to reshuffle only if the deck is fully exhausted.
+  // If deck is low, reshuffle
   if (deck.length < 10) {
     createDeck();
     shuffleDeck();
   }
 
-  // Clear previous round
+  // Clear old state
   playerHand = [];
   dealerHand = [];
   gameOver = false;
+  dealerRevealed = false;
   messageP.textContent = "";
 
   // Deal initial cards
@@ -212,23 +202,20 @@ function startNewGame() {
   playerHand.push(deck.pop());
   dealerHand.push(deck.pop());
 
-  // Update visuals
-  displayHand(playerHand, playerCardsDiv);
-  displayHand(dealerHand, dealerCardsDiv);
+  // Show them
+  displayHand(dealerHand, dealerCardsDiv, true);   // Dealer with hidden second card
+  displayHand(playerHand, playerCardsDiv, false);  // Player face-up
   updateScores();
-  updateDeckInfo();
 
-  // Gameplay buttons are active
+  // Gameplay buttons active
   hitBtn.disabled = false;
   standBtn.disabled = false;
-  // Bet controls are disabled during a round
+  // Bet controls disabled
   dealBtn.disabled = true;
   clearBtn.disabled = true;
 }
 
-/**
- * Disable betting area if the player is out of chips or game is over.
- */
+/** Disable betting area if out of chips */
 function disableBetting() {
   chipElements.forEach(chip => {
     chip.style.pointerEvents = "none";
@@ -237,9 +224,7 @@ function disableBetting() {
   dealBtn.disabled = true;
 }
 
-/**
- * Disable gameplay controls (Hit / Stand).
- */
+/** Disable Hit/Stand. */
 function disableGameplay() {
   hitBtn.disabled = true;
   standBtn.disabled = true;
@@ -249,20 +234,17 @@ function disableGameplay() {
 // Event Listeners
 // -------------------------------------
 
-// On page load, create and shuffle the deck, update the UI
 window.addEventListener("DOMContentLoaded", () => {
   createDeck();
   shuffleDeck();
-  updateDeckInfo();
   totalChipsSpan.textContent = totalChips;
   currentBetSpan.textContent = currentBet;
 });
 
-// Betting Chips Click
+// Betting Chips
 chipElements.forEach(chip => {
   chip.addEventListener("click", () => {
     const chipValue = parseInt(chip.getAttribute("data-value"));
-    // Only allow a bet if the player has enough chips
     if (totalChips - currentBet >= chipValue) {
       currentBet += chipValue;
       currentBetSpan.textContent = currentBet;
@@ -278,13 +260,10 @@ clearBtn.addEventListener("click", () => {
 
 // Deal
 dealBtn.addEventListener("click", () => {
-  // If no bet was placed, show a message
   if (currentBet <= 0) {
     messageP.textContent = "Please place a bet before dealing!";
     return;
   }
-
-  // Otherwise, start the round
   startNewGame();
 });
 
@@ -292,9 +271,8 @@ dealBtn.addEventListener("click", () => {
 hitBtn.addEventListener("click", () => {
   if (!gameOver) {
     playerHand.push(deck.pop());
-    displayHand(playerHand, playerCardsDiv);
+    displayHand(playerHand, playerCardsDiv, false);
     updateScores();
-    updateDeckInfo();
 
     if (getHandValue(playerHand) > 21) {
       gameOver = true;
@@ -306,13 +284,18 @@ hitBtn.addEventListener("click", () => {
 // Stand
 standBtn.addEventListener("click", () => {
   if (!gameOver) {
+    // Reveal dealer's second card
+    dealerRevealed = true;
+
     // Dealer draws until 17 or more
     while (getHandValue(dealerHand) < 17) {
       dealerHand.push(deck.pop());
     }
-    displayHand(dealerHand, dealerCardsDiv);
+
+    // Update displays
+    displayHand(dealerHand, dealerCardsDiv, true);
     updateScores();
-    updateDeckInfo();
+
     gameOver = true;
     checkForEndOfGame();
   }
