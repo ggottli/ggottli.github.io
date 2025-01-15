@@ -1,29 +1,46 @@
-// Script.js
+// script.js
 
-// ---------------------
+// -------------------------------------
 // Global Variables
-// ---------------------
+// -------------------------------------
 let deck = [];
 let playerHand = [];
 let dealerHand = [];
+
+let totalChips = 2000;     // Player starts with 2000 chips
+let currentBet = 0;
+
 let gameOver = false;
 
-// HTML elements
+// HTML Elements
 const dealerCardsDiv = document.getElementById("dealer-cards");
 const dealerScoreP = document.getElementById("dealer-score");
 const playerCardsDiv = document.getElementById("player-cards");
 const playerScoreP = document.getElementById("player-score");
+
+const totalChipsSpan = document.getElementById("total-chips");
+const currentBetSpan = document.getElementById("current-bet");
 const messageP = document.getElementById("message");
 
+const deckCardsRemainingSpan = document.getElementById("deck-cards-remaining");
+
+// Buttons
+const clearBtn = document.getElementById("btn-clear");
 const dealBtn = document.getElementById("btn-deal");
 const hitBtn = document.getElementById("btn-hit");
 const standBtn = document.getElementById("btn-stand");
 
-// ---------------------
-// Utility Functions
-// ---------------------
+// Chips for betting
+const chipElements = document.querySelectorAll(".chip");
+
+// -------------------------------------
+// Functions
+// -------------------------------------
+
+/**
+ * Creates a deck combining 3 standard decks (3 x 52 = 156 cards).
+ */
 function createDeck() {
-  // Clears the deck, then creates a new one
   deck = [];
   const suits = ["♠", "♥", "♦", "♣"];
   const values = [
@@ -31,14 +48,20 @@ function createDeck() {
     "6", "7", "8", "9", "10",
     "J", "Q", "K"
   ];
-
-  for (let suit of suits) {
-    for (let value of values) {
-      deck.push({ value, suit });
+  
+  // 3 decks
+  for (let d = 0; d < 3; d++) {
+    for (let suit of suits) {
+      for (let value of values) {
+        deck.push({ value, suit });
+      }
     }
   }
 }
 
+/**
+ * Shuffle the global deck in place.
+ */
 function shuffleDeck() {
   for (let i = 0; i < deck.length; i++) {
     let swapIdx = Math.floor(Math.random() * deck.length);
@@ -46,10 +69,12 @@ function shuffleDeck() {
   }
 }
 
+/**
+ * Returns integer value of a given card (Ace special-case is handled in getHandValue).
+ */
 function getCardValue(card) {
   if (card.value === "A") {
-    // Handle A later, as 1 or 11
-    return 1;
+    return 1; 
   } else if (["J", "Q", "K"].includes(card.value)) {
     return 10;
   } else {
@@ -57,6 +82,9 @@ function getCardValue(card) {
   }
 }
 
+/**
+ * Returns total hand value (handling Ace as 1 or 11).
+ */
 function getHandValue(hand) {
   let total = 0;
   let hasAce = false;
@@ -67,7 +95,7 @@ function getHandValue(hand) {
       hasAce = true;
     }
   }
-
+  
   // If there's an Ace and it won't bust, add 10
   if (hasAce && total + 10 <= 21) {
     total += 10;
@@ -75,98 +103,104 @@ function getHandValue(hand) {
   return total;
 }
 
-function displayHand(hand, element) {
-  // Clear existing cards
-  element.innerHTML = "";
-
-  // Show each card in the hand
+/**
+ * Visually display a hand’s cards in the given container.
+ */
+function displayHand(hand, container) {
+  container.innerHTML = "";
   for (let card of hand) {
-    let cardDiv = document.createElement("div");
+    const cardDiv = document.createElement("div");
     cardDiv.classList.add("card");
     cardDiv.innerHTML = `
       <div>${card.value}</div>
       <div class="suit">${card.suit}</div>
     `;
-    element.appendChild(cardDiv);
+    container.appendChild(cardDiv);
   }
 }
 
+/**
+ * Update both player and dealer score text.
+ */
 function updateScores() {
-  const playerValue = getHandValue(playerHand);
-  const dealerValue = getHandValue(dealerHand);
-  playerScoreP.textContent = `Score: ${playerValue}`;
-  dealerScoreP.textContent = `Score: ${dealerValue}`;
+  playerScoreP.textContent = `Score: ${getHandValue(playerHand)}`;
+  dealerScoreP.textContent = `Score: ${getHandValue(dealerHand)}`;
 }
 
+/**
+ * Updates deck-cards-remaining display.
+ */
+function updateDeckInfo() {
+  deckCardsRemainingSpan.textContent = `Cards left: ${deck.length}`;
+}
+
+/**
+ * Check for the end of the game (bust or stand), update chips, show message, etc.
+ */
 function checkForEndOfGame() {
   const playerValue = getHandValue(playerHand);
   const dealerValue = getHandValue(dealerHand);
 
   if (playerValue > 21) {
+    // Player bust
     messageP.textContent = "You busted! Dealer wins!";
-    gameOver = true;
+    totalChips -= currentBet;
+    endRound();
   } else if (dealerValue > 21) {
+    // Dealer bust
     messageP.textContent = "Dealer busted! You win!";
-    gameOver = true;
+    totalChips += currentBet;
+    endRound();
   } else if (gameOver) {
-    // This means dealer finished drawing
+    // Compare final totals
     if (playerValue > dealerValue) {
       messageP.textContent = "You win!";
+      totalChips += currentBet;
     } else if (playerValue < dealerValue) {
       messageP.textContent = "Dealer wins!";
+      totalChips -= currentBet;
     } else {
       messageP.textContent = "It's a tie!";
+      // Tie = push, no chip change
     }
+    endRound();
   }
 
-  // Disable buttons if game is over
-  if (gameOver) {
-    dealBtn.disabled = false;   // Let the user play again
-    hitBtn.disabled = true;
-    standBtn.disabled = true;
+  totalChipsSpan.textContent = totalChips;
+
+  // Check if player is out of chips
+  if (totalChips <= 0) {
+    messageP.textContent = "You are out of chips! Game Over!";
+    disableBetting();
+    disableGameplay();
   }
 }
 
-// ---------------------
-// Button Actions
-// ---------------------
-dealBtn.addEventListener("click", () => {
-  startNewGame();
-});
+/**
+ * Called when the round is over (bust or stand scenario).
+ */
+function endRound() {
+  dealBtn.disabled = false;
+  clearBtn.disabled = false;
+  hitBtn.disabled = true;
+  standBtn.disabled = true;
+  currentBet = 0;
+  currentBetSpan.textContent = currentBet;
+  gameOver = true;
+}
 
-hitBtn.addEventListener("click", () => {
-  if (!gameOver) {
-    playerHand.push(deck.pop());
-    displayHand(playerHand, playerCardsDiv);
-    updateScores();
-    if (getHandValue(playerHand) > 21) {
-      gameOver = true;
-    }
-    checkForEndOfGame();
-  }
-});
-
-standBtn.addEventListener("click", () => {
-  if (!gameOver) {
-    // Dealer's turn
-    while (getHandValue(dealerHand) < 17) {
-      dealerHand.push(deck.pop());
-    }
-    displayHand(dealerHand, dealerCardsDiv);
-    gameOver = true;
-    updateScores();
-    checkForEndOfGame();
-  }
-});
-
-// ---------------------
-// Start the Game
-// ---------------------
+/**
+ * Begin a new round (deal).
+ */
 function startNewGame() {
-  createDeck();
-  shuffleDeck();
+  // If we have fewer than, say, 10 cards left, let's reshuffle to ensure we have enough
+  // Or you can decide to reshuffle only if the deck is fully exhausted.
+  if (deck.length < 10) {
+    createDeck();
+    shuffleDeck();
+  }
 
-  // Clear existing data
+  // Clear previous round
   playerHand = [];
   dealerHand = [];
   gameOver = false;
@@ -178,13 +212,108 @@ function startNewGame() {
   playerHand.push(deck.pop());
   dealerHand.push(deck.pop());
 
-  // Display
+  // Update visuals
   displayHand(playerHand, playerCardsDiv);
   displayHand(dealerHand, dealerCardsDiv);
   updateScores();
+  updateDeckInfo();
 
-  // Disable/enable appropriate buttons
-  dealBtn.disabled = true;
+  // Gameplay buttons are active
   hitBtn.disabled = false;
   standBtn.disabled = false;
+  // Bet controls are disabled during a round
+  dealBtn.disabled = true;
+  clearBtn.disabled = true;
 }
+
+/**
+ * Disable betting area if the player is out of chips or game is over.
+ */
+function disableBetting() {
+  chipElements.forEach(chip => {
+    chip.style.pointerEvents = "none";
+  });
+  clearBtn.disabled = true;
+  dealBtn.disabled = true;
+}
+
+/**
+ * Disable gameplay controls (Hit / Stand).
+ */
+function disableGameplay() {
+  hitBtn.disabled = true;
+  standBtn.disabled = true;
+}
+
+// -------------------------------------
+// Event Listeners
+// -------------------------------------
+
+// On page load, create and shuffle the deck, update the UI
+window.addEventListener("DOMContentLoaded", () => {
+  createDeck();
+  shuffleDeck();
+  updateDeckInfo();
+  totalChipsSpan.textContent = totalChips;
+  currentBetSpan.textContent = currentBet;
+});
+
+// Betting Chips Click
+chipElements.forEach(chip => {
+  chip.addEventListener("click", () => {
+    const chipValue = parseInt(chip.getAttribute("data-value"));
+    // Only allow a bet if the player has enough chips
+    if (totalChips - currentBet >= chipValue) {
+      currentBet += chipValue;
+      currentBetSpan.textContent = currentBet;
+    }
+  });
+});
+
+// Clear Bet
+clearBtn.addEventListener("click", () => {
+  currentBet = 0;
+  currentBetSpan.textContent = currentBet;
+});
+
+// Deal
+dealBtn.addEventListener("click", () => {
+  // If no bet was placed, show a message
+  if (currentBet <= 0) {
+    messageP.textContent = "Please place a bet before dealing!";
+    return;
+  }
+
+  // Otherwise, start the round
+  startNewGame();
+});
+
+// Hit
+hitBtn.addEventListener("click", () => {
+  if (!gameOver) {
+    playerHand.push(deck.pop());
+    displayHand(playerHand, playerCardsDiv);
+    updateScores();
+    updateDeckInfo();
+
+    if (getHandValue(playerHand) > 21) {
+      gameOver = true;
+    }
+    checkForEndOfGame();
+  }
+});
+
+// Stand
+standBtn.addEventListener("click", () => {
+  if (!gameOver) {
+    // Dealer draws until 17 or more
+    while (getHandValue(dealerHand) < 17) {
+      dealerHand.push(deck.pop());
+    }
+    displayHand(dealerHand, dealerCardsDiv);
+    updateScores();
+    updateDeckInfo();
+    gameOver = true;
+    checkForEndOfGame();
+  }
+});
