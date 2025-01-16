@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Blackjack</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
@@ -25,17 +25,17 @@
     <p id="dealer-score">Score: 0</p>
   </div>
 
-  <!-- Player area -->
-  <div class="player-area">
-    <h2>You</h2>
-    <div id="player-cards" class="card-container"></div>
-    <p id="player-score">Score: 0</p>
+  <!-- Player area (can have multiple hands after a split) -->
+  <div id="player-hands-container">
+    <!-- We will dynamically create each player's hand section here in JS -->
   </div>
 
-  <!-- Gameplay Controls (Hit / Stand) -->
+  <!-- Gameplay Controls -->
   <div class="gameplay-controls">
     <button id="btn-hit" disabled>Hit</button>
     <button id="btn-stand" disabled>Stand</button>
+    <button id="btn-double" disabled>Double Down</button>
+    <button id="btn-split" disabled>Split</button>
   </div>
 
   <!-- Messages -->
@@ -43,7 +43,7 @@
     <p id="message"></p>
   </div>
 
-  <!-- Betting Area (below gameplay controls) -->
+  <!-- Betting Area -->
   <div class="betting-area">
     <div class="current-bet">
       <span>Bet: </span>
