@@ -2,39 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Euchre Game</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Euchre</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>Euchre Game</h1>
-  </header>
 
-  <main id="game-area">
-    <section id="table">
-      <!-- Played cards go here -->
-      <div id="played-cards"></div>
-    </section>
-    
-    <section id="player-hand" class="hand-area">
-      <!-- Player's cards displayed here, clickable to select a card. -->
-    </section>
-    
-    <!-- Opponents' hands (face-down or simplified) -->
-    <section id="opponent1-hand" class="hand-area opponent-hand"></section>
-    <section id="opponent2-hand" class="hand-area opponent-hand"></section>
-    <section id="opponent3-hand" class="hand-area opponent-hand"></section>
+  <!-- Score/Message Bar -->
+  <div class="top-bar">
+    <h1>Euchre</h1>
+    <div id="message-area"></div>
+  </div>
 
-    <!-- Bidding UI / Turn-up card area -->
-    <section id="bidding-area"></section>
+  <!-- Table area -->
+  <div class="table-container">
+    <!-- Opponent 1 (top) -->
+    <div class="opponent-area" id="opponent1-area">
+      <h2>Opponent 1</h2>
+      <div class="hand-container" id="opponent1-hand"></div>
+    </div>
 
-    <section id="scoreboard">
-      <div id="team1-score">Team1: 0</div>
-      <div id="team2-score">Team2: 0</div>
-      <div id="round-info"></div>
-    </section>
-  </main>
+    <!-- Opponent 2 (left) -->
+    <div class="opponent-area" id="opponent2-area">
+      <h2>Opponent 2</h2>
+      <div class="hand-container vertical" id="opponent2-hand"></div>
+    </div>
 
-  <script src="main.js"></script>
+    <!-- Center table for tricks + kitty/trump card -->
+    <div class="center-table" id="center-table">
+      <div class="kitty-card" id="kitty-card"></div>
+      <button id="btn-order-up" disabled>Order Up</button>
+      <button id="btn-pass" disabled>Pass</button>
+      <button id="btn-select-trump" disabled>Select Trump</button>
+    </div>
+
+    <!-- Partner (right) -->
+    <div class="opponent-area" id="partner-area">
+      <h2>Partner</h2>
+      <div class="hand-container vertical" id="partner-hand"></div>
+    </div>
+
+    <!-- User area (bottom) -->
+    <div class="user-area" id="user-area">
+      <h2>You</h2>
+      <div class="hand-container" id="user-hand"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="script.js"></script>
 </body>
 </html>
