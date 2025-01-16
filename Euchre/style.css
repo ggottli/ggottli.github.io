@@ -6,7 +6,7 @@
 }
 
 body {
-  background-color: #35654d; /* green table color */
+  background-color: #35654d; /* greenish table color */
   font-family: Arial, sans-serif;
   color: #fff;
   text-align: center;
@@ -16,34 +16,50 @@ body {
 .top-bar {
   margin-bottom: 10px;
 }
-
 h1 {
   font-size: 2.5rem;
   color: #ffd700; /* gold accent */
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
-/* Table Layout */
+.scoreboard {
+  font-size: 1.1rem;
+  margin: 5px 0;
+}
+
+.dealer-indicator,
+.trump-indicator {
+  font-size: 1.2rem;
+  margin: 5px 0;
+}
+
+#message-area {
+  margin: 5px 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* Table grid layout */
 .table-container {
   display: grid;
   grid-template-columns: 1fr 3fr 1fr;
-  grid-template-rows: 1fr 3fr 1fr;
+  grid-template-rows: 1fr 2fr 1fr;
   gap: 10px;
   width: 90%;
   margin: 0 auto;
   position: relative;
 }
 
-/* Positions of each area */
-#opponent1-area {
+/* Arrange seats (Partner top, Opp1 left, Opp2 right, User bottom) */
+#partner-area {
   grid-column: 2 / 3;
   grid-row: 1 / 2;
 }
-#opponent2-area {
+#opponent1-area {
   grid-column: 1 / 2;
   grid-row: 2 / 3;
 }
-#partner-area {
+#opponent2-area {
   grid-column: 3 / 4;
   grid-row: 2 / 3;
 }
@@ -60,14 +76,30 @@ h1 {
   justify-content: center;
 }
 
+/* Each seat's container */
+.player-area {
+  position: relative;
+  padding: 5px;
+}
+
+/* For vertical hands on left/right seats */
+.hand-container.vertical {
+  flex-direction: column;
+}
+
 .hand-container {
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 5px;
 }
-.hand-container.vertical {
-  flex-direction: column;
+
+/* Where the played card is placed for each seat */
+.play-spot {
+  position: relative;
+  width: 60px;   
+  height: 85px;  
+  margin: 0 auto;
 }
 
 /* Card styling */
@@ -75,7 +107,6 @@ h1 {
   width: 60px;
   height: 85px;
   background-color: #fff;
-  color: #000;
   margin: 5px;
   border-radius: 5px;
   border: 2px solid #ccc;
@@ -86,13 +117,19 @@ h1 {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-}
-.suit {
-  font-size: 1.2rem;
+  transition: all 0.4s ease; /* for simple hover or moves */
 }
 
-.kitty-card {
-  margin: 10px 0;
+/* Display the suit in the correct color */
+.card.red {
+  color: red;
+}
+.card.black {
+  color: black;
+}
+
+.suit {
+  font-size: 1.2rem;
 }
 
 /* Buttons */
@@ -101,7 +138,7 @@ button {
   border: none;
   border-radius: 5px;
   color: #fff;
-  padding: 8px 14px;
+  padding: 6px 10px;
   margin: 5px;
   cursor: pointer;
   font-size: 0.9rem;
@@ -115,9 +152,15 @@ button:hover:not(:disabled) {
   background-color: #ff1e63;
 }
 
-/* Messages */
-#message-area {
-  margin-top: 10px;
-  font-size: 1.2rem;
-  font-weight: bold;
+/* Animate played card to the center of the table */
+.played-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(100px, -100px) scale(1.2);
+  z-index: 10;
+  transition: transform 0.8s ease;
+}
+.played-card.to-center {
+  transform: translate(0,0) scale(1.0);
 }

@@ -1,401 +1,518 @@
-// script.js
-
-/****************************************************
- * Basic Data Setup
- ****************************************************/
+/***************************************************
+ * Euchre Full Example (Simplified)
+ ***************************************************/
 const suits = ["♠","♥","♦","♣"];
 const values = ["9","10","J","Q","K","A"];
-let deck = [];
+
+/** We’ll seat players as:
+ * 0: Partner (top, team1)
+ * 1: Opponent1 (left, team2)
+ * 2: Opponent2 (right, team2)
+ * 3: User (bottom, team1)
+ */
 let players = [
-  { name: "Opponent1", hand: [], team: 1 },
+  { name: "Partner", hand: [], team: 1 },
+  { name: "Opponent1", hand: [], team: 2 },
   { name: "Opponent2", hand: [], team: 2 },
-  { name: "Partner",   hand: [], team: 1 },
-  { name: "You",       hand: [], team: 2 },
+  { name: "You", hand: [], team: 1 }
 ];
 
-// For convenience in referencing positions:
-const OPP1 = 0, OPP2 = 1, PARTNER = 2, USER = 3;
-
-let kittyCard = null;      // The face-up kitty card
-let trumpSuit = null;      // The chosen trump
-let dealerIndex = 0;       // Who is dealing this round?
-let currentPhase = 0;      // 0 = dealing, 1=phase1 trump, 2=phase2 trump, 3=playing
-let messageArea = document.getElementById("message-area");
-
 // HTML references
+const partnerHandDiv = document.getElementById("partner-hand");
 const opponent1HandDiv = document.getElementById("opponent1-hand");
 const opponent2HandDiv = document.getElementById("opponent2-hand");
-const partnerHandDiv = document.getElementById("partner-hand");
-const userHandDiv = document.getElementById("user-hand");
-const kittyCardDiv = document.getElementById("kitty-card");
+const userHandDiv    = document.getElementById("user-hand");
 
-const btnOrderUp = document.getElementById("btn-order-up");
-const btnPass = document.getElementById("btn-pass");
-const btnSelectTrump = document.getElementById("btn-select-trump");
+const partnerPlaySpot  = document.getElementById("partner-play-spot");
+const opponent1PlaySpot= document.getElementById("opponent1-play-spot");
+const opponent2PlaySpot= document.getElementById("opponent2-play-spot");
+const userPlaySpot     = document.getElementById("user-play-spot");
 
-/****************************************************
- * Euchre Setup
- ****************************************************/
+const kittyCardDiv  = document.getElementById("kitty-card");
 
-/** Create a 24-card Euchre deck. */
+const messageArea   = document.getElementById("message-area");
+const dealerIndicator = document.getElementById("dealer-indicator");
+const trumpIndicator  = document.getElementById("trump-indicator");
+
+const btnOrderUp    = document.getElementById("btn-order-up");
+const btnPass       = document.getElementById("btn-pass");
+const btnSelectTrump= document.getElementById("btn-select-trump");
+
+const team1ScoreSpan= document.getElementById("team1-score");
+const team2ScoreSpan= document.getElementById("team2-score");
+
+// Game State
+let deck = [];
+let kittyCard = null;
+let trumpSuit = null;
+let dealerIndex = 0;
+let makerIndex = null;  // who picked trump
+let currentPhase = 0;   // 0=deal,1=phase1,2=phase2,3=play
+let roundTrickCount = 0;
+let leaderPos = 0;      // who leads the next trick
+let currentTrick = [];
+let team1Score = 0;
+let team2Score = 0;
+let trickWinsByTeam = {1:0, 2:0};
+
+/***************************************************
+ *  Deck & Deal
+ ***************************************************/
+
 function createDeck() {
   deck = [];
-  for (let suit of suits) {
-    for (let val of values) {
-      deck.push({value: val, suit});
+  for (let s of suits) {
+    for (let v of values) {
+      deck.push({value:v, suit:s});
     }
   }
 }
 
-/** Shuffle deck in place. */
 function shuffleDeck() {
-  for(let i = 0; i < deck.length; i++){
-    const swapIdx = Math.floor(Math.random() * deck.length);
-    [deck[i], deck[swapIdx]] = [deck[swapIdx], deck[i]];
+  for(let i=0; i<deck.length; i++){
+    let swapIdx = Math.floor(Math.random()*deck.length);
+    [deck[i],deck[swapIdx]]=[deck[swapIdx],deck[i]];
   }
 }
 
-/** Deal 5 cards to each player and 1 kitty card. */
 function dealCards() {
-  // Clear old hands
+  // Clear old
   players.forEach(p => p.hand = []);
-  // Shuffle & deal
   shuffleDeck();
-  // Each player gets 5
-  for (let round = 0; round < 5; round++) {
-    for (let i = 0; i < 4; i++) {
-      players[(dealerIndex + 1 + i) % 4].hand.push(deck.pop());
+
+  // 5 cards each
+  for (let r=0; r<5; r++) {
+    for (let i=1; i<=4; i++) {
+      let playerPos = (dealerIndex + i) % 4;
+      players[playerPos].hand.push(deck.pop());
     }
   }
-  // Next card is kitty
-  kittyCard = deck.pop();
+  kittyCard = deck.pop(); // leftover for trump
 }
 
-/****************************************************
- * Rendering
- ****************************************************/
+/***************************************************
+ *  Rendering
+ ***************************************************/
+
+function getSuitColor(s) {
+  return (s === "♥" || s === "♦") ? "red" : "black";
+}
+
 function renderHands() {
-  // For now, show AI cards face-down for Opponents, face-up for user. 
-  // (Or face-up for debugging.)
-  opponent1HandDiv.innerHTML = "";
-  players[OPP1].hand.forEach(() => {
-    const cardDiv = document.createElement("div");
-    cardDiv.classList.add("card", "deal-animation");
-    cardDiv.textContent = "🂠"; // Face-down
-    opponent1HandDiv.appendChild(cardDiv);
+  // Partner
+  partnerHandDiv.innerHTML="";
+  players[0].hand.forEach(()=> {
+    let c = document.createElement("div");
+    c.className="card deal-animation";
+    c.textContent="🂠";
+    partnerHandDiv.appendChild(c);
   });
 
-  opponent2HandDiv.innerHTML = "";
-  players[OPP2].hand.forEach(() => {
-    const cardDiv = document.createElement("div");
-    cardDiv.classList.add("card", "deal-animation");
-    cardDiv.textContent = "🂠"; // Face-down
-    opponent2HandDiv.appendChild(cardDiv);
+  // Opp1
+  opponent1HandDiv.innerHTML="";
+  players[1].hand.forEach(()=> {
+    let c=document.createElement("div");
+    c.className="card deal-animation";
+    c.textContent="🂠";
+    opponent1HandDiv.appendChild(c);
   });
 
-  partnerHandDiv.innerHTML = "";
-  players[PARTNER].hand.forEach(() => {
-    const cardDiv = document.createElement("div");
-    cardDiv.classList.add("card", "deal-animation");
-    cardDiv.textContent = "🂠"; // Face-down
-    partnerHandDiv.appendChild(cardDiv);
+  // Opp2
+  opponent2HandDiv.innerHTML="";
+  players[2].hand.forEach(()=> {
+    let c=document.createElement("div");
+    c.className="card deal-animation";
+    c.textContent="🂠";
+    opponent2HandDiv.appendChild(c);
   });
 
-  userHandDiv.innerHTML = "";
-  players[USER].hand.forEach((card, index) => {
-    const cardDiv = document.createElement("div");
-    cardDiv.classList.add("card", "deal-animation");
-    cardDiv.innerHTML = `<div>${card.value}</div><div class="suit">${card.suit}</div>`;
-    // For playing a card, you might add a click event:
-    cardDiv.addEventListener("click", () => onUserPlaysCard(index));
-    userHandDiv.appendChild(cardDiv);
+  // User
+  userHandDiv.innerHTML="";
+  players[3].hand.forEach((card,idx)=>{
+    let c=document.createElement("div");
+    c.classList.add("card", getSuitColor(card.suit));
+    c.innerHTML=`
+      <div>${card.value}</div>
+      <div class="suit">${card.suit}</div>
+    `;
+    c.addEventListener("click", ()=>onUserPlayCard(idx));
+    userHandDiv.appendChild(c);
   });
 
-  // Render kitty
+  // Kitty
   if (kittyCard) {
-    kittyCardDiv.innerHTML = `
-      <div class="card deal-animation">
+    kittyCardDiv.innerHTML=`
+      <div class="card ${getSuitColor(kittyCard.suit)} deal-animation">
         <div>${kittyCard.value}</div>
         <div class="suit">${kittyCard.suit}</div>
       </div>
     `;
   } else {
-    kittyCardDiv.innerHTML = "";
+    kittyCardDiv.innerHTML="";
   }
 }
 
-/****************************************************
- * Simple Trump Phase Logic
- ****************************************************/
-
-/** Start Phase 1 - chance to order up the kitty's suit. */
-function startPhase1Trump() {
-  currentPhase = 1;
-  messageArea.textContent = `Kitty suit is ${kittyCard.suit}. Who will order up?`;
-  // We'll iterate in order: (dealerIndex+1) % 4, etc.
-  askNextToOrderUp(0); // naive approach
+function updateDealerIndicator() {
+  dealerIndicator.textContent = `Dealer: ${players[dealerIndex].name}`;
 }
 
-/** Ask each player in turn if they want to order up. */
-function askNextToOrderUp(offset) {
-  let playerPos = (dealerIndex + 1 + offset) % 4;
-  if (offset >= 4) {
-    // No one ordered => go to Phase 2
-    startPhase2Trump();
+function updateTrumpIndicator() {
+  if (trumpSuit) {
+    trumpIndicator.textContent = `Trump: ${trumpSuit}`;
+  } else {
+    trumpIndicator.textContent = "Trump: ?";
+  }
+}
+
+function updateScoreboard() {
+  team1ScoreSpan.textContent = team1Score;
+  team2ScoreSpan.textContent = team2Score;
+}
+
+/***************************************************
+ *  Buttons: Order Up, Pass, Select Trump
+ ***************************************************/
+
+btnOrderUp.addEventListener("click", () => {
+  btnOrderUp.disabled=true; 
+  btnPass.disabled=true;
+  orderUp(3); // user = index 3
+});
+btnPass.addEventListener("click", () => {
+  btnOrderUp.disabled=true; 
+  btnPass.disabled=true; 
+  btnSelectTrump.disabled=true;
+  passAction();
+});
+btnSelectTrump.addEventListener("click", ()=> {
+  let chosen = prompt("Pick trump suit (♠, ♥, ♦, or ♣):");
+  if(!suits.includes(chosen)){
+    messageArea.textContent="Invalid suit. Try again or pass.";
     return;
   }
-  if (playerPos === USER) {
-    // enable UI for user (Order Up / Pass)
-    btnOrderUp.disabled = false;
-    btnPass.disabled = false;
-    btnSelectTrump.disabled = true;
+  trumpSuit=chosen;
+  makerIndex=3; // user
+  messageArea.textContent = `${players[3].name} chooses trump: ${trumpSuit}`;
+  startPlayPhase();
+});
+
+/***************************************************
+ *  Phase 1: Order Up
+ ***************************************************/
+
+let phase1Offset=0;
+
+function startPhase1() {
+  currentPhase=1;
+  phase1Offset=0;
+  messageArea.textContent=`Kitty suit is ${kittyCard.suit}. Checking who orders up...`;
+  askNextToOrderUp();
+}
+
+function askNextToOrderUp() {
+  if(phase1Offset>=4) {
+    // no one ordered => Phase2
+    startPhase2();
+    return;
+  }
+  let pIndex = (dealerIndex+1+phase1Offset)%4;
+  if(pIndex===3) {
+    // user => enable UI
+    btnOrderUp.disabled=false;
+    btnPass.disabled=false;
+    btnSelectTrump.disabled=true;
   } else {
-    // AI logic (random or pass)
-    let decide = Math.random() < 0.3; // 30% chance to order up
-    if (decide) {
-      orderUp(playerPos);
+    // AI (30% chance)
+    let decides = Math.random()<0.3; 
+    if(decides) {
+      orderUp(pIndex);
     } else {
-      askNextToOrderUp(offset + 1);
+      phase1Offset++;
+      askNextToOrderUp();
     }
   }
 }
 
-/** If a player orders up the kitty suit. */
-function orderUp(playerPos) {
-  trumpSuit = kittyCard.suit;
-  messageArea.textContent = `${players[playerPos].name} ordered up ${trumpSuit}!`;
-  currentPhase = 3; // skip phase2, jump to playing
-  // The dealer picks up the card
-  let dPos = dealerIndex;
+function orderUp(pIndex){
+  trumpSuit=kittyCard.suit;
+  makerIndex=pIndex;
+  messageArea.textContent=`${players[pIndex].name} orders up ${trumpSuit}!`;
+  // dealer picks up
+  let dPos=dealerIndex;
   players[dPos].hand.push(kittyCard);
-  // The dealer should discard 1 card (naive: random discard).
-  let discardIndex = Math.floor(Math.random() * players[dPos].hand.length);
-  players[dPos].hand.splice(discardIndex,1);
-
-  // Re-render
-  kittyCard = null;
-  renderHands();
-
-  // proceed to playing
-  setTimeout(() => {
-    startPlaying();
-  }, 1000);
+  // random discard
+  let discardI = Math.floor(Math.random()*players[dPos].hand.length);
+  players[dPos].hand.splice(discardI,1);
+  kittyCard=null;
+  startPlayPhase();
 }
 
-/** If no one orders up in Phase 1, we do Phase 2. */
-function startPhase2Trump() {
-  currentPhase = 2;
-  messageArea.textContent = `No one ordered up. Pick a trump or pass.`;
-  askNextToPickTrump(0);
+/***************************************************
+ *  Phase 2: Select Another Trump
+ ***************************************************/
+
+let phase2Offset=0;
+function startPhase2(){
+  currentPhase=2;
+  phase2Offset=0;
+  messageArea.textContent=`No one ordered up. Next phase to select trump or pass.`;
+  askNextToPickTrump();
 }
 
-/** Similar approach for Phase 2. */
-function askNextToPickTrump(offset) {
-  let playerPos = (dealerIndex + 1 + offset) % 4;
-  if (offset >= 4) {
-    // Everyone passed => random force or "Stick the dealer" 
-    // For simplicity, let the dealer pick random suit.
-    let dPos = dealerIndex;
-    let forcedSuit = suits[Math.floor(Math.random()*suits.length)];
-    trumpSuit = forcedSuit;
-    messageArea.textContent = `Dealer picks ${trumpSuit} by default.`;
-    currentPhase = 3;
-    kittyCard = null;
-    renderHands();
-    setTimeout(() => {
-      startPlaying();
-    }, 1000);
+function askNextToPickTrump(){
+  if(phase2Offset>=4){
+    // stick the dealer
+    let dPos=dealerIndex;
+    let forced = suits[Math.floor(Math.random()*suits.length)];
+    trumpSuit=forced;
+    makerIndex=dPos;
+    messageArea.textContent=`Dealer is stuck with ${trumpSuit}.`;
+    kittyCard=null;
+    startPlayPhase();
     return;
   }
-  if (playerPos === USER) {
-    // enable "Select Trump" button or "Pass"
-    btnOrderUp.disabled = true;
-    btnSelectTrump.disabled = false;
-    btnPass.disabled = false;
+  let pIndex=(dealerIndex+1+phase2Offset)%4;
+  if(pIndex===3){
+    // user => can pick or pass
+    btnOrderUp.disabled=true;
+    btnPass.disabled=false;
+    btnSelectTrump.disabled=false;
   } else {
-    // AI picks randomly or passes
-    let decide = Math.random() < 0.3; 
-    if (decide) {
-      let chosenSuit = suits[Math.floor(Math.random()*suits.length)];
-      trumpSuit = chosenSuit === kittyCard?.suit ? suits[(suits.indexOf(chosenSuit)+1)%4] : chosenSuit;
-      messageArea.textContent = `${players[playerPos].name} picks ${trumpSuit} as trump!`;
-      currentPhase = 3;
-      kittyCard = null;
-      renderHands();
-      setTimeout(() => {
-        startPlaying();
-      }, 1000);
+    // AI
+    let decides=Math.random()<0.3;
+    if(decides){
+      let pick = suits[Math.floor(Math.random()*suits.length)];
+      if(pick===kittyCard?.suit){
+        // try a different suit if we want
+        pick=suits[(suits.indexOf(pick)+1)%4];
+      }
+      trumpSuit=pick;
+      makerIndex=pIndex;
+      kittyCard=null;
+      messageArea.textContent=`${players[pIndex].name} picks ${trumpSuit} as trump!`;
+      startPlayPhase();
     } else {
-      askNextToPickTrump(offset + 1);
+      phase2Offset++;
+      askNextToPickTrump();
     }
   }
 }
 
-/****************************************************
- * Playing Phase (very simplified)
- ****************************************************/
-let currentTrick = []; // store the 4 cards played
-let leaderPos = 0;     // who leads the trick
-let trickCount = 0;
-
-function startPlaying() {
-  messageArea.textContent = `Trump is ${trumpSuit}. Let's play!`;
-  trickCount = 0;
-  leaderPos = (dealerIndex + 1) % 4; // next after dealer leads first
-  playNextTrick();
+function passAction() {
+  // user passes
+  if(currentPhase===1){
+    phase1Offset++;
+    askNextToOrderUp();
+  } else if(currentPhase===2){
+    phase2Offset++;
+    askNextToPickTrump();
+  }
 }
 
-/** Start or continue the next trick. Clear any table of old cards, etc. */
-function playNextTrick() {
-  currentTrick = [];
-  trickCount++;
-  if (trickCount > 5) {
-    // Round over
+/***************************************************
+ *  Playing Phase
+ ***************************************************/
+
+function startPlayPhase(){
+  currentPhase=3;
+  renderHands();
+  updateTrumpIndicator();
+  // next to lead is dealerIndex+1
+  leaderPos=(dealerIndex+1)%4;
+  roundTrickCount=0;
+  trickWinsByTeam[1]=0;
+  trickWinsByTeam[2]=0;
+  setTimeout(()=>playNextTrick(),1000);
+}
+
+function playNextTrick(){
+  currentTrick=[];
+  roundTrickCount++;
+  if(roundTrickCount>5){
     finishRound();
     return;
   }
-  messageArea.textContent = `Trick #${trickCount}: ${players[leaderPos].name} leads.`;
-  if (leaderPos === USER) {
-    // user picks a card to lead
-    // the click handler is on the user’s cards
+  messageArea.textContent=`Trick #${roundTrickCount}: ${players[leaderPos].name} leads.`;
+  if(leaderPos===3){
+    // user lead
+    // wait for user to click a card
   } else {
-    // AI leads
-    let aiCardIndex = Math.floor(Math.random()*players[leaderPos].hand.length);
-    let playedCard = players[leaderPos].hand.splice(aiCardIndex,1)[0];
-    currentTrick.push({player: leaderPos, card: playedCard});
-    renderHands(); 
-    nextPlayerInTrick((leaderPos+1)%4);
+    aiPlayCard(leaderPos);
   }
 }
 
-/** Called when the user clicks a card to play. */
-function onUserPlaysCard(index) {
-  if (currentPhase !== 3) return; // not in playing phase
-  if (leaderPos !== USER && currentTrick.length===0) return; 
-  // If the user isn't the leader, must follow suit if possible, etc. 
-  // We'll skip that logic for brevity.
-
-  let playedCard = players[USER].hand.splice(index,1)[0];
-  currentTrick.push({player: USER, card: playedCard});
-  renderHands();
-  nextPlayerInTrick((USER+1)%4);
+function onUserPlayCard(index){
+  if(currentPhase!==3) return;
+  // user must be next or must follow suit logic. skipping advanced checks
+  let card=players[3].hand.splice(index,1)[0];
+  playCardToSpot(3,card);
+  currentTrick.push({player:3,card});
+  nextPlayerInTrick((3+1)%4);
 }
 
-/** Each subsequent player (AI) plays a card, eventually 4 cards in the trick. */
-function nextPlayerInTrick(pos) {
-  if (currentTrick.length >= 4) {
-    // Determine trick winner
-    let winner = determineTrickWinner(currentTrick, trumpSuit);
-    messageArea.textContent = `${players[winner].name} wins the trick!`;
-    leaderPos = winner;
-    setTimeout(() => {
-      playNextTrick();
-    }, 1500);
+function aiPlayCard(pIndex){
+  // naive approach
+  let cIndex=Math.floor(Math.random()*players[pIndex].hand.length);
+  let card=players[pIndex].hand.splice(cIndex,1)[0];
+  playCardToSpot(pIndex,card);
+  currentTrick.push({player:pIndex,card});
+  nextPlayerInTrick((pIndex+1)%4);
+}
+
+function nextPlayerInTrick(pos){
+  if(currentTrick.length>=4){
+    // determine winner
+    let winner=determineTrickWinner(currentTrick);
+    messageArea.textContent=`${players[winner].name} wins the trick!`;
+    leaderPos=winner;
+    let team=players[winner].team;
+    trickWinsByTeam[team]++;
+    setTimeout(()=>playNextTrick(),1500);
     return;
   }
-  if (pos === USER) {
-    // wait for user to click
-    messageArea.textContent = `Your turn to play a card.`;
-    return;
+  if(pos===3){
+    // user
+    // wait user click
+    messageArea.textContent=`Your turn to play a card.`;
   } else {
-    // AI chooses a card
-    let aiCardIndex = Math.floor(Math.random()*players[pos].hand.length);
-    let playedCard = players[pos].hand.splice(aiCardIndex,1)[0];
-    currentTrick.push({player: pos, card: playedCard});
-    renderHands();
-    nextPlayerInTrick((pos+1)%4);
+    setTimeout(()=>aiPlayCard(pos),1000);
   }
 }
 
-/** Very naive approach for determining which card wins the trick. */
-function determineTrickWinner(trick, trump) {
-  // In real Euchre: Right Bower = Jack of trump, Left Bower = Jack of same color, then A/K/Q/J/T/9
-  // For simplicity, let's just track suit following and trump. 
-  // We'll skip Bower logic or do minimal approach.
-
-  let ledSuit = trick[0].card.suit;
-  let winningIndex = 0;
-  for (let i = 1; i < trick.length; i++) {
-    if (trick[i].card.suit === trick[winningIndex].card.suit) {
-      // same suit, compare rank?
-      // We'll do naive rank ordering
-      if (values.indexOf(trick[i].card.value) > values.indexOf(trick[winningIndex].card.value)) {
-        winningIndex = i;
-      }
+/** Simple approach ignoring bowers. 
+ * Trump outranks led suit. Otherwise compare ranks. 
+ */
+function determineTrickWinner(trick){
+  let trump=trumpSuit;
+  let ledSuit=trick[0].card.suit;
+  let winnerIdx=0;
+  for(let i=1;i<4;i++){
+    let curr=trick[i].card;
+    let lead=trick[winnerIdx].card;
+    // if curr has trump but lead doesn't
+    if(curr.suit===trump && lead.suit!==trump){
+      winnerIdx=i;
     } 
-    // else if it’s trump vs non-trump
-    else if (trick[i].card.suit === trump && trick[winningIndex].card.suit !== trump) {
-      winningIndex = i;
+    else if(curr.suit===lead.suit && lead.suit!==trump){
+      // compare index in values
+      if(values.indexOf(curr.value)>values.indexOf(lead.value)){
+        winnerIdx=i;
+      }
+    }
+    else if(curr.suit===trump && lead.suit===trump){
+      // compare ranks in trump
+      if(values.indexOf(curr.value)>values.indexOf(lead.value)){
+        winnerIdx=i;
+      }
     }
   }
-  return trick[winningIndex].player;
+  return trick[winnerIdx].player;
 }
 
-/** After 5 tricks, see how many each team took. */
-function finishRound() {
-  messageArea.textContent = "Round finished! (No scoring logic in this example.)";
-  // You might count how many tricks each team took, etc.
-
-  endRound();
-}
-
-/****************************************************
- * UI Button Handlers
- ****************************************************/
-btnOrderUp.addEventListener("click", () => {
-  btnOrderUp.disabled = true;
-  btnPass.disabled = true;
-  orderUp(USER);
-});
-
-btnPass.addEventListener("click", () => {
-  // If in Phase1, we go to next offset
-  // If in Phase2, we also go to next offset, etc.
-  btnOrderUp.disabled = true;
-  btnPass.disabled = true;
-  btnSelectTrump.disabled = true;
-  if (currentPhase === 1) {
-    // pass in phase1 => ask next
-    let offset = 0;
-    // find who was asked
-    // naive approach: skip
-    askNextToOrderUp(offset + 1);
-  } else if (currentPhase === 2) {
-    // pass in phase2 => next
-    askNextToPickTrump(1);
+/***************************************************
+ *  Animations: Move card to .play-spot
+ ***************************************************/
+function playCardToSpot(playerIndex, card){
+  let spot;
+  switch(playerIndex){
+    case 0: spot=partnerPlaySpot; break;
+    case 1: spot=opponent1PlaySpot; break;
+    case 2: spot=opponent2PlaySpot; break;
+    case 3: spot=userPlaySpot; break;
   }
-});
+  spot.innerHTML="";
+  let cardDiv=document.createElement("div");
+  cardDiv.classList.add("card","played-card", getSuitColor(card.suit));
+  cardDiv.innerHTML=`
+    <div>${card.value}</div>
+    <div class="suit">${card.suit}</div>
+  `;
+  spot.appendChild(cardDiv);
 
-btnSelectTrump.addEventListener("click", () => {
-  // Let user pick from suits
-  let chosen = prompt("Pick trump suit (♠, ♥, ♦, or ♣):");
-  if (!suits.includes(chosen)) {
-    messageArea.textContent = "Invalid suit. Try again or pass.";
+  // Force reflow
+  cardDiv.getBoundingClientRect();
+  // Animate to center
+  cardDiv.classList.add("to-center");
+}
+
+/***************************************************
+ *  End of Round (Scoring)
+ ***************************************************/
+function finishRound(){
+  messageArea.textContent="Round finished. Calculating points...";
+  let makerTeam=players[makerIndex].team;
+  let makerTricks=trickWinsByTeam[makerTeam];
+  let otherTeam=(makerTeam===1)?2:1;
+  let otherTricks=trickWinsByTeam[otherTeam];
+  // Award points
+  if(makerTricks>=3 && makerTricks<5){
+    // 3 or 4
+    if(makerTricks===5){
+      // Actually if 5 that’s 2 points, but let's handle that:
+      // We'll do else if(makerTricks===5) -> 2 points
+    }
+    // Actually let's do:
+    if(makerTricks===5){
+      // If the maker took all 5
+      messageArea.textContent+=" Maker took all 5 => +2 points!";
+      if(makerTeam===1) team1Score+=2; else team2Score+=2;
+    } else {
+      // 3 or 4 => +1
+      messageArea.textContent+=` Maker took ${makerTricks} => +1 point.`;
+      if(makerTeam===1) team1Score+=1; else team2Score+=1;
+    }
+  } 
+  else if(makerTricks===5){
+    // took all 5 => +2
+    messageArea.textContent+=" Maker took all 5 => +2 points!";
+    if(makerTeam===1) team1Score+=2; else team2Score+=2;
+  }
+  else {
+    // maker fails => other team gets 2
+    messageArea.textContent+=` Maker only took ${makerTricks} => Other team +2.`;
+    if(otherTeam===1) team1Score+=2; else team2Score+=2;
+  }
+
+  updateScoreboard();
+  setTimeout(()=>checkForGameEnd(),2000);
+}
+
+function checkForGameEnd(){
+  if(team1Score>=10){
+    messageArea.textContent="Team1 reaches 10! Game over.";
+    // Could show a "Play again?" button or auto reload
+  } else if(team2Score>=10){
+    messageArea.textContent="Team2 reaches 10! Game over.";
+  } else {
+    // next round
+    nextRound();
+  }
+}
+
+function nextRound(){
+  // rotate dealer
+  dealerIndex=(dealerIndex+1)%4;
+  startNewRound();
+}
+
+/***************************************************
+ *  Master Flow
+ ***************************************************/
+function startNewRound(){
+  if(team1Score>=10||team2Score>=10){
+    messageArea.textContent="Game Over. Refresh to start again.";
     return;
   }
-  trumpSuit = chosen;
-  messageArea.textContent = `You chose ${trumpSuit} as trump!`;
-  currentPhase = 3;
-  kittyCard = null;
-  renderHands();
-  setTimeout(() => {
-    startPlaying();
-  }, 1000);
-});
-
-/****************************************************
- * Game Start
- ****************************************************/
-function startNewRound() {
-  createDeck();
+  trumpSuit=null; makerIndex=null;
+  createDeck(); 
   shuffleDeck();
   dealCards();
   renderHands();
-  startPhase1Trump();
+  updateDealerIndicator();
+  updateTrumpIndicator();
+  setTimeout(()=>startPhase1(),1000);
 }
 
-// Just start a new round on page load
-window.addEventListener("DOMContentLoaded", () => {
-  dealerIndex = Math.floor(Math.random()*4); 
+window.addEventListener("DOMContentLoaded",()=>{
   startNewRound();
 });
