@@ -1,65 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Euchre</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Euchre Game</title>
+  <!-- Add a link to your CSS styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Maybe a nice Google Font for a fun vibe -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee+Shade&display=swap">
 </head>
 <body>
-
-  <div class="table-container">
+  <div class="table-area">
+    <!-- Title or header -->
+    <h1 class="game-title">Euchre Fun</h1>
     
-    <!-- Top row: Partner in the middle, empty corners for spacing -->
-    <div class="empty-corner"></div>
-    <div class="player-area" id="partner-area">
-      <h2>Partner</h2>
-      <div class="hand-container" id="partner-hand"></div>
+    <!-- The card table itself -->
+    <div class="card-table">
+      <!-- Player seats. You can name them or label them P1, P2, etc. -->
+      <div id="player-top" class="player-seat">Shark<br><span class="score">0</span></div>
+      <div id="player-left" class="player-seat">Watson<br><span class="score">0</span></div>
+      <div id="player-right" class="player-seat">Queenpin<br><span class="score">0</span></div>
+      <div id="player-bottom" class="player-seat">You<br><span class="score">0</span></div>
+
+      <!-- Place to show the trump card or top card of the kitty -->
+      <div id="trump-display" class="trump-display"></div>
+
+      <!-- Area for your own hand of cards -->
+      <div id="your-hand" class="hand-area"></div>
     </div>
-    <div class="empty-corner"></div>
-
-    <!-- Middle row: Opponent1 (left), Info Panel (center), Opponent2 (right) -->
-    <div class="player-area vertical" id="opponent1-area">
-      <h2>Opponent 1</h2>
-      <div class="hand-container vertical" id="opponent1-hand"></div>
-    </div>
-
-    <div class="info-panel">
-      <div class="scoreboard">
-        <span>Team1: <span id="team1-score">0</span></span> | 
-        <span>Team2: <span id="team2-score">0</span></span>
-      </div>
-      <div class="dealer-indicator" id="dealer-indicator">Dealer: ?</div>
-      <div class="trump-indicator" id="trump-indicator">Trump: ?</div>
-      <div id="message-area"></div>
-
-      <!-- Buttons for trump decision -->
-      <div class="center-actions">
-        <div class="kitty-card" id="kitty-card"></div>
-        <button id="btn-order-up" disabled>Order Up</button>
-        <button id="btn-pass" disabled>Pass</button>
-        <button id="btn-select-trump" disabled>Select Trump</button>
-      </div>
-
-      <!-- Trick area: where all 4 played cards are displayed together -->
-      <div class="trick-area" id="trick-area"></div>
-    </div>
-
-    <div class="player-area vertical" id="opponent2-area">
-      <h2>Opponent 2</h2>
-      <div class="hand-container vertical" id="opponent2-hand"></div>
-    </div>
-
-    <!-- Bottom row: User in the middle -->
-    <div class="empty-corner"></div>
-    <div class="player-area" id="user-area">
-      <h2>You</h2>
-      <div class="hand-container" id="user-hand"></div>
-    </div>
-    <div class="empty-corner"></div>
     
+    <!-- Buttons for order up, pass, etc. -->
+    <div class="controls">
+      <button id="btn-pass">Pass</button>
+      <button id="btn-orderup">Order Up Trump</button>
+      <button id="btn-not-alone">Not Alone</button>
+    </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Scripts -->
+  <script src="app.js"></script>
 </body>
 </html>
