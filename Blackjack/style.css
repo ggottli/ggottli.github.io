@@ -73,9 +73,8 @@
     font-size: 1.4rem;
   }
   
-  /* Simple deal animation - feel free to adjust */
+  /* Simple deal animation */
   .deal-animation {
-    /* Position the card initially off to the top-right, then animate into place */
     transform: translate(300px, -200px) rotate(30deg);
     opacity: 0;
     animation: deal 0.5s forwards ease;

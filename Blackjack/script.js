@@ -7,11 +7,11 @@ let deck = [];
 let playerHand = [];
 let dealerHand = [];
 
-let totalChips = 2000; // Player starts with 2000 chips
+let totalChips = 2000; 
 let currentBet = 0;
 
 let gameOver = false;
-let dealerRevealed = false; // is dealer's second card revealed?
+let dealerRevealed = false;
 
 // HTML Elements
 const dealerCardsDiv = document.getElementById("dealer-cards");
@@ -33,7 +33,7 @@ const standBtn = document.getElementById("btn-stand");
 const chipElements = document.querySelectorAll(".chip");
 
 // -------------------------------------
-// Deck & Value Functions
+// Deck Setup
 // -------------------------------------
 
 function createDeck() {
@@ -58,6 +58,10 @@ function shuffleDeck() {
   }
 }
 
+// -------------------------------------
+// Blackjack Logic
+// -------------------------------------
+
 function getCardValue(card) {
   if (card.value === "A") {
     return 1; 
@@ -79,103 +83,67 @@ function getHandValue(hand) {
     }
   }
   
-  // Handle Ace as 1 or 11
   if (hasAce && total + 10 <= 21) {
     total += 10;
   }
   return total;
 }
 
+/**
+ * Check if a 2-card hand is exactly 21 => "blackjack".
+ */
+function isBlackjack(hand) {
+  return hand.length === 2 && getHandValue(hand) === 21;
+}
+
 // -------------------------------------
-// Rendering & Animation
+// Rendering / Animations
 // -------------------------------------
 
-/**
- * Create and return a new card DOM element with the given card data.
- * If 'hidden' is true, show a face-down look.
- */
 function createCardElement(card, hidden = false) {
   const cardDiv = document.createElement("div");
   cardDiv.classList.add("card", "deal-animation");
 
   if (hidden) {
-    // Face-down card
     cardDiv.style.backgroundColor = "#333";
     cardDiv.style.color = "#333";
     cardDiv.textContent = "???";
   } else {
-    // Face-up card
     cardDiv.innerHTML = `
       <div>${card.value}</div>
       <div class="suit">${card.suit}</div>
     `;
   }
+
   return cardDiv;
 }
 
 /**
  * Display the entire hand in the given container.
- * If 'isDealer' is true and dealerRevealed=false, the second card is hidden.
  */
 function displayHand(hand, container, isDealer = false) {
   container.innerHTML = "";
-
   hand.forEach((card, index) => {
     let hidden = false;
-    // Dealer's second card face-down if not revealed
+
+    // If dealer's second card is hidden
     if (isDealer && index === 1 && !dealerRevealed) {
       hidden = true;
     }
-
-    const cardElement = createCardElement(card, hidden);
-    container.appendChild(cardElement);
+    const cardElem = createCardElement(card, hidden);
+    container.appendChild(cardElem);
   });
 }
 
-/**
- * Deal a single card from the deck to a target hand & update its container visually.
- * Return a Promise so we can await the delay easily.
- */
-function dealOneCard(hand, container, isDealer = false, hideSecondDealerCard = false) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Pop a card off the deck
-      const card = deck.pop();
-
-      // If dealer's second card + not revealed -> hidden
-      let hidden = false;
-      if (isDealer && hand.length === 1 && !dealerRevealed) {
-        hidden = true;
-      }
-
-      // Create the card DOM element
-      const cardElement = createCardElement(card, hidden);
-
-      // Add it to the container
-      container.appendChild(cardElement);
-
-      // Add the card to the hand array
-      hand.push(card);
-
-      resolve();
-    }, 500); // 500ms delay per card
-  });
-}
-
-/**
- * Update the text of the player's and dealer's score.
- */
 function updateScores() {
-  // Player
   const playerValue = getHandValue(playerHand);
   playerScoreP.textContent = `Score: ${playerValue}`;
 
-  // Dealer
   if (!dealerRevealed && dealerHand.length > 0) {
     // Show just first card's value if second is hidden
     const firstCardVal = getCardValue(dealerHand[0]);
-    // If first card is Ace, it might be 1 or 11, let's display "11+" to hint
     if (dealerHand[0].value === "A") {
+      // Could show "11+" for an ace
       dealerScoreP.textContent = `Score: 11+`;
     } else {
       dealerScoreP.textContent = `Score: ${firstCardVal}+`;
@@ -190,9 +158,6 @@ function updateScores() {
 // Game Flow
 // -------------------------------------
 
-/**
- * Check if it's the end of the game and handle results/payout.
- */
 function checkForEndOfGame() {
   const playerValue = getHandValue(playerHand);
   const dealerValue = getHandValue(dealerHand);
@@ -208,7 +173,7 @@ function checkForEndOfGame() {
     totalChips += currentBet;
     endRound();
   } else if (gameOver) {
-    // Compare totals
+    // Compare
     if (playerValue > dealerValue) {
       messageP.textContent = "You win!";
       totalChips += currentBet;
@@ -217,13 +182,13 @@ function checkForEndOfGame() {
       totalChips -= currentBet;
     } else {
       messageP.textContent = "It's a tie!";
+      // No chip change
     }
     endRound();
   }
 
   totalChipsSpan.textContent = totalChips;
 
-  // Check if player is broke
   if (totalChips <= 0) {
     messageP.textContent = "You are out of chips! Game Over!";
     disableBetting();
@@ -231,25 +196,19 @@ function checkForEndOfGame() {
   }
 }
 
-/**
- * End the round, but do NOT reset the bet (unless user presses Clear).
- */
 function endRound() {
-  // Reactivate "Deal" and "Clear"
   dealBtn.disabled = false;
   clearBtn.disabled = false;
-  // Disable Hit & Stand
   hitBtn.disabled = true;
   standBtn.disabled = true;
-  // Mark game over
   gameOver = true;
 }
 
 /**
- * Start a new round (initial deal).
- * If no bet is placed or bet is too big, handle accordingly.
+ * Start dealing a new round with initial cards and check for blackjack immediately.
  */
 async function startNewGame() {
+  // If no bet or bet too large, handle
   if (currentBet <= 0) {
     messageP.textContent = "Please place a bet before dealing!";
     return;
@@ -259,7 +218,7 @@ async function startNewGame() {
     return;
   }
 
-  // If deck is low, reshuffle
+  // Reshuffle if deck is low
   if (deck.length < 10) {
     createDeck();
     shuffleDeck();
@@ -272,19 +231,17 @@ async function startNewGame() {
   gameOver = false;
   messageP.textContent = "";
 
-  // Disable deal / clear while round is in progress
+  // UI states
   dealBtn.disabled = true;
   clearBtn.disabled = true;
-
-  // Enable Hit / Stand
   hitBtn.disabled = false;
   standBtn.disabled = false;
 
-  // Clear old cards from the DOM
+  // Clear old cards
   dealerCardsDiv.innerHTML = "";
   playerCardsDiv.innerHTML = "";
 
-  // Deal initial 2 cards to player, 2 to dealer, with a delay
+  // Deal 2 cards to player, 2 cards to dealer
   await dealOneCard(playerHand, playerCardsDiv, false);
   updateScores();
 
@@ -296,11 +253,61 @@ async function startNewGame() {
 
   await dealOneCard(dealerHand, dealerCardsDiv, true);
   updateScores();
+
+  // **Check for immediate blackjack** scenarios
+  const playerHasBJ = isBlackjack(playerHand);
+  const dealerHasBJ = isBlackjack(dealerHand);
+
+  if (playerHasBJ || dealerHasBJ) {
+    // Reveal dealer’s card
+    dealerRevealed = true;
+    displayHand(dealerHand, dealerCardsDiv, true);
+    updateScores();
+
+    if (playerHasBJ && dealerHasBJ) {
+      // Both have blackjack => push
+      messageP.textContent = "Both have blackjack! Push!";
+      // no chip change
+      endRound();
+      return;
+    } else if (playerHasBJ && !dealerHasBJ) {
+      // Player alone has blackjack => 3:2 payout
+      messageP.textContent = "Blackjack! You win 3:2!";
+      totalChips += currentBet * 1.5;
+      totalChipsSpan.textContent = totalChips;
+      endRound();
+      return;
+    } else if (dealerHasBJ && !playerHasBJ) {
+      // Dealer alone has blackjack
+      messageP.textContent = "Dealer has blackjack!";
+      totalChips -= currentBet;
+      totalChipsSpan.textContent = totalChips;
+      endRound();
+      return;
+    }
+  }
 }
 
 /**
- * Disable the ability to bet if out of chips.
+ * Deal a single card from the deck with a small delay & animation.
  */
+function dealOneCard(hand, container, isDealer = false) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const card = deck.pop();
+      // If it's the dealer's second card (index=1), might be hidden if not revealed
+      const hidden = (isDealer && hand.length === 1 && !dealerRevealed);
+
+      const cardElem = createCardElement(card, hidden);
+      container.appendChild(cardElem);
+
+      hand.push(card);
+      resolve();
+    }, 500);
+  });
+}
+
+/** Disable betting if chips are 0 */
 function disableBetting() {
   chipElements.forEach(chip => {
     chip.style.pointerEvents = "none";
@@ -309,9 +316,7 @@ function disableBetting() {
   dealBtn.disabled = true;
 }
 
-/**
- * Disable Hit/Stand (used if the user is out of chips).
- */
+/** Disable Hit/Stand */
 function disableGameplay() {
   hitBtn.disabled = true;
   standBtn.disabled = true;
@@ -332,7 +337,6 @@ window.addEventListener("DOMContentLoaded", () => {
 chipElements.forEach(chip => {
   chip.addEventListener("click", () => {
     const chipValue = parseInt(chip.getAttribute("data-value"));
-    // Only allow if there's enough chips left to cover it
     if (totalChips - currentBet >= chipValue) {
       currentBet += chipValue;
       currentBetSpan.textContent = currentBet;
@@ -367,9 +371,12 @@ hitBtn.addEventListener("click", () => {
 // Stand
 standBtn.addEventListener("click", async () => {
   if (!gameOver) {
-    dealerRevealed = true; // Reveal the dealer’s hidden card
+    // Reveal dealer's hidden card now
+    dealerRevealed = true;
+    displayHand(dealerHand, dealerCardsDiv, true);
+    updateScores();
 
-    // Dealer draws until 17 or more, with delay for each card
+    // Dealer draws until 17 or more
     while (getHandValue(dealerHand) < 17) {
       await dealOneCard(dealerHand, dealerCardsDiv, true);
       updateScores();
