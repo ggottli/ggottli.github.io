@@ -3,41 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <title>Euchre Game</title>
-  <!-- Add a link to your CSS styles -->
-  <link rel="stylesheet" href="styles.css" />
-  <!-- Maybe a nice Google Font for a fun vibe -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee+Shade&display=swap">
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="table-area">
-    <!-- Title or header -->
-    <h1 class="game-title">Euchre Fun</h1>
-    
-    <!-- The card table itself -->
-    <div class="card-table">
-      <!-- Player seats. You can name them or label them P1, P2, etc. -->
-      <div id="player-top" class="player-seat">Shark<br><span class="score">0</span></div>
-      <div id="player-left" class="player-seat">Watson<br><span class="score">0</span></div>
-      <div id="player-right" class="player-seat">Queenpin<br><span class="score">0</span></div>
-      <div id="player-bottom" class="player-seat">You<br><span class="score">0</span></div>
-
-      <!-- Place to show the trump card or top card of the kitty -->
-      <div id="trump-display" class="trump-display"></div>
-
-      <!-- Area for your own hand of cards -->
-      <div id="your-hand" class="hand-area"></div>
+  <div id="game-container">
+    <!-- Scoreboard -->
+    <div id="scoreboard">
+      <div class="team-score" id="team-red-score">Team Red: 0</div>
+      <div class="team-score" id="team-blue-score">Team Blue: 0</div>
     </div>
-    
-    <!-- Buttons for order up, pass, etc. -->
-    <div class="controls">
-      <button id="btn-pass">Pass</button>
-      <button id="btn-orderup">Order Up Trump</button>
-      <button id="btn-not-alone">Not Alone</button>
+
+    <!-- Table -->
+    <div id="table">
+      <!-- The deck -->
+      <div id="deck"></div>
+
+      <!-- Players -->
+      <div class="player" id="player-top">Shark
+        <div class="hand" id="hand-top"></div>
+      </div>
+      <div class="player" id="player-left">Watson
+        <div class="hand" id="hand-left"></div>
+      </div>
+      <div class="player" id="player-right">Queenpin
+        <div class="hand" id="hand-right"></div>
+      </div>
+      <div class="player" id="player-bottom">You
+        <div class="hand" id="hand-bottom"></div>
+      </div>
+
+      <!-- Center Play Area -->
+      <div id="center-play"></div>
+    </div>
+
+    <!-- Trump Selection Modal -->
+    <div id="trump-selection" class="modal">
+      <p>Select Trump</p>
+      <button id="pass-btn">Pass</button>
+      <button id="order-btn">Order Up Trump</button>
+      <button id="alone-btn">Go Alone</button>
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="app.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

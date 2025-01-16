@@ -1,0 +1,120 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #222; /* so the edges are dark outside the table */
+  font-family: sans-serif;
+  color: #fff;
+}
+
+#game-container {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Table background: green felt */
+#table {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(#147414, #0a570a);
+}
+
+.player {
+  position: absolute;
+  text-align: center;
+  color: #fff;
+}
+
+#player-top {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#player-left {
+  top: 50%;
+  left: 10%;
+  transform: translateY(-50%);
+}
+#player-right {
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%);
+}
+#player-bottom {
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Hands */
+.hand {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Deck */
+#deck {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 90px; /* approximate card ratio */
+  background: url('../images/card-back.png') no-repeat center / cover;
+  border-radius: 5px;
+}
+
+/* Center Play */
+#center-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+}
+
+/* Scoreboard */
+#scoreboard {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 1.2rem;
+}
+.team-score {
+  display: inline-block;
+  margin: 10px;
+}
+
+/* Cards */
+.card {
+  width: 60px;
+  height: 90px;
+  background-size: cover;
+  border-radius: 5px;
+  position: relative;
+  transform-origin: center center;
+  transition: transform 0.5s ease, left 0.5s ease, top 0.5s ease;
+}
+
+/* Modal (Trump Selection) */
+.modal {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  padding: 20px;
+  border: 2px solid #999;
+  display: none; /* hidden by default */
+}
+.modal button {
+  margin: 5px;
+  padding: 10px;
+  cursor: pointer;
+}
