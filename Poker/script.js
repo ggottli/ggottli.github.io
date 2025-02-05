@@ -98,7 +98,7 @@ class Bot extends Player {
 // Hand Evaluation (Simplified)
 // ------------------
 function evaluateHand(cards) {
-  // This is a very basic evaluator: it sums the card values and adds bonuses for pairs.
+  // This is a basic evaluator: it sums the card values and adds bonuses for pairs.
   let sum = 0;
   let counts = {};
   for (let card of cards) {
@@ -111,6 +111,38 @@ function evaluateHand(cards) {
     if (counts[rank] === 4) sum += 50;
   }
   return sum;
+}
+
+// ------------------
+// Rendering Helpers for Cards
+// ------------------
+function renderCard(card) {
+  // Creates a card face element.
+  let cardDiv = document.createElement("div");
+  cardDiv.classList.add("card");
+  // Color red for hearts and diamonds
+  if (card.suit === "hearts" || card.suit === "diamonds") {
+    cardDiv.classList.add("red");
+  }
+  // Map suit names to Unicode symbols
+  const suitSymbols = {
+    hearts: "♥",
+    diamonds: "♦",
+    clubs: "♣",
+    spades: "♠"
+  };
+  cardDiv.innerHTML = `<div class="card-rank">${card.rank}</div>
+                       <div class="card-suit">${suitSymbols[card.suit]}</div>`;
+  return cardDiv;
+}
+
+function renderCardBack() {
+  // Creates a card-back element (for hidden cards)
+  let cardDiv = document.createElement("div");
+  cardDiv.classList.add("card", "card-back");
+  // Optionally, you can add a pattern or text here.
+  cardDiv.innerHTML = "&nbsp;";
+  return cardDiv;
 }
 
 // ------------------
@@ -132,11 +164,13 @@ let game = {
     this.deck = new Deck();
     this.deck.shuffle();
     
-    // Create one human player and three bots with different styles
+    // Create one human player and eight bots (generic names)
     this.players.push(new Player("You", 1000, true));
-    this.players.push(new Bot("Bot Aggro", 1000, "aggressive"));
-    this.players.push(new Bot("Bot Cautious", 1000, "conservative"));
-    this.players.push(new Bot("Bot Random", 1000, "random"));
+    const botStyles = ["aggressive", "conservative", "random"];
+    for (let i = 2; i <= 9; i++) {
+      let style = botStyles[Math.floor(Math.random() * botStyles.length)];
+      this.players.push(new Bot("Player " + i, 1000, style));
+    }
     
     // Reset each player’s hand and mark them active
     this.players.forEach(p => p.resetHand());
@@ -161,15 +195,12 @@ let game = {
       }
     }
     
-    // Clear any previous community cards
-    this.communityCards = [];
     this.roundInProgress = true;
     updateUI();
     addMessage("New round started. Choose your action!");
-    // Now the game will wait for your input via the buttons.
   },
   
-  // Process the human player’s action then process the bots’ responses
+  // Process the human player’s action and then process bots’ actions
   playerAction: function (action) {
     let human = this.players.find(p => p.isHuman);
     if (!human || !human.active) {
@@ -182,7 +213,7 @@ let game = {
       addMessage("You folded.");
     } else if (action === "call") {
       addMessage("You called.");
-      // For this simplified game, the call action doesn’t change the bet (ante already paid)
+      // In this simplified game, call does not change the bet (ante already paid)
     } else if (action === "raise") {
       let raiseAmount = this.currentBet; // fixed raise amount
       if (human.chips >= raiseAmount) {
@@ -205,7 +236,6 @@ let game = {
           addMessage(`${p.name} folds.`);
         } else if (decision === "call") {
           addMessage(`${p.name} calls.`);
-          // They already ante’d, so no extra chips needed
         } else if (decision === "raise") {
           let raiseAmount = this.currentBet;
           if (p.chips >= raiseAmount) {
@@ -224,15 +254,16 @@ let game = {
     this.completeRound();
   },
   
-  // Complete the round: deal community cards, evaluate hands, award the pot.
+  // Complete the round: deal community cards, evaluate hands, and award the pot.
   completeRound: function () {
-    // For simplicity, deal all five community cards at once
+    // Deal all five community cards
     while (this.communityCards.length < 5) {
       this.communityCards.push(this.deck.deal());
     }
+    this.roundInProgress = false;
     updateUI();
     
-    // Evaluate hands for each active player (human and bots)
+    // Evaluate hands for each active player
     let bestScore = -1;
     let winner = null;
     for (let p of this.players) {
@@ -254,7 +285,6 @@ let game = {
       addMessage("No winner this round.");
     }
     
-    this.roundInProgress = false;
     updateUI();
     
     // Eliminate players with 0 chips
@@ -271,31 +301,38 @@ let game = {
 // UI Helper Functions
 // ------------------
 function updateUI() {
-  // Update players’ info and community cards on the page.
-  const playerInfoDiv = document.getElementById("player-info");
-  const botInfoDiv = document.getElementById("bot-info");
-  const communityDiv = document.getElementById("community-cards");
-  
-  playerInfoDiv.innerHTML = "<h2>Your Info</h2>";
-  botInfoDiv.innerHTML = "<h2>Opponents</h2>";
-  communityDiv.innerHTML = "";
-  
-  game.players.forEach(p => {
-    let info = document.createElement("div");
-    info.className = "player";
-    info.innerHTML = `<strong>${p.name}</strong> - Chips: ${p.chips}`;
-    if (p.isHuman) {
-      info.innerHTML += "<br>Hand: " + p.hand.map(c => c.toString()).join(", ");
-      playerInfoDiv.appendChild(info);
+  // Update each player slot on the table
+  for (let i = 0; i < game.players.length; i++) {
+    let player = game.players[i];
+    let slot = document.getElementById("player-slot-" + i);
+    slot.innerHTML = `<strong>${player.name}</strong><br>Chips: ${player.chips}`;
+    
+    // Create a div to hold the player's cards
+    let handDiv = document.createElement("div");
+    handDiv.className = "hand";
+    
+    // Show your cards face up always; for bots, show card backs if the round is in progress.
+    if (player.isHuman || !game.roundInProgress) {
+      player.hand.forEach(card => {
+        handDiv.appendChild(renderCard(card));
+      });
     } else {
-      botInfoDiv.appendChild(info);
+      // For bots, show hidden cards (card backs) while the round is active.
+      if (player.hand.length > 0) {
+        handDiv.appendChild(renderCardBack());
+        handDiv.appendChild(renderCardBack());
+      }
     }
-  });
+    slot.appendChild(handDiv);
+  }
   
+  // Update community cards at center of the table
+  const communityDiv = document.getElementById("community-cards");
+  communityDiv.innerHTML = "";
   if (game.communityCards.length > 0) {
-    communityDiv.innerHTML =
-      "<strong>Community Cards:</strong> " +
-      game.communityCards.map(c => c.toString()).join(", ");
+    game.communityCards.forEach(card => {
+      communityDiv.appendChild(renderCard(card));
+    });
   }
 }
 
@@ -326,15 +363,12 @@ document.getElementById("btn-fold").addEventListener("click", function () {
   }
 });
 
-// Create a Start New Round button dynamically
-const startButton = document.createElement("button");
-startButton.innerText = "Start New Round";
-startButton.addEventListener("click", function () {
-  if (!game.roundInProgress) {
+// Start a new round when the user clicks on the "Start New Round" message.
+document.getElementById("messages").addEventListener("click", function () {
+  if (!game.roundInProgress && game.players.length > 1) {
     game.init();
   }
 });
-document.getElementById("actions").appendChild(startButton);
 
 // ------------------
 // Start the Game on Page Load

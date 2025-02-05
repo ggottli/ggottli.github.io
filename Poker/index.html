@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Poker Game</title>
+  <title>Poker Showdown!</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="game-container">
     <h1>Poker Showdown!</h1>
-    <!-- Table / Community Cards -->
+    <!-- The poker table -->
     <div id="table">
-      <div id="community-cards" class="card-row"></div>
-    </div>
-
-    <!-- Player and Bot Info -->
-    <div id="players">
-      <div id="player-info">
-        <h2>Your Info</h2>
-      </div>
-      <div id="bot-info">
-        <h2>Opponents</h2>
-      </div>
+      <!-- Community Cards go in the center -->
+      <div id="community-cards"></div>
+      <!-- Nine player slots: slot 0 is you; slots 1-8 are bots -->
+      <div class="player-slot" id="player-slot-0"></div>
+      <div class="player-slot" id="player-slot-1"></div>
+      <div class="player-slot" id="player-slot-2"></div>
+      <div class="player-slot" id="player-slot-3"></div>
+      <div class="player-slot" id="player-slot-4"></div>
+      <div class="player-slot" id="player-slot-5"></div>
+      <div class="player-slot" id="player-slot-6"></div>
+      <div class="player-slot" id="player-slot-7"></div>
+      <div class="player-slot" id="player-slot-8"></div>
     </div>
 
     <!-- Action Buttons -->
@@ -29,10 +30,9 @@
       <button id="btn-call">Call</button>
       <button id="btn-raise">Raise</button>
       <button id="btn-fold">Fold</button>
-      <!-- A dynamic button to start a new round will be appended here -->
     </div>
 
-    <!-- Messages / Game Log -->
+    <!-- Game Messages / Log -->
     <div id="messages"></div>
   </div>
   <script src="script.js"></script>
