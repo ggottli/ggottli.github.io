@@ -28,12 +28,14 @@ body {
     background: rgba(0, 128, 0, 0.7); /* green felt look */
   }
   
-  /* Community cards container at center of table */
+  /* Community cards at center */
   #community-cards {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: row;
   }
   
   /* Player slots arranged around the table */
@@ -48,7 +50,7 @@ body {
     font-size: 14px;
   }
   
-  /* Positioning each slot (feel free to tweak these coordinates) */
+  /* Position each slot (feel free to tweak these coordinates) */
   #player-slot-0 {
     /* Human: bottom center */
     bottom: 10px;
@@ -110,10 +112,18 @@ body {
     color: red;
   }
   
-  /* Style for the back of a card */
+  /* Style for card back */
   .card-back {
     background: #2E86C1;
     color: #fff;
+  }
+  
+  /* Hand container: display cards horizontally */
+  .hand {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 5px;
   }
   
   /* Action buttons */
