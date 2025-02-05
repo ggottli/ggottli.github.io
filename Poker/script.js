@@ -54,7 +54,7 @@ class Player {
     this.chips = chips;
     this.isHuman = isHuman;
     this.hand = [];
-    this.active = true; // Still in the hand
+    this.active = true; // still in the current hand
     this.currentBet = 0;
   }
   resetHand() {
@@ -67,10 +67,10 @@ class Player {
 class Bot extends Player {
   constructor(name, chips, playingStyle) {
     super(name, chips, false);
-    this.playingStyle = playingStyle; // Hidden playing style
+    this.playingStyle = playingStyle; // hidden playing style
   }
   decideAction(gameState) {
-    // Simple decision logic: uses hand strength from evaluateHand
+    // Basic decision logic based on hand strength.
     let handStrength = evaluateHand(this.hand.concat(gameState.communityCards));
     if (this.playingStyle === "aggressive") {
       if (handStrength > 30 || Math.random() < 0.7) {
@@ -86,7 +86,7 @@ class Bot extends Player {
       } else {
         return "fold";
       }
-    } else { // random
+    } else {
       const actions = ["call", "raise", "fold"];
       return actions[Math.floor(Math.random() * actions.length)];
     }
@@ -97,7 +97,7 @@ class Bot extends Player {
 // Hand Evaluation (Simplified)
 // ------------------
 function evaluateHand(cards) {
-  // A basic evaluator: sums card values and adds bonuses for pairs/triples
+  // Basic evaluator: sum card values and add bonus for pairs/triples.
   let sum = 0;
   let counts = {};
   for (let card of cards) {
@@ -116,10 +116,8 @@ function evaluateHand(cards) {
 // Rendering Helpers for Cards
 // ------------------
 function renderCard(card) {
-  // Create a card face element.
   let cardDiv = document.createElement("div");
   cardDiv.classList.add("card");
-  // Red color for hearts and diamonds
   if (card.suit === "hearts" || card.suit === "diamonds") {
     cardDiv.classList.add("red");
   }
@@ -135,11 +133,31 @@ function renderCard(card) {
 }
 
 function renderCardBack() {
-  // Create a card-back element (for hidden cards)
   let cardDiv = document.createElement("div");
   cardDiv.classList.add("card", "card-back");
   cardDiv.innerHTML = "&nbsp;";
   return cardDiv;
+}
+
+// ------------------
+// Animate Fold: When a player folds, animate the hand disappearing
+// ------------------
+function animateFold(playerIndex, callback) {
+  let slot = document.getElementById("player-slot-" + playerIndex);
+  if (slot) {
+    let handDiv = slot.querySelector(".hand");
+    if (handDiv) {
+      handDiv.classList.add("folded");
+      // After the animation (800ms), call the callback.
+      setTimeout(() => {
+        callback();
+      }, 800);
+    } else {
+      callback();
+    }
+  } else {
+    callback();
+  }
 }
 
 // ------------------
@@ -150,11 +168,11 @@ let game = {
   deck: null,
   communityCards: [],
   pot: 0,
-  currentBet: 50, // fixed raise amount per betting round
-  state: "preflop", // possible states: preflop, flop, turn, river, showdown
-  currentPlayerIndex: 0, // index used for the betting round
+  currentBet: 50,   // initial bet amount
+  highestBet: 50,   // tracks the current highest bet in this round
+  state: "preflop", // states: preflop, flop, turn, river, showdown
+  currentPlayerIndex: 0, // index for betting order
 
-  // Initialize a new round
   init: function () {
     this.players = [];
     this.communityCards = [];
@@ -162,6 +180,7 @@ let game = {
     this.deck = new Deck();
     this.deck.shuffle();
     this.state = "preflop";
+    this.highestBet = 50;
 
     // Create one human and eight bots with generic names.
     this.players.push(new Player("You", 1000, true));
@@ -170,8 +189,6 @@ let game = {
       let style = botStyles[Math.floor(Math.random() * botStyles.length)];
       this.players.push(new Bot("Player " + i, 1000, style));
     }
-
-    // Reset each player's hand.
     this.players.forEach(p => p.resetHand());
 
     // Deal two hole cards to each active player.
@@ -185,57 +202,65 @@ let game = {
 
     updateUI();
     addMessage("=== New Round: Pre-flop Betting Round ===");
-    // Start the first betting round.
     this.startBettingRound();
   },
 
-  // Begin a betting round by resetting the player index.
   startBettingRound: function() {
     this.currentPlayerIndex = 0;
     this.promptNextPlayer();
   },
 
-  // Prompt the next active player (in clockwise order) to act.
   promptNextPlayer: function() {
     // Skip players who are not active.
     while (this.currentPlayerIndex < this.players.length && !this.players[this.currentPlayerIndex].active) {
       this.currentPlayerIndex++;
     }
     if (this.currentPlayerIndex >= this.players.length) {
-      // All players have acted; end this betting round.
       this.endBettingRound();
       return;
     }
     let currentPlayer = this.players[this.currentPlayerIndex];
     if (currentPlayer.isHuman) {
-      addMessage("Your turn. Choose an action.");
+      let requiredCall = this.highestBet - currentPlayer.currentBet;
+      addMessage(`Your turn. You need to call ${requiredCall} chips.`);
       enableActionButtons(true);
     } else {
-      // For bots, simulate a brief delay before auto‑deciding.
       enableActionButtons(false);
+      let idx = this.currentPlayerIndex;
       setTimeout(() => {
         let decision = currentPlayer.decideAction(this);
         addMessage(`${currentPlayer.name} chooses to ${decision}.`);
-        processPlayerDecision(currentPlayer, decision);
+        processPlayerDecision(currentPlayer, decision, idx);
         this.currentPlayerIndex++;
         this.promptNextPlayer();
       }, 1000);
     }
   },
 
-  // Process the human player's action.
   processHumanAction: function(decision) {
     let currentPlayer = this.players[this.currentPlayerIndex];
-    if (currentPlayer && currentPlayer.isHuman) {
-      processPlayerDecision(currentPlayer, decision);
-      addMessage(`You choose to ${decision}.`);
-      enableActionButtons(false);
-      this.currentPlayerIndex++;
-      this.promptNextPlayer();
+    let idx = this.currentPlayerIndex;
+    if (decision === "raise") {
+      let requiredCall = this.highestBet - currentPlayer.currentBet;
+      let minRaise = requiredCall + 10; // For example, minimum raise is call amount + 10.
+      addMessage(`You need to call ${requiredCall} chips. Minimum raise is ${minRaise} chips.`);
+      let input = prompt(`Enter raise amount (minimum ${minRaise}):`);
+      let raiseAmount = parseInt(input);
+      if (isNaN(raiseAmount)) {
+        addMessage("Invalid raise amount. Treated as call.");
+        decision = "call";
+      } else {
+        processPlayerDecision(currentPlayer, decision, idx, raiseAmount);
+      }
+    } else {
+      processPlayerDecision(currentPlayer, decision, idx);
     }
+    addMessage(`You choose to ${decision}.`);
+    enableActionButtons(false);
+    this.currentPlayerIndex++;
+    this.promptNextPlayer();
   },
 
-  // End the current betting round and advance the game stage.
   endBettingRound: function() {
     if (this.state === "preflop") {
       // Reveal the Flop (3 cards)
@@ -261,16 +286,14 @@ let game = {
       return;
     }
     updateUI();
-    // Start the next betting round.
     this.startBettingRound();
   },
 
-  // At showdown, reveal all cards and determine the winner.
   showdown: function() {
     updateUI();
     let bestScore = -1;
     let winner = null;
-    for (let p of this.players) {
+    this.players.forEach(p => {
       if (p.active) {
         let fullHand = p.hand.concat(this.communityCards);
         let score = evaluateHand(fullHand);
@@ -280,7 +303,7 @@ let game = {
           winner = p;
         }
       }
-    }
+    });
     if (winner) {
       winner.chips += this.pot;
       addMessage(`${winner.name} wins the pot of ${this.pot} chips!`);
@@ -292,20 +315,86 @@ let game = {
   }
 };
 
-// Process a player's decision (applies to both human and bots).
-function processPlayerDecision(player, decision) {
+// ------------------
+// Process a Player's Decision
+// ------------------
+function processPlayerDecision(player, decision, playerIndex, raiseAmount) {
   if (decision === "fold") {
+    // Animate fold then mark the player inactive.
+    animateFold(playerIndex, () => {
+      updateUI();
+    });
     player.active = false;
+  } else if (decision === "call") {
+    let requiredCall = game.highestBet - player.currentBet;
+    if (requiredCall > 0) {
+      if (player.chips >= requiredCall) {
+        player.chips -= requiredCall;
+        player.currentBet += requiredCall;
+        game.pot += requiredCall;
+      } else {
+        addMessage(`${player.name} doesn't have enough chips to call. Folding.`);
+        animateFold(playerIndex, () => {
+          updateUI();
+        });
+        player.active = false;
+      }
+    }
   } else if (decision === "raise") {
-    if (player.chips >= game.currentBet) {
-      player.chips -= game.currentBet;
-      player.currentBet += game.currentBet;
-      game.pot += game.currentBet;
+    let requiredCall = game.highestBet - player.currentBet;
+    if (player.isHuman) {
+      if (!raiseAmount || isNaN(raiseAmount)) {
+        addMessage("Invalid raise amount. Treated as call.");
+        decision = "call";
+        processPlayerDecision(player, decision, playerIndex);
+        return;
+      }
+      let minRaise = requiredCall + 10;
+      if (raiseAmount < minRaise) {
+        addMessage(`Raise must be at least ${minRaise} chips. Treated as call.`);
+        decision = "call";
+        processPlayerDecision(player, decision, playerIndex);
+        return;
+      }
+      if (player.chips >= raiseAmount) {
+        player.chips -= raiseAmount;
+        player.currentBet += raiseAmount;
+        game.pot += raiseAmount;
+        if (player.currentBet > game.highestBet) {
+          game.highestBet = player.currentBet;
+        }
+      } else {
+        addMessage("Not enough chips to raise that amount. Treated as call.");
+        decision = "call";
+        processPlayerDecision(player, decision, playerIndex);
+        return;
+      }
     } else {
-      addMessage(`${player.name} cannot raise (insufficient chips). Treated as call.`);
+      // For bots, use a fixed raise: requiredCall + 10.
+      let botRaise = requiredCall + 10;
+      if (player.chips >= botRaise) {
+        player.chips -= botRaise;
+        player.currentBet += botRaise;
+        game.pot += botRaise;
+        if (player.currentBet > game.highestBet) {
+          game.highestBet = player.currentBet;
+        }
+      } else {
+        let callAmt = requiredCall;
+        if (player.chips >= callAmt) {
+          player.chips -= callAmt;
+          player.currentBet += callAmt;
+          game.pot += callAmt;
+        } else {
+          addMessage(`${player.name} cannot raise and folds.`);
+          animateFold(playerIndex, () => {
+            updateUI();
+          });
+          player.active = false;
+        }
+      }
     }
   }
-  // For a "call," no chip adjustment is needed.
   updateUI();
 }
 
@@ -313,28 +402,31 @@ function processPlayerDecision(player, decision) {
 // UI Helper Functions
 // ------------------
 function updateUI() {
-  // Update each player's slot with their info and hand.
+  // Update each player's slot.
   for (let i = 0; i < game.players.length; i++) {
     let player = game.players[i];
     let slot = document.getElementById("player-slot-" + i);
     if (slot) {
-      slot.innerHTML = `<strong>${player.name}</strong><br>Chips: ${player.chips}`;
-      let handDiv = document.createElement("div");
-      handDiv.className = "hand";
-      // Show cards face‑up for the human or at showdown.
-      if (player.isHuman || game.state === "showdown") {
-        player.hand.forEach(card => handDiv.appendChild(renderCard(card)));
+      if (!player.active) {
+        slot.innerHTML = `<strong>${player.name}</strong><br>Folded`;
       } else {
-        // For bots during betting rounds, show card backs.
-        if (player.hand.length > 0) {
-          handDiv.appendChild(renderCardBack());
-          handDiv.appendChild(renderCardBack());
+        slot.innerHTML = `<strong>${player.name}</strong><br>Chips: ${player.chips}`;
+        let handDiv = document.createElement("div");
+        handDiv.className = "hand";
+        // Show cards face‑up for human or at showdown; for bots during betting rounds, show card backs.
+        if (player.isHuman || game.state === "showdown") {
+          player.hand.forEach(card => handDiv.appendChild(renderCard(card)));
+        } else {
+          if (player.hand.length > 0) {
+            handDiv.appendChild(renderCardBack());
+            handDiv.appendChild(renderCardBack());
+          }
         }
+        slot.appendChild(handDiv);
       }
-      slot.appendChild(handDiv);
     }
   }
-  // Update the community cards (always face‑up).
+  // Update community cards (always face‑up).
   const communityDiv = document.getElementById("community-cards");
   communityDiv.innerHTML = "";
   game.communityCards.forEach(card => communityDiv.appendChild(renderCard(card)));
@@ -373,7 +465,7 @@ document.getElementById("btn-fold").addEventListener("click", function () {
   }
 });
 
-// When clicking the messages area after a round, start a new round.
+// Start a new round on messages click after showdown.
 document.getElementById("messages").addEventListener("click", function () {
   if (game.state === "showdown") {
     game.init();

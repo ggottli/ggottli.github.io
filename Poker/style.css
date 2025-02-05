@@ -107,23 +107,30 @@ body {
     position: relative;
   }
   
-  /* Make hearts and diamonds red */
+  /* Red for hearts and diamonds */
   .card.red {
     color: red;
   }
   
-  /* Style for card back */
+  /* Card back styling */
   .card-back {
     background: #2E86C1;
     color: #fff;
   }
   
-  /* Hand container: display cards horizontally */
+  /* Hand container: cards are displayed horizontally */
   .hand {
     display: flex;
     flex-direction: row;
     justify-content: center;
     margin-top: 5px;
+  }
+  
+  /* Folding animation: when a hand is folded, fade and slide away */
+  .hand.folded {
+    opacity: 0;
+    transform: rotate(-30deg) translateY(-20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
   }
   
   /* Action buttons */
