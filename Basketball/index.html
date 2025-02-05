@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>3D 2-on-2 Basketball Game</title>
+    <title>3D 2-on-2 Basketball Game with 3-Point Lines & Shot Probabilities</title>
     <style>
       body {
         margin: 0;
@@ -12,7 +12,7 @@
       canvas {
         display: block;
         margin: auto;
-        /* Use a gradient for the court to suggest depth */
+        /* A subtle vertical gradient gives the court more depth */
         background: linear-gradient(#7ec850, #5aa642);
       }
     </style>
@@ -20,12 +20,12 @@
   <body>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <script>
-      // ----- Canvas Setup -----
+      // ----- Canvas & Court Setup -----
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d");
       const COURT_WIDTH = canvas.width;
       const COURT_HEIGHT = canvas.height;
-      
+
       // ----- Game Constants -----
       const PLAYER_RADIUS = 15;
       const BALL_RADIUS = 8;
@@ -34,8 +34,9 @@
       const SPRINT_DURATION = 500; // milliseconds
       const PASS_SPEED = 0.3; // pixels per ms (for passes)
       const SHOOT_FLIGHT_TIME = 1000; // ms flight time for a shot
-      const GRAVITY = 0.0015; // pixels per ms² (for the shot arc)
-      
+      const GRAVITY = 0.0015; // pixels per ms² for the shot arc
+      const THREE_POINT_RADIUS = 150; // pixels: distance from hoop that marks the 3-point line
+
       // ----- Player Class -----
       class Player {
         constructor(x, y, team) {
@@ -51,7 +52,7 @@
         update(delta) {
           this.x += this.vx * this.speed;
           this.y += this.vy * this.speed;
-          // Keep players on the court.
+          // Clamp within the court boundaries.
           this.x = Math.max(PLAYER_RADIUS, Math.min(COURT_WIDTH - PLAYER_RADIUS, this.x));
           this.y = Math.max(PLAYER_RADIUS, Math.min(COURT_HEIGHT - PLAYER_RADIUS, this.y));
           if (this.sprintTime > 0) {
@@ -60,12 +61,12 @@
           }
         }
         draw(ctx) {
-          // Draw a shadow to simulate depth.
+          // Draw a subtle shadow.
           ctx.beginPath();
           ctx.ellipse(this.x, this.y + PLAYER_RADIUS * 0.5, PLAYER_RADIUS, PLAYER_RADIUS * 0.5, 0, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(0,0,0,0.3)";
           ctx.fill();
-          // Use a radial gradient to give a spherical look.
+          // Use a radial gradient for a 3D–like appearance.
           let grad = ctx.createRadialGradient(this.x, this.y - 5, PLAYER_RADIUS * 0.3, this.x, this.y - 5, PLAYER_RADIUS);
           if (this.team === "blue") {
             grad.addColorStop(0, "#99ccff");
@@ -78,6 +79,7 @@
           ctx.arc(this.x, this.y, PLAYER_RADIUS, 0, Math.PI * 2);
           ctx.fillStyle = grad;
           ctx.fill();
+          // If holding the ball, draw an outline.
           if (this.hasBall) {
             ctx.lineWidth = 3;
             ctx.strokeStyle = "#fff";
@@ -85,7 +87,7 @@
           }
         }
       }
-      
+
       // ----- Ball Class -----
       class Ball {
         constructor(x, y) {
@@ -95,29 +97,31 @@
           this.vy = 0;
           this.state = "held"; // "held", "in-flight" (for passes), "shot", "loose"
           this.holder = null;
-          // For shot arcs (simulate 3D):
-          this.z = 0;    // vertical (height) position
-          this.vz = 0;   // vertical velocity
-          // For scoring checks:
+          // For shot arcs (simulate vertical motion)
+          this.z = 0;
+          this.vz = 0;
+          // For shot outcome details.
           this.shotAttempt = false;
           this.shotTeam = null;
+          this.shotValue = 0;
+          this.shotProbability = 0;
         }
         update(delta) {
           if (this.state === "shot") {
-            // Update x and y normally.
+            // Update horizontal position.
             this.x += this.vx * delta;
             this.y += this.vy * delta;
-            // Update vertical (z) position using simple kinematics.
+            // Update vertical position.
             this.z += this.vz * delta - 0.5 * GRAVITY * delta * delta;
             this.vz -= GRAVITY * delta;
             if (this.z <= 0) {
               this.z = 0;
-              // End of the shot arc; transition to "loose" so scoring can be checked.
+              // End of shot arc; the ball becomes loose and we’ll process shot outcome.
               this.state = "loose";
               this.vx = this.vy = this.vz = 0;
             }
           } else if (this.state === "in-flight") {
-            // For ground-level passes.
+            // For ground passes.
             this.x += this.vx * delta;
             this.y += this.vy * delta;
             if (
@@ -138,12 +142,12 @@
         }
         draw(ctx) {
           if (this.state === "shot") {
-            // Draw a shadow at the ground position.
+            // Draw the shadow at the ground position.
             ctx.beginPath();
             ctx.ellipse(this.x, this.y, BALL_RADIUS * 1.2, BALL_RADIUS * 0.6, 0, 0, Math.PI * 2);
             ctx.fillStyle = "rgba(0,0,0,0.3)";
             ctx.fill();
-            // Draw the ball at an elevated (z) position by offsetting upward.
+            // Draw the ball at an elevated position.
             let drawX = this.x;
             let drawY = this.y - this.z;
             let grad = ctx.createRadialGradient(drawX, drawY, BALL_RADIUS * 0.3, drawX, drawY, BALL_RADIUS);
@@ -156,7 +160,7 @@
             ctx.strokeStyle = "#000";
             ctx.stroke();
           } else {
-            // For passes or when held, draw the ball on the ground with a shadow.
+            // Draw ground-level ball with shadow.
             ctx.beginPath();
             ctx.ellipse(this.x, this.y, BALL_RADIUS * 1.2, BALL_RADIUS * 0.6, 0, 0, Math.PI * 2);
             ctx.fillStyle = "rgba(0,0,0,0.3)";
@@ -170,36 +174,35 @@
           }
         }
       }
-      
-      // ----- Create Players and Ball -----
+
+      // ----- Create Players & Ball -----
       const players = [];
       // Blue team (user-controlled/AI)
       const blue1 = new Player(200, COURT_HEIGHT / 2 - 50, "blue");
       const blue2 = new Player(200, COURT_HEIGHT / 2 + 50, "blue");
       players.push(blue1, blue2);
-      // Red team (AI)
+      // Red team (CPU)
       const red1 = new Player(COURT_WIDTH - 200, COURT_HEIGHT / 2 - 50, "red");
       const red2 = new Player(COURT_WIDTH - 200, COURT_HEIGHT / 2 + 50, "red");
       players.push(red1, red2);
-      
+
       // Start with blue1 holding the ball.
       const ball = new Ball(blue1.x, blue1.y);
       ball.state = "held";
       ball.holder = blue1;
       blue1.hasBall = true;
-      
+
       // ----- Game State Variables -----
       let blueScore = 0;
       let redScore = 0;
       let currentQuarter = 1;
-      let quarterTime = 60 * 1000; // one minute per quarter (ms)
+      let quarterTime = 60 * 1000; // one minute per quarter (in ms)
       let lastTime = performance.now();
-      
+
       // ----- Input Handling -----
       const keys = {};
       window.addEventListener("keydown", (e) => {
         keys[e.key] = true;
-        // Prevent scrolling with arrow keys.
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
           e.preventDefault();
         }
@@ -207,10 +210,10 @@
       window.addEventListener("keyup", (e) => {
         keys[e.key] = false;
       });
-      
-      // Determine which blue player to control:
-      // If one already holds the ball, control that one;
-      // otherwise, control the one closest to the ball.
+
+      // ----- Utility Functions -----
+      // Choose the blue player to control: if one holds the ball, control that one;
+      // otherwise, choose the one closest to the ball.
       function getControlledPlayer() {
         if (blue1.hasBall) return blue1;
         if (blue2.hasBall) return blue2;
@@ -218,96 +221,127 @@
         const d2 = Math.hypot(blue2.x - ball.x, blue2.y - ball.y);
         return d1 < d2 ? blue1 : blue2;
       }
-      
+
       // Returns true if blue team is on offense.
       function isBlueOffense() {
         return blue1.hasBall || blue2.hasBall;
       }
-      
-      // ----- AI Functions -----
+
+      // ----- AI Functions (with Separation to Avoid Overlap) -----
       function updateAI(player, delta) {
         if (player.team === "blue") {
           const controlled = getControlledPlayer();
           if (player === controlled) return; // skip user–controlled player.
           if (isBlueOffense()) {
-            // On offense, move to a complementary position near the target hoop.
+            // On offense, move to complementary positions near the target hoop.
             const targetX = COURT_WIDTH - 150;
             const targetY = player === blue1 ? COURT_HEIGHT / 2 - 80 : COURT_HEIGHT / 2 + 80;
-            const angle = Math.atan2(targetY - player.y, targetX - player.x);
+            let angle = Math.atan2(targetY - player.y, targetX - player.x);
             player.vx = Math.cos(angle);
             player.vy = Math.sin(angle);
           } else {
-            // On defense, head toward the ball.
-            const angle = Math.atan2(ball.y - player.y, ball.x - player.x);
+            // On defense, move toward the ball.
+            let angle = Math.atan2(ball.y - player.y, ball.x - player.x);
             player.vx = Math.cos(angle);
             player.vy = Math.sin(angle);
           }
         } else {
           // Red team AI.
           if (red1.hasBall || red2.hasBall) {
-            // Offense: move toward blue’s basket (left side).
+            // Offense: head toward blue’s basket (left side).
             const targetX = 150;
-            const angle = Math.atan2(0, targetX - player.x);
+            let angle = Math.atan2(0, targetX - player.x);
             player.vx = Math.cos(angle);
             player.vy = 0;
-            // When close enough to the basket, shoot.
+            // When close to the basket, attempt a shot.
             if (Math.hypot(player.x - 150, player.y - COURT_HEIGHT / 2) < 100) {
               if (ball.state === "held" && ball.holder === player) {
                 shootBall(player);
               }
             }
           } else {
-            // On defense, head toward the ball.
-            const angle = Math.atan2(ball.y - player.y, ball.x - player.x);
+            // On defense, move toward the ball.
+            let angle = Math.atan2(ball.y - player.y, ball.x - player.x);
             player.vx = Math.cos(angle);
             player.vy = Math.sin(angle);
           }
         }
+        // --- Separation Logic: Avoid overlapping teammates ---
+        let sepX = 0, sepY = 0;
+        for (let other of players) {
+          if (other !== player && other.team === player.team) {
+            let dist = Math.hypot(player.x - other.x, player.y - other.y);
+            if (dist < PLAYER_RADIUS * 2) {
+              sepX += (player.x - other.x) / dist;
+              sepY += (player.y - other.y) / dist;
+            }
+          }
+        }
+        player.vx += sepX * 0.5;
+        player.vy += sepY * 0.5;
+        // Normalize the velocity if needed.
+        let len = Math.hypot(player.vx, player.vy);
+        if (len > 0) {
+          player.vx /= len;
+          player.vy /= len;
+        }
       }
-      
+
       // ----- Action Functions -----
-      // Shoot: The ball follows a parabolic (3D) arc toward the target hoop.
+      // Shoot: Launch the ball in a parabolic arc toward the hoop. Also compute
+      // the shot’s distance and success probability.
       function shootBall(player) {
         if (!player.hasBall) return;
-        const target =
-          player.team === "blue"
-            ? { x: COURT_WIDTH - 50, y: COURT_HEIGHT / 2 }
-            : { x: 50, y: COURT_HEIGHT / 2 };
+        // Determine target hoop.
+        let hoop = player.team === "blue" ? { x: COURT_WIDTH - 50, y: COURT_HEIGHT / 2 }
+                                          : { x: 50, y: COURT_HEIGHT / 2 };
         ball.state = "shot";
         ball.holder = null;
         ball.shotAttempt = true;
         ball.shotTeam = player.team;
         player.hasBall = false;
-        // Calculate x and y velocities so that the ball reaches the hoop in SHOOT_FLIGHT_TIME ms.
-        ball.vx = (target.x - player.x) / SHOOT_FLIGHT_TIME;
-        ball.vy = (target.y - player.y) / SHOOT_FLIGHT_TIME;
-        ball.z = 0; // starting at ground level (could be raised a bit if desired)
-        // Calculate initial vertical velocity so that the ball returns to z=0 at SHOOT_FLIGHT_TIME.
+        // Set horizontal velocities to reach the hoop in SHOOT_FLIGHT_TIME ms.
+        ball.vx = (hoop.x - player.x) / SHOOT_FLIGHT_TIME;
+        ball.vy = (hoop.y - player.y) / SHOOT_FLIGHT_TIME;
+        ball.z = 0;
         ball.vz = 0.5 * GRAVITY * SHOOT_FLIGHT_TIME;
+        // Compute the distance from the shooter to the hoop.
+        let dist = Math.hypot(hoop.x - player.x, hoop.y - player.y);
+        ball.shotDistance = dist;
+        // Determine shot type and probability based on distance.
+        if (dist < THREE_POINT_RADIUS) {
+          ball.shotValue = 2;
+          // For two-pointers, we assume about 70% chance when very close, falling to ~50% at the 3-point line.
+          let effectiveDistance = Math.max(dist, 50);
+          ball.shotProbability = Math.max(0.5, 0.7 - 0.2 * ((effectiveDistance - 50) / 100));
+        } else {
+          ball.shotValue = 3;
+          // For three-pointers, start at ~50% and drop toward ~30% for very long shots.
+          let effectiveDistance = Math.max(dist, THREE_POINT_RADIUS);
+          ball.shotProbability = Math.max(0.3, 0.5 - 0.2 * ((effectiveDistance - THREE_POINT_RADIUS) / (300 - THREE_POINT_RADIUS)));
+        }
       }
-      
-      // Pass: Send the ball to your teammate (remains on the ground).
+
+      // Pass: Send the ball to your teammate.
       function passBall(player) {
         if (!player.hasBall) return;
-        const teammate = player === blue1 ? blue2 : blue1;
+        let teammate = player === blue1 ? blue2 : blue1;
         ball.state = "in-flight";
         ball.holder = null;
         player.hasBall = false;
-        const dx = teammate.x - player.x;
-        const dy = teammate.y - player.y;
-        // Aim for the teammate in about 500ms.
-        const passTime = 500;
+        let dx = teammate.x - player.x;
+        let dy = teammate.y - player.y;
+        const passTime = 500; // ms
         ball.vx = dx / passTime;
         ball.vy = dy / passTime;
       }
-      
-      // On defense, attempt a steal with Z.
+
+      // Steal attempt (on defense with Z).
       function attemptSteal(defender) {
-        const opponent = defender.team === "blue"
-          ? (red1.hasBall ? red1 : red2)
-          : (blue1.hasBall ? blue1 : blue2);
+        let opponent = defender.team === "blue" ? (red1.hasBall ? red1 : red2)
+                                                : (blue1.hasBall ? blue1 : blue2);
         if (!opponent || !opponent.hasBall) return;
-        const distance = Math.hypot(defender.x - opponent.x, defender.y - opponent.y);
+        let distance = Math.hypot(defender.x - opponent.x, defender.y - opponent.y);
         if (distance < 30) {
           opponent.hasBall = false;
           ball.holder = defender;
@@ -315,25 +349,25 @@
           defender.hasBall = true;
         }
       }
-      
-      // On defense, attempt a block (when an opponent’s shot is in flight) using C.
+
+      // Block attempt (on defense with C).
       function attemptBlock(defender) {
         if (ball.state !== "shot") return;
-        const distance = Math.hypot(defender.x - ball.x, defender.y - ball.y);
+        let distance = Math.hypot(defender.x - ball.x, defender.y - ball.y);
         if (distance < 30) {
           ball.state = "loose";
           ball.vx = ball.vy = ball.vz = 0;
         }
       }
-      
-      // Sprint: temporarily boost the controlled player’s speed.
+
+      // Sprint: Temporarily boost speed.
       function sprint(player) {
         player.speed = SPRINT_SPEED;
         player.sprintTime = SPRINT_DURATION;
       }
-      
-      // ----- Draw Hoop Function -----
-      // Draws an elliptical hoop with a simple net effect.
+
+      // ----- Drawing Functions -----
+      // Draw a hoop with a bit of net detail.
       function drawHoop(x, y) {
         ctx.save();
         ctx.translate(x, y);
@@ -354,14 +388,30 @@
         }
         ctx.restore();
       }
-      
+
+      // Draw the three–point lines as dashed circles around each hoop.
+      function drawThreePointLines() {
+        ctx.strokeStyle = "#fff";
+        ctx.setLineDash([5, 5]);
+        // Left hoop.
+        ctx.beginPath();
+        ctx.arc(50, COURT_HEIGHT / 2, THREE_POINT_RADIUS, 0, Math.PI * 2);
+        ctx.stroke();
+        // Right hoop.
+        ctx.beginPath();
+        ctx.arc(COURT_WIDTH - 50, COURT_HEIGHT / 2, THREE_POINT_RADIUS, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
       // ----- Main Game Loop -----
       function gameLoop(timestamp) {
-        const delta = timestamp - lastTime;
+        let delta = timestamp - lastTime;
         lastTime = timestamp;
+
+        // Update quarter clock.
         quarterTime -= delta;
         if (quarterTime <= 0) {
-          // End of quarter: reset positions and advance the quarter counter.
           currentQuarter++;
           if (currentQuarter > 4) {
             alert("Game Over!\nFinal Score - Blue: " + blueScore + "   Red: " + redScore);
@@ -369,13 +419,12 @@
             blueScore = redScore = 0;
           }
           quarterTime = 60 * 1000;
+          // Reset positions.
           blue1.x = 200; blue1.y = COURT_HEIGHT / 2 - 50;
           blue2.x = 200; blue2.y = COURT_HEIGHT / 2 + 50;
           red1.x = COURT_WIDTH - 200; red1.y = COURT_HEIGHT / 2 - 50;
           red2.x = COURT_WIDTH - 200; red2.y = COURT_HEIGHT / 2 + 50;
-          // Restart with blue1 holding the ball.
-          ball.x = blue1.x;
-          ball.y = blue1.y;
+          ball.x = blue1.x; ball.y = blue1.y;
           ball.state = "held";
           ball.holder = blue1;
           blue1.hasBall = true;
@@ -383,24 +432,25 @@
           red1.hasBall = false;
           red2.hasBall = false;
         }
-        
+
         // Clear the canvas.
         ctx.clearRect(0, 0, COURT_WIDTH, COURT_HEIGHT);
-        
-        // Draw Court Midline.
+
+        // Draw court midline.
         ctx.strokeStyle = "#fff";
         ctx.beginPath();
         ctx.moveTo(COURT_WIDTH / 2, 0);
         ctx.lineTo(COURT_WIDTH / 2, COURT_HEIGHT);
         ctx.stroke();
-        
-        // Draw Hoops.
-        // Left hoop (blue’s basket) at (50, COURT_HEIGHT/2).
+
+        // Draw the 3–point lines.
+        drawThreePointLines();
+
+        // Draw the hoops.
         drawHoop(50, COURT_HEIGHT / 2);
-        // Right hoop (red’s basket) at (COURT_WIDTH - 50, COURT_HEIGHT/2).
         drawHoop(COURT_WIDTH - 50, COURT_HEIGHT / 2);
-        
-        // Process User Input for the controlled blue player.
+
+        // Process user input for the controlled blue player.
         const controlled = getControlledPlayer();
         controlled.vx = controlled.vy = 0;
         if (keys["ArrowUp"]) controlled.vy = -1;
@@ -412,8 +462,7 @@
           controlled.vy *= Math.SQRT1_2;
         }
         if (keys["x"]) sprint(controlled);
-        // Action keys:
-        // Z: on offense, shoot; on defense, attempt steal.
+        // Z: On offense, shoot; on defense, attempt steal.
         if (keys["z"]) {
           if (isBlueOffense()) {
             if (controlled.hasBall) shootBall(controlled);
@@ -422,7 +471,7 @@
           }
           keys["z"] = false;
         }
-        // C: on offense, pass; on defense, block.
+        // C: On offense, pass; on defense, attempt block.
         if (keys["c"]) {
           if (isBlueOffense()) {
             if (controlled.hasBall) passBall(controlled);
@@ -431,9 +480,9 @@
           }
           keys["c"] = false;
         }
-        
-        // Update and Draw All Players.
-        for (const player of players) {
+
+        // Update and draw all players.
+        for (let player of players) {
           if (player.team === "blue") {
             if (player !== controlled) updateAI(player, delta);
           } else {
@@ -442,34 +491,27 @@
           player.update(delta);
           player.draw(ctx);
         }
-        
-        // Update and Draw the Ball.
+
+        // Update and draw the ball.
         ball.update(delta);
         ball.draw(ctx);
-        
-        // Scoring Check for shot attempts.
-        // When a shot (ball.shotAttempt) ends (ball becomes "loose"), check if it went through the hoop.
+
+        // Process shot outcome (only once when the shot arc ends).
         if (ball.state === "loose" && ball.shotAttempt) {
-          if (
-            ball.shotTeam === "blue" &&
-            ball.x > COURT_WIDTH - 70 &&
-            Math.abs(ball.y - COURT_HEIGHT / 2) < 30
-          ) {
-            blueScore += 2;
-          } else if (
-            ball.shotTeam === "red" &&
-            ball.x < 70 &&
-            Math.abs(ball.y - COURT_HEIGHT / 2) < 30
-          ) {
-            redScore += 2;
+          if (Math.random() < ball.shotProbability) {
+            if (ball.shotTeam === "blue") {
+              blueScore += ball.shotValue;
+            } else {
+              redScore += ball.shotValue;
+            }
           }
           ball.shotAttempt = false;
         }
-        
-        // If the ball is loose and near any player, have that player pick it up.
+
+        // If the ball is loose and near a player, have that player pick it up.
         if (ball.state === "loose") {
-          for (const player of players) {
-            const d = Math.hypot(player.x - ball.x, player.y - ball.y);
+          for (let player of players) {
+            let d = Math.hypot(player.x - ball.x, player.y - ball.y);
             if (d < PLAYER_RADIUS + BALL_RADIUS) {
               ball.state = "held";
               ball.holder = player;
@@ -478,8 +520,8 @@
             }
           }
         }
-        
-        // Draw the Scoreboard and Clock.
+
+        // Draw scoreboard and clock.
         ctx.fillStyle = "#000";
         ctx.font = "20px Arial";
         ctx.fillText("Blue: " + blueScore, 20, 30);
@@ -487,10 +529,10 @@
         ctx.fillText("Quarter: " + currentQuarter, COURT_WIDTH / 2 - 40, 30);
         const seconds = Math.floor(quarterTime / 1000);
         ctx.fillText("Time: " + seconds + "s", COURT_WIDTH / 2 - 40, 60);
-        
+
         requestAnimationFrame(gameLoop);
       }
-      
+
       requestAnimationFrame(gameLoop);
     </script>
   </body>
