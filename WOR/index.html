@@ -10,10 +10,13 @@
     <!-- Header: Branding & Navigation -->
     <header>
       <div class="container header-container">
-        <!-- Replace with your Pi Kappa Phi logo -->
-        <img src="images/pikp-logo.png" alt="Pi Kappa Phi Logo" class="logo" />
-        <h1>War of the Roses</h1>
-        <nav>
+        <!-- Left side: Logo & Title -->
+        <div class="header-left">
+          <img src="images/pikp-logo.png" alt="Pi Kappa Phi Logo" class="logo" />
+          <h1>War of the Roses</h1>
+        </div>
+        <!-- Desktop Navigation (hidden on mobile) -->
+        <nav class="desktop-nav">
           <ul>
             <li><a href="#introduction">Introduction</a></li>
             <li><a href="#about">About the Event</a></li>
@@ -21,8 +24,25 @@
             <li><a href="#donate">Donate</a></li>
           </ul>
         </nav>
+        <!-- Hamburger Menu Icon for Mobile -->
+        <div class="hamburger" id="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </div>
     </header>
+
+    <!-- Mobile Navigation (slides in from right) -->
+    <div class="mobile-nav" id="mobile-nav">
+      <div class="close-btn" id="mobile-nav-close">&times;</div>
+      <ul>
+        <li><a href="#introduction" class="mobile-link">Introduction</a></li>
+        <li><a href="#about" class="mobile-link">About the Event</a></li>
+        <li><a href="talents.html" class="mobile-link">Meet the Contestants</a></li>
+        <li><a href="#donate" class="mobile-link">Donate</a></li>
+      </ul>
+    </div>
 
     <!-- Main Content -->
     <main>
@@ -65,10 +85,8 @@
             and help empower people with disabilities through The Ability
             Experience.
           </p>
-          <!-- Replace the href with your actual donation link -->
-          <a href="https://example.com/donate" class="donate-button" target="_blank"
-            >Donate Now</a
-          >
+          <!-- Replace with your actual donation URL -->
+          <a href="https://example.com/donate" class="donate-button" target="_blank">Donate Now</a>
         </div>
       </section>
     </main>

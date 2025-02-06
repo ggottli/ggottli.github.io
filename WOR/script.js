@@ -1,9 +1,31 @@
 // script.js
 document.addEventListener("DOMContentLoaded", function () {
-    console.log("Program Loaded!");
+    console.log("Interactive Program Loaded!");
   
-    // Optional: If you want to add scroll-triggered animations or other interactivity,
-    // you can expand this script. For example, you might observe sections coming into view
-    // and add a class to re-trigger animations.
+    const menuToggle = document.getElementById("menu-toggle");
+    const mobileNav = document.getElementById("mobile-nav");
+    const mobileNavClose = document.getElementById("mobile-nav-close");
+    const mobileLinks = document.querySelectorAll(".mobile-link");
+  
+    // Open mobile nav when hamburger is clicked
+    if (menuToggle) {
+      menuToggle.addEventListener("click", function () {
+        mobileNav.classList.add("open");
+      });
+    }
+  
+    // Close mobile nav when close button is clicked
+    if (mobileNavClose) {
+      mobileNavClose.addEventListener("click", function () {
+        mobileNav.classList.remove("open");
+      });
+    }
+  
+    // Close mobile nav when any link is clicked
+    mobileLinks.forEach(link => {
+      link.addEventListener("click", function () {
+        mobileNav.classList.remove("open");
+      });
+    });
   });
   

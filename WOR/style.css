@@ -31,34 +31,104 @@
     align-items: center;
     justify-content: space-between;
   }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
   .logo {
     max-width: 150px;
   }
   header h1 {
     font-size: 2.5rem;
     margin: 10px 0;
-    color: #E7A614; /* Gold accent for headlines */
+    color: #E7A614; /* Gold accent */
   }
-  nav ul {
+  
+  /* Desktop Navigation */
+  .desktop-nav ul {
     list-style: none;
     display: flex;
     gap: 20px;
   }
-  nav a {
-    color: #E7A614; /* Gold for navigation links */
+  .desktop-nav a {
+    color: #E7A614;
     text-decoration: none;
     font-weight: bold;
     transition: color 0.3s ease;
   }
-  nav a:hover {
+  .desktop-nav a:hover {
     color: #FFFFFF;
     text-decoration: underline;
+  }
+  
+  /* Hamburger Menu (Mobile) */
+  .hamburger {
+    display: none; /* Shown in media query */
+    flex-direction: column;
+    cursor: pointer;
+  }
+  .hamburger span {
+    width: 25px;
+    height: 3px;
+    background: #E7A614;
+    margin: 4px 0;
+    transition: all 0.3s ease;
+  }
+  
+  /* Mobile Navigation Panel */
+  .mobile-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: 100%;
+    background: #005596;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .mobile-nav.open {
+    transform: translateX(0);
+  }
+  .mobile-nav .close-btn {
+    font-size: 2rem;
+    color: #E7A614;
+    cursor: pointer;
+    text-align: right;
+  }
+  .mobile-nav ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 40px;
+  }
+  .mobile-nav li {
+    margin-bottom: 20px;
+  }
+  .mobile-nav a {
+    color: #E7A614;
+    text-decoration: none;
+    font-size: 1.2em;
+  }
+  .mobile-nav a:hover {
+    color: #FFFFFF;
+  }
+  
+  /* Responsive: Mobile Styles */
+  @media (max-width: 768px) {
+    .desktop-nav {
+      display: none;
+    }
+    .hamburger {
+      display: flex;
+    }
   }
   
   /* Section Styles */
   .section {
     padding: 40px 0;
-    /* For smooth transitions on scroll (if enhanced later with JS) */
+    /* Initial state for fade in */
     opacity: 0;
     transform: translateY(20px);
     animation: fadeInUp 1s ease-out forwards;
@@ -95,7 +165,7 @@
     transform: scale(1.05);
   }
   
-  /* Talent Grid & Cards (for the Meet the Contestants page) */
+  /* Talent Grid & Cards (Meet the Contestants page) */
   .talent-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -110,7 +180,7 @@
   }
   .talent-card:hover {
     transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   .talent-card img {
     width: 100%;
