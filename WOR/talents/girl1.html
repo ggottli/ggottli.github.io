@@ -3,31 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sulli Wengrowski | Zeta Contestant</title>
+    <title>Sulli Wengrowski | Zeta</title>
     <link rel="stylesheet" href="../style.css" />
   </head>
   <body>
+    <!-- Consistent Header -->
     <header>
       <div class="container header-container">
-        <a href="../index.html">
-          <img src="../images/pikp-logo.png" alt="Pi Kappa Phi Logo" class="logo" />
-        </a>
-        <h1>Jane Doe</h1>
-        <nav>
+        <div class="header-left">
+          <a href="../index.html">
+            <img src="../images/pikp-logo.png" alt="Pi Kappa Phi Logo" class="logo" />
+          </a>
+          <h1>War of the Roses</h1>
+        </div>
+        <nav class="desktop-nav">
           <ul>
             <li><a href="../index.html">Home</a></li>
-            <li><a href="../talents.html">Back to Meet the Contestants</a></li>
+            <li><a href="../talents.html">Meet the Contestants</a></li>
           </ul>
         </nav>
+        <!-- Hamburger Menu for Mobile -->
+        <div class="hamburger" id="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </div>
     </header>
+
+    <!-- Mobile Navigation Panel -->
+    <div class="mobile-nav" id="mobile-nav">
+      <div class="close-btn" id="mobile-nav-close">&times;</div>
+      <ul>
+        <li><a href="../index.html" class="mobile-link">Home</a></li>
+        <li><a href="../talents.html" class="mobile-link">Meet the Contestants</a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
     <main>
       <section class="section fade-in" style="animation-delay: 0.2s;">
         <div class="container talent-detail">
           <img src="../images/girl1.jpg" alt="Jane Doe" class="talent-photo" />
           <h2>Talent: Vocalist & Musician</h2>
           <p>
-            Jane brings soulful melodies and powerful vocals to the stage.
+            Sulli brings soulful melodies and powerful vocals to the stage.
             Her performance is a blend of classic tunes and modern rhythms, sure
             to captivate the audience.
           </p>
@@ -40,10 +60,13 @@
         </div>
       </section>
     </main>
+
+    <!-- Footer -->
     <footer>
       <div class="container">
         <p>&copy; 2025 War of the Roses | Hosted by Pi Kappa Phi. All rights reserved.</p>
       </div>
     </footer>
+    <script src="../script.js"></script>
   </body>
 </html>
