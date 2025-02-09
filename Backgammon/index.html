@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <!-- Make sure it fits on mobile -->
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Interactive Backgammon</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div id="gameContainer">
-    <!-- The canvas will be our game board -->
-    <canvas id="boardCanvas"></canvas>
-    <!-- Game controls and status display -->
-    <div id="controls">
-      <button id="rollButton">Roll Dice</button>
-      <div id="diceDisplay"></div>
-      <div id="gameInfo"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Responsive mobile meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interactive Backgammon</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="gameContainer">
+      <!-- The canvas where the board is drawn -->
+      <canvas id="boardCanvas"></canvas>
+      <!-- Controls and status -->
+      <div id="controls">
+        <button id="rollButton">Roll Dice</button>
+        <div id="diceDisplay"></div>
+        <div id="gameInfo"></div>
+      </div>
     </div>
-  </div>
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

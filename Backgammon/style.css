@@ -15,12 +15,14 @@ body {
 }
 
 canvas {
-  background: #006600; /* a green felt look */
+  /* Tan board background */
+  background: #D2B48C;
   border: 2px solid #333;
   max-width: 100%;
   height: auto;
 }
 
+/* Controls styling */
 #controls {
   margin-top: 10px;
   text-align: center;
@@ -29,4 +31,10 @@ canvas {
 button {
   padding: 10px 20px;
   font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+#diceDisplay, #gameInfo {
+  margin: 5px 0;
+  font-size: 1.1rem;
 }
