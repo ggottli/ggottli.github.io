@@ -34,7 +34,7 @@ button {
   margin-bottom: 5px;
 }
 
-#diceDisplay, #gameInfo {
+#gameInfo {
   margin: 5px 0;
   font-size: 1.1rem;
 }

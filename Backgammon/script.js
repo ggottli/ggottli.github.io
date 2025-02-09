@@ -1,69 +1,59 @@
-// === Global Setup ===
+// ==================== Global Setup ====================
 const canvas = document.getElementById("boardCanvas");
 const ctx = canvas.getContext("2d");
 
 // Resize canvas to fit screen (with a maximum width)
 function resizeCanvas() {
   canvas.width = Math.min(window.innerWidth * 0.95, 800);
-  canvas.height = canvas.width * 0.6; // maintain a board aspect ratio
-  drawBoard();
-  drawCheckers();
-  if (gameState.selectedSource !== null) {
-    // Re‑highlight valid moves if a piece was selected
-    highlightValidDestinations();
-  }
+  canvas.height = canvas.width * 0.6; // maintain board aspect ratio
+  redraw();
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// === Game State ===
-// We use indices 0..23 for the 24 board points. (Point 1 is index 0, Point 24 is index 23.)
-// By standard rules, white (the human player) moves from high index to low index (bearing off from index <0)
-// while black (the CPU) moves from low index to high index (bearing off from index >23).
+// ==================== Game State ====================
+// We use indices 0..23 for the 24 board points.
+// Standard starting positions:
+// • White (human): 2 on point 24 (index 23), 5 on point 13 (index 12),
+//   3 on point 8 (index 7), and 5 on point 6 (index 5).
+// • Black (CPU): 2 on point 1 (index 0), 5 on point 12 (index 11),
+//   3 on point 17 (index 16), and 5 on point 19 (index 18).
+// White moves from high index toward 0 (and bears off on the left),
+// while Black moves from low index upward (bearing off on the right).
 let gameState = {
   board: new Array(24).fill(null).map(() => ({ color: null, count: 0 })),
-  // The bar stores checkers that have been hit.
   bar: { white: 0, black: 0 },
   borneOff: { white: 0, black: 0 },
-  // currentPlayer is set to "white" (human) or "black" (CPU)
-  currentPlayer: null,
-  // The dice for the current turn (an array of numbers)
-  dice: [],
-  // Moves left – a copy of the dice values that haven’t yet been played this turn.
-  movesLeft: [],
-  // selectedSource is either a board point index or the string "bar" when a checker is selected for moving.
-  selectedSource: null,
-  // validMoves holds the list of legal moves for the currently selected checker.
-  validMoves: [],
-  // gamePhase controls the overall flow:
+  currentPlayer: null, // "white" (human) or "black" (CPU)
+  dice: [],            // The current dice values
+  movesLeft: [],       // The dice values not yet used this turn
+  selectedSource: null, // When a piece is selected: a board index or "bar"
+  validMoves: [],      // Valid moves for the selected checker
+  // Game phase controls overall flow:
   // "initial" – initial roll to decide who goes first.
-  // "playerRoll" or "cpuRoll" – waiting for a dice roll.
-  // "playerMove" or "cpuMove" – waiting for moves.
+  // "playerRoll" / "playerMove" – human turn.
+  // "cpuRoll" / "cpuMove" – CPU turn.
   gamePhase: "initial",
-  // For the initial roll we store each side’s roll (a single die each)
+  // For initial roll: each side’s one-die result.
   initialRoll: { white: null, black: null },
 };
 
-// === Initialize Board ===
-// Standard starting positions:
-// For white (human): 2 on point 24 (index 23), 5 on point 13 (index 12),
-// 3 on point 8 (index 7), and 5 on point 6 (index 5).
-// For black (CPU): 2 on point 1 (index 0), 5 on point 12 (index 11),
-// 3 on point 17 (index 16), and 5 on point 19 (index 18).
+// ==================== Initial Setup ====================
 function initGame() {
+  // Clear the board first
   for (let i = 0; i < 24; i++) {
     gameState.board[i] = { color: null, count: 0 };
   }
   // Black (CPU)
-  gameState.board[0] = { color: "black", count: 2 };
-  gameState.board[11] = { color: "black", count: 5 };
-  gameState.board[16] = { color: "black", count: 3 };
-  gameState.board[18] = { color: "black", count: 5 };
+  gameState.board[0]   = { color: "black", count: 2 };
+  gameState.board[11]  = { color: "black", count: 5 };
+  gameState.board[16]  = { color: "black", count: 3 };
+  gameState.board[18]  = { color: "black", count: 5 };
   // White (human)
-  gameState.board[23] = { color: "white", count: 2 };
-  gameState.board[12] = { color: "white", count: 5 };
-  gameState.board[7] = { color: "white", count: 3 };
-  gameState.board[5] = { color: "white", count: 5 };
+  gameState.board[23]  = { color: "white", count: 2 };
+  gameState.board[12]  = { color: "white", count: 5 };
+  gameState.board[7]   = { color: "white", count: 3 };
+  gameState.board[5]   = { color: "white", count: 5 };
 
   gameState.bar.white = 0;
   gameState.bar.black = 0;
@@ -78,99 +68,84 @@ function initGame() {
   gameState.initialRoll.white = null;
   gameState.initialRoll.black = null;
   updateGameInfo();
-  drawBoard();
-  drawCheckers();
+  redraw();
 }
 initGame();
 
-// === Drawing Functions ===
+// ==================== Drawing Functions ====================
 
 // Draw the board with a tan background and alternating point colors.
-// The board is divided into a top row (points 13–24) and bottom row (points 1–12).
+// The board is divided into two halves with a central bar.
 function drawBoard() {
+  // Clear entire canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // Draw the tan board background (set in CSS but we clear it here too)
+  // (The canvas background is already tan via CSS, but we fill it here as well.)
   ctx.fillStyle = "#D2B48C";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const boardWidth = canvas.width;
   const boardHeight = canvas.height;
-  // We reserve 14 “columns”: 6 points on each side and 2 columns for the bar.
   const pointWidth = boardWidth / 14;
   const triangleHeight = boardHeight / 2;
-
-  // Draw the bar in the center
   const barX = boardWidth / 2 - pointWidth;
-  ctx.fillStyle = "#A0522D"; // a rich brown for the bar
+
+  // Draw the bar (central divider)
+  ctx.fillStyle = "#A0522D"; // rich brown
   ctx.fillRect(barX, 0, pointWidth * 2, boardHeight);
 
-  // Helper function to draw a triangle (point)
-  // (x,y) is the left corner; direction "up" or "down" indicates which way the triangle points.
-  function drawTriangle(x, y, width, height, direction, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    if (direction === "up") {
-      ctx.moveTo(x, y + height);
-      ctx.lineTo(x + width, y + height);
-      ctx.lineTo(x + width / 2, y);
-    } else {
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + width, y);
-      ctx.lineTo(x + width / 2, y + height);
-    }
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // Colors for points: alternate dark brown and light brown.
+  // Colors for points
   const darkColor = "#8B4513";
   const lightColor = "#CD853F";
 
-  // --- Top Row (points 13-24) ---
-  // The top row is drawn from left to right.
-  // Points 24 to 19 are on the left of the bar and points 18 to 13 on the right.
+  // --- Top Row (points 13–24) ---
+  // Points 24 to 19 (indices 23 to 18) are to the left of the bar.
+  // Points 18 to 13 (indices 17 to 12) are to the right.
   for (let i = 0; i < 12; i++) {
     let color = i % 2 === 0 ? darkColor : lightColor;
     let x;
     if (i < 6) {
-      // left of the bar; points 24 to 19 (indices 23 to 18)
+      // Left of bar: i=0 gives point 24 (index 23), i=5 gives point 19 (index 18)
       x = barX - pointWidth * (6 - i);
     } else {
-      // right of the bar; points 18 to 13 (indices 17 to 12)
+      // Right of bar: i=6 gives point 18 (index 17), i=11 gives point 13 (index 12)
       x = barX + pointWidth * 2 + pointWidth * (i - 6);
     }
     drawTriangle(x, 0, pointWidth, triangleHeight, "down", color);
   }
 
-  // --- Bottom Row (points 1-12) ---
-  // The bottom row is drawn from left to right.
-  // Points 1-6 are to the left of the bar; points 7-12 are to the right.
+  // --- Bottom Row (points 1–12) ---
+  // Points 1–6 (indices 0–5) lie to the left of the bar,
+  // and points 7–12 (indices 6–11) lie to the right.
   for (let i = 0; i < 12; i++) {
     let color = i % 2 === 0 ? darkColor : lightColor;
     let x;
     if (i < 6) {
-      // left of the bar; points 1-6 (indices 0 to 5)
-      x = barX - pointWidth * (6 - i);
+      x = boardWidth / 2 - pointWidth * (6 - i);
     } else {
-      // right of the bar; points 7-12 (indices 6 to 11)
-      x = barX + pointWidth * 2 + pointWidth * (i - 6);
+      x = boardWidth / 2 + pointWidth + (i - 6) * pointWidth;
     }
     drawTriangle(x, boardHeight - triangleHeight, pointWidth, triangleHeight, "up", color);
   }
-
-  // Optionally, highlight the bar if the player has checkers there.
-  if (gameState.bar.white > 0 && gameState.currentPlayer === "white") {
-    ctx.fillStyle = "rgba(0,255,0,0.3)";
-    ctx.fillRect(barX, boardHeight / 2, pointWidth * 2, boardHeight / 2);
-  }
-  if (gameState.bar.black > 0 && gameState.currentPlayer === "black") {
-    ctx.fillStyle = "rgba(0,255,0,0.3)";
-    ctx.fillRect(barX, 0, pointWidth * 2, boardHeight / 2);
-  }
 }
 
-// Draw the checkers on the board and on the bar.
-// For clarity, we use a light color for the human (“white”) and a dark color for the CPU (“black”).
+// Helper to draw a triangle (point) given its position and direction.
+function drawTriangle(x, y, width, height, direction, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (direction === "up") {
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + width, y);
+    ctx.lineTo(x + width / 2, y + height);
+  } else {
+    ctx.moveTo(x, y + height);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x + width / 2, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Draw all checkers based on gameState.board and gameState.bar.
 function drawCheckers() {
   const boardWidth = canvas.width;
   const boardHeight = canvas.height;
@@ -179,140 +154,177 @@ function drawCheckers() {
   const checkerRadius = pointWidth * 0.4;
   const offset = 5;
 
-  // Helper to draw a checker with a border.
-  function drawChecker(x, y, color) {
-    ctx.beginPath();
-    ctx.arc(x, y, checkerRadius, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#333";
-    ctx.stroke();
-  }
-
   // Draw checkers on board points.
-  // Our board array uses indices 0–23. Points 1–12 (indices 0–11) are in the bottom row;
-  // points 13–24 (indices 12–23) are in the top row.
+  // Bottom row: indices 0–11 (points 1–12)
+  // Top row: indices 12–23 (points 13–24)
   for (let i = 0; i < 24; i++) {
     const point = gameState.board[i];
     if (point.count === 0) continue;
     let isTop = i >= 12;
     let x, yStart, yStep = checkerRadius * 2.2;
     if (isTop) {
-      // For the top row, we split the points into two groups (left of the bar and right).
+      // For top row:
       if (i < 18) {
-        // Right of the bar: points 13-18 (board indices 12–17)
+        // Right of bar: indices 12–17 (points 13–18)
         let pos = i - 12;
-        x = canvas.width / 2 + pointWidth * (pos + 1) + pointWidth;
+        x = boardWidth / 2 + pointWidth * 2 + pos * pointWidth + pointWidth / 2;
       } else {
-        // Left of the bar: points 19-24 (indices 18–23)
-        let pos = i - 18;
-        x = canvas.width / 2 - pointWidth * (6 - pos);
+        // Left of bar: indices 18–23 (points 19–24; note reverse order)
+        let pos = 23 - i;
+        x = boardWidth / 2 - pointWidth * (pos + 1) + pointWidth / 2;
       }
       yStart = checkerRadius + offset;
+      // Stack checkers from the top down (but not past the middle)
       for (let j = 0; j < point.count; j++) {
         let y = yStart + j * yStep;
         if (y > triangleHeight - checkerRadius) y = triangleHeight - checkerRadius;
-        drawChecker(x, y, point.color === "white" ? "#F5DEB3" : "#8B4513");
+        drawChecker(x, y, point.color);
       }
     } else {
-      // Bottom row: split into two groups.
+      // Bottom row:
       if (i < 6) {
-        // Points 1-6 (indices 0–5)
-        let pos = i;
-        x = canvas.width / 2 - pointWidth * (6 - pos) + pointWidth / 2;
+        // Left of bar: indices 0–5 (points 1–6)
+        x = boardWidth / 2 - pointWidth * (6 - i) + pointWidth / 2;
       } else {
-        // Points 7-12 (indices 6–11)
+        // Right of bar: indices 6–11 (points 7–12)
         let pos = i - 6;
-        x = canvas.width / 2 + pointWidth * pos + pointWidth * 2;
+        x = boardWidth / 2 + pointWidth + pos * pointWidth + pointWidth / 2;
       }
-      yStart = canvas.height - checkerRadius - offset;
+      yStart = boardHeight - checkerRadius - offset;
+      // Stack checkers upward from the bottom (but not past the middle)
       for (let j = 0; j < point.count; j++) {
         let y = yStart - j * yStep;
-        if (y < canvas.height - triangleHeight + checkerRadius) y = canvas.height - triangleHeight + checkerRadius;
-        drawChecker(x, y, point.color === "white" ? "#F5DEB3" : "#8B4513");
+        if (y < triangleHeight + checkerRadius) y = triangleHeight + checkerRadius;
+        drawChecker(x, y, point.color);
       }
     }
   }
 
   // Draw checkers on the bar.
   if (gameState.bar.white > 0) {
-    // For white, draw them on the bottom half of the bar.
-    let x = canvas.width / 2;
-    let yStart = canvas.height / 2 + checkerRadius;
+    let barCenter = getBarCenter("white");
+    // For multiple checkers, offset vertically.
     for (let j = 0; j < gameState.bar.white; j++) {
-      let y = yStart + j * (checkerRadius * 2.2);
-      drawChecker(x, y, "#F5DEB3");
+      drawChecker(barCenter.x, barCenter.y + j * (checkerRadius * 2.2), "white");
     }
   }
   if (gameState.bar.black > 0) {
-    // For black, draw them on the top half of the bar.
-    let x = canvas.width / 2 + pointWidth;
-    let yStart = canvas.height / 2 - checkerRadius;
+    let barCenter = getBarCenter("black");
     for (let j = 0; j < gameState.bar.black; j++) {
-      let y = yStart - j * (checkerRadius * 2.2);
-      drawChecker(x, y, "#8B4513");
+      drawChecker(barCenter.x, barCenter.y - j * (checkerRadius * 2.2), "black");
     }
   }
 }
 
-// Highlight a board point (or the bar) to indicate selection.
-function highlightArea(x, y, width, height) {
-  ctx.fillStyle = "rgba(0, 0, 255, 0.3)";
-  ctx.fillRect(x, y, width, height);
+// Helper to draw a single checker.
+function drawChecker(x, y, color) {
+  const boardWidth = canvas.width;
+  const pointWidth = boardWidth / 14;
+  const checkerRadius = pointWidth * 0.4;
+  ctx.beginPath();
+  ctx.arc(x, y, checkerRadius, 0, Math.PI * 2);
+  // Use pure white and pure black for the checkers.
+  ctx.fillStyle = color === "white" ? "#FFFFFF" : "#000000";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#333";
+  ctx.stroke();
 }
 
-// When a player selects a piece (or bar), we highlight valid destination points.
-function highlightValidDestinations() {
-  gameState.validMoves.forEach((move) => {
-    // Highlight the destination region.
-    let dest = move.to;
-    // For bearing off moves, we highlight an off‐board area.
-    if (move.bearOff) {
-      // Draw a small highlight near the board edge.
-      if (gameState.currentPlayer === "white") {
-        ctx.fillStyle = "rgba(0,255,0,0.5)";
-        ctx.fillRect(0, canvas.height - 40, 40, 40);
-      } else {
-        ctx.fillStyle = "rgba(0,255,0,0.5)";
-        ctx.fillRect(canvas.width - 40, 0, 40, 40);
-      }
-      return;
-    }
-    // Otherwise, map the destination board point to a screen region.
-    const boardWidth = canvas.width;
-    const boardHeight = canvas.height;
-    const pointWidth = boardWidth / 14;
-    const triangleHeight = boardHeight / 2;
-    let x, y, w, h;
-    if (dest < 12) {
-      // Bottom row.
-      if (dest < 6) {
-        x = canvas.width / 2 - pointWidth * 6 + dest * pointWidth;
-      } else {
-        x = canvas.width / 2 + pointWidth * (dest - 6) + pointWidth * 2;
-      }
-      y = canvas.height - triangleHeight;
-      w = pointWidth;
-      h = triangleHeight;
+// Draw the dice in the middle of the board (one above the other).
+function drawDice() {
+  if (gameState.dice.length === 0) return;
+  const boardWidth = canvas.width;
+  const boardHeight = canvas.height;
+  const pointWidth = boardWidth / 14;
+  const diceSize = pointWidth; // dice are squares roughly as wide as a board point
+  const diceX = (boardWidth - diceSize) / 2;
+  // Vertically center the two dice (one above, one below center)
+  const diceY1 = boardHeight / 2 - diceSize - 5;
+  const diceY2 = boardHeight / 2 + 5;
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 2;
+  // Draw first dice
+  ctx.fillRect(diceX, diceY1, diceSize, diceSize);
+  ctx.strokeRect(diceX, diceY1, diceSize, diceSize);
+  // Draw second dice
+  ctx.fillRect(diceX, diceY2, diceSize, diceSize);
+  ctx.strokeRect(diceX, diceY2, diceSize, diceSize);
+
+  // Draw the dice values (centered)
+  ctx.fillStyle = "#000000";
+  ctx.font = diceSize * 0.6 + "px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  if (gameState.dice.length >= 1) {
+    ctx.fillText(gameState.dice[0], diceX + diceSize / 2, diceY1 + diceSize / 2);
+  }
+  if (gameState.dice.length >= 2) {
+    ctx.fillText(gameState.dice[1], diceX + diceSize / 2, diceY2 + diceSize / 2);
+  }
+}
+
+// ==================== Helper Functions for Animation ====================
+
+// Compute the center of a board point (for moving checkers).
+function getPointCenter(index) {
+  const boardWidth = canvas.width;
+  const boardHeight = canvas.height;
+  const pointWidth = boardWidth / 14;
+  const triangleHeight = boardHeight / 2;
+  let cx, cy;
+  if (index < 12) {
+    // Bottom row: indices 0–11.
+    if (index < 6) {
+      cx = boardWidth / 2 - pointWidth * (6 - index) + pointWidth / 2;
     } else {
-      // Top row.
-      if (dest < 18) {
-        let pos = dest - 12;
-        x = canvas.width / 2 + pointWidth * (pos + 1) + pointWidth;
-      } else {
-        let pos = dest - 18;
-        x = canvas.width / 2 - pointWidth * (6 - pos);
-      }
-      y = 0;
-      w = pointWidth;
-      h = triangleHeight;
+      cx = boardWidth / 2 + pointWidth + (index - 6) * pointWidth + pointWidth / 2;
     }
-    highlightArea(x, y, w, h);
-  });
+    cy = boardHeight - triangleHeight / 2;
+  } else {
+    // Top row: indices 12–23.
+    if (index < 18) { // Right of bar: indices 12–17.
+      let pos = index - 12;
+      cx = boardWidth / 2 + pointWidth * 2 + pos * pointWidth + pointWidth / 2;
+    } else { // Left of bar: indices 18–23 (reverse order)
+      let pos = 23 - index;
+      cx = boardWidth / 2 - pointWidth * (pos + 1) + pointWidth / 2;
+    }
+    cy = triangleHeight / 2;
+  }
+  return { x: cx, y: cy };
 }
 
-// === UI Updates ===
+// Compute a center point for checkers on the bar.
+function getBarCenter(player) {
+  const boardWidth = canvas.width;
+  const boardHeight = canvas.height;
+  const pointWidth = boardWidth / 14;
+  if (player === "white") {
+    // Place white checkers roughly in the lower half of the bar.
+    return { x: boardWidth / 2, y: (boardHeight + boardHeight / 2) / 2 };
+  } else {
+    // Place black checkers in the upper half.
+    return { x: boardWidth / 2 + pointWidth, y: boardHeight / 4 };
+  }
+}
+
+// Compute a center point for bearing off.
+function getBearOffCenter(player) {
+  const boardWidth = canvas.width;
+  const boardHeight = canvas.height;
+  if (player === "white") {
+    // For white, bearing off is on the left side.
+    return { x: 20, y: boardHeight - 20 };
+  } else {
+    // For black, bearing off is on the right side.
+    return { x: boardWidth - 20, y: 20 };
+  }
+}
+
+// ==================== UI & Dice Roll Animation ====================
 
 function updateGameInfo() {
   const infoDiv = document.getElementById("gameInfo");
@@ -335,27 +347,14 @@ function updateGameInfo() {
       break;
   }
   let diceText = gameState.dice.length > 0 ? "Dice: " + gameState.dice.join(", ") : "";
-  let turnText =
-    gameState.currentPlayer === "white"
-      ? "Your checkers (White)"
-      : "CPU checkers (Black)";
+  let turnText = gameState.currentPlayer === "white" ? "Your checkers (White)" : "CPU checkers (Black)";
   infoDiv.innerHTML = `<strong>${phaseText}</strong><br>${diceText}<br>Current Turn: ${turnText}`;
-  // Also update dice display
-  document.getElementById("diceDisplay").innerText = diceText;
-  // Enable or disable the roll button based on phase.
-  const rollButton = document.getElementById("rollButton");
-  if (gameState.gamePhase === "playerRoll" || gameState.gamePhase === "initial") {
-    rollButton.disabled = false;
-  } else {
-    rollButton.disabled = true;
-  }
 }
 
-// === Dice Animation ===
-// Roll the given number of dice (1 or 2) with a brief animation.
+// Roll the dice with an animation that shows rapidly changing values.
 function rollDiceAnimation(numDice, callback) {
-  let duration = 1000; // milliseconds
-  let interval = 100; // update every 100ms
+  let duration = 1000; // animation duration in ms
+  let interval = 100;  // update every 100ms
   let elapsed = 0;
   let animationInterval = setInterval(() => {
     let tempRolls = [];
@@ -364,239 +363,140 @@ function rollDiceAnimation(numDice, callback) {
     }
     gameState.dice = tempRolls;
     updateGameInfo();
+    redraw();
     elapsed += interval;
     if (elapsed >= duration) {
       clearInterval(animationInterval);
-      // Final roll result:
+      // Final dice values:
       let finalRolls = [];
       for (let i = 0; i < numDice; i++) {
         finalRolls.push(Math.floor(Math.random() * 6) + 1);
       }
       gameState.dice = finalRolls;
-      // For a dice roll during a turn, if doubles then 4 moves are allowed.
+      // Set movesLeft (4 moves if doubles, else 2 moves).
       if (numDice === 2 && finalRolls[0] === finalRolls[1]) {
         gameState.movesLeft = [finalRolls[0], finalRolls[0], finalRolls[0], finalRolls[0]];
       } else if (numDice === 2) {
         gameState.movesLeft = [...finalRolls];
       }
       updateGameInfo();
+      redraw();
       callback(finalRolls);
-      drawBoard();
-      drawCheckers();
-      if (gameState.selectedSource !== null) {
-        highlightValidDestinations();
-      }
     }
   }, interval);
 }
 
-// === Dice Roll Button Handler ===
-document.getElementById("rollButton").addEventListener("click", () => {
-  if (gameState.gamePhase === "initial") {
-    // === Initial Roll to decide who goes first ===
-    // Human rolls one die.
-    document.getElementById("rollButton").disabled = true;
-    rollDiceAnimation(1, (roll) => {
-      gameState.initialRoll.white = roll[0];
-      updateGameInfo();
-      // Now simulate CPU rolling after a brief delay.
-      setTimeout(() => {
-        rollDiceAnimation(1, (cpuRoll) => {
-          gameState.initialRoll.black = cpuRoll[0];
-          // If tie, re‑roll.
-          if (gameState.initialRoll.white === gameState.initialRoll.black) {
-            alert("Tie! Roll again to decide who goes first.");
-            gameState.initialRoll.white = null;
-            gameState.initialRoll.black = null;
-            gameState.dice = [];
-            gameState.gamePhase = "initial";
-            updateGameInfo();
-          } else {
-            // The higher roll wins and uses both dice as the initial dice.
-            if (gameState.initialRoll.white > gameState.initialRoll.black) {
-              gameState.currentPlayer = "white";
-              gameState.dice = [gameState.initialRoll.white, gameState.initialRoll.black];
-              gameState.movesLeft =
-                gameState.initialRoll.white === gameState.initialRoll.black
-                  ? [gameState.initialRoll.white, gameState.initialRoll.white, gameState.initialRoll.white, gameState.initialRoll.white]
-                  : [gameState.initialRoll.white, gameState.initialRoll.black];
-              alert("You won the initial roll! You go first.");
-              gameState.gamePhase = "playerMove";
-            } else {
-              gameState.currentPlayer = "black";
-              gameState.dice = [gameState.initialRoll.white, gameState.initialRoll.black];
-              gameState.movesLeft =
-                gameState.initialRoll.white === gameState.initialRoll.black
-                  ? [gameState.initialRoll.black, gameState.initialRoll.black, gameState.initialRoll.black, gameState.initialRoll.black]
-                  : [gameState.initialRoll.white, gameState.initialRoll.black];
-              alert("CPU won the initial roll! CPU goes first.");
-              gameState.gamePhase = "cpuMove";
-              setTimeout(cpuTurn, 1000);
-            }
-          }
-          updateGameInfo();
-        });
-      }, 500);
-    });
-  } else if (gameState.gamePhase === "playerRoll") {
-    // === Regular turn dice roll for the player ===
-    document.getElementById("rollButton").disabled = true;
-    rollDiceAnimation(2, () => {
-      gameState.gamePhase = "playerMove";
-      updateGameInfo();
-    });
-  }
-});
+// ==================== Checker Move Animation ====================
 
-// === Checker Selection & Move Handling ===
-
-// Get the board point index from click coordinates.
-// (This function maps the canvas click position to a board point index.)
-function getPointFromCoordinates(x, y) {
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  const triangleHeight = boardHeight / 2;
-  // Check if click is in the bar area.
-  const barX = boardWidth / 2 - pointWidth;
-  if (x >= barX && x <= barX + pointWidth * 2) {
-    // If the current player has checkers on the bar, return "bar"
-    if (gameState.bar[gameState.currentPlayer] > 0) {
-      return "bar";
-    }
-  }
-  // Determine if the click is on the top or bottom half.
-  if (y < triangleHeight) {
-    // Top row: points 13-24 (indices 12-23)
-    // Left of bar: points 19-24 (indices 18-23)
-    // Right of bar: points 13-18 (indices 12-17)
-    if (x < barX) {
-      // left of bar
-      let pos = Math.floor((barX - x) / pointWidth);
-      return 23 - pos; // points 24 downwards
-    } else if (x > barX + pointWidth * 2) {
-      let pos = Math.floor((x - (barX + pointWidth * 2)) / pointWidth);
-      return 12 + pos;
-    }
+// This function animates a checker moving from its source to destination.
+function animateCheckerMove(move, callback) {
+  let player = gameState.currentPlayer;
+  let startPos, endPos;
+  if (move.from === "bar") {
+    startPos = getBarCenter(player);
   } else {
-    // Bottom row: points 1-12 (indices 0-11)
-    // Left of bar: points 1-6 (indices 0-5)
-    // Right of bar: points 7-12 (indices 6-11)
-    if (x < barX) {
-      let pos = Math.floor((x - (barX - pointWidth * 6)) / pointWidth);
-      return pos;
-    } else if (x > barX + pointWidth * 2) {
-      let pos = Math.floor((x - (barX + pointWidth * 2)) / pointWidth);
-      return 6 + pos;
+    startPos = getPointCenter(move.from);
+  }
+  if (move.bearOff) {
+    endPos = getBearOffCenter(player);
+  } else {
+    endPos = getPointCenter(move.to);
+  }
+  let duration = 500; // duration in ms
+  let startTime = null;
+  function animateStep(timestamp) {
+    if (!startTime) startTime = timestamp;
+    let elapsed = timestamp - startTime;
+    let t = Math.min(elapsed / duration, 1);
+    let currentX = startPos.x + t * (endPos.x - startPos.x);
+    let currentY = startPos.y + t * (endPos.y - startPos.y);
+    redraw(); // redraw board, checkers, and dice
+    // Draw the moving checker on top.
+    const boardWidth = canvas.width;
+    const pointWidth = boardWidth / 14;
+    const checkerRadius = pointWidth * 0.4;
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, checkerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = player === "white" ? "#FFFFFF" : "#000000";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#333";
+    ctx.stroke();
+    if (t < 1) {
+      requestAnimationFrame(animateStep);
+    } else {
+      callback();
     }
   }
-  return null;
+  requestAnimationFrame(animateStep);
 }
 
-// When the player clicks the canvas in his move phase:
-canvas.addEventListener("click", (event) => {
-  // Only allow clicks during the player's move phase.
-  if (gameState.currentPlayer !== "white" || gameState.gamePhase !== "playerMove") return;
-  const rect = canvas.getBoundingClientRect();
-  const clickX = event.clientX - rect.left;
-  const clickY = event.clientY - rect.top;
-  let clickedSource = getPointFromCoordinates(clickX, clickY);
-  // If the player has checkers on the bar, he must re‑enter them.
-  if (gameState.bar.white > 0 && clickedSource !== "bar") {
-    alert("You must re‑enter your checkers from the bar!");
-    return;
+// This function performs a move with an animation.
+// It first removes the checker from the source (so it isn’t drawn in its old position),
+// then animates the moving checker, and finally updates the destination.
+function performMove(move, callback) {
+  // Remove the used die from movesLeft.
+  let dieIndex = gameState.movesLeft.indexOf(move.die);
+  if (dieIndex !== -1) gameState.movesLeft.splice(dieIndex, 1);
+  // Remove checker from source.
+  if (move.from === "bar") {
+    gameState.bar[gameState.currentPlayer]--;
+  } else {
+    gameState.board[move.from].count--;
+    if (gameState.board[move.from].count === 0) {
+      gameState.board[move.from].color = null;
+    }
   }
-  // If no piece is currently selected, then try to select one.
-  if (gameState.selectedSource === null) {
-    // Determine if the clicked area contains one of the player's checkers.
-    if (clickedSource === "bar") {
-      // There is at least one checker on the bar.
-      gameState.selectedSource = "bar";
-      gameState.validMoves = getValidMoves("bar");
-      if (gameState.validMoves.length === 0) {
-        alert("No legal moves from the bar!");
-        gameState.selectedSource = null;
-      }
-    } else if (typeof clickedSource === "number") {
-      const point = gameState.board[clickedSource];
-      if (point && point.count > 0 && point.color === "white") {
-        gameState.selectedSource = clickedSource;
-        gameState.validMoves = getValidMoves(clickedSource);
-        if (gameState.validMoves.length === 0) {
-          alert("No legal moves for this checker.");
-          gameState.selectedSource = null;
+  // Animate the moving checker.
+  animateCheckerMove(move, () => {
+    // After animation, update destination.
+    if (move.bearOff) {
+      gameState.borneOff[gameState.currentPlayer]++;
+    } else {
+      let destPoint = gameState.board[move.to];
+      // If there’s exactly one opposing checker, hit it.
+      if (destPoint.count === 1 && destPoint.color !== gameState.currentPlayer) {
+        gameState.bar[destPoint.color]++;
+        gameState.board[move.to] = { color: gameState.currentPlayer, count: 1 };
+      } else {
+        if (destPoint.count === 0) {
+          gameState.board[move.to] = { color: gameState.currentPlayer, count: 1 };
+        } else {
+          gameState.board[move.to].count++;
         }
       }
     }
-    drawBoard();
-    drawCheckers();
-    if (gameState.validMoves.length > 0) highlightValidDestinations();
-  } else {
-    // A source is already selected; now see if the clicked destination matches one valid move.
-    let destination = clickedSource;
-    // For bearing off, if the player clicks near the bottom‑left corner, interpret that as a bear‑off move.
-    if (
-      gameState.selectedSource !== "bar" &&
-      destination === null &&
-      clickX < 50 &&
-      clickY > canvas.height - 50
-    ) {
-      destination = "bearOff";
-    }
-    let chosenMove = gameState.validMoves.find(
-      (move) => (move.to === destination) || (move.bearOff && destination === "bearOff")
-    );
-    if (chosenMove) {
-      attemptMove(chosenMove);
-      gameState.selectedSource = null;
-      gameState.validMoves = [];
-      drawBoard();
-      drawCheckers();
-      updateGameInfo();
-      // If moves remain, wait for further selection; otherwise end turn.
-      if (gameState.movesLeft.length === 0) {
-        endTurn();
-      }
-    } else {
-      // If the player clicks somewhere else, deselect.
-      gameState.selectedSource = null;
-      gameState.validMoves = [];
-      drawBoard();
-      drawCheckers();
-    }
-  }
-});
+    callback();
+  });
+}
 
-// === Move Generation & Validation ===
+// ==================== Move Generation & Validation ====================
 
-// Returns an array of valid moves for a checker selected from a given source.
-// The source is either a board index (number) or the string "bar".
+// Returns an array of valid moves for a checker at the given source.
+// Source is either a board index or "bar".
 function getValidMoves(source) {
   let moves = [];
-  // If the player has checkers on the bar, the only legal moves are re‑entry moves.
   if (source === "bar") {
-    // For white (human), re‑entry is into the opponent's home board (points 19–24, indices 18–23)
+    // When re-entering from the bar:
+    // For white, re-entry is into the opponent's home board (points 19–24, indices 18–23).
     gameState.movesLeft.forEach((die) => {
-      // For white: a die of 1 enters on point 24 (index 23), 2 → index 22, …, 6 → index 18.
-      let dest = 24 - die; // e.g. die 1 => 23
-      // Validate destination: must be open (empty or with one black checker).
+      let dest = 24 - die; // die 1 enters at index 23, die 6 at index 18.
       let point = gameState.board[dest];
+      // Allow if the destination is empty or has one opposing checker.
       if (
-        point === undefined ||
-        (point.count > 0 && point.color === "white") ||
+        point.count === 0 ||
+        point.color === "white" ||
         (point.count === 1 && point.color === "black")
       ) {
         moves.push({ from: "bar", to: dest, die: die, bearOff: false });
       }
     });
   } else if (typeof source === "number") {
-    // For a checker on the board.
     gameState.movesLeft.forEach((die) => {
-      let dest;
-      let bearOff = false;
+      let dest, bearOff = false;
       if (gameState.currentPlayer === "white") {
         dest = source - die;
-        // Bearing off: if the destination is off the board and all white checkers are in the home board (indices 0–5)
+        // Bearing off: if dest is off the board and all white checkers are in home board (indices 0–5).
         if (dest < 0 && canBearOff("white")) {
           bearOff = true;
         }
@@ -610,8 +510,6 @@ function getValidMoves(source) {
         moves.push({ from: source, to: null, die: die, bearOff: true });
       } else if (dest >= 0 && dest <= 23) {
         let destination = gameState.board[dest];
-        // Destination is legal if empty or has checkers of same color,
-        // or if it has exactly one opposing checker (which will be hit).
         if (
           destination.count === 0 ||
           destination.color === gameState.currentPlayer ||
@@ -625,19 +523,15 @@ function getValidMoves(source) {
   return moves;
 }
 
-// Checks if all checkers for the given player are in their home board.
+// Check if all checkers for a player are in their home board.
 function canBearOff(player) {
   let homeRange;
   if (player === "white") {
-    // White's home board: points 1–6 (indices 0–5)
-    homeRange = [0, 5];
+    homeRange = [0, 5]; // white's home board (points 1–6)
   } else {
-    // Black's home board: points 19–24 (indices 18–23)
-    homeRange = [18, 23];
+    homeRange = [18, 23]; // black's home board (points 19–24)
   }
-  // Count all checkers on the board for this player.
-  let totalOnBoard = 0;
-  let inHome = 0;
+  let totalOnBoard = 0, inHome = 0;
   for (let i = 0; i < 24; i++) {
     let point = gameState.board[i];
     if (point.color === player) {
@@ -647,54 +541,119 @@ function canBearOff(player) {
       }
     }
   }
-  // Also, if any checkers are on the bar, bearing off is not allowed.
+  // If any checkers are on the bar, bearing off is not allowed.
   if (gameState.bar[player] > 0) return false;
   return totalOnBoard > 0 && totalOnBoard === inHome;
 }
 
-// Attempt the given move. This function updates the game state.
-function attemptMove(move) {
-  // Remove the used die from movesLeft.
-  let dieIndex = gameState.movesLeft.indexOf(move.die);
-  if (dieIndex !== -1) {
-    gameState.movesLeft.splice(dieIndex, 1);
-  }
+// ==================== Player Input Handling ====================
 
-  // Remove checker from source.
-  if (move.from === "bar") {
-    gameState.bar[gameState.currentPlayer]--;
+// Map a click’s coordinates to a board point (or "bar").
+// (This logic matches the board–drawing layout.)
+function getPointFromCoordinates(x, y) {
+  const boardWidth = canvas.width;
+  const boardHeight = canvas.height;
+  const pointWidth = boardWidth / 14;
+  const triangleHeight = boardHeight / 2;
+  const barX = boardWidth / 2 - pointWidth;
+  // If click is in the bar and the player has checkers there, return "bar".
+  if (x >= barX && x <= barX + pointWidth * 2) {
+    if (gameState.bar[gameState.currentPlayer] > 0) return "bar";
+  }
+  // Determine top or bottom half.
+  if (y < triangleHeight) {
+    // Top row: points 13–24.
+    if (x < barX) {
+      let pos = Math.floor((barX - x) / pointWidth);
+      return 23 - pos; // left of bar: indices 23 downwards.
+    } else if (x > barX + pointWidth * 2) {
+      let pos = Math.floor((x - (barX + pointWidth * 2)) / pointWidth);
+      return 12 + pos; // right of bar: indices 12 upwards.
+    }
   } else {
-    gameState.board[move.from].count--;
-    if (gameState.board[move.from].count === 0) {
-      gameState.board[move.from].color = null;
+    // Bottom row: points 1–12.
+    if (x < barX) {
+      let pos = Math.floor((x - (barX - pointWidth * 6)) / pointWidth);
+      return pos; // left of bar: indices 0–5.
+    } else if (x > barX + pointWidth * 2) {
+      let pos = Math.floor((x - (barX + pointWidth * 2)) / pointWidth);
+      return 6 + pos; // right of bar: indices 6–11.
     }
   }
-
-  // If bearing off, increment borneOff.
-  if (move.bearOff) {
-    gameState.borneOff[gameState.currentPlayer]++;
-  } else {
-    // If destination point has exactly one opposing checker, that checker is hit.
-    let destPoint = gameState.board[move.to];
-    if (destPoint.count === 1 && destPoint.color !== gameState.currentPlayer) {
-      // Send the hit checker to the bar.
-      gameState.bar[destPoint.color]++;
-      // Replace with the moving checker.
-      gameState.board[move.to] = { color: gameState.currentPlayer, count: 1 };
-    } else {
-      if (destPoint.count === 0) {
-        gameState.board[move.to] = { color: gameState.currentPlayer, count: 1 };
-      } else {
-        gameState.board[move.to].count++;
-      }
-    }
-  }
+  return null;
 }
 
-// When the turn is over (no moves left), switch turns.
+// Handle clicks during the player's move phase.
+canvas.addEventListener("click", (event) => {
+  // Only allow clicks when it's the human's move phase.
+  if (gameState.currentPlayer !== "white" || gameState.gamePhase !== "playerMove") return;
+  const rect = canvas.getBoundingClientRect();
+  const clickX = event.clientX - rect.left;
+  const clickY = event.clientY - rect.top;
+  let clickedArea = getPointFromCoordinates(clickX, clickY);
+  // If the player has checkers on the bar, they must re‑enter from there.
+  if (gameState.bar.white > 0 && clickedArea !== "bar") {
+    alert("You must re‑enter your checkers from the bar!");
+    return;
+  }
+  if (gameState.selectedSource === null) {
+    // No checker selected yet; try to select one.
+    if (clickedArea === "bar") {
+      gameState.selectedSource = "bar";
+      gameState.validMoves = getValidMoves("bar");
+      if (gameState.validMoves.length === 0) {
+        alert("No legal moves from the bar!");
+        gameState.selectedSource = null;
+        return;
+      }
+    } else if (typeof clickedArea === "number") {
+      const point = gameState.board[clickedArea];
+      if (point && point.count > 0 && point.color === "white") {
+        gameState.selectedSource = clickedArea;
+        gameState.validMoves = getValidMoves(clickedArea);
+        if (gameState.validMoves.length === 0) {
+          alert("No legal moves for this checker.");
+          gameState.selectedSource = null;
+          return;
+        }
+      }
+    }
+    redraw();
+    // Optionally, highlight valid destinations here.
+  } else {
+    // A checker is already selected; try to complete a move.
+    let destination = clickedArea;
+    // For bearing off, if the player clicks near the bottom-left corner.
+    if (gameState.selectedSource !== "bar" && destination === null && clickX < 50 && clickY > canvas.height - 50) {
+      destination = "bearOff";
+    }
+    let chosenMove = gameState.validMoves.find(
+      (move) => (move.to === destination) || (move.bearOff && destination === "bearOff")
+    );
+    if (chosenMove) {
+      // Perform the move with animation.
+      performMove(chosenMove, () => {
+        gameState.selectedSource = null;
+        gameState.validMoves = [];
+        updateGameInfo();
+        redraw();
+        if (gameState.movesLeft.length === 0) {
+          endTurn();
+        }
+      });
+    } else {
+      // Deselect if the clicked area isn’t a valid destination.
+      gameState.selectedSource = null;
+      gameState.validMoves = [];
+      redraw();
+    }
+  }
+});
+
+// ==================== Turn Management & CPU Logic ====================
+
+// Called when no moves remain; switches turns.
 function endTurn() {
-  // Check for win conditions here (borneOff 15 checkers, etc.) if desired.
-  // For now, simply switch turn.
   if (gameState.currentPlayer === "white") {
     gameState.currentPlayer = "black";
     gameState.gamePhase = "cpuRoll";
@@ -703,16 +662,14 @@ function endTurn() {
   } else {
     gameState.currentPlayer = "white";
     gameState.gamePhase = "playerRoll";
-    // Clear dice so that player must roll.
     gameState.dice = [];
     gameState.movesLeft = [];
     updateGameInfo();
+    redraw();
   }
 }
 
-// === CPU Logic ===
-
-// The CPU turn: roll dice and then make moves automatically.
+// CPU turn: roll dice and then make moves automatically.
 function cpuTurn() {
   if (gameState.currentPlayer !== "black") return;
   gameState.gamePhase = "cpuRoll";
@@ -727,16 +684,15 @@ function cpuTurn() {
 // Gather all legal moves for the CPU.
 function getAllLegalMoves(player) {
   let moves = [];
-  // If the CPU has checkers on the bar, those must be moved first.
+  // If checkers are on the bar, these must be moved first.
   if (gameState.bar[player] > 0) {
-    // For black, re‑entry is into white’s home board (points 1–6, indices 0–5).
     gameState.movesLeft.forEach((die) => {
-      // For black: a die of 1 enters on point 1 (index 0), 2 → index 1, etc.
+      // For black, re-entry is into white’s home board (points 1–6, indices 0–5).
       let dest = die - 1;
       let point = gameState.board[dest];
       if (
-        point === undefined ||
-        (point.count > 0 && point.color === player) ||
+        point.count === 0 ||
+        point.color === player ||
         (point.count === 1 && point.color !== player)
       ) {
         moves.push({ from: "bar", to: dest, die: die, bearOff: false });
@@ -744,7 +700,6 @@ function getAllLegalMoves(player) {
     });
     return moves;
   }
-  // Otherwise, check each board point.
   for (let i = 0; i < 24; i++) {
     let point = gameState.board[i];
     if (point.color === player && point.count > 0) {
@@ -784,32 +739,88 @@ function cpuMakeMove() {
   if (gameState.currentPlayer !== "black" || gameState.gamePhase !== "cpuMove") return;
   let legalMoves = getAllLegalMoves("black");
   if (legalMoves.length === 0) {
-    // No legal moves – end turn.
     gameState.dice = [];
     gameState.movesLeft = [];
     endTurn();
     return;
   }
-  // Pick the first legal move (or choose randomly).
+  // (For simplicity, pick the first legal move.)
   let move = legalMoves[0];
-  attemptMove(move);
-  drawBoard();
-  drawCheckers();
-  updateGameInfo();
-  // Delay before the next CPU move.
-  setTimeout(() => {
-    if (gameState.movesLeft.length > 0) {
-      cpuMakeMove();
-    } else {
-      endTurn();
-    }
-  }, 600);
+  performMove(move, () => {
+    updateGameInfo();
+    setTimeout(() => {
+      if (gameState.movesLeft.length > 0) {
+        cpuMakeMove();
+      } else {
+        endTurn();
+      }
+    }, 600);
+  });
 }
 
-// === Redraw on state changes ===
+// ==================== Redraw Function ====================
 function redraw() {
   drawBoard();
   drawCheckers();
+  drawDice();
   updateGameInfo();
 }
+
+// ==================== Dice Roll Button Handler ====================
+document.getElementById("rollButton").addEventListener("click", () => {
+  if (gameState.gamePhase === "initial") {
+    // --- Initial Roll to decide who goes first ---
+    document.getElementById("rollButton").disabled = true;
+    rollDiceAnimation(1, (roll) => {
+      gameState.initialRoll.white = roll[0];
+      updateGameInfo();
+      setTimeout(() => {
+        rollDiceAnimation(1, (cpuRoll) => {
+          gameState.initialRoll.black = cpuRoll[0];
+          if (gameState.initialRoll.white === gameState.initialRoll.black) {
+            alert("Tie! Roll again to decide who goes first.");
+            gameState.initialRoll.white = null;
+            gameState.initialRoll.black = null;
+            gameState.dice = [];
+            gameState.gamePhase = "initial";
+            updateGameInfo();
+          } else {
+            if (gameState.initialRoll.white > gameState.initialRoll.black) {
+              gameState.currentPlayer = "white";
+              gameState.dice = [gameState.initialRoll.white, gameState.initialRoll.black];
+              gameState.movesLeft = gameState.initialRoll.white === gameState.initialRoll.black
+                ? [gameState.initialRoll.white, gameState.initialRoll.white, gameState.initialRoll.white, gameState.initialRoll.white]
+                : [gameState.initialRoll.white, gameState.initialRoll.black];
+              alert("You won the initial roll! You go first.");
+              gameState.gamePhase = "playerMove";
+            } else {
+              gameState.currentPlayer = "black";
+              gameState.dice = [gameState.initialRoll.white, gameState.initialRoll.black];
+              gameState.movesLeft = gameState.initialRoll.white === gameState.initialRoll.black
+                ? [gameState.initialRoll.black, gameState.initialRoll.black, gameState.initialRoll.black, gameState.initialRoll.black]
+                : [gameState.initialRoll.white, gameState.initialRoll.black];
+              alert("CPU won the initial roll! CPU goes first.");
+              gameState.gamePhase = "cpuMove";
+              setTimeout(cpuTurn, 1000);
+            }
+          }
+          document.getElementById("rollButton").disabled = false;
+          updateGameInfo();
+          redraw();
+        });
+      }, 500);
+    });
+  } else if (gameState.gamePhase === "playerRoll") {
+    // --- Player’s regular turn dice roll ---
+    document.getElementById("rollButton").disabled = true;
+    rollDiceAnimation(2, () => {
+      gameState.gamePhase = "playerMove";
+      document.getElementById("rollButton").disabled = false;
+      updateGameInfo();
+      redraw();
+    });
+  }
+});
+
+// ==================== Initial Redraw ====================
 redraw();
