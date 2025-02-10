@@ -32,9 +32,14 @@
     padding: 0 20px;
   }
   .header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    text-align: left;
+  }
+  .header-center {
+    text-align: center;
+  }
+  
+  .header-right {
+    text-align: right;
   }
   .logo {
     max-width: 150px;
@@ -146,7 +151,7 @@
   
   /* Section Styles */
   .section {
-    padding: 40px 0;
+    padding: 20px 0;
     /* Initial state for fade in */
     opacity: 0;
     transform: translateY(20px);
@@ -166,7 +171,7 @@
     text-align: center;
     background: #f9f9f9;
     border-radius: 10px;
-    padding: 30px;
+    padding: 20px;
   }
   .donate-button {
     display: inline-block;
