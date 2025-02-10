@@ -92,7 +92,7 @@
     transition: transform 0.3s ease-in-out;
     z-index: 1000;
     padding: 20px;
-    padding-left: 5px;
+    padding-left: 10px;
   }
   .mobile-nav.open {
     transform: translateX(0);
@@ -105,7 +105,7 @@
   }
   .mobile-nav ul {
     list-style: none;
-    padding: 0;
+    padding: 10;
     margin-top: 40px;
   }
   .mobile-nav li {
