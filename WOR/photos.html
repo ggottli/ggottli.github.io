@@ -52,11 +52,22 @@
 
     <!-- Main Content: Week in Review Photo Gallery -->
     <main>
+      <!-- Sheetsign Section -->
+      <section class="section fade-in" style="animation-delay: 0.2s;">
+        <div class="container">
+          <h2>Sheetsigns</h2>
+          <p>Check out all the sheetsigns made!</p>
+          <div class="photo-gallery" id="sheetsign-gallery">
+            <!-- JavaScript will generate 7 sheetsign images here -->
+          </div>
+        </div>
+      </section>
+      
       <!-- Dodgeball Section -->
       <section class="section fade-in" style="animation-delay: 0.2s;">
         <div class="container">
           <h2>Dodgeball</h2>
-          <p>Check out all the dodgeball fun!</p>
+          <p>Look back at all the dodgeball fun!</p>
           <div class="photo-gallery" id="dodgeball-gallery">
             <!-- JavaScript will generate 45 dodgeball images here -->
           </div>
@@ -70,6 +81,17 @@
           <p>Relive the best moments from trivia night!</p>
           <div class="photo-gallery" id="trivia-gallery">
             <!-- JavaScript will generate 45 trivia images here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Awareness Section -->
+      <section class="section fade-in" style="animation-delay: 0.6s;">
+        <div class="container">
+          <h2>Awareness Tent</h2>
+          <p>Awareness table and Pi Kapps around campus!</p>
+          <div class="photo-gallery" id="awareness-gallery">
+            <!-- JavaScript will generate 28 awareness images here -->
           </div>
         </div>
       </section>
@@ -99,6 +121,17 @@
 
     <!-- JavaScript to generate Dodgeball and Trivia images dynamically -->
     <script>
+      // Generate Sheetsign images
+      const sheetsignGallery = document.getElementById('sheetsign-gallery');
+      if (sheetsignGallery) {
+        for (let i = 1; i <= 7; i++) {
+          const img = document.createElement('img');
+          img.src = `images/sheetsign/sheetsign-${i}.jpg`;
+          img.alt = `Sheetsign ${i}`;
+          sheetsignGallery.appendChild(img);
+        }
+      }
+
       // Generate Dodgeball images
       const dodgeballGallery = document.getElementById('dodgeball-gallery');
       if (dodgeballGallery) {
@@ -118,6 +151,17 @@
           img.src = `images/trivia/trivia-${i}.jpg`;
           img.alt = `Trivia ${i}`;
           triviaGallery.appendChild(img);
+        }
+      }
+
+      // Generate Awareness images
+      const awarenessGallery = document.getElementById('awareness-gallery');
+      if (awarenessGallery) {
+        for (let i = 1; i <= 28; i++) {
+          const img = document.createElement('img');
+          img.src = `images/awareness/awareness-${i}.jpg`;
+          img.alt = `Awareness ${i}`;
+          awarenessGallery.appendChild(img);
         }
       }
     </script>
