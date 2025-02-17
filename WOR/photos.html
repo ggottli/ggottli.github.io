@@ -56,8 +56,20 @@
       <section class="section fade-in" style="animation-delay: 0.2s;">
         <div class="container">
           <h2>Dodgeball</h2>
+          <p>Check out all the dodgeball fun!</p>
           <div class="photo-gallery" id="dodgeball-gallery">
             <!-- JavaScript will generate 45 dodgeball images here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Trivia Section -->
+      <section class="section fade-in" style="animation-delay: 0.6s;">
+        <div class="container">
+          <h2>Trivia</h2>
+          <p>Relive the best moments from trivia night!</p>
+          <div class="photo-gallery" id="trivia-gallery">
+            <!-- JavaScript will generate 45 trivia images here -->
           </div>
         </div>
       </section>
@@ -66,6 +78,7 @@
       <section class="section fade-in" style="animation-delay: 0.4s;">
         <div class="container">
           <h2>Merch</h2>
+          <p>Our awesome event merch!</p>
           <div class="photo-gallery">
             <img src="images/shirt-front.jpg" alt="Front of shirt" />
             <img src="images/shirt-back.jpg" alt="Back of shirt" />
@@ -75,17 +88,6 @@
       </section>
 
       <!-- Additional sections for other events can be added here -->
-      <!-- Example:
-      <section class="section fade-in" style="animation-delay: 0.6s;">
-        <div class="container">
-          <h2>Game Night</h2>
-          <p>Some fun photos from game night!</p>
-          <div class="photo-gallery">
-            Add images here
-          </div>
-        </div>
-      </section>
-      -->
     </main>
 
     <!-- Footer -->
@@ -95,8 +97,9 @@
       </div>
     </footer>
 
-    <!-- JavaScript to generate Dodgeball images dynamically -->
+    <!-- JavaScript to generate Dodgeball and Trivia images dynamically -->
     <script>
+      // Generate Dodgeball images
       const dodgeballGallery = document.getElementById('dodgeball-gallery');
       if (dodgeballGallery) {
         for (let i = 1; i <= 45; i++) {
@@ -104,6 +107,17 @@
           img.src = `images/dodgeball/dodgeball-${i}.jpg`;
           img.alt = `Dodgeball ${i}`;
           dodgeballGallery.appendChild(img);
+        }
+      }
+
+      // Generate Trivia images
+      const triviaGallery = document.getElementById('trivia-gallery');
+      if (triviaGallery) {
+        for (let i = 1; i <= 45; i++) {
+          const img = document.createElement('img');
+          img.src = `images/trivia/trivia-${i}.jpg`;
+          img.alt = `Trivia ${i}`;
+          triviaGallery.appendChild(img);
         }
       }
     </script>
