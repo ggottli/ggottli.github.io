@@ -148,6 +148,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .awareness-gallery {
+      column-count: 2;
+    }
+  }
+  @media (max-width: 480px) {
+    .awareness-gallery {
+      column-count: 1;
+    }
   }
   
   /* Section Styles */
@@ -248,6 +256,20 @@
 
 .photo-gallery img:hover {
   transform: scale(1.05);
+}
+
+/* Awareness Tent Gallery - Collage Layout */
+.awareness-gallery {
+  column-count: 3;
+  column-gap: 1rem;
+}
+
+.awareness-gallery img {
+  width: 100%;
+  margin-bottom: 1rem;
+  display: block;
+  /* Optional: add a small border or shadow */
+  border-radius: 4px;
 }
 
   
