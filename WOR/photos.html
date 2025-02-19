@@ -96,6 +96,16 @@
         </div>
       </section>
 
+      <!-- Dodgeball Section -->
+      <section class="section fade-in" style="animation-delay: 0.2s;">
+        <div class="container">
+          <h2>Game Night</h2>
+          <p>All the game night fun!</p>
+          <div class="photo-gallery" id="games-gallery">
+            <!-- JavaScript will generate 28 game night images here -->
+          </div>
+        </div>
+      </section>
 
       <!-- Merch Section -->
       <section class="section fade-in" style="animation-delay: 0.4s;">
@@ -163,6 +173,17 @@
           img.src = `images/awareness/awareness-${i}.jpg`;
           img.alt = `Awareness ${i}`;
           awarenessGallery.appendChild(img);
+        }
+      }
+
+      // Generate Dodgeball images
+      const gamesGallery = document.getElementById('games-gallery');
+      if (gamesGallery) {
+        for (let i = 1; i <= 28; i++) {
+          const img = document.createElement('img');
+          img.src = `images/games/games-${i}.jpg`;
+          img.alt = `Game Night ${i}`;
+          gamesGallery.appendChild(img);
         }
       }
     </script>
