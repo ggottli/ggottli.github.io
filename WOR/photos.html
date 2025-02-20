@@ -53,7 +53,7 @@
     <!-- Main Content: Week in Review Photo Gallery -->
     <main>
       <!-- Sheetsign Section -->
-      <section class="section fade-in" style="animation-delay: 0.2s;">
+      <section class="section fade-in" style="animation-delay: 0.6s;">
         <div class="container">
           <h2>Sheetsigns</h2>
           <p>Check out all the sheetsigns made!</p>
@@ -64,7 +64,7 @@
       </section>
       
       <!-- Dodgeball Section -->
-      <section class="section fade-in" style="animation-delay: 0.2s;">
+      <section class="section fade-in" style="animation-delay: 0.6s;">
         <div class="container">
           <h2>Dodgeball</h2>
           <p>Look back at all the dodgeball fun!</p>
@@ -96,8 +96,8 @@
         </div>
       </section>
 
-      <!-- Dodgeball Section -->
-      <section class="section fade-in" style="animation-delay: 0.2s;">
+      <!-- Game Night Section -->
+      <section class="section fade-in" style="animation-delay: 0.6s;">
         <div class="container">
           <h2>Game Night</h2>
           <p>All the game night fun!</p>
@@ -107,8 +107,19 @@
         </div>
       </section>
 
+      <!-- Prom Night Section -->
+      <section class="section fade-in" style="animation-delay: 0.6s;">
+        <div class="container">
+          <h2>Second Chance Prom</h2>
+          <p>A prom for people who never got the opportunity!</p>
+          <div class="photo-gallery" id="prom-gallery">
+            <!-- JavaScript will generate 23 game night images here -->
+          </div>
+        </div>
+      </section>
+
       <!-- Merch Section -->
-      <section class="section fade-in" style="animation-delay: 0.4s;">
+      <section class="section fade-in" style="animation-delay: 0.6s;">
         <div class="container">
           <h2>Merch</h2>
           <p>Our awesome event merch!</p>
@@ -176,7 +187,7 @@
         }
       }
 
-      // Generate Dodgeball images
+      // Generate Game Night images
       const gamesGallery = document.getElementById('games-gallery');
       if (gamesGallery) {
         for (let i = 1; i <= 28; i++) {
@@ -184,6 +195,17 @@
           img.src = `images/games/games-${i}.jpg`;
           img.alt = `Game Night ${i}`;
           gamesGallery.appendChild(img);
+        }
+      }
+
+      // Generate Prom images
+      const promGallery = document.getElementById('prom-gallery');
+      if (promGallery) {
+        for (let i = 1; i <= 23; i++) {
+          const img = document.createElement('img');
+          img.src = `images/prom/prom-${i}.jpg`;
+          img.alt = `Second Chance Prom ${i}`;
+          promGallery.appendChild(img);
         }
       }
     </script>
