@@ -118,6 +118,39 @@
         </div>
       </section>
 
+      <!-- Talent Show Section -->
+      <section class="section fade-in" style="animation-delay: 0.6s;">
+        <div class="container">
+          <h2>Talent Show</h2>
+          <p>See all the great acts and people who made this possible!</p>
+          <div class="photo-gallery" id="talent-gallery">
+            <!-- JavaScript will generate 81 talent show images here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Talent Show Videos Section -->
+      <section class="section fade-in" style="animation-delay: 0.6s;">
+        <div class="container">
+          <h2>Talent Show Videos</h2>
+          <div class="video-gallery">
+            <video controls>
+              <source src="images/talents/video-1.MOV" type="video/quicktime">
+              Your browser does not support the video tag.
+            </video>
+            <video controls>
+              <source src="images/talents/video-1.MOV" type="video/quicktime">
+              Your browser does not support the video tag.
+            </video>
+            <video controls>
+              <source src="images/talents/video-1.MOV" type="video/quicktime">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </section>
+
+
       <!-- Merch Section -->
       <section class="section fade-in" style="animation-delay: 0.6s;">
         <div class="container">
@@ -206,6 +239,17 @@
           img.src = `images/prom/prom-${i}.jpg`;
           img.alt = `Second Chance Prom ${i}`;
           promGallery.appendChild(img);
+        }
+      }
+
+      // Generate Talent Show images
+      const talentGallery = document.getElementById('talent-gallery');
+      if (talentGallery) {
+        for (let i = 1; i <= 81; i++) {
+          const img = document.createElement('img');
+          img.src = `images/talents/talent-${i}.jpg`;
+          img.alt = `Talent Show ${i}`;
+          talentGallery.appendChild(img);
         }
       }
     </script>
