@@ -1,0 +1,18 @@
+/* Basic styling for the game canvas and page */
+body {
+    margin: 0;
+    padding: 0;
+    background: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    color: #fff;
+  }
+  
+  canvas {
+    border: 2px solid #fff;
+    background: #000;
+  }
+  
