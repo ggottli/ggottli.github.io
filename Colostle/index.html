@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Colostle Digital Adventure</title>
   <link rel="stylesheet" href="style.css">
-  <!-- You can link to any Google Fonts if desired, for example Cinzel -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -15,25 +14,102 @@
     <ul id="timeline"></ul>
   </aside>
 
-  <!-- Main content area -->
   <main id="main-content">
-    <header>
+    <!-- Character Builder Section -->
+    <section id="character-builder">
+      <h1>Create Your Character</h1>
+      <form id="character-form">
+        <div class="form-group">
+          <label for="class-select">Select Class:</label>
+          <select id="class-select" required>
+            <option value="">-- Choose a class --</option>
+            <option value="armed" data-exploration="4" data-combat="6">
+              The Armed – Battle-hardened warrior with a Rook arm. (Exploration: 4, Combat: 6)
+            </option>
+            <option value="followed" data-exploration="6" data-combat="4">
+              The Followed – Ranger with a loyal Rookling companion. (Exploration: 6, Combat: 4)
+            </option>
+            <option value="helmed" data-exploration="5" data-combat="5">
+              The Helmed – Master of arcane Rook alchemy using a Helm. (Exploration: 5, Combat: 5)
+            </option>
+            <option value="mounted" data-exploration="3" data-combat="7">
+              The Mounted – Nomadic warrior riding a mechanical mount. (Exploration: 3, Combat: 7)
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="calling-select">Select Calling:</label>
+          <select id="calling-select" required>
+            <option value="">-- Choose a calling --</option>
+            <option value="calling1">
+              An army sweeps your village—your home is under attack. You must discover why.
+            </option>
+            <option value="calling2">
+              A mysterious vision guides you to a towering structure of a fallen Rook.
+            </option>
+            <option value="calling3">
+              Rumors of a Dragon Rook that grants flight compel you to pursue it.
+            </option>
+            <option value="calling4">
+              A secret friendship with a Rook challenges your village’s beliefs.
+            </option>
+            <option value="calling5">
+              Childhood tales of legendary warriors and fabled Rookstones inspire you.
+            </option>
+            <option value="calling6">
+              A treasured family map and key beckon you to unlock ancient secrets.
+            </option>
+            <option value="calling7">
+              As a knight, you are charged with defending your people by hunting Rooks.
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="nature-select">Select Nature:</label>
+          <select id="nature-select" required>
+            <option value="">-- Choose a nature --</option>
+            <option value="nature1">
+              Happy-go-lucky, extremely optimistic, fun.
+            </option>
+            <option value="nature2">
+              Impatient, quick-to-anger, grumpy.
+            </option>
+            <option value="nature3">
+              Brave, by-the-book, serious, no sense of humour.
+            </option>
+            <option value="nature4">
+              Introspective, quiet, mysterious, person of few words.
+            </option>
+            <option value="nature5">
+              Larger than life, tells exaggerated stories, roars with laughter.
+            </option>
+            <option value="nature6">
+              Sly, strategic and always planning.
+            </option>
+            <option value="nature7">
+              Salt-of-the-earth, common folk, finds it easy to talk with anyone.
+            </option>
+          </select>
+        </div>
+        <button type="submit" id="create-character-btn">Create Character</button>
+      </form>
+    </section>
+
+    <!-- Game Header (to be updated after character creation) -->
+    <section id="game-header" class="hidden">
       <h1>Colostle Digital Adventure</h1>
+      <p>Character: <span id="char-class"></span> | Calling: <span id="char-calling"></span> | Nature: <span id="char-nature"></span></p>
+      <p>Exploration Score: <span id="char-expl-score"></span> | Combat Score: <span id="char-combat-score"></span></p>
       <p>Based on <strong>Colostle</strong> – a solo RPG by <a href="http://www.colostle.com" target="_blank">Nich Angell</a></p>
-    </header>
-    
-    <!-- Exploration Section -->
-    <section id="exploration-section">
+    </section>
+
+    <!-- Exploration Section (hidden until character is created) -->
+    <section id="exploration-section" class="hidden">
       <div id="exploration-controls">
-        <label for="explorationScore">Exploration Score:</label>
-        <input type="number" id="explorationScore" value="3" min="1" max="10">
+        <p>Your assigned Exploration Score is: <span id="exploration-score-display"></span></p>
         <button id="explore-btn">Explore</button>
       </div>
-      
-      <!-- Area to display drawn cards and corresponding prompts -->
       <div id="cards-display"></div>
-      
-      <!-- Journal area -->
       <div id="journal-area">
         <h2>Journal Your Adventure</h2>
         <textarea id="journal-input" placeholder="Write about your encounter(s) here..."></textarea>

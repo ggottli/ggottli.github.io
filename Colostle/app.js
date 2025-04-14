@@ -1,259 +1,287 @@
-// Utility function: returns a random element from an array
+// Global character object – will be filled upon creation.
+let character = {};
+
+// Utility function: returns a random element from an array.
 function randomChoice(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// For exploration, only use ranks A–10.
+const explorationRanks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+const suits = ["♥", "♦", "♣", "♠"];
+
+// Mappings from the original exploration tables (pages 25–26)
+// Red card mapping (for ♥ and ♦).
+const redCardMapping = {
+  "A": {
+    "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
+    "♦": "A stranger in unusual robes with a castle symbol on them. [Armed]"
+  },
+  "2": {
+    "♥": "Animal to hunt for food. [Easy Prey]",
+    "♦": "Animal to hunt for food. [Dangerous]"
+  },
+  "3": {
+    "♥": "CALLING – You come across someone key to your calling. [Friendly]",
+    "♦": "CALLING – You come across someone key to your calling. [Not friendly]"
+  },
+  "4": {
+    "♥": "A person you meet asks you to find something for them. [Trustworthy]. Draw an ITEM card.",
+    "♦": "A person you meet asks you to find something for them. [Untrustworthy]. Draw an ITEM card."
+  },
+  "5": {
+    "♥": "A dead body of another human. [Seems safe]. Draw an ITEM card OR an EVENT card.",
+    "♦": "A dead body of another human. [Something’s off]. Draw an ITEM card OR an EVENT card."
+  },
+  "6": {
+    "♥": "Another adventurer in Rook Armour appears. [Friendly]",
+    "♦": "Another adventurer in Rook Armour appears. [Not friendly]"
+  },
+  "7": {
+    "♥": "A gargoyle appears and takes you to a new area. [Taken to a new area]",
+    "♦": "A gargoyle appears and carries you up to its nest. [Taken to the rafters]"
+  },
+  "8": {
+    "♥": "You find a small settlement. [Safe]. Draw an ITEM card.",
+    "♦": "You find a small settlement. [Event]. Draw an EVENT card."
+  },
+  "9": {
+    "♥": "A massive skeleton stares at you. [Safe]",
+    "♦": "A massive skeleton stares at you. [Bandit camp]"
+  },
+  "10": {
+    "♥": "You pass by a camp of people unnoticed. [They don’t notice you]",
+    "♦": "A camp captures you. [You are captured]"
   }
-  
-  // For exploration, we only use ranks A through 10.
-  const explorationRanks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
-  // Full set of suits (♥, ♦ for red; ♣, ♠ for black)
-  const suits = ["♥", "♦", "♣", "♠"];
-  
-  // Define mappings for red card prompts (pages 25)
-  const redCardMapping = {
-    "A": {
-      "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
-      "♦": "A stranger in unusual robes with a castle symbol on them. [Armed]"
-    },
-    "2": {
-      "♥": "Animal to hunt for food. [Easy Prey]",
-      "♦": "Animal to hunt for food. [Dangerous]"
-    },
-    "3": {
-      "♥": "CALLING – You come across someone key to your calling. [Friendly]",
-      "♦": "CALLING – You come across someone key to your calling. [Not friendly]"
-    },
-    "4": {
-      "♥": "A person you meet asks you to find something for them. [Trustworthy]. Draw an ITEM card.",
-      "♦": "A person you meet asks you to find something for them. [Untrustworthy]. Draw an ITEM card."
-    },
-    "5": {
-      "♥": "A dead body of another human. [Seems safe]. Draw an ITEM card OR an EVENT card.",
-      "♦": "A dead body of another human. [Something’s off]. Draw an ITEM card OR an EVENT card."
-    },
-    "6": {
-      "♥": "Another adventurer like yourself, garbed in Rook Armour. [Friendly]",
-      "♦": "Another adventurer like yourself, garbed in Rook Armour. [Not friendly]"
-    },
-    "7": {
-      "♥": "A gargoyle appears and takes you to a new area. [Taken to a new area]",
-      "♦": "A gargoyle appears and carries you up to its nest. [Taken to the rafters]"
-    },
-    "8": {
-      "♥": "You come across a small settlement. [Safe]. Draw an ITEM card.",
-      "♦": "You come across a small settlement. [Event]. Draw an EVENT card."
-    },
-    "9": {
-      "♥": "A massive skeleton stares at you. [Safe]",
-      "♦": "A massive skeleton stares at you. [Bandit camp]"
-    },
-    "10": {
-      "♥": "A camp of people is nearby—you pass unnoticed. [They don’t notice you]",
-      "♦": "A camp of people captures you. [You are captured]"
-    }
-  };
-  
-  // Define mappings for black card prompts (page 26)
-  const blackCardMapping = {
-    "A": {
-      "♠": "A large treasure is here. [Untouched]. Add 1 to your score and gain an item.",
-      "♣": "A large treasure is here. [Evidence of attempted raids]. Add 1 to your score and gain an item."
-    },
-    "2": {
-      "♠": "A door stands before you. [Intact/Locked].",
-      "♣": "A door stands before you. [Ruined]."
-    },
-    "3": {
-      "♠": "A staircase leads upward, disappearing into mist. [Intact].",
-      "♣": "A staircase leads upward, disappearing into mist. [Ruined]."
-    },
-    "4": {
-      "♠": "Ruins of a forgotten civilization. [Somewhat intact]. Draw an EVENT card.",
-      "♣": "Ruins of a forgotten civilization. [Mostly rubble]. Draw an EVENT card."
-    },
-    "5": {
-      "♠": "A strange mechanism operates in the Colostle. [Functional].",
-      "♣": "A strange mechanism operates in the Colostle. [Damaged]."
-    },
-    "6": {
-      "♠": "You avoid a trap. [You avoid it!].",
-      "♣": "You are caught in a trap. [You are caught in it!]."
-    },
-    "7": {
-      "♠": "A cave entrance beckons you. [Flat and easily navigable].",
-      "♣": "A cave entrance beckons you. [Deep and hard to climb into]."
-    },
-    "8": {
-      "♠": "The sea stretches before you. [Calm].",
-      "♣": "The sea stretches before you. [Stormy]."
-    },
-    "9": {
-      "♠": "You find a clue to your calling. [Something you were looking for].",
-      "♣": "You find a clue to your calling. [A clue to the next step]."
-    },
-    "10": {
-      "♠": "You come across a bustling city. [Thriving].",
-      "♣": "You come across an abandoned city. [Abandoned]."
-    }
-  };
-  
-  // Define Item and Event tables (from page 27)
-  const itemTable = [
-    { value: "TREASURE", prompt: "TREASURE (for trading)" },
-    { value: "SUPPLIES", prompt: "SUPPLIES" },
-    { value: "KNOWLEDGE", prompt: "KNOWLEDGE" },
-    { value: "HERBS/INGREDIENTS", prompt: "HERBS/INGREDIENTS to make a healing potion to heal one WOUND" },
-    { value: "KEY", prompt: "KEY" },
-    { value: "VEHICLE", prompt: "VEHICLE" },
-    { value: "A TAME ANIMAL", prompt: "A TAME ANIMAL" },
-    { value: "POTION", prompt: "POTION" },
-    { value: "MACHINE PART", prompt: "MACHINE PART" },
-    { value: "MAP", prompt: "MAP" },
-    { value: "WEAPON", prompt: "WEAPON" },
-    { value: "ARTEFACT/IDOL", prompt: "ARTEFACT/IDOL" },
-    { value: "2 TREASURES", prompt: "2 TREASURES (for trading)" }
-  ];
-  
-  const eventTable = [
-    { value: "YOU MEET A FRIEND", prompt: "YOU MEET A FRIEND" },
-    { value: "A STORM", prompt: "A STORM" },
-    { value: "SOMETHING FALLS FROM THE CEILING", prompt: "SOMETHING FALLS FROM THE ‘CEILING’" },
-    { value: "YOU FALL", prompt: "YOU FALL" },
-    { value: "A LOUD NOISE", prompt: "A LOUD NOISE" },
-    { value: "A STRANGE FEELING", prompt: "A STRANGE FEELING" },
-    { value: "SUN SETS OR RISES", prompt: "SUN SETS OR RISES" },
-    { value: "A FIRE STARTS", prompt: "A FIRE STARTS" },
-    { value: "SOMETHING BREAKS", prompt: "SOMETHING BREAKS" },
-    { value: "YOUR WAY IS BLOCKED", prompt: "YOUR WAY IS BLOCKED" },
-    { value: "YOU ARE SURROUNDED", prompt: "YOU ARE SURROUNDED" },
-    { value: "HUNGER SETS IN", prompt: "HUNGER SETS IN" },
-    { value: "CREATE/REPAIR SOMETHING", prompt: "CREATE/REPAIR SOMETHING" }
-  ];
-  
-  // Helper functions to "draw" an item or event card when needed
-  function drawItem() {
-    const item = randomChoice(itemTable);
-    return `ITEM: ${item.prompt}`;
+};
+
+// Black card mapping (for ♣ and ♠).
+const blackCardMapping = {
+  "A": {
+    "♠": "A large treasure appears. [Untouched]. Add 1 to your score and gain an item.",
+    "♣": "A large treasure appears. [Evidence of attempted raids]. Add 1 to your score and gain an item."
+  },
+  "2": {
+    "♠": "A mysterious door stands before you. [Intact/Locked].",
+    "♣": "A mysterious door stands before you. [Ruined]."
+  },
+  "3": {
+    "♠": "A grand staircase appears, leading up into mist. [Intact].",
+    "♣": "A crumbling staircase appears, lost in ruin. [Ruined]."
+  },
+  "4": {
+    "♠": "Ruins of a forgotten civilization beckon. [Somewhat intact]. Draw an EVENT card.",
+    "♣": "Ruins of a forgotten civilization lie in rubble. [Mostly rubble]. Draw an EVENT card."
+  },
+  "5": {
+    "♠": "A strange mechanism hums with life. [Functional].",
+    "♣": "A strange mechanism sputters, barely working. [Damaged]."
+  },
+  "6": {
+    "♠": "You skillfully avoid a trap. [You avoid it!].",
+    "♣": "You are caught in a trap. [You are caught in it!]."
+  },
+  "7": {
+    "♠": "A cave entrance seems inviting. [Flat and easily navigable].",
+    "♣": "A cave entrance is deep and hard to scale. [Deep and hard to climb into]."
+  },
+  "8": {
+    "♠": "The calm sea stretches before you. [Calm].",
+    "♣": "The sea roils with a storm. [Stormy]."
+  },
+  "9": {
+    "♠": "A clue to your calling is revealed. [Something you were looking for].",
+    "♣": "A clue to your calling is revealed. [A clue to the next step]."
+  },
+  "10": {
+    "♠": "You come upon a thriving city. [Thriving].",
+    "♣": "You come upon an abandoned city. [Abandoned]."
   }
-  
-  function drawEvent() {
-    const event = randomChoice(eventTable);
-    return `EVENT: ${event.prompt}`;
-  }
-  
-  // Main function to draw a set of exploration cards based on the exploration score
-  function drawCards(num) {
-    let drawnCards = [];
-    for (let i = 0; i < num; i++) {
-      // Choose a random suit from the full set and a rank from explorationRanks
-      const suit = randomChoice(suits);
-      const rank = randomChoice(explorationRanks);
-      let basePrompt = "";
-      let extraPrompt = "";
-  
-      // Determine if red (♥, ♦) or black (♣, ♠)
-      if (suit === "♥" || suit === "♦") {
-        // Use red card mapping
-        const mapping = redCardMapping[rank];
-        if (mapping && mapping[suit]) {
-          basePrompt = mapping[suit];
-          // Check for instructions to draw an extra card prompt
-          if (basePrompt.includes("Draw an ITEM card OR an EVENT card")) {
-            // Randomly choose ITEM or EVENT
-            extraPrompt = (Math.random() < 0.5) ? drawItem() : drawEvent();
-          } else if (basePrompt.includes("Draw an ITEM card")) {
-            extraPrompt = drawItem();
-          } else if (basePrompt.includes("Draw an EVENT card")) {
-            extraPrompt = drawEvent();
-          }
-        }
-      } else {
-        // Black cards (♣, ♠)
-        const mapping = blackCardMapping[rank];
-        if (mapping && mapping[suit]) {
-          basePrompt = mapping[suit];
-          // For Ace, the text tells you to "gain an item" – so automatically draw an item.
-          if (rank === "A") {
-            extraPrompt = drawItem();
-          }
-          // For prompts that instruct drawing an EVENT card
-          if (basePrompt.includes("Draw an EVENT card")) {
-            extraPrompt = drawEvent();
-          }
+};
+
+// Item and Event tables (from page 27)
+const itemTable = [
+  { prompt: "TREASURE (for trading)" },
+  { prompt: "SUPPLIES" },
+  { prompt: "KNOWLEDGE" },
+  { prompt: "HERBS/INGREDIENTS to make a healing potion to heal one WOUND" },
+  { prompt: "KEY" },
+  { prompt: "VEHICLE" },
+  { prompt: "A TAME ANIMAL" },
+  { prompt: "POTION" },
+  { prompt: "MACHINE PART" },
+  { prompt: "MAP" },
+  { prompt: "WEAPON" },
+  { prompt: "ARTEFACT/IDOL" },
+  { prompt: "2 TREASURES (for trading)" }
+];
+
+const eventTable = [
+  { prompt: "YOU MEET A FRIEND" },
+  { prompt: "A STORM" },
+  { prompt: "SOMETHING FALLS FROM THE ‘CEILING’" },
+  { prompt: "YOU FALL" },
+  { prompt: "A LOUD NOISE" },
+  { prompt: "A STRANGE FEELING" },
+  { prompt: "SUN SETS OR RISES" },
+  { prompt: "A FIRE STARTS" },
+  { prompt: "SOMETHING BREAKS" },
+  { prompt: "YOUR WAY IS BLOCKED" },
+  { prompt: "YOU ARE SURROUNDED" },
+  { prompt: "HUNGER SETS IN" },
+  { prompt: "CREATE/REPAIR SOMETHING" }
+];
+
+function drawItem() {
+  return "ITEM: " + randomChoice(itemTable).prompt;
+}
+
+function drawEvent() {
+  return "EVENT: " + randomChoice(eventTable).prompt;
+}
+
+// Main exploration card draw function.
+// Uses the red or black card mappings; if the prompt instructs an extra draw (item or event), appends the extra text.
+function drawCards(num) {
+  let drawnCards = [];
+  for (let i = 0; i < num; i++) {
+    const suit = randomChoice(suits);
+    const rank = randomChoice(explorationRanks);
+    let basePrompt = "";
+    let extraPrompt = "";
+
+    if (suit === "♥" || suit === "♦") {
+      const mapping = redCardMapping[rank];
+      if (mapping && mapping[suit]) {
+        basePrompt = mapping[suit];
+        if (basePrompt.includes("Draw an ITEM card OR an EVENT card")) {
+          extraPrompt = (Math.random() < 0.5) ? drawItem() : drawEvent();
+        } else if (basePrompt.includes("Draw an ITEM card")) {
+          extraPrompt = drawItem();
+        } else if (basePrompt.includes("Draw an EVENT card")) {
+          extraPrompt = drawEvent();
         }
       }
-      
-      // Combine the base prompt and any extra prompt
-      let fullPrompt = basePrompt;
-      if (extraPrompt) {
-        fullPrompt += " – " + extraPrompt;
+    } else {
+      const mapping = blackCardMapping[rank];
+      if (mapping && mapping[suit]) {
+        basePrompt = mapping[suit];
+        if (rank === "A") {
+          extraPrompt = drawItem();
+        }
+        if (basePrompt.includes("Draw an EVENT card")) {
+          extraPrompt = drawEvent();
+        }
       }
-      
-      drawnCards.push({ suit, rank, prompt: fullPrompt });
     }
-    return drawnCards;
-  }
-  
-  // Display drawn cards in the exploration panel
-  function displayCards(cards) {
-    const displayDiv = document.getElementById("cards-display");
-    displayDiv.innerHTML = ""; // clear previous cards
-    cards.forEach(card => {
-      const cardDiv = document.createElement("div");
-      cardDiv.className = "card";
-      const title = document.createElement("h3");
-      title.innerText = `${card.rank} ${card.suit}`;
-      cardDiv.appendChild(title);
-      const promptPara = document.createElement("p");
-      promptPara.innerText = card.prompt;
-      cardDiv.appendChild(promptPara);
-      displayDiv.appendChild(cardDiv);
-    });
-  }
-  
-  // Save a journal entry to the timeline
-  function saveJournalEntry(text) {
-    if (!text.trim()) {
-      alert("Please write something in your journal before continuing.");
-      return;
+    
+    let fullPrompt = basePrompt;
+    if (extraPrompt) {
+      fullPrompt += " – " + extraPrompt;
     }
-    const timeline = document.getElementById("timeline");
-    const listItem = document.createElement("li");
-    // Use the first 40 characters as a summary for the timeline
-    const summary = text.length > 40 ? text.substring(0, 40) + "..." : text;
-    listItem.innerText = summary;
-    // Save full text as a data attribute
-    listItem.dataset.fullText = text;
-    // Add event listener to show full text on click
-    listItem.addEventListener("click", function() {
-      openModal(this.dataset.fullText);
-    });
-    timeline.appendChild(listItem);
-    // Clear the journal input and card display for next phase
-    document.getElementById("journal-input").value = "";
-    document.getElementById("cards-display").innerHTML = "";
+    
+    drawnCards.push({ suit, rank, prompt: fullPrompt });
   }
-  
-  // Modal handling: open modal with full journal text
-  function openModal(text) {
-    const modal = document.getElementById("modal");
-    document.getElementById("modal-text").innerText = text;
-    modal.classList.remove("hidden");
+  return drawnCards;
+}
+
+// Function to display drawn cards.
+function displayCards(cards) {
+  const displayDiv = document.getElementById("cards-display");
+  displayDiv.innerHTML = "";
+  cards.forEach(card => {
+    const cardDiv = document.createElement("div");
+    cardDiv.className = "card";
+    const title = document.createElement("h3");
+    title.innerText = `${card.rank} ${card.suit}`;
+    cardDiv.appendChild(title);
+    const promptPara = document.createElement("p");
+    promptPara.innerText = card.prompt;
+    cardDiv.appendChild(promptPara);
+    displayDiv.appendChild(cardDiv);
+  });
+}
+
+// Save journal entry to timeline.
+function saveJournalEntry(text) {
+  if (!text.trim()) {
+    alert("Please write something in your journal before continuing.");
+    return;
   }
-  
-  // Close modal when clicking the close button
-  document.getElementById("close-modal").addEventListener("click", function() {
-    document.getElementById("modal").classList.add("hidden");
+  const timeline = document.getElementById("timeline");
+  const listItem = document.createElement("li");
+  const summary = text.length > 40 ? text.substring(0, 40) + "..." : text;
+  listItem.innerText = summary;
+  listItem.dataset.fullText = text;
+  listItem.addEventListener("click", function() {
+    openModal(this.dataset.fullText);
   });
+  timeline.appendChild(listItem);
+  document.getElementById("journal-input").value = "";
+  document.getElementById("cards-display").innerHTML = "";
+}
+
+// Modal handling.
+function openModal(text) {
+  const modal = document.getElementById("modal");
+  document.getElementById("modal-text").innerText = text;
+  modal.classList.remove("hidden");
+}
+document.getElementById("close-modal").addEventListener("click", function() {
+  document.getElementById("modal").classList.add("hidden");
+});
+
+// Event listener for exploration (using character-assigned exploration score).
+document.getElementById("explore-btn").addEventListener("click", function() {
+  const expScore = character.explorationScore;
+  const cards = drawCards(expScore);
+  displayCards(cards);
+});
+
+// Event listener for journaling.
+document.getElementById("continue-btn").addEventListener("click", function() {
+  const journalText = document.getElementById("journal-input").value;
+  saveJournalEntry(journalText);
+});
+
+// Character creation
+document.getElementById("character-form").addEventListener("submit", function(event) {
+  event.preventDefault();
   
-  // Set up event listeners for exploration and journaling
-  document.getElementById("explore-btn").addEventListener("click", function() {
-    const score = parseInt(document.getElementById("explorationScore").value) || 1;
-    const cards = drawCards(score);
-    displayCards(cards);
-  });
+  // Get values from dropdowns.
+  const classSelect = document.getElementById("class-select");
+  const callingSelect = document.getElementById("calling-select");
+  const natureSelect = document.getElementById("nature-select");
   
-  document.getElementById("continue-btn").addEventListener("click", function() {
-    const journalText = document.getElementById("journal-input").value;
-    saveJournalEntry(journalText);
-  });
+  const selectedClass = classSelect.options[classSelect.selectedIndex];
+  const charClass = selectedClass.text;
+  const explorationScore = parseInt(selectedClass.getAttribute("data-exploration"));
+  const combatScore = parseInt(selectedClass.getAttribute("data-combat"));
   
+  const charCalling = callingSelect.options[callingSelect.selectedIndex].text;
+  const charNature = natureSelect.options[natureSelect.selectedIndex].text;
+  
+  // Store character data.
+  character = {
+    class: charClass,
+    calling: charCalling,
+    nature: charNature,
+    explorationScore,
+    combatScore
+  };
+
+  // Update game header with character details.
+  document.getElementById("char-class").innerText = character.class;
+  document.getElementById("char-calling").innerText = character.calling;
+  document.getElementById("char-nature").innerText = character.nature;
+  document.getElementById("char-expl-score").innerText = character.explorationScore;
+  document.getElementById("char-combat-score").innerText = character.combatScore;
+  
+  // Also show the fixed exploration score in the exploration controls.
+  document.getElementById("exploration-score-display").innerText = character.explorationScore;
+  
+  // Hide character builder and show game header and exploration section.
+  document.getElementById("character-builder").classList.add("hidden");
+  document.getElementById("game-header").classList.remove("hidden");
+  document.getElementById("exploration-section").classList.remove("hidden");
+});
