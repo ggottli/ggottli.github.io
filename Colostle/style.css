@@ -1,43 +1,44 @@
-/* General resets and styling */
+/* Global resets and typography */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Cinzel', serif;
     display: flex;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f9f3e9, #e0f7fa);
-    color: #333;
+    background: #f8f1e4;  /* light parchment */
+    color: #3e2723;      /* dark brown */
   }
   
   /* Sidebar Timeline Panel */
   #timeline-panel {
     width: 25%;
     max-width: 300px;
-    background-color: #fff;
+    background-color: #8e0000;  /* deep maroon */
+    color: #fff;
     padding: 20px;
-    border-right: 2px solid #ccc;
+    border-right: 4px solid #d4af37; /* gold accent */
     overflow-y: auto;
   }
   #timeline-panel h2 {
-    font-size: 1.5em;
+    font-size: 1.8em;
     margin-bottom: 1em;
-    color: #00695c;
+    text-align: center;
   }
   #timeline {
     list-style: none;
   }
   #timeline li {
-    background: #e0f2f1;
+    background: #a30000;
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
     cursor: pointer;
   }
   #timeline li:hover {
-    background: #b2dfdb;
+    background: #bf360c;
   }
   
   /* Main Content */
@@ -50,15 +51,23 @@
     margin-bottom: 20px;
   }
   header h1 {
-    font-size: 2.5em;
+    font-size: 2.8em;
     margin-bottom: 10px;
-    color: #2e7d32;
+    color: #8e0000;
   }
   header p {
     margin-bottom: 8px;
+    font-size: 1.1em;
+  }
+  header a {
+    color: #d4af37;
+    text-decoration: none;
+  }
+  header a:hover {
+    text-decoration: underline;
   }
   
-  /* Exploration Section */
+  /* Exploration Controls */
   #exploration-controls {
     margin-bottom: 20px;
     text-align: center;
@@ -69,47 +78,52 @@
   #exploration-controls input {
     font-size: 1em;
     width: 60px;
-    margin-left: 10px;
-    margin-right: 20px;
+    margin: 0 15px;
     padding: 5px;
+    border: 2px solid #8e0000;
+    border-radius: 4px;
   }
   #exploration-controls button {
     padding: 8px 16px;
     font-size: 1em;
-    background-color: #4caf50;
+    background-color: #d4af37; /* gold */
     border: none;
     border-radius: 5px;
-    color: #fff;
+    color: #3e2723;
     cursor: pointer;
+    font-weight: bold;
   }
   #exploration-controls button:hover {
-    background-color: #388e3c;
+    background-color: #bf8f26;
   }
   
   /* Cards display area */
   #cards-display {
     margin-bottom: 20px;
-    min-height: 100px;
+    min-height: 120px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .card {
-    display: inline-block;
-    background: #fffde7;
-    border: 2px solid #fbc02d;
+    background: #fff7e6; /* light parchment with warmth */
+    border: 2px solid #8e0000;
     border-radius: 5px;
     margin: 5px;
     padding: 10px;
     width: calc(45% - 20px);
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
   }
   .card h3 {
     margin-bottom: 8px;
     font-size: 1.2em;
-    color: #ff6f00;
+    color: #8e0000;
   }
   .card p {
     font-size: 0.95em;
   }
   
-  /* Journal area */
+  /* Journal Area */
   #journal-area {
     text-align: center;
     margin-top: 20px;
@@ -119,25 +133,26 @@
     height: 150px;
     font-size: 1em;
     padding: 10px;
-    border: 2px solid #ccc;
+    border: 2px solid #8e0000;
     border-radius: 5px;
     resize: vertical;
+    background-color: #fffceb;
   }
   #journal-area button {
     margin-top: 10px;
     padding: 10px 20px;
     font-size: 1.1em;
-    background-color: #2196f3;
+    background-color: #8e0000;
     border: none;
     border-radius: 5px;
-    color: #fff;
+    color: #ffd700; /* bright gold */
     cursor: pointer;
   }
   #journal-area button:hover {
-    background-color: #1976d2;
+    background-color: #a30000;
   }
   
-  /* Modal styles */
+  /* Modal Styles */
   #modal {
     position: fixed;
     z-index: 100;
@@ -146,13 +161,13 @@
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(0,0,0,0.7);
   }
   #modal-content {
-    background-color: #fefefe;
+    background-color: #fffceb;
     margin: 10% auto;
     padding: 20px;
-    border: 1px solid #888;
+    border: 3px solid #8e0000;
     width: 80%;
     max-width: 600px;
     border-radius: 10px;
@@ -164,6 +179,7 @@
     top: 10px;
     font-size: 28px;
     font-weight: bold;
+    color: #8e0000;
     cursor: pointer;
   }
   .hidden {
