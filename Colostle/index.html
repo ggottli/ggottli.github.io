@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Colostle Digital Adventure</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Sidebar for timeline / saved journals -->
+  <aside id="timeline-panel">
+    <h2>Your Adventure Timeline</h2>
+    <ul id="timeline"></ul>
+  </aside>
+
+  <!-- Main content area -->
+  <main id="main-content">
+    <header>
+      <h1>Colostle Digital Adventure</h1>
+      <p>Based on Colostle – a solo RPG by <strong>Nich Angell</strong></p>
+      <p><small>For more details, visit <a href="http://www.colostle.com" target="_blank">colostle.com</a></small></p>
+    </header>
+    
+    <!-- Exploration Section -->
+    <section id="exploration-section">
+      <div id="exploration-controls">
+        <label for="explorationScore">Exploration Score:</label>
+        <input type="number" id="explorationScore" value="3" min="1" max="10">
+        <button id="explore-btn">Explore</button>
+      </div>
+      
+      <!-- Area to display drawn cards and corresponding prompts -->
+      <div id="cards-display"></div>
+      
+      <!-- Journal area -->
+      <div id="journal-area">
+        <h2>Journal Your Adventure</h2>
+        <textarea id="journal-input" placeholder="Write about your encounter(s) here..."></textarea>
+        <button id="continue-btn">Continue & Save Journal</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal for viewing saved journal entries -->
+  <div id="modal" class="hidden">
+    <div id="modal-content">
+      <span id="close-modal">&times;</span>
+      <div id="modal-text"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
