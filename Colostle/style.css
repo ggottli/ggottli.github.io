@@ -6,10 +6,9 @@
   }
   body {
     font-family: 'Cinzel', serif;
-    display: flex;
-    min-height: 100vh;
     background: #f8f1e4;  /* light parchment */
     color: #3e2723;      /* dark brown */
+    padding-bottom: 120px; /* add extra bottom padding so fixed info box doesn't cover content */
   }
   
   /* Sidebar Timeline Panel */
@@ -89,27 +88,6 @@
   }
   #create-character-btn:hover {
     background-color: #bf8f26;
-  }
-  
-  /* Game Header */
-  #game-header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  #game-header h1 {
-    font-size: 2.8em;
-    color: #8e0000;
-  }
-  #game-header p {
-    margin: 5px 0;
-    font-size: 1.1em;
-  }
-  #game-header a {
-    color: #d4af37;
-    text-decoration: none;
-  }
-  #game-header a:hover {
-    text-decoration: underline;
   }
   
   /* Exploration Controls */
@@ -205,11 +183,16 @@
     padding: 10px 20px;
     font-size: 1.1em;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
   }
   #info-box p {
-    margin: 0 10px;
+    margin: 5px;
+  }
+  .info-buttons {
+    display: flex;
+    gap: 10px;
   }
   #info-box button {
     padding: 5px 10px;
@@ -224,8 +207,8 @@
     background-color: #bf8f26;
   }
   
-  /* Modal Styles */
-  #modal {
+  /* Modal Styles (for journal) */
+  #modal, #char-modal {
     position: fixed;
     z-index: 100;
     left: 0;
@@ -235,7 +218,7 @@
     overflow: auto;
     background-color: rgba(0,0,0,0.7);
   }
-  #modal-content {
+  #modal-content, #char-modal-content {
     background-color: #fffceb;
     margin: 10% auto;
     padding: 20px;
@@ -245,7 +228,7 @@
     border-radius: 10px;
     position: relative;
   }
-  #close-modal {
+  #close-modal, #close-char-modal {
     position: absolute;
     right: 20px;
     top: 10px;

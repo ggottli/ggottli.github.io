@@ -95,15 +95,7 @@
       </form>
     </section>
 
-    <!-- Game Header (shown after character creation) -->
-    <section id="game-header" class="hidden">
-      <h1>Colostle Digital Adventure</h1>
-      <p>Character: <span id="char-class"></span> | Calling: <span id="char-calling"></span> | Nature: <span id="char-nature"></span></p>
-      <p>Exploration Score: <span id="char-expl-score"></span> / 5 | Combat Score: <span id="char-combat-score"></span> / 5</p>
-      <p>Based on <strong>Colostle</strong> – a solo RPG by <a href="http://www.colostle.com" target="_blank">Nich Angell</a></p>
-    </section>
-
-    <!-- Exploration Section (hidden until character is created) -->
+    <!-- Exploration Section (hidden until character creation) -->
     <section id="exploration-section" class="hidden">
       <div id="exploration-controls">
         <p>Your assigned Exploration Score is: <span id="exploration-score-display"></span> / 5</p>
@@ -117,20 +109,32 @@
       </div>
     </section>
 
-    <!-- Info Box: displays key info (scores, inventory) -->
+    <!-- Info Box: displays scores, inventory, and action buttons -->
     <div id="info-box" class="hidden">
       <p><strong>Exploration Score:</strong> <span id="info-exploration"></span> / 5</p>
       <p><strong>Combat Score:</strong> <span id="info-combat"></span> / 5</p>
       <p><strong>Inventory:</strong> <span id="info-inventory">None</span></p>
-      <button id="add-item-btn">Add Item</button>
+      <div class="info-buttons">
+        <button id="add-item-btn">Add Item</button>
+        <button id="remove-item-btn">Remove Item</button>
+        <button id="view-char-btn">View Character</button>
+      </div>
     </div>
   </main>
 
-  <!-- Modal for viewing journal entries -->
+  <!-- Journal Modal -->
   <div id="modal" class="hidden">
     <div id="modal-content">
       <span id="close-modal">&times;</span>
       <div id="modal-text"></div>
+    </div>
+  </div>
+
+  <!-- Character Sheet Modal -->
+  <div id="char-modal" class="hidden">
+    <div id="char-modal-content">
+      <span id="close-char-modal">&times;</span>
+      <div id="char-modal-text"></div>
     </div>
   </div>
 

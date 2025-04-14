@@ -1,16 +1,18 @@
-// Global character object – will hold character data.
+// Global character object and episode counter.
 let character = {};
+let episodeCount = 0;
 
-// Utility function: random element from array.
+// Utility: returns random element from an array.
 function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Our full deck: all 13 ranks.
+// All ranks including face cards.
 const allRanks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 const suits = ["♥", "♦", "♣", "♠"];
 
-// Mappings for red cards (ranks A–10) as before.
+/* --- Card Mappings --- */
+// Red card mapping (ranks A–10).
 const redCardMapping = {
   "A": {
     "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
@@ -54,7 +56,7 @@ const redCardMapping = {
   }
 };
 
-// Mappings for black cards (ranks A–10) as before.
+// Black card mapping (ranks A–10).
 const blackCardMapping = {
   "A": {
     "♠": "A large treasure appears. [Untouched]. Add 1 to your score and gain an item.",
@@ -100,12 +102,12 @@ const blackCardMapping = {
 
 // Face card mapping for Rook encounters.
 const faceCardMapping = {
-  "J": "Rook Encounter: You are surrounded by a horde of minor Rooks. (JACK: You are surrounded)",
-  "Q": "Rook Encounter: A medium-sized Rook appears before you. (QUEEN: Medium Rook)",
-  "K": "Rook Encounter: A massive Rook looms over you in terrifying grandeur. (KING: Massive Rook)"
+  "J": "Rook Encounter: You are surrounded by a horde of minor Rooks. (JACK)",
+  "Q": "Rook Encounter: A medium-sized Rook appears before you. (QUEEN)",
+  "K": "Rook Encounter: A massive Rook looms over you in terrifying grandeur. (KING)"
 };
 
-// Item and Event tables (page 27).
+// Item and Event tables.
 const itemTable = [
   { prompt: "TREASURE (for trading)" },
   { prompt: "SUPPLIES" },
@@ -146,22 +148,20 @@ function drawEvent() {
   return "EVENT: " + randomChoice(eventTable).prompt;
 }
 
-// Updated drawCards function: uses full deck (allRanks)
-// If a face card (J, Q, K) is drawn, create a Rook encounter per combat rules.
+// Updated drawCards uses full deck with face cards for Rook encounters.
 function drawCards(num) {
   let drawnCards = [];
   for (let i = 0; i < num; i++) {
     const suit = randomChoice(suits);
     const rank = randomChoice(allRanks);
     
-    // Check for face cards.
+    // If face card, treat as a combat (Rook) encounter.
     if (["J", "Q", "K"].includes(rank)) {
       let basePrompt = faceCardMapping[rank];
-      // Randomly assign a Rook type from the three primary magical qualities.
+      // Append a random Rook type for extra flavor.
       const rookType = randomChoice(["Electric", "Rumble", "Ice"]);
-      const fullPrompt = basePrompt + " – " + rookType + " Rook";
-      drawnCards.push({ suit, rank, prompt: fullPrompt });
-      continue;  // Skip further processing
+      drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook` });
+      continue;
     }
     
     // Process non-face cards.
@@ -217,16 +217,21 @@ function displayCards(cards) {
   });
 }
 
+// Journal entry saves with automatic "Episode X:" prefix.
 function saveJournalEntry(text) {
   if (!text.trim()) {
     alert("Please write something in your journal before continuing.");
     return;
   }
+  episodeCount++;
+  const journalText = `Episode ${episodeCount}: ${text.trim()}`;
+  
   const timeline = document.getElementById("timeline");
   const listItem = document.createElement("li");
-  const summary = text.length > 40 ? text.substring(0, 40) + "..." : text;
+  // Use the journalText for the full entry and a summary for the timeline.
+  const summary = journalText.length > 40 ? journalText.substring(0, 40) + "..." : journalText;
   listItem.innerText = summary;
-  listItem.dataset.fullText = text;
+  listItem.dataset.fullText = journalText;
   listItem.addEventListener("click", function() {
     openModal(this.dataset.fullText);
   });
@@ -244,7 +249,7 @@ document.getElementById("close-modal").addEventListener("click", function() {
   document.getElementById("modal").classList.add("hidden");
 });
 
-// Update inventory display.
+// Inventory update.
 function updateInventoryDisplay() {
   const invDisplay = document.getElementById("info-inventory");
   if (character.inventory.length === 0) {
@@ -265,13 +270,49 @@ document.getElementById("continue-btn").addEventListener("click", function() {
   saveJournalEntry(journalText);
 });
 
-// Inventory - add item.
+// Add Item button.
 document.getElementById("add-item-btn").addEventListener("click", function() {
   let newItem = prompt("Enter an item to add:");
   if (newItem) {
     character.inventory.push(newItem);
     updateInventoryDisplay();
   }
+});
+
+// Remove Item button.
+document.getElementById("remove-item-btn").addEventListener("click", function() {
+  if (character.inventory.length === 0) {
+    alert("Your inventory is empty!");
+    return;
+  }
+  let itemToRemove = prompt("Enter the name of the item to remove:\nInventory: " + character.inventory.join(", "));
+  if (itemToRemove) {
+    const index = character.inventory.indexOf(itemToRemove);
+    if (index > -1) {
+      character.inventory.splice(index, 1);
+      updateInventoryDisplay();
+    } else {
+      alert("Item not found in inventory.");
+    }
+  }
+});
+
+// View Character button: open character sheet modal.
+document.getElementById("view-char-btn").addEventListener("click", function() {
+  const charInfo = `
+    <h2>Character Sheet</h2>
+    <p><strong>Class:</strong> ${character.class}</p>
+    <p><strong>Calling:</strong> ${character.calling}</p>
+    <p><strong>Nature:</strong> ${character.nature}</p>
+    <p><strong>Exploration Score:</strong> ${character.explorationScore} / 5</p>
+    <p><strong>Combat Score:</strong> ${character.combatScore} / 5</p>
+    <p><strong>Inventory:</strong> ${character.inventory.length ? character.inventory.join(", ") : "None"}</p>
+  `;
+  document.getElementById("char-modal-text").innerHTML = charInfo;
+  document.getElementById("char-modal").classList.remove("hidden");
+});
+document.getElementById("close-char-modal").addEventListener("click", function() {
+  document.getElementById("char-modal").classList.add("hidden");
 });
 
 // Character creation.
@@ -290,7 +331,7 @@ document.getElementById("character-form").addEventListener("submit", function(ev
   const charCalling = callingSelect.options[callingSelect.selectedIndex].text;
   const charNature = natureSelect.options[natureSelect.selectedIndex].text;
   
-  // Save character info.
+  // Store character info.
   character = {
     class: charClass,
     calling: charCalling,
@@ -300,24 +341,13 @@ document.getElementById("character-form").addEventListener("submit", function(ev
     inventory: []
   };
   
-  // Update header.
-  document.getElementById("char-class").innerText = character.class;
-  document.getElementById("char-calling").innerText = character.calling;
-  document.getElementById("char-nature").innerText = character.nature;
-  document.getElementById("char-expl-score").innerText = character.explorationScore;
-  document.getElementById("char-combat-score").innerText = character.combatScore;
-  
-  // Update exploration controls.
-  document.getElementById("exploration-score-display").innerText = character.explorationScore;
-  
   // Update info box.
   document.getElementById("info-exploration").innerText = character.explorationScore;
   document.getElementById("info-combat").innerText = character.combatScore;
   updateInventoryDisplay();
   
-  // Hide character builder; show game header, exploration, and info box.
+  // Hide character builder and show exploration section and info box.
   document.getElementById("character-builder").classList.add("hidden");
-  document.getElementById("game-header").classList.remove("hidden");
   document.getElementById("exploration-section").classList.remove("hidden");
   document.getElementById("info-box").classList.remove("hidden");
 });
