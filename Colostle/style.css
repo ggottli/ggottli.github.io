@@ -95,6 +95,10 @@
   /* Upload Saved Game Section */
   .upload-section {
     margin-top: 15px;
+    padding: 10px;
+    border: 2px dashed #8e0000;
+    border-radius: 5px;
+    background: #fff9f0;
     text-align: center;
   }
   .upload-section label {
@@ -110,6 +114,10 @@
   #exploration-controls {
     margin-bottom: 20px;
     text-align: center;
+  }
+  #exploration-controls h1 {
+    font-size: 2.8em;
+    color: #8e0000;
   }
   #exploration-controls p {
     font-size: 1.2em;
@@ -199,17 +207,18 @@
     padding: 10px 20px;
     font-size: 1.1em;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
   }
   #info-box p {
     margin: 5px;
   }
   .info-buttons {
+    margin-top: 10px;
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
   }
   #info-box button {
     padding: 5px 10px;
