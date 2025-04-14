@@ -23,17 +23,17 @@
           <label for="class-select">Select Class:</label>
           <select id="class-select" required>
             <option value="">-- Choose a class --</option>
-            <option value="armed" data-exploration="4" data-combat="6">
-              The Armed – Battle-hardened warrior with a Rook arm. (Exploration: 4, Combat: 6)
+            <option value="armed" data-exploration="3" data-combat="5">
+              The Armed – Battle-hardened warrior with a Rook arm. (Exploration: 3, Combat: 5)
             </option>
-            <option value="followed" data-exploration="6" data-combat="4">
-              The Followed – Ranger with a loyal Rookling companion. (Exploration: 6, Combat: 4)
+            <option value="followed" data-exploration="5" data-combat="3">
+              The Followed – Ranger with a loyal Rookling companion. (Exploration: 5, Combat: 3)
             </option>
-            <option value="helmed" data-exploration="5" data-combat="5">
-              The Helmed – Master of arcane Rook alchemy using a Helm. (Exploration: 5, Combat: 5)
+            <option value="helmed" data-exploration="4" data-combat="4">
+              The Helmed – Master of arcane Rook alchemy using a Helm. (Exploration: 4, Combat: 4)
             </option>
-            <option value="mounted" data-exploration="3" data-combat="7">
-              The Mounted – Nomadic warrior riding a mechanical mount. (Exploration: 3, Combat: 7)
+            <option value="mounted" data-exploration="2" data-combat="5">
+              The Mounted – Nomadic warrior riding a mechanical mount. (Exploration: 2, Combat: 5)
             </option>
           </select>
         </div>
@@ -95,18 +95,18 @@
       </form>
     </section>
 
-    <!-- Game Header (to be updated after character creation) -->
+    <!-- Game Header (shown after character creation) -->
     <section id="game-header" class="hidden">
       <h1>Colostle Digital Adventure</h1>
       <p>Character: <span id="char-class"></span> | Calling: <span id="char-calling"></span> | Nature: <span id="char-nature"></span></p>
-      <p>Exploration Score: <span id="char-expl-score"></span> | Combat Score: <span id="char-combat-score"></span></p>
+      <p>Exploration Score: <span id="char-expl-score"></span> / 5 | Combat Score: <span id="char-combat-score"></span> / 5</p>
       <p>Based on <strong>Colostle</strong> – a solo RPG by <a href="http://www.colostle.com" target="_blank">Nich Angell</a></p>
     </section>
 
     <!-- Exploration Section (hidden until character is created) -->
     <section id="exploration-section" class="hidden">
       <div id="exploration-controls">
-        <p>Your assigned Exploration Score is: <span id="exploration-score-display"></span></p>
+        <p>Your assigned Exploration Score is: <span id="exploration-score-display"></span> / 5</p>
         <button id="explore-btn">Explore</button>
       </div>
       <div id="cards-display"></div>
@@ -116,9 +116,17 @@
         <button id="continue-btn">Continue & Save Journal</button>
       </div>
     </section>
+
+    <!-- Info Box: displays key info (scores, inventory) -->
+    <div id="info-box" class="hidden">
+      <p><strong>Exploration Score:</strong> <span id="info-exploration"></span> / 5</p>
+      <p><strong>Combat Score:</strong> <span id="info-combat"></span> / 5</p>
+      <p><strong>Inventory:</strong> <span id="info-inventory">None</span></p>
+      <button id="add-item-btn">Add Item</button>
+    </div>
   </main>
 
-  <!-- Modal for viewing saved journal entries -->
+  <!-- Modal for viewing journal entries -->
   <div id="modal" class="hidden">
     <div id="modal-content">
       <span id="close-modal">&times;</span>

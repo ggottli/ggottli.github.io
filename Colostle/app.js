@@ -1,17 +1,16 @@
-// Global character object – will be filled upon creation.
+// Global character object – will hold character data.
 let character = {};
 
-// Utility function: returns a random element from an array.
+// Utility function: random element from array.
 function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// For exploration, only use ranks A–10.
-const explorationRanks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+// Our full deck: all 13 ranks.
+const allRanks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 const suits = ["♥", "♦", "♣", "♠"];
 
-// Mappings from the original exploration tables (pages 25–26)
-// Red card mapping (for ♥ and ♦).
+// Mappings for red cards (ranks A–10) as before.
 const redCardMapping = {
   "A": {
     "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
@@ -55,7 +54,7 @@ const redCardMapping = {
   }
 };
 
-// Black card mapping (for ♣ and ♠).
+// Mappings for black cards (ranks A–10) as before.
 const blackCardMapping = {
   "A": {
     "♠": "A large treasure appears. [Untouched]. Add 1 to your score and gain an item.",
@@ -99,7 +98,14 @@ const blackCardMapping = {
   }
 };
 
-// Item and Event tables (from page 27)
+// Face card mapping for Rook encounters.
+const faceCardMapping = {
+  "J": "Rook Encounter: You are surrounded by a horde of minor Rooks. (JACK: You are surrounded)",
+  "Q": "Rook Encounter: A medium-sized Rook appears before you. (QUEEN: Medium Rook)",
+  "K": "Rook Encounter: A massive Rook looms over you in terrifying grandeur. (KING: Massive Rook)"
+};
+
+// Item and Event tables (page 27).
 const itemTable = [
   { prompt: "TREASURE (for trading)" },
   { prompt: "SUPPLIES" },
@@ -140,16 +146,27 @@ function drawEvent() {
   return "EVENT: " + randomChoice(eventTable).prompt;
 }
 
-// Main exploration card draw function.
-// Uses the red or black card mappings; if the prompt instructs an extra draw (item or event), appends the extra text.
+// Updated drawCards function: uses full deck (allRanks)
+// If a face card (J, Q, K) is drawn, create a Rook encounter per combat rules.
 function drawCards(num) {
   let drawnCards = [];
   for (let i = 0; i < num; i++) {
     const suit = randomChoice(suits);
-    const rank = randomChoice(explorationRanks);
+    const rank = randomChoice(allRanks);
+    
+    // Check for face cards.
+    if (["J", "Q", "K"].includes(rank)) {
+      let basePrompt = faceCardMapping[rank];
+      // Randomly assign a Rook type from the three primary magical qualities.
+      const rookType = randomChoice(["Electric", "Rumble", "Ice"]);
+      const fullPrompt = basePrompt + " – " + rookType + " Rook";
+      drawnCards.push({ suit, rank, prompt: fullPrompt });
+      continue;  // Skip further processing
+    }
+    
+    // Process non-face cards.
     let basePrompt = "";
     let extraPrompt = "";
-
     if (suit === "♥" || suit === "♦") {
       const mapping = redCardMapping[rank];
       if (mapping && mapping[suit]) {
@@ -179,13 +196,11 @@ function drawCards(num) {
     if (extraPrompt) {
       fullPrompt += " – " + extraPrompt;
     }
-    
     drawnCards.push({ suit, rank, prompt: fullPrompt });
   }
   return drawnCards;
 }
 
-// Function to display drawn cards.
 function displayCards(cards) {
   const displayDiv = document.getElementById("cards-display");
   displayDiv.innerHTML = "";
@@ -202,7 +217,6 @@ function displayCards(cards) {
   });
 }
 
-// Save journal entry to timeline.
 function saveJournalEntry(text) {
   if (!text.trim()) {
     alert("Please write something in your journal before continuing.");
@@ -221,7 +235,6 @@ function saveJournalEntry(text) {
   document.getElementById("cards-display").innerHTML = "";
 }
 
-// Modal handling.
 function openModal(text) {
   const modal = document.getElementById("modal");
   document.getElementById("modal-text").innerText = text;
@@ -231,24 +244,40 @@ document.getElementById("close-modal").addEventListener("click", function() {
   document.getElementById("modal").classList.add("hidden");
 });
 
-// Event listener for exploration (using character-assigned exploration score).
+// Update inventory display.
+function updateInventoryDisplay() {
+  const invDisplay = document.getElementById("info-inventory");
+  if (character.inventory.length === 0) {
+    invDisplay.innerText = "None";
+  } else {
+    invDisplay.innerText = character.inventory.join(", ");
+  }
+}
+
+// Exploration uses the character's assigned exploration score.
 document.getElementById("explore-btn").addEventListener("click", function() {
-  const expScore = character.explorationScore;
-  const cards = drawCards(expScore);
+  const cards = drawCards(character.explorationScore);
   displayCards(cards);
 });
 
-// Event listener for journaling.
 document.getElementById("continue-btn").addEventListener("click", function() {
   const journalText = document.getElementById("journal-input").value;
   saveJournalEntry(journalText);
 });
 
-// Character creation
+// Inventory - add item.
+document.getElementById("add-item-btn").addEventListener("click", function() {
+  let newItem = prompt("Enter an item to add:");
+  if (newItem) {
+    character.inventory.push(newItem);
+    updateInventoryDisplay();
+  }
+});
+
+// Character creation.
 document.getElementById("character-form").addEventListener("submit", function(event) {
   event.preventDefault();
   
-  // Get values from dropdowns.
   const classSelect = document.getElementById("class-select");
   const callingSelect = document.getElementById("calling-select");
   const natureSelect = document.getElementById("nature-select");
@@ -261,27 +290,34 @@ document.getElementById("character-form").addEventListener("submit", function(ev
   const charCalling = callingSelect.options[callingSelect.selectedIndex].text;
   const charNature = natureSelect.options[natureSelect.selectedIndex].text;
   
-  // Store character data.
+  // Save character info.
   character = {
     class: charClass,
     calling: charCalling,
     nature: charNature,
     explorationScore,
-    combatScore
+    combatScore,
+    inventory: []
   };
-
-  // Update game header with character details.
+  
+  // Update header.
   document.getElementById("char-class").innerText = character.class;
   document.getElementById("char-calling").innerText = character.calling;
   document.getElementById("char-nature").innerText = character.nature;
   document.getElementById("char-expl-score").innerText = character.explorationScore;
   document.getElementById("char-combat-score").innerText = character.combatScore;
   
-  // Also show the fixed exploration score in the exploration controls.
+  // Update exploration controls.
   document.getElementById("exploration-score-display").innerText = character.explorationScore;
   
-  // Hide character builder and show game header and exploration section.
+  // Update info box.
+  document.getElementById("info-exploration").innerText = character.explorationScore;
+  document.getElementById("info-combat").innerText = character.combatScore;
+  updateInventoryDisplay();
+  
+  // Hide character builder; show game header, exploration, and info box.
   document.getElementById("character-builder").classList.add("hidden");
   document.getElementById("game-header").classList.remove("hidden");
   document.getElementById("exploration-section").classList.remove("hidden");
+  document.getElementById("info-box").classList.remove("hidden");
 });

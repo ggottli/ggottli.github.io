@@ -194,6 +194,36 @@
     background-color: #a30000;
   }
   
+  /* Info Box - fixed at bottom */
+  #info-box {
+    position: fixed;
+    bottom: 0;
+    left: 25%; /* account for sidebar */
+    right: 0;
+    background-color: #fffceb;
+    border-top: 2px solid #8e0000;
+    padding: 10px 20px;
+    font-size: 1.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #info-box p {
+    margin: 0 10px;
+  }
+  #info-box button {
+    padding: 5px 10px;
+    background-color: #d4af37;
+    border: none;
+    border-radius: 5px;
+    color: #3e2723;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  #info-box button:hover {
+    background-color: #bf8f26;
+  }
+  
   /* Modal Styles */
   #modal {
     position: fixed;
