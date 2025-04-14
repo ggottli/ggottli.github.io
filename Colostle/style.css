@@ -1,4 +1,4 @@
-/* Global resets and typography */
+/* Global Resets and Typography */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -6,20 +6,22 @@
   }
   body {
     font-family: 'Cinzel', serif;
-    background: #f8f1e4;  /* light parchment */
-    color: #3e2723;      /* dark brown */
-    padding-bottom: 120px; /* add extra bottom padding so fixed info box doesn't cover content */
+    background: #f8f1e4; /* light parchment */
+    color: #3e2723;     /* dark brown */
+    padding-bottom: 140px; /* extra space to account for fixed info box */
+    display: flex;
   }
   
   /* Sidebar Timeline Panel */
   #timeline-panel {
     width: 25%;
     max-width: 300px;
-    background-color: #8e0000;  /* deep maroon */
+    background-color: #8e0000;   /* deep maroon */
     color: #fff;
     padding: 20px;
     border-right: 4px solid #d4af37; /* gold accent */
     overflow-y: auto;
+    height: 100vh;
   }
   #timeline-panel h2 {
     font-size: 1.8em;
@@ -113,7 +115,7 @@
     background-color: #bf8f26;
   }
   
-  /* Cards display area */
+  /* Cards Display Area */
   #cards-display {
     margin-bottom: 20px;
     min-height: 120px;
@@ -172,11 +174,11 @@
     background-color: #a30000;
   }
   
-  /* Info Box - fixed at bottom */
+  /* Info Box (Fixed at Bottom) */
   #info-box {
     position: fixed;
     bottom: 0;
-    left: 25%; /* account for sidebar */
+    left: 25%; /* matches sidebar width */
     right: 0;
     background-color: #fffceb;
     border-top: 2px solid #8e0000;
@@ -207,7 +209,7 @@
     background-color: #bf8f26;
   }
   
-  /* Modal Styles (for journal) */
+  /* Modal Styles for Journal and Character Sheet */
   #modal, #char-modal {
     position: fixed;
     z-index: 100;
@@ -239,5 +241,22 @@
   }
   .hidden {
     display: none;
+  }
+  
+  /* Media Query for Smaller Screens */
+  @media (max-width: 768px) {
+    #timeline-panel {
+      width: 100%;
+      max-width: none;
+      height: auto;
+      border-right: none;
+      border-bottom: 4px solid #d4af37;
+    }
+    #main-content {
+      padding: 20px;
+    }
+    #info-box {
+      left: 0;
+    }
   }
   

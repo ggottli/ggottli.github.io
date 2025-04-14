@@ -2,17 +2,17 @@
 let character = {};
 let episodeCount = 0;
 
-// Utility: returns random element from an array.
+// Utility: returns a random element from an array.
 function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// All ranks including face cards.
-const allRanks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+// Full deck: all 13 ranks.
+const allRanks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const suits = ["♥", "♦", "♣", "♠"];
 
 /* --- Card Mappings --- */
-// Red card mapping (ranks A–10).
+// Red card mapping for ranks A–10.
 const redCardMapping = {
   "A": {
     "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
@@ -56,7 +56,7 @@ const redCardMapping = {
   }
 };
 
-// Black card mapping (ranks A–10).
+// Black card mapping for ranks A–10.
 const blackCardMapping = {
   "A": {
     "♠": "A large treasure appears. [Untouched]. Add 1 to your score and gain an item.",
@@ -148,23 +148,22 @@ function drawEvent() {
   return "EVENT: " + randomChoice(eventTable).prompt;
 }
 
-// Updated drawCards uses full deck with face cards for Rook encounters.
+// drawCards: if face card then generate Rook encounter.
 function drawCards(num) {
   let drawnCards = [];
   for (let i = 0; i < num; i++) {
     const suit = randomChoice(suits);
     const rank = randomChoice(allRanks);
     
-    // If face card, treat as a combat (Rook) encounter.
+    // If face card, generate a Rook encounter.
     if (["J", "Q", "K"].includes(rank)) {
       let basePrompt = faceCardMapping[rank];
-      // Append a random Rook type for extra flavor.
       const rookType = randomChoice(["Electric", "Rumble", "Ice"]);
       drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook` });
       continue;
     }
     
-    // Process non-face cards.
+    // Non-face cards: process using red/black mappings.
     let basePrompt = "";
     let extraPrompt = "";
     if (suit === "♥" || suit === "♦") {
@@ -217,7 +216,7 @@ function displayCards(cards) {
   });
 }
 
-// Journal entry saves with automatic "Episode X:" prefix.
+// Journal entry: prefix with Episode number.
 function saveJournalEntry(text) {
   if (!text.trim()) {
     alert("Please write something in your journal before continuing.");
@@ -228,7 +227,6 @@ function saveJournalEntry(text) {
   
   const timeline = document.getElementById("timeline");
   const listItem = document.createElement("li");
-  // Use the journalText for the full entry and a summary for the timeline.
   const summary = journalText.length > 40 ? journalText.substring(0, 40) + "..." : journalText;
   listItem.innerText = summary;
   listItem.dataset.fullText = journalText;
@@ -249,7 +247,7 @@ document.getElementById("close-modal").addEventListener("click", function() {
   document.getElementById("modal").classList.add("hidden");
 });
 
-// Inventory update.
+// Update inventory display.
 function updateInventoryDisplay() {
   const invDisplay = document.getElementById("info-inventory");
   if (character.inventory.length === 0) {
@@ -297,7 +295,7 @@ document.getElementById("remove-item-btn").addEventListener("click", function() 
   }
 });
 
-// View Character button: open character sheet modal.
+// View Character button: show character sheet modal.
 document.getElementById("view-char-btn").addEventListener("click", function() {
   const charInfo = `
     <h2>Character Sheet</h2>
@@ -331,7 +329,7 @@ document.getElementById("character-form").addEventListener("submit", function(ev
   const charCalling = callingSelect.options[callingSelect.selectedIndex].text;
   const charNature = natureSelect.options[natureSelect.selectedIndex].text;
   
-  // Store character info.
+  // Save character info.
   character = {
     class: charClass,
     calling: charCalling,
@@ -346,7 +344,7 @@ document.getElementById("character-form").addEventListener("submit", function(ev
   document.getElementById("info-combat").innerText = character.combatScore;
   updateInventoryDisplay();
   
-  // Hide character builder and show exploration section and info box.
+  // Hide character builder; show exploration and info box.
   document.getElementById("character-builder").classList.add("hidden");
   document.getElementById("exploration-section").classList.remove("hidden");
   document.getElementById("info-box").classList.remove("hidden");
