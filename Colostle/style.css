@@ -8,7 +8,7 @@
     font-family: 'Cinzel', serif;
     background: #f8f1e4; /* light parchment */
     color: #3e2723;     /* dark brown */
-    padding-bottom: 140px; /* extra space to account for fixed info box */
+    padding-bottom: 140px; /* extra space for fixed info box */
     display: flex;
   }
   
@@ -16,7 +16,7 @@
   #timeline-panel {
     width: 25%;
     max-width: 300px;
-    background-color: #8e0000;   /* deep maroon */
+    background-color: #8e0000; /* deep maroon */
     color: #fff;
     padding: 20px;
     border-right: 4px solid #d4af37; /* gold accent */
@@ -178,7 +178,7 @@
   #info-box {
     position: fixed;
     bottom: 0;
-    left: 25%; /* matches sidebar width */
+    left: 25%; /* matches sidebar */
     right: 0;
     background-color: #fffceb;
     border-top: 2px solid #8e0000;
@@ -195,6 +195,7 @@
   .info-buttons {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
   }
   #info-box button {
     padding: 5px 10px;

@@ -8,11 +8,11 @@ function randomChoice(arr) {
 }
 
 // Full deck: all 13 ranks.
-const allRanks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const allRanks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 const suits = ["♥", "♦", "♣", "♠"];
 
 /* --- Card Mappings --- */
-// Red card mapping for ranks A–10.
+// Red card mapping (ranks A–10).
 const redCardMapping = {
   "A": {
     "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
@@ -56,7 +56,7 @@ const redCardMapping = {
   }
 };
 
-// Black card mapping for ranks A–10.
+// Black card mapping (ranks A–10).
 const blackCardMapping = {
   "A": {
     "♠": "A large treasure appears. [Untouched]. Add 1 to your score and gain an item.",
@@ -102,9 +102,9 @@ const blackCardMapping = {
 
 // Face card mapping for Rook encounters.
 const faceCardMapping = {
-  "J": "Rook Encounter: You are surrounded by a horde of minor Rooks. (JACK)",
-  "Q": "Rook Encounter: A medium-sized Rook appears before you. (QUEEN)",
-  "K": "Rook Encounter: A massive Rook looms over you in terrifying grandeur. (KING)"
+  "J": "Rook Encounter: You are surrounded by a horde of minor Rooks.",
+  "Q": "Rook Encounter: A medium-sized Rook appears before you.",
+  "K": "Rook Encounter: A massive Rook looms over you in terrifying grandeur."
 };
 
 // Item and Event tables.
@@ -141,29 +141,30 @@ const eventTable = [
 ];
 
 function drawItem() {
-  return "ITEM: " + randomChoice(itemTable).prompt;
+  return randomChoice(itemTable).prompt;
 }
 
 function drawEvent() {
-  return "EVENT: " + randomChoice(eventTable).prompt;
+  return randomChoice(eventTable).prompt;
 }
 
-// drawCards: if face card then generate Rook encounter.
+// Updated drawCards function.
 function drawCards(num) {
   let drawnCards = [];
   for (let i = 0; i < num; i++) {
     const suit = randomChoice(suits);
     const rank = randomChoice(allRanks);
     
-    // If face card, generate a Rook encounter.
+    // Handle face cards (J, Q, K) as Rook encounters.
     if (["J", "Q", "K"].includes(rank)) {
       let basePrompt = faceCardMapping[rank];
       const rookType = randomChoice(["Electric", "Rumble", "Ice"]);
-      drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook` });
+      const reward = drawItem(); // Reward for defeating the Rook.
+      drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook – Reward: ${reward}` });
       continue;
     }
     
-    // Non-face cards: process using red/black mappings.
+    // Non-face cards.
     let basePrompt = "";
     let extraPrompt = "";
     if (suit === "♥" || suit === "♦") {
@@ -216,7 +217,7 @@ function displayCards(cards) {
   });
 }
 
-// Journal entry: prefix with Episode number.
+// Journal entries are prefixed with "Episode X:".
 function saveJournalEntry(text) {
   if (!text.trim()) {
     alert("Please write something in your journal before continuing.");
@@ -257,7 +258,7 @@ function updateInventoryDisplay() {
   }
 }
 
-// Exploration uses the character's assigned exploration score.
+// Exploration uses the character's exploration score.
 document.getElementById("explore-btn").addEventListener("click", function() {
   const cards = drawCards(character.explorationScore);
   displayCards(cards);
@@ -295,7 +296,28 @@ document.getElementById("remove-item-btn").addEventListener("click", function() 
   }
 });
 
-// View Character button: show character sheet modal.
+// Update Score button: allows user to change exploration and combat scores.
+document.getElementById("update-score-btn").addEventListener("click", function() {
+  let newExplScore = prompt("Enter new Exploration Score (0-5):", character.explorationScore);
+  let newCombScore = prompt("Enter new Combat Score (0-5):", character.combatScore);
+  newExplScore = parseInt(newExplScore);
+  newCombScore = parseInt(newCombScore);
+  if (!isNaN(newExplScore) && newExplScore >= 0 && newExplScore <= 5) {
+    character.explorationScore = newExplScore;
+    document.getElementById("info-exploration").innerText = character.explorationScore;
+    document.getElementById("exploration-score-display").innerText = character.explorationScore;
+  } else {
+    alert("Invalid Exploration Score.");
+  }
+  if (!isNaN(newCombScore) && newCombScore >= 0 && newCombScore <= 5) {
+    character.combatScore = newCombScore;
+    document.getElementById("info-combat").innerText = character.combatScore;
+  } else {
+    alert("Invalid Combat Score.");
+  }
+});
+
+// View Character button: displays the character sheet modal.
 document.getElementById("view-char-btn").addEventListener("click", function() {
   const charInfo = `
     <h2>Character Sheet</h2>
@@ -344,7 +366,7 @@ document.getElementById("character-form").addEventListener("submit", function(ev
   document.getElementById("info-combat").innerText = character.combatScore;
   updateInventoryDisplay();
   
-  // Hide character builder; show exploration and info box.
+  // Hide character builder; show exploration section and info box.
   document.getElementById("character-builder").classList.add("hidden");
   document.getElementById("exploration-section").classList.remove("hidden");
   document.getElementById("info-box").classList.remove("hidden");
