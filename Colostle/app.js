@@ -1,4 +1,4 @@
-// Global character object and episode counter.
+// Global character object, episode counter, and timeline data.
 let character = {};
 let episodeCount = 0;
 
@@ -12,7 +12,7 @@ const allRanks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 const suits = ["♥", "♦", "♣", "♠"];
 
 /* --- Card Mappings --- */
-// Red card mapping (ranks A–10).
+// Red card mapping for ranks A–10.
 const redCardMapping = {
   "A": {
     "♥": "A stranger in unusual robes with a castle symbol on them. [Unarmed]",
@@ -56,7 +56,7 @@ const redCardMapping = {
   }
 };
 
-// Black card mapping (ranks A–10).
+// Black card mapping for ranks A–10.
 const blackCardMapping = {
   "A": {
     "♠": "A large treasure appears. [Untouched]. Add 1 to your score and gain an item.",
@@ -148,16 +148,16 @@ function drawEvent() {
   return randomChoice(eventTable).prompt;
 }
 
-// Updated drawCards function.
+// drawCards function now includes face cards as Rook encounters.  
 function drawCards(num) {
   let drawnCards = [];
   for (let i = 0; i < num; i++) {
     const suit = randomChoice(suits);
     const rank = randomChoice(allRanks);
     
-    // Handle face cards (J, Q, K) as Rook encounters.
+    // If face card, create Rook encounter.
     if (["J", "Q", "K"].includes(rank)) {
-      let basePrompt = faceCardMapping[rank];
+      let basePrompt = faceCardMapping[rank];      
       const rookType = randomChoice(["Electric", "Rumble", "Ice"]);
       const reward = drawItem(); // Reward for defeating the Rook.
       drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook – Reward: ${reward}` });
@@ -258,7 +258,7 @@ function updateInventoryDisplay() {
   }
 }
 
-// Exploration uses the character's exploration score.
+// Exploration uses the character's assigned exploration score.
 document.getElementById("explore-btn").addEventListener("click", function() {
   const cards = drawCards(character.explorationScore);
   displayCards(cards);
@@ -296,7 +296,7 @@ document.getElementById("remove-item-btn").addEventListener("click", function() 
   }
 });
 
-// Update Score button: allows user to change exploration and combat scores.
+// Update Score button: prompts for new Exploration and Combat scores.
 document.getElementById("update-score-btn").addEventListener("click", function() {
   let newExplScore = prompt("Enter new Exploration Score (0-5):", character.explorationScore);
   let newCombScore = prompt("Enter new Combat Score (0-5):", character.combatScore);
@@ -317,7 +317,79 @@ document.getElementById("update-score-btn").addEventListener("click", function()
   }
 });
 
-// View Character button: displays the character sheet modal.
+// Save Game button: download the game state as a JSON file.
+document.getElementById("save-game-btn").addEventListener("click", function() {
+  const timelineElements = document.querySelectorAll("#timeline li");
+  let timelineData = [];
+  timelineElements.forEach(li => {
+    timelineData.push(li.dataset.fullText);
+  });
+  
+  const gameState = {
+    character: character,
+    episodeCount: episodeCount,
+    timeline: timelineData
+  };
+  
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameState, null, 2));
+  const downloadAnchor = document.createElement("a");
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", "colostle_save.json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+});
+
+// Load Game button: load game state from uploaded JSON.
+document.getElementById("load-game-btn").addEventListener("click", function() {
+  const fileInput = document.getElementById("upload-file");
+  if (!fileInput.files.length) {
+    alert("Please choose a file to upload.");
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const gameState = JSON.parse(e.target.result);
+      // Update global state.
+      character = gameState.character;
+      episodeCount = gameState.episodeCount || 0;
+      
+      // Update timeline.
+      const timeline = document.getElementById("timeline");
+      timeline.innerHTML = "";
+      if (gameState.timeline && Array.isArray(gameState.timeline)) {
+        gameState.timeline.forEach(entry => {
+          const li = document.createElement("li");
+          li.innerText = entry.length > 40 ? entry.substring(0, 40) + "..." : entry;
+          li.dataset.fullText = entry;
+          li.addEventListener("click", function() {
+            openModal(this.dataset.fullText);
+          });
+          timeline.appendChild(li);
+        });
+      }
+      
+      // Update UI elements.
+      document.getElementById("info-exploration").innerText = character.explorationScore;
+      document.getElementById("info-combat").innerText = character.combatScore;
+      document.getElementById("exploration-score-display").innerText = character.explorationScore;
+      updateInventoryDisplay();
+      
+      // Hide the character builder, show exploration and info box.
+      document.getElementById("character-builder").classList.add("hidden");
+      document.getElementById("exploration-section").classList.remove("hidden");
+      document.getElementById("info-box").classList.remove("hidden");
+    } catch (err) {
+      alert("Error loading saved game. Make sure the file is a valid game save.");
+    }
+  };
+  reader.readAsText(file);
+});
+
+// View Character button: open character sheet modal.
 document.getElementById("view-char-btn").addEventListener("click", function() {
   const charInfo = `
     <h2>Character Sheet</h2>
@@ -335,7 +407,7 @@ document.getElementById("close-char-modal").addEventListener("click", function()
   document.getElementById("char-modal").classList.add("hidden");
 });
 
-// Character creation.
+// Character creation: on form submit.
 document.getElementById("character-form").addEventListener("submit", function(event) {
   event.preventDefault();
   

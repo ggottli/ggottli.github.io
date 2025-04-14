@@ -92,6 +92,20 @@
     background-color: #bf8f26;
   }
   
+  /* Upload Saved Game Section */
+  .upload-section {
+    margin-top: 15px;
+    text-align: center;
+  }
+  .upload-section label {
+    font-size: 1em;
+    margin-right: 10px;
+  }
+  .upload-section input[type="file"] {
+    font-size: 1em;
+    margin-right: 10px;
+  }
+  
   /* Exploration Controls */
   #exploration-controls {
     margin-bottom: 20px;
@@ -178,7 +192,7 @@
   #info-box {
     position: fixed;
     bottom: 0;
-    left: 25%; /* matches sidebar */
+    left: 25%;
     right: 0;
     background-color: #fffceb;
     border-top: 2px solid #8e0000;
