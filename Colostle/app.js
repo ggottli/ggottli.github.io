@@ -199,7 +199,39 @@ const oceanRedMapping = {
     "Q": "Ocean Encounter: A medium-sized kraken emerges from the deep.",
     "K": "Ocean Encounter: A colossal Leviathan surfaces with a mighty roar."
   };
-  
+
+// --- Cities Tables ---
+const cityRedMapping = {
+  "A": { "♥": "A grand palace grounds. [Noble district]", "♦": "A busy marketplace in a city district. [Trading]" },
+  "2": { "♥": "A quiet residential area full of life. [Safe]", "♦": "A slum area with potential for danger. [Risky]" },
+  "3": { "♥": "A cultural center with art and literature. [Inspiring]", "♦": "A shady alley full of whispers. [Dangerous]" },
+  "4": { "♥": "An affluent neighborhood with elegant architecture. [Trusted]", "♦": "A derelict building with rumors of hauntings. [Untrusted]" },
+  "5": { "♥": "A vibrant town square bustling with activity. [Energetic]", "♦": "A city district darkened by crime. [Menacing]" },
+  "6": { "♥": "A public plaza where citizens gather to celebrate. [Friendly]", "♦": "A district in turmoil with riots. [Chaotic]" },
+  "7": { "♥": "An ancient monument steeped in local lore. [Revered]", "♦": "A neglected memorial that holds a grim secret. [Foreboding]" },
+  "8": { "♥": "A well-maintained civic center. [Organized]", "♦": "An abandoned civic building. [Deserted]" },
+  "9": { "♥": "A grand theatre showcasing the best of local art. [Majestic]", "♦": "A crumbling theatre haunted by memories. [Haunting]" },
+  "10": { "♥": "A flourishing new city district. [Innovative]", "♦": "A dilapidated part of the city in decline. [Fallen]" }
+};
+
+const cityBlackMapping = {
+  "A": { "♠": "A majestic city hall stands proud. [Untouched]", "♣": "A city hall showing signs of corruption. [Tarnished]" },
+  "2": { "♠": "A guarded library of ancient lore. [Intact/Locked]", "♣": "A burned-down archive of lost knowledge. [Ruined]" },
+  "3": { "♠": "A soaring skyscraper that pierces the sky. [Intact]", "♣": "A skyscraper in decay, collapsing under neglect. [Ruined]" },
+  "4": { "♠": "Modern bridges connect bustling districts. [Functional]", "♣": "A disrepair infrastructure failing in critical areas. [Damaged]" },
+  "5": { "♠": "A stately museum of the city's history. [Well-preserved]", "♣": "An abandoned museum with broken exhibits. [Neglected]" },
+  "6": { "♠": "A lively community center fosters hope. [Vibrant]", "♣": "A decaying community center bearing the scars of conflict. [Battered]" },
+  "7": { "♠": "Elegant towers hint at prosperous business. [Flourishing]", "♣": "Empty, shell-like structures mark failed commerce. [Deserted]" },
+  "8": { "♠": "A modern transit hub efficiently connecting the city. [Smooth]", "♣": "A chaotic transport station with gridlock. [Disorderly]" },
+  "9": { "♠": "A cultural festival fills the streets with joy. [Celebratory]", "♣": "A spontaneous riot disrupts celebrations. [Tumultuous]" },
+  "10": { "♠": "A new urban development promising a bright future. [Thriving]", "♣": "An urban sprawl overwhelmed by decay. [Abandoned]" }
+};
+
+const cityFaceMapping = {
+  "J": "City Encounter: A street gang challenges your authority.",
+  "Q": "City Encounter: A local dignitary offers valuable insights.",
+  "K": "City Encounter: A crisis erupts that reshapes the urban landscape."
+};
 
 // Item and Event tables.
 const itemTable = [
@@ -246,11 +278,18 @@ function drawEvent() {
 function drawCards(num) {
     let drawnCards = [];
     let table;
+    
     if (currentLocation === "Oceans") {
       table = {
         redMapping: oceanRedMapping,
         blackMapping: oceanBlackMapping,
         faceMapping: oceanFaceMapping
+      };
+    } else if (currentLocation === "Cities") {
+      table = {
+        redMapping: cityRedMapping,
+        blackMapping: cityBlackMapping,
+        faceMapping: cityFaceMapping
       };
     } else {
       table = {
@@ -264,11 +303,13 @@ function drawCards(num) {
       const suit = randomChoice(suits);
       const rank = randomChoice(allRanks);
       
-      // If face card, create Rook encounter.
+      // Face cards (Rook/Encounter) handling.
       if (["J", "Q", "K"].includes(rank)) {
         let basePrompt = table.faceMapping[rank];
         if (currentLocation === "Oceans") {
-          // For ocean encounters we do not append a rook type.
+          const reward = drawItem();
+          drawnCards.push({ suit, rank, prompt: `${basePrompt} – Reward: ${reward}` });
+        } else if (currentLocation === "Cities") {
           const reward = drawItem();
           drawnCards.push({ suit, rank, prompt: `${basePrompt} – Reward: ${reward}` });
         } else {
@@ -313,8 +354,7 @@ function drawCards(num) {
       drawnCards.push({ suit, rank, prompt: fullPrompt });
     }
     return drawnCards;
-  }
-  
+  }  
 
 function displayCards(cards) {
   const displayDiv = document.getElementById("cards-display");
@@ -434,17 +474,21 @@ document.getElementById("update-score-btn").addEventListener("click", function()
 
 // Change Location button: changes which table is used when drawing cards.
 document.getElementById("change-location-btn").addEventListener("click", function() {
-    let choice = prompt("Choose your setting:\n1. The Colostle\n2. Oceans");
-    if (choice === "1") {
-      currentLocation = "The Colostle";
-      alert("Location changed to The Colostle.");
-    } else if (choice === "2") {
-      currentLocation = "Oceans";
-      alert("Location changed to Oceans.");
-    } else {
-      alert("Invalid choice. Location not changed.");
-    }
+    document.getElementById("location-modal").classList.remove("hidden");
   });
+  
+  document.getElementById("close-location-modal").addEventListener("click", function() {
+    document.getElementById("location-modal").classList.add("hidden");
+  });
+  
+  document.getElementById("set-location-btn").addEventListener("click", function() {
+    const sel = document.getElementById("location-select");
+    const choice = sel.value;
+    currentLocation = choice;
+    alert("Location changed to " + currentLocation);
+    document.getElementById("location-modal").classList.add("hidden");
+  });
+  
   
 
 // Save Game button: download the game state as a JSON file.

@@ -283,4 +283,37 @@
       left: 0;
     }
   }
+
+  /* Location Modal */
+#location-modal {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+  }
+  #location-modal-content {
+    background-color: #fffceb;
+    margin: 10% auto;
+    padding: 20px;
+    border: 3px solid #8e0000;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 10px;
+    text-align: center;
+    position: relative;
+  }
+  #close-location-modal {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #8e0000;
+    cursor: pointer;
+  }
+  
   
