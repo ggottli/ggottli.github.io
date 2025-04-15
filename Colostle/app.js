@@ -1,6 +1,7 @@
 // Global character object, episode counter, and timeline data.
 let character = {};
 let episodeCount = 0;
+let currentLocation = "The Colostle";
 
 // Utility: returns a random element from an array.
 function randomChoice(arr) {
@@ -107,6 +108,99 @@ const faceCardMapping = {
   "K": "Rook Encounter: A massive Rook looms over you in terrifying grandeur."
 };
 
+const oceanRedMapping = {
+    "A": {
+      "♥": "An uncharted island emerges on the horizon. [Quiet coast]",
+      "♦": "A mysterious ship sails by. [Armed coast guard]"
+    },
+    "2": {
+      "♥": "A pod of dolphins guides your vessel. [Easy Passage]",
+      "♦": "A school of aggressive fish attacks. [Dangerous]"
+    },
+    "3": {
+      "♥": "A message in a bottle washes ashore. [Friendly]",
+      "♦": "A stranded sailor appears. [Not friendly]"
+    },
+    "4": {
+      "♥": "A merchant ship offers trade. [Trustworthy]",
+      "♦": "A pirate ship signals war. [Untrustworthy]"
+    },
+    "5": {
+      "♥": "A calm bay offers safe harbor. [Seems safe]",
+      "♦": "A turbulent squall approaches. [Something’s off]"
+    },
+    "6": {
+      "♥": "Fellow adventurers on a ship offer alliance. [Friendly]",
+      "♦": "A rival captain challenges you. [Not friendly]"
+    },
+    "7": {
+      "♥": "A sea monster emerges, guiding you to hidden treasure. [Taken to a new course]",
+      "♦": "A whirlpool threatens to pull you under. [Taken off course]"
+    },
+    "8": {
+      "♥": "You find an abandoned lighthouse. [Calm light]",
+      "♦": "You see a ghost ship in the mist. [Haunting]"
+    },
+    "9": {
+      "♥": "A coral reef teems with marine life. [Safe passage]",
+      "♦": "An oil spill makes the area hazardous. [Doomed]"
+    },
+    "10": {
+      "♥": "A bustling port city is in sight. [Harboring opportunity]",
+      "♦": "A deserted dock challenges you. [Abandoned]"
+    }
+  };
+  
+  const oceanBlackMapping = {
+    "A": {
+      "♠": "A hidden treasure chest floats near a rock. [Untouched]",
+      "♣": "Remains of a sunken ship hint at attempted raids. [Evidence]"
+    },
+    "2": {
+      "♠": "A rickety bridge of ice connects two icebergs. [Intact/Locked]",
+      "♣": "The ice bridge is partially melted. [Ruined]"
+    },
+    "3": {
+      "♠": "A towering iceberg forms a staircase into the sky. [Intact]",
+      "♣": "An iceberg collapses, showing its old ruins. [Ruined]"
+    },
+    "4": {
+      "♠": "Frozen remains of an ancient vessel. [Somewhat intact]. Draw an EVENT card.",
+      "♣": "The ship is broken apart in the ice. [Mostly rubble]. Draw an EVENT card."
+    },
+    "5": {
+      "♠": "A frozen mechanism churns in the ice. [Functional]",
+      "♣": "The mechanism is iced over and sputtering. [Damaged]"
+    },
+    "6": {
+      "♠": "You skate gracefully across the frozen lake. [You avoid it!]",
+      "♣": "You slip on the ice. [You are caught in it!]"
+    },
+    "7": {
+      "♠": "An ice cave beckons. [Flat and easily navigable]",
+      "♣": "A deep crevasse hides within the ice. [Deep and hard to climb into]"
+    },
+    "8": {
+      "♠": "A calm, frozen sea lies ahead. [Calm]",
+      "♣": "A blizzard shakes the frozen ocean. [Stormy]"
+    },
+    "9": {
+      "♠": "A glimmering clue in the ice is revealed. [Something you were looking for]",
+      "♣": "The clue is obscured by heavy frost. [A clue to the next step]"
+    },
+    "10": {
+      "♠": "You approach a thriving icy harbor. [Thriving]",
+      "♣": "An abandoned icy port lies silent. [Abandoned]"
+    }
+  };
+  
+  const oceanFaceMapping = {
+    "J": "Ocean Encounter: A swarm of ice-crusted minions surrounds you.",
+    "Q": "Ocean Encounter: A medium-sized kraken emerges from the deep.",
+    "K": "Ocean Encounter: A colossal Leviathan surfaces with a mighty roar."
+  };
+  
+
 // Item and Event tables.
 const itemTable = [
   { prompt: "TREASURE (for trading)" },
@@ -150,56 +244,77 @@ function drawEvent() {
 
 // drawCards function now includes face cards as Rook encounters.  
 function drawCards(num) {
-  let drawnCards = [];
-  for (let i = 0; i < num; i++) {
-    const suit = randomChoice(suits);
-    const rank = randomChoice(allRanks);
-    
-    // If face card, create Rook encounter.
-    if (["J", "Q", "K"].includes(rank)) {
-      let basePrompt = faceCardMapping[rank];      
-      const rookType = randomChoice(["Electric", "Rumble", "Ice"]);
-      const reward = drawItem(); // Reward for defeating the Rook.
-      drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook – Reward: ${reward}` });
-      continue;
-    }
-    
-    // Non-face cards.
-    let basePrompt = "";
-    let extraPrompt = "";
-    if (suit === "♥" || suit === "♦") {
-      const mapping = redCardMapping[rank];
-      if (mapping && mapping[suit]) {
-        basePrompt = mapping[suit];
-        if (basePrompt.includes("Draw an ITEM card OR an EVENT card")) {
-          extraPrompt = (Math.random() < 0.5) ? drawItem() : drawEvent();
-        } else if (basePrompt.includes("Draw an ITEM card")) {
-          extraPrompt = drawItem();
-        } else if (basePrompt.includes("Draw an EVENT card")) {
-          extraPrompt = drawEvent();
-        }
-      }
+    let drawnCards = [];
+    let table;
+    if (currentLocation === "Oceans") {
+      table = {
+        redMapping: oceanRedMapping,
+        blackMapping: oceanBlackMapping,
+        faceMapping: oceanFaceMapping
+      };
     } else {
-      const mapping = blackCardMapping[rank];
-      if (mapping && mapping[suit]) {
-        basePrompt = mapping[suit];
-        if (rank === "A") {
-          extraPrompt = drawItem();
-        }
-        if (basePrompt.includes("Draw an EVENT card")) {
-          extraPrompt = drawEvent();
-        }
-      }
+      table = {
+        redMapping: redCardMapping,
+        blackMapping: blackCardMapping,
+        faceMapping: faceCardMapping
+      };
     }
     
-    let fullPrompt = basePrompt;
-    if (extraPrompt) {
-      fullPrompt += " – " + extraPrompt;
+    for (let i = 0; i < num; i++) {
+      const suit = randomChoice(suits);
+      const rank = randomChoice(allRanks);
+      
+      // If face card, create Rook encounter.
+      if (["J", "Q", "K"].includes(rank)) {
+        let basePrompt = table.faceMapping[rank];
+        if (currentLocation === "Oceans") {
+          // For ocean encounters we do not append a rook type.
+          const reward = drawItem();
+          drawnCards.push({ suit, rank, prompt: `${basePrompt} – Reward: ${reward}` });
+        } else {
+          let rookType = randomChoice(["Electric", "Rumble", "Ice"]);
+          const reward = drawItem();
+          drawnCards.push({ suit, rank, prompt: `${basePrompt} – ${rookType} Rook – Reward: ${reward}` });
+        }
+        continue;
+      }
+      
+      let basePrompt = "";
+      let extraPrompt = "";
+      if (suit === "♥" || suit === "♦") {
+        const mapping = table.redMapping[rank];
+        if (mapping && mapping[suit]) {
+          basePrompt = mapping[suit];
+          if (basePrompt.includes("Draw an ITEM card OR an EVENT card")) {
+            extraPrompt = (Math.random() < 0.5) ? drawItem() : drawEvent();
+          } else if (basePrompt.includes("Draw an ITEM card")) {
+            extraPrompt = drawItem();
+          } else if (basePrompt.includes("Draw an EVENT card")) {
+            extraPrompt = drawEvent();
+          }
+        }
+      } else {
+        const mapping = table.blackMapping[rank];
+        if (mapping && mapping[suit]) {
+          basePrompt = mapping[suit];
+          if (rank === "A") {
+            extraPrompt = drawItem();
+          }
+          if (basePrompt.includes("Draw an EVENT card")) {
+            extraPrompt = drawEvent();
+          }
+        }
+      }
+      
+      let fullPrompt = basePrompt;
+      if (extraPrompt) {
+        fullPrompt += " – " + extraPrompt;
+      }
+      drawnCards.push({ suit, rank, prompt: fullPrompt });
     }
-    drawnCards.push({ suit, rank, prompt: fullPrompt });
+    return drawnCards;
   }
-  return drawnCards;
-}
+  
 
 function displayCards(cards) {
   const displayDiv = document.getElementById("cards-display");
@@ -316,6 +431,21 @@ document.getElementById("update-score-btn").addEventListener("click", function()
     alert("Invalid Combat Score.");
   }
 });
+
+// Change Location button: changes which table is used when drawing cards.
+document.getElementById("change-location-btn").addEventListener("click", function() {
+    let choice = prompt("Choose your setting:\n1. The Colostle\n2. Oceans");
+    if (choice === "1") {
+      currentLocation = "The Colostle";
+      alert("Location changed to The Colostle.");
+    } else if (choice === "2") {
+      currentLocation = "Oceans";
+      alert("Location changed to Oceans.");
+    } else {
+      alert("Invalid choice. Location not changed.");
+    }
+  });
+  
 
 // Save Game button: download the game state as a JSON file.
 document.getElementById("save-game-btn").addEventListener("click", function() {
