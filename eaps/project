@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electrifying Transportation: A Scientific Approach</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0 20px;
+        }
+        header {
+            background-color: #1e90ff;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+        section {
+            margin: 40px auto;
+            max-width: 900px;
+        }
+        h1, h2, h3 {
+            color: #1e90ff;
+        }
+        figure {
+            text-align: center;
+            margin: 20px 0;
+        }
+        figure img {
+            max-width: 100%;
+            height: auto;
+        }
+        figure figcaption {
+            font-style: italic;
+            font-size: 0.9em;
+        }
+        .pros, .cons {
+            background-color: #e0f7fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .cons {
+            background-color: #ffebee;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 50px;
+            padding-bottom: 20px;
+        }
+        a {
+            color: #1e90ff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Electrifying Transportation: A Scientific Approach</h1>
+    </header>
+    <section>
+        <h2>Introduction</h2>
+        <p>The transportation sector is one of the largest contributors to global greenhouse gas emissions, responsible for around 28% of global energy-related CO₂ emissions in 2022. Road transport, particularly passenger vehicles, plays a significant role in these emissions due to its dependence on gasoline and diesel fuels.</p>
+        <figure>
+            <img src="figure1.png" alt="Emissions in 2022 by Sector">
+            <figcaption>Figure 1: Emissions in 2022 (United States EPA)</figcaption>
+        </figure>
+        <p>Electrifying transportation—especially passenger vehicles—offers a key solution. Battery electric vehicles (BEVs) significantly reduce tailpipe emissions and mitigate urban air pollution, improving both environmental and public health outcomes. While challenges remain, including infrastructure and battery sourcing, the benefits strongly favor this transition.</p>
+    </section>
+
+    <section class="pros">
+        <h2>The Proposed Strategy – Pros</h2>
+        <p>Studies show BEVs already outperform internal combustion engine vehicles (ICEVs) in terms of life-cycle emissions, even in regions with coal-powered grids. The transition must begin now to meet global climate targets.</p>
+        <figure>
+            <img src="figure2.png" alt="Life Cycle Emissions Comparison">
+            <figcaption>Figure 2: Life cycle GHG emissions of BEVs vs. ICEVs (Bieker, 2021)</figcaption>
+        </figure>
+        <p>EVs also dramatically reduce urban air pollution. In California, a small increase in BEVs led to significant decreases in asthma-related ER visits. Health projections suggest tens of thousands of premature deaths could be prevented by 2050 with full EV adoption.</p>
+    </section>
+
+    <section class="cons">
+        <h2>The Proposed Strategy – Cons</h2>
+        <p>EVs still face hurdles including high upfront costs, range anxiety, and long charging times. Battery production also raises ethical and environmental concerns. However, new battery technologies and falling prices are rapidly improving this outlook.</p>
+        <figure>
+            <img src="figure3.png" alt="Battery Prices Over Time">
+            <figcaption>Figure 3: Decline in battery costs since 2010 (McCarthy, 2024)</figcaption>
+        </figure>
+        <p>Emerging solutions such as solid-state batteries and renewable-powered grids promise to alleviate these issues and further enhance EV sustainability.</p>
+    </section>
+
+    <section>
+        <h2>Successful Implementations</h2>
+        <p>Several countries have demonstrated effective EV rollout strategies. Norway leads with over 80% EV sales in 2022, thanks to strong policy incentives. China has become a global leader in EV production and adoption through large-scale investment. The Netherlands stands out for its robust charging infrastructure and supportive policies.</p>
+        <p>These examples illustrate the importance of consistent, ambitious government support. As other nations follow suit, electrification of transportation can scale globally to meet climate goals.</p>
+    </section>
+
+    <section>
+        <h2>References</h2>
+        <p>Visit the <a href="#">References Section</a> for a full list of cited sources and links to original studies and reports.</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Electrify Research Project. All rights reserved.</p>
+    </footer>
+</body>
+</html>
