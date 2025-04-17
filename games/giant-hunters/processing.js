@@ -20,7 +20,7 @@ var Browser = {
   }
 };
 
-window.Processing = require('./src/index.js')(Browser);
+window.Processing = require('./src/')(Browser);
 
 },{"./src/":27}],2:[function(require,module,exports){
 module.exports={
@@ -21510,35 +21510,35 @@ module.exports = function setupParser(Processing, options) {
 },{}],27:[function(require,module,exports){
 // Base source files
 var source = {
-  virtEquals: require("./Helpers/virtEquals.js"),
-  virtHashCode: require("./Helpers/virtHashCode.js"),
-  ObjectIterator: require("./Helpers/ObjectIterator.js"),
-  PConstants: require("./Helpers/PConstants.js"),
-  ArrayList: require("./Objects/ArrayList.js"),
-  HashMap: require("./Objects/HashMap.js"),
-  PVector: require("./Objects/PVector.js"),
-  PFont: require("./Objects/PFont.js"),
-  Char: require("./Objects/Char.js"),
-  XMLAttribute: require("./Objects/XMLAttribute.js"),
-  XMLElement: require("./Objects/XMLElement.js"),
-  PMatrix2D: require("./Objects/PMatrix2D.js"),
-  PMatrix3D: require("./Objects/PMatrix3D.js"),
-  PShape: require("./Objects/PShape.js"),
-  colors: require("./Objects/webcolors.js"),
-  PShapeSVG:  require("./Objects/PShapeSVG.js"),
-  CommonFunctions: require("./P5Functions/commonFunctions.js"),
-  defaultScope: require("./Helpers/defaultScope.js"),
-  Processing: require("./processing.js"),
-  setupParser: require("./Parser/Parser.js"),
-  finalize: require("./Helpers/finalizeProcessing.js")
+  virtEquals: require("./Helpers/virtEquals"),
+  virtHashCode: require("./Helpers/virtHashCode"),
+  ObjectIterator: require("./Helpers/ObjectIterator"),
+  PConstants: require("./Helpers/PConstants"),
+  ArrayList: require("./Objects/ArrayList"),
+  HashMap: require("./Objects/HashMap"),
+  PVector: require("./Objects/PVector"),
+  PFont: require("./Objects/PFont"),
+  Char: require("./Objects/Char"),
+  XMLAttribute: require("./Objects/XMLAttribute"),
+  XMLElement: require("./Objects/XMLElement"),
+  PMatrix2D: require("./Objects/PMatrix2D"),
+  PMatrix3D: require("./Objects/PMatrix3D"),
+  PShape: require("./Objects/PShape"),
+  colors: require("./Objects/webcolors"),
+  PShapeSVG:  require("./Objects/PShapeSVG"),
+  CommonFunctions: require("./P5Functions/commonFunctions"),
+  defaultScope: require("./Helpers/defaultScope"),
+  Processing: require("./Processing"),
+  setupParser: require("./Parser/Parser"),
+  finalize: require("./Helpers/finalizeProcessing")
 };
 
 // Additional code that gets tacked onto "p" during
 // instantiation of a Processing sketch.
 source.extend = {
   withMath: require("./P5Functions/Math.js"),
-  withProxyFunctions: require("./P5Functions/JavaProxyFunctions.js")(source.virtHashCode, source.virtEquals),
-  withTouch: require("./P5Functions/touchmouse.js"),
+  withProxyFunctions: require("./P5Functions/JavaProxyFunctions")(source.virtHashCode, source.virtEquals),
+  withTouch: require("./P5Functions/touchmouse"),
   withCommonFunctions: source.CommonFunctions.withCommonFunctions
 };
 
