@@ -1,319 +1,323 @@
 /* Global Resets and Typography */
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: 'Cinzel', serif;
+  background: #f8f1e4;
+  color: #3e2723;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Layout Containers */
+#app-wrapper {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+}
+
+/* Sidebar Timeline Panel */
+#timeline-panel {
+  flex: 0 0 25%;
+  max-width: 300px;
+  background-color: #8e0000;
+  color: #fff;
+  padding: 20px;
+  border-right: 4px solid #d4af37;
+  overflow-y: auto;
+}
+#timeline-panel h2 {
+  font-size: 1.8em;
+  margin-bottom: 1em;
+  text-align: center;
+}
+#timeline {
+  list-style: none;
+}
+#timeline li {
+  background: #a30000;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#timeline li:hover {
+  background: #bf360c;
+}
+
+/* Main Content */
+#main-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Character Builder Section */
+#character-builder {
+  background: #fffceb;
+  padding: 20px;
+  border: 3px solid #8e0000;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+#character-builder h1 {
+  text-align: center;
+  color: #8e0000;
+  margin-bottom: 15px;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+.form-group label {
+  font-size: 1.2em;
+  display: block;
+  margin-bottom: 5px;
+}
+.form-group select,
+.input-group input,
+.input-group button {
+  width: 100%;
+  padding: 10px;
+  font-size: 1em;
+  border: 2px solid #8e0000;
+  border-radius: 4px;
+  background-color: #fefefe;
+}
+#create-character-btn {
+  background-color: #d4af37;
+  border: none;
+  padding: 12px 20px;
+  font-size: 1.1em;
+  color: #3e2723;
+  border-radius: 5px;
+  cursor: pointer;
+  display: block;
+  margin: 0 auto;
+}
+#create-character-btn:hover {
+  background-color: #bf8f26;
+}
+
+/* Upload Section */
+.upload-section {
+  margin-top: 15px;
+  padding: 10px;
+  border: 2px dashed #8e0000;
+  border-radius: 5px;
+  background: #fff9f0;
+  text-align: center;
+}
+.upload-section label,
+.upload-section input,
+.upload-section button {
+  font-size: 1em;
+  margin: 5px 0;
+}
+
+/* Exploration Controls */
+#exploration-controls {
+  text-align: center;
+  margin-bottom: 20px;
+}
+#exploration-controls h1 {
+  font-size: 2.4em;
+  color: #8e0000;
+}
+#exploration-controls p {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+#exploration-controls button {
+  padding: 10px 18px;
+  font-size: 1em;
+  background-color: #d4af37;
+  border: none;
+  border-radius: 5px;
+  color: #3e2723;
+  cursor: pointer;
+  font-weight: bold;
+}
+#exploration-controls button:hover {
+  background-color: #bf8f26;
+}
+
+/* Cards Display Area */
+#cards-display {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+.card {
+  background: #fff7e6;
+  border: 2px solid #8e0000;
+  border-radius: 5px;
+  margin: 10px;
+  padding: 10px;
+  flex: 1 1 calc(45% - 20px);
+  max-width: calc(45% - 20px);
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+}
+.card h3 {
+  margin-bottom: 8px;
+  font-size: 1.2em;
+  color: #8e0000;
+}
+.card p {
+  font-size: 0.95em;
+}
+
+/* Journal Area */
+#journal-area {
+  text-align: center;
+  margin-top: 20px;
+}
+#journal-area h2 {
+  margin-bottom: 10px;
+  color: #8e0000;
+}
+#journal-area textarea {
+  width: 100%;
+  height: 150px;
+  font-size: 1em;
+  padding: 10px;
+  border: 2px solid #8e0000;
+  border-radius: 5px;
+  resize: vertical;
+  background-color: #fffceb;
+}
+#journal-area button {
+  margin-top: 10px;
+  padding: 12px 24px;
+  font-size: 1.1em;
+  background-color: #8e0000;
+  border: none;
+  border-radius: 5px;
+  color: #ffd700;
+  cursor: pointer;
+}
+#journal-area button:hover {
+  background-color: #a30000;
+}
+
+/* Info Box */
+#info-box {
+  background-color: #fffceb;
+  border-top: 2px solid #8e0000;
+  padding: 10px 20px;
+  font-size: 1.1em;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+}
+.info-buttons {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+#info-box button {
+  padding: 8px 12px;
+  background-color: #d4af37;
+  border: none;
+  border-radius: 5px;
+  color: #3e2723;
+  cursor: pointer;
+  font-weight: bold;
+}
+#info-box button:hover {
+  background-color: #bf8f26;
+}
+
+/* Modal Styles */
+.modal,
+.char-modal,
+#location-modal {
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.7);
+}
+.modal-content,
+.char-modal-content,
+#location-modal-content {
+  background-color: #fffceb;
+  margin: 5% auto;
+  padding: 20px;
+  border: 3px solid #8e0000;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 10px;
+  position: relative;
+}
+.close-modal,
+.close-char-modal,
+#close-location-modal {
+  position: absolute;
+  right: 20px;
+  top: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #8e0000;
+  cursor: pointer;
+}
+.hidden {
+  display: none;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .card {
+    flex: 1 1 calc(50% - 20px);
+    max-width: calc(50% - 20px);
   }
-  body {
-    font-family: 'Cinzel', serif;
-    background: #f8f1e4; /* light parchment */
-    color: #3e2723;     /* dark brown */
-    padding-bottom: 140px; /* extra space for fixed info box */
-    display: flex;
-  }
-  
-  /* Sidebar Timeline Panel */
   #timeline-panel {
-    width: 25%;
-    max-width: 300px;
-    background-color: #8e0000; /* deep maroon */
-    color: #fff;
-    padding: 20px;
-    border-right: 4px solid #d4af37; /* gold accent */
-    overflow-y: auto;
-    height: 100vh;
+    flex: 0 0 30%;
   }
-  #timeline-panel h2 {
-    font-size: 1.8em;
-    margin-bottom: 1em;
-    text-align: center;
+}
+@media (max-width: 768px) {
+  #app-wrapper {
+    flex-direction: column;
   }
-  #timeline {
-    list-style: none;
-  }
-  #timeline li {
-    background: #a30000;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  #timeline li:hover {
-    background: #bf360c;
-  }
-  
-  /* Main Content */
-  #main-content {
-    flex: 1;
-    padding: 20px 40px;
-  }
-  
-  /* Character Builder Section */
-  #character-builder {
-    background: #fffceb;
-    padding: 20px;
-    border: 3px solid #8e0000;
-    border-radius: 10px;
-    margin-bottom: 20px;
-  }
-  #character-builder h1 {
-    text-align: center;
-    color: #8e0000;
-    margin-bottom: 15px;
-  }
-  .form-group {
-    margin-bottom: 15px;
-  }
-  .form-group label {
-    font-size: 1.2em;
-    display: block;
-    margin-bottom: 5px;
-  }
-  .form-group select {
+  #timeline-panel {
     width: 100%;
-    padding: 8px;
-    font-size: 1em;
-    border: 2px solid #8e0000;
-    border-radius: 4px;
-    background-color: #fefefe;
+    max-width: none;
+    height: auto;
+    border-right: none;
+    border-bottom: 4px solid #d4af37;
   }
-  #create-character-btn {
-    background-color: #d4af37;
-    border: none;
-    padding: 10px 20px;
-    font-size: 1.1em;
-    color: #3e2723;
-    border-radius: 5px;
-    cursor: pointer;
-    display: block;
-    margin: 0 auto;
-  }
-  #create-character-btn:hover {
-    background-color: #bf8f26;
-  }
-  
-  /* Upload Saved Game Section */
-  .upload-section {
-    margin-top: 15px;
+  #main-content {
     padding: 10px;
-    border: 2px dashed #8e0000;
-    border-radius: 5px;
-    background: #fff9f0;
-    text-align: center;
-  }
-  .upload-section label {
-    font-size: 1em;
-    margin-right: 10px;
-  }
-  .upload-section input[type="file"] {
-    font-size: 1em;
-    margin-right: 10px;
-  }
-  
-  /* Exploration Controls */
-  #exploration-controls {
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  #exploration-controls h1 {
-    font-size: 2.8em;
-    color: #8e0000;
-  }
-  #exploration-controls p {
-    font-size: 1.2em;
-    margin-bottom: 10px;
-  }
-  #exploration-controls button {
-    padding: 8px 16px;
-    font-size: 1em;
-    background-color: #d4af37;
-    border: none;
-    border-radius: 5px;
-    color: #3e2723;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  #exploration-controls button:hover {
-    background-color: #bf8f26;
-  }
-  
-  /* Cards Display Area */
-  #cards-display {
-    margin-bottom: 20px;
-    min-height: 120px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
   }
   .card {
-    background: #fff7e6;
-    border: 2px solid #8e0000;
-    border-radius: 5px;
-    margin: 5px;
-    padding: 10px;
-    width: calc(45% - 20px);
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+    flex: 1 1 100%;
+    max-width: 100%;
   }
-  .card h3 {
-    margin-bottom: 8px;
-    font-size: 1.2em;
-    color: #8e0000;
-  }
-  .card p {
-    font-size: 0.95em;
-  }
-  
-  /* Journal Area */
-  #journal-area {
-    text-align: center;
-    margin-top: 20px;
-  }
-  #journal-area h2 {
-    margin-bottom: 10px;
-    color: #8e0000;
-  }
-  #journal-area textarea {
-    width: 90%;
-    height: 150px;
-    font-size: 1em;
-    padding: 10px;
-    border: 2px solid #8e0000;
-    border-radius: 5px;
-    resize: vertical;
-    background-color: #fffceb;
-  }
-  #journal-area button {
-    margin-top: 10px;
-    padding: 10px 20px;
-    font-size: 1.1em;
-    background-color: #8e0000;
-    border: none;
-    border-radius: 5px;
-    color: #ffd700;
-    cursor: pointer;
-  }
-  #journal-area button:hover {
-    background-color: #a30000;
-  }
-  
-  /* Info Box (Fixed at Bottom) */
+}
+@media (max-width: 480px) {
   #info-box {
-    position: fixed;
-    bottom: 0;
-    left: 25%;
-    right: 0;
-    background-color: #fffceb;
-    border-top: 2px solid #8e0000;
-    padding: 10px 20px;
-    font-size: 1.1em;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    font-size: 1em;
+    padding: 8px;
   }
-  #info-box p {
-    margin: 5px;
+  #exploration-controls h1 {
+    font-size: 2em;
   }
-  .info-buttons {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  #info-box button {
-    padding: 5px 10px;
-    background-color: #d4af37;
-    border: none;
-    border-radius: 5px;
-    color: #3e2723;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  #info-box button:hover {
-    background-color: #bf8f26;
-  }
-  
-  /* Modal Styles for Journal and Character Sheet */
-  #modal, #char-modal {
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
+  #create-character-btn,
+  #journal-area button,
+  #exploration-controls button {
     width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.7);
+    padding: 12px;
   }
-  #modal-content, #char-modal-content {
-    background-color: #fffceb;
-    margin: 10% auto;
-    padding: 20px;
-    border: 3px solid #8e0000;
-    width: 80%;
-    max-width: 600px;
-    border-radius: 10px;
-    position: relative;
-  }
-  #close-modal, #close-char-modal {
-    position: absolute;
-    right: 20px;
-    top: 10px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #8e0000;
-    cursor: pointer;
-  }
-  .hidden {
-    display: none;
-  }
-  
-  /* Media Query for Smaller Screens */
-  @media (max-width: 768px) {
-    #timeline-panel {
-      width: 100%;
-      max-width: none;
-      height: auto;
-      border-right: none;
-      border-bottom: 4px solid #d4af37;
-    }
-    #main-content {
-      padding: 20px;
-    }
-    #info-box {
-      left: 0;
-    }
-  }
-
-  /* Location Modal */
-#location-modal {
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.7);
-  }
-  #location-modal-content {
-    background-color: #fffceb;
-    margin: 10% auto;
-    padding: 20px;
-    border: 3px solid #8e0000;
-    width: 80%;
-    max-width: 400px;
-    border-radius: 10px;
-    text-align: center;
-    position: relative;
-  }
-  #close-location-modal {
-    position: absolute;
-    right: 20px;
-    top: 10px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #8e0000;
-    cursor: pointer;
-  }
-  
-  
+}
