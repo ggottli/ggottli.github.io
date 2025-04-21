@@ -1,0 +1,135 @@
+/* style.css */
+
+/* Import a medieval-inspired serif font */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f9f6f1; /* Parchment-like background */
+  color: #3c2f2f;            /* Dark brown text */
+  font-family: 'Cinzel', serif;
+  line-height: 1.6;
+}
+
+a {
+  color: #7e5a5a;
+  text-decoration: none;
+}
+a:hover {
+  color: #a16e6e;
+  text-decoration: underline;
+}
+
+/* Header & Navigation */
+.site-header {
+  background-color: #3c2f2f; /* Deep stone brown */
+  color: #f9f6f1;
+  padding: 1rem 0;
+  text-align: center;
+}
+.site-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+}
+.site-nav ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.site-nav li {
+  margin: 0 1rem;
+}
+.site-nav a {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.site-nav a.active,
+.site-nav a:hover {
+  border-bottom: 2px solid #f9f6f1;
+}
+
+/* Hero sections */
+.hero,
+.page-hero {
+  position: relative;
+  overflow: hidden;
+}
+.hero img,
+.page-hero img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  max-height: 400px;
+}
+
+/* Main content */
+main {
+  padding: 2rem 1rem;
+}
+.content-section {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  background-color: rgba(255, 255, 245, 0.9);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.content-section h2 {
+  color: #5d4e4e;
+  margin-top: 0;
+  font-size: 2rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+}
+.content-section h3 {
+  color: #5d4e4e;
+  margin-top: 1.5rem;
+}
+.content-section ul,
+.content-section ol {
+  margin-left: 1.5rem;
+}
+.content-section p + ul {
+  margin-top: 0.5rem;
+}
+
+/* Reference list styling */
+.reference-list {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.reference-list li {
+  margin-bottom: 1rem;
+  padding-left: 1rem;
+  border-left: 4px solid #7e5a5a;
+}
+
+/* Footer */
+.site-footer {
+  background-color: #3c2f2f;
+  color: #f9f6f1;
+  text-align: center;
+  padding: 1rem 0;
+  font-size: 0.9rem;
+  border-top: 1px solid #5d4e4e;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .site-nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
+  .site-nav li {
+    margin: 0.5rem 0;
+  }
+  .content-section {
+    padding: 1rem;
+  }
+}
