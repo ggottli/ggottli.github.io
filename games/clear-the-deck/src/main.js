@@ -25,7 +25,7 @@ function main() {
   renderModeSelection(handleModeSelect);
 }
 
-/** Handle top‑level menu */
+/** Handle top‑level menu choice */
 function handleModeSelect(mode) {
   if (mode === 'play') {
     handlePlayStart.__parentSelectMode = handleModeSelect;
@@ -37,11 +37,11 @@ function handleModeSelect(mode) {
 }
 
 /**
- * Live play: human vs. bots
+ * Live play: human vs. bots.
  * @param {{ playerCount: number }} config
  */
 async function handlePlayStart({ playerCount }) {
-  // initialize engine and bots
+  // Initialize engine and bots
   engine = new GameEngine(playerCount);
   engine.init();
   botList = Array.from({ length: playerCount }, (_, idx) =>
@@ -59,7 +59,8 @@ async function handlePlayStart({ playerCount }) {
         statusMessage
       },
       onPlay,
-      onPickup
+      onPickup,
+      onReveal
     );
   }
 
@@ -86,7 +87,7 @@ async function handlePlayStart({ playerCount }) {
     await updateUI();
   }
 
-  /** Callback when human plays cards */
+  /** Callback when human plays selected cards */
   const onPlay = async (cards) => {
     if (engine.currentPlayer !== humanIndex) return;
     engine.playCards(humanIndex, cards);
@@ -94,7 +95,7 @@ async function handlePlayStart({ playerCount }) {
   };
   onPlay.__parentSelectMode = handleModeSelect;
 
-  /** Callback when human picks up */
+  /** Callback when human picks up the center pile */
   const onPickup = async () => {
     if (engine.currentPlayer !== humanIndex) return;
     engine.pickUpCenter(humanIndex);
@@ -102,12 +103,33 @@ async function handlePlayStart({ playerCount }) {
   };
   onPickup.__parentSelectMode = handleModeSelect;
 
-  // initial render
+  /**
+   * Callback when human reveals a face‑down card.
+   * Only allowed when it's your turn and no face‑up cards remain.
+   */
+  const onReveal = async (idx) => {
+    if (engine.currentPlayer !== humanIndex) return;
+    if (engine.players[humanIndex].faceUp.length > 0) return;
+
+    // Reveal (pop) the next face‑down card
+    const rank = engine.revealFaceDown(humanIndex);
+    // Show the reveal briefly
+    statusMessage = `You revealed ${rank}`;
+    await updateUI();
+    await sleep(500);
+
+    // Immediately play it
+    engine.playCards(humanIndex, [rank]);
+    await runBots();
+  };
+  onReveal.__parentSelectMode = handleModeSelect;
+
+  // Initial render
   await updateUI();
 }
 
 /**
- * Simulation mode: bots only
+ * Simulation mode: bots only.
  * @param {{ playerCount: number, botName: string, numGames: number }} config
  */
 function handleSimStart({ playerCount, botName, numGames }) {
@@ -148,5 +170,5 @@ function handleSimStart({ playerCount, botName, numGames }) {
   renderSimulationResults(results);
 }
 
-// start the app
+// Start the app
 main();
