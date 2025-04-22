@@ -12,17 +12,22 @@ import {
 
 let engine;
 let botList;
-const humanPlayerIdx = 0;
+let statusMessage = '';
+const humanIndex = 0;
 
-// Kick things off
+/** Pause for the given milliseconds */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Entry point */
 function main() {
   renderModeSelection(handleModeSelect);
 }
 
-/** Handle top‑level menu choice */
+/** Handle top‑level menu */
 function handleModeSelect(mode) {
   if (mode === 'play') {
-    // so “Back” knows where to go
     handlePlayStart.__parentSelectMode = handleModeSelect;
     renderPlaySetup(handlePlayStart);
   } else if (mode === 'sim') {
@@ -31,85 +36,95 @@ function handleModeSelect(mode) {
   }
 }
 
-/** Start a live game: human vs. CPUs */
-function handlePlayStart({ playerCount }) {
-  // 1) Init engine
+/**
+ * Live play: human vs. bots
+ * @param {{ playerCount: number }} config
+ */
+async function handlePlayStart({ playerCount }) {
+  // initialize engine and bots
   engine = new GameEngine(playerCount);
   engine.init();
+  botList = Array.from({ length: playerCount }, (_, idx) =>
+    idx === humanIndex ? null : new bots.RandomBot()
+  );
 
-  // 2) Create bots for slots 1…playerCount-1
-  botList = Array(playerCount);
-  for (let i = 1; i < playerCount; i++) {
-    botList[i] = new bots.RandomBot();  // you could let user pick strategy later
-  }
-
-  // 3) Human “Play” callback
-  function onPlay(cards) {
-    if (engine.currentPlayer !== humanPlayerIdx) return;
-    engine.playCards(humanPlayerIdx, cards);
-    runBots();
-    updateGameUI();
-  }
-  onPlay.__parentSelectMode = handleModeSelect;
-
-  // 4) Human “Pick up” callback
-  function onPickup() {
-    if (engine.currentPlayer !== humanPlayerIdx) return;
-    engine.pickUpCenter(humanPlayerIdx);
-    runBots();
-    updateGameUI();
-  }
-  onPickup.__parentSelectMode = handleModeSelect;
-
-  // 5) Run bot turns until it’s human’s turn (or game over)
-  function runBots() {
-    while (!engine.isGameOver() && engine.currentPlayer !== humanPlayerIdx) {
-      const idx = engine.currentPlayer;
-      const move = botList[idx].chooseMove(engine, idx);
-      if (move.action === 'play') {
-        engine.playCards(idx, move.cards);
-      } else {
-        engine.pickUpCenter(idx);
-      }
-    }
-  }
-
-  // 6) Render the current game state
-  function updateGameUI() {
+  /** Re-render the game state */
+  async function updateUI() {
     renderGame(
       {
         playerCount,
         players: engine.players,
         centerPile: engine.centerPile,
-        currentPlayer: engine.currentPlayer
+        currentPlayer: engine.currentPlayer,
+        statusMessage
       },
       onPlay,
       onPickup
     );
   }
 
+  /** Run bot turns until it's the human's turn again (or game over) */
+  async function runBots() {
+    while (!engine.isGameOver() && engine.currentPlayer !== humanIndex) {
+      const idx = engine.currentPlayer;
+      statusMessage = `Player ${idx + 1} (Bot) is thinking…`;
+      await updateUI();
+      await sleep(800);
+
+      const move = botList[idx].chooseMove(engine, idx);
+      if (move.action === 'play') {
+        engine.playCards(idx, move.cards);
+        statusMessage = `Player ${idx + 1} played ${move.cards.length}×${move.cards[0]}`;
+      } else {
+        engine.pickUpCenter(idx);
+        statusMessage = `Player ${idx + 1} picked up the pile`;
+      }
+      await updateUI();
+      await sleep(800);
+    }
+    statusMessage = '';
+    await updateUI();
+  }
+
+  /** Callback when human plays cards */
+  const onPlay = async (cards) => {
+    if (engine.currentPlayer !== humanIndex) return;
+    engine.playCards(humanIndex, cards);
+    await runBots();
+  };
+  onPlay.__parentSelectMode = handleModeSelect;
+
+  /** Callback when human picks up */
+  const onPickup = async () => {
+    if (engine.currentPlayer !== humanIndex) return;
+    engine.pickUpCenter(humanIndex);
+    await runBots();
+  };
+  onPickup.__parentSelectMode = handleModeSelect;
+
   // initial render
-  updateGameUI();
+  await updateUI();
 }
 
-
-/** Run N games of bots-only and show stats */
+/**
+ * Simulation mode: bots only
+ * @param {{ playerCount: number, botName: string, numGames: number }} config
+ */
 function handleSimStart({ playerCount, botName, numGames }) {
-  // so “Back” works
   handleSimStart.__parentSelectMode = handleModeSelect;
-  // pick the class
+
+  if (!bots[botName]) {
+    console.error(`Bot strategy "${botName}" not found.`);
+    return;
+  }
   const BotClass = bots[botName];
-
-  // prepare bot instances for every seat
-  botList = Array(playerCount).fill().map(() => new BotClass());
-
+  botList = Array.from({ length: playerCount }, () => new BotClass());
   const wins = Array(playerCount).fill(0);
 
-  // simulate
-  for (let i = 0; i < numGames; i++) {
+  for (let game = 0; game < numGames; game++) {
     engine = new GameEngine(playerCount);
     engine.init();
-    // play until someone goes out
+
     while (!engine.isGameOver()) {
       const idx = engine.currentPlayer;
       const move = botList[idx].chooseMove(engine, idx);
@@ -119,21 +134,19 @@ function handleSimStart({ playerCount, botName, numGames }) {
         engine.pickUpCenter(idx);
       }
     }
-    // find the winner (empty slots)
+
     const winner = engine.players.findIndex(p =>
       p.hand.length === 0 &&
       p.faceUp.length === 0 &&
       p.faceDown.length === 0
     );
-    wins[winner]++;
+    if (winner >= 0) wins[winner]++;
   }
 
   const results = { totalGames: numGames, wins };
-  // attach for “Back” button
   renderSimulationResults.__parentSelectMode = handleModeSelect;
   renderSimulationResults(results);
 }
 
-
-// start the app!
+// start the app
 main();
