@@ -240,6 +240,7 @@ export function renderGame(state, onPlay, onPickup, onReveal) {
           selected.add(key);
           img.classList.add('ring', 'ring-yellow-300');
         }
+        playBtn.disabled = selected.size === 0;
       });
     }
     return img;
