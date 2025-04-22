@@ -7,7 +7,7 @@ const ROOT_ID = 'game-root';
 
 /**
  * Convert numeric rank to the DeckOfCardsAPI image code.
- * Uses Hearts suit for simplicity; front/back images from deckofcardsapi.com.
+ * Note: tens are '0' in the API, not 'T'.
  */
 function rankToCode(rank) {
   switch (rank) {
@@ -15,14 +15,13 @@ function rankToCode(rank) {
     case 11: return 'JH';
     case 12: return 'QH';
     case 13: return 'KH';
-    case 10: return 'TH';
+    case 10: return '0H';       // TEN → '0H'
     default: return `${rank}H`;
   }
 }
 
 /**
- * Render the top‑level mode selection screen.
- * Calls onSelectMode('play') or onSelectMode('sim') when chosen.
+ * Render top‑level menu.
  */
 export function renderModeSelection(onSelectMode) {
   const root = document.getElementById(ROOT_ID);
@@ -44,8 +43,7 @@ export function renderModeSelection(onSelectMode) {
 }
 
 /**
- * Render the play‑setup form (choose human+bot count).
- * Calls onStart({ playerCount }).
+ * Render play‑setup form.
  */
 export function renderPlaySetup(onStart) {
   const root = document.getElementById(ROOT_ID);
@@ -78,8 +76,7 @@ export function renderPlaySetup(onStart) {
 }
 
 /**
- * Render the simulation‑setup form.
- * Calls onSimStart({ playerCount, botName, numGames }).
+ * Render simulation‑setup form.
  */
 export function renderSimulationSetup(onSimStart) {
   const root = document.getElementById(ROOT_ID);
@@ -128,16 +125,16 @@ export function renderSimulationSetup(onSimStart) {
 }
 
 /**
- * Render the live game board with image‑based cards and status.
- * onPlay(cards: number[]) and onPickup() handle human actions.
+ * Render the live game.
+ * Now accepts a fourth callback, onReveal(idx), for when the player flips a face‑down card.
  */
-export function renderGame(state, onPlay, onPickup) {
+export function renderGame(state, onPlay, onPickup, onReveal) {
   const root = document.getElementById(ROOT_ID);
   root.innerHTML = '';
   const { playerCount, players, centerPile, currentPlayer, statusMessage } = state;
   const isYourTurn = currentPlayer === 0;
 
-  // Header and turn indicator
+  // Header
   const header = document.createElement('div');
   header.className = 'flex justify-between items-center mb-2';
   header.innerHTML = `
@@ -148,7 +145,7 @@ export function renderGame(state, onPlay, onPickup) {
   `;
   root.appendChild(header);
 
-  // Status / thinking message
+  // Status / bot thinking
   if (statusMessage) {
     const status = document.createElement('div');
     status.className = 'flex items-center mb-4 text-gray-700';
@@ -179,7 +176,7 @@ export function renderGame(state, onPlay, onPickup) {
   centerSection.appendChild(pile);
   root.appendChild(centerSection);
 
-  // Opponent displays
+  // Opponents
   const botsSection = document.createElement('div');
   botsSection.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6';
   players.forEach((p, idx) => {
@@ -212,12 +209,13 @@ export function renderGame(state, onPlay, onPickup) {
   });
   root.appendChild(botsSection);
 
-  // Human player's cards
+  // Human player's area
   const youSection = document.createElement('div');
   youSection.className = 'p-4 border rounded bg-white shadow mb-4';
   youSection.innerHTML = `<h3 class="font-semibold mb-2">Your Cards</h3>`;
   root.appendChild(youSection);
 
+  // Face-up cards (your table)
   const selected = new Set();
   function makeCard(rank, zone, idx) {
     const img = document.createElement('img');
@@ -232,7 +230,7 @@ export function renderGame(state, onPlay, onPickup) {
     img.dataset.key  = `${zone}-${idx}`;
     img.dataset.zone = zone;
     img.dataset.rank = rank;
-    if (isYourTurn) {
+    if (isYourTurn && zone !== 'faceDown') {
       img.addEventListener('click', () => {
         const key = img.dataset.key;
         if (selected.has(key)) {
@@ -242,13 +240,12 @@ export function renderGame(state, onPlay, onPickup) {
           selected.add(key);
           img.classList.add('ring', 'ring-yellow-300');
         }
-        playBtn.disabled = selected.size === 0;
       });
     }
     return img;
   }
 
-  // face-up
+  // Your face-up
   const fuContainer = document.createElement('div');
   fuContainer.innerHTML = '<p class="font-medium mb-1">Table (Face-up):</p>';
   const fuCards = document.createElement('div');
@@ -257,7 +254,7 @@ export function renderGame(state, onPlay, onPickup) {
   fuContainer.appendChild(fuCards);
   root.appendChild(fuContainer);
 
-  // hand
+  // Your hand
   const handContainer = document.createElement('div');
   handContainer.innerHTML = '<p class="font-medium mb-1">Your Hand:</p>';
   const handCards = document.createElement('div');
@@ -266,13 +263,36 @@ export function renderGame(state, onPlay, onPickup) {
   handContainer.appendChild(handCards);
   root.appendChild(handContainer);
 
+  // Your face-down
+  const fdContainer = document.createElement('div');
+  fdContainer.innerHTML = '<p class="font-medium mb-1">Table (Face-down):</p>';
+  const fdCards = document.createElement('div');
+  fdCards.className = 'flex';
+  players[0].faceDown.forEach((_, i) => {
+    const img = document.createElement('img');
+    img.src   = 'https://deckofcardsapi.com/static/img/back.png';
+    img.alt   = 'face-down';
+    img.className = [
+      'w-16 h-24 m-1 shadow',
+      isYourTurn && players[0].faceUp.length === 0 ? 
+        'cursor-pointer hover:ring hover:ring-red-400' : 
+        'opacity-50'
+    ].join(' ');
+    if (isYourTurn && players[0].faceUp.length === 0 && typeof onReveal === 'function') {
+      img.addEventListener('click', () => onReveal(i));
+    }
+    fdCards.appendChild(img);
+  });
+  fdContainer.appendChild(fdCards);
+  root.appendChild(fdContainer);
+
   // Controls
   const controls = document.createElement('div');
   controls.className = 'flex space-x-4 mt-2';
   const playBtn = document.createElement('button');
   playBtn.textContent = 'Play Selected';
   playBtn.className = 'flex-1 px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50';
-  playBtn.disabled = true;
+  playBtn.disabled = selected.size === 0;
   if (isYourTurn) {
     playBtn.addEventListener('click', () => {
       const cards = Array.from(selected).map(key => {
@@ -292,7 +312,7 @@ export function renderGame(state, onPlay, onPickup) {
   controls.append(playBtn, pickupBtn);
   root.appendChild(controls);
 
-  // Exit button
+  // Back to menu
   const exitBtn = document.createElement('button');
   exitBtn.textContent = '← Back to Menu';
   exitBtn.className = 'mt-6 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400';
@@ -303,8 +323,7 @@ export function renderGame(state, onPlay, onPickup) {
 }
 
 /**
- * Render simulation results in a styled table.
- * Results: { totalGames, wins: number[] }
+ * Render simulation results.
  */
 export function renderSimulationResults(results) {
   const root = document.getElementById(ROOT_ID);
@@ -320,7 +339,7 @@ export function renderSimulationResults(results) {
   `;
   root.appendChild(header);
 
-  // Table wrapper
+  // Table
   const tableWrapper = document.createElement('div');
   tableWrapper.className = 'overflow-x-auto mb-6';
   const table = document.createElement('table');
@@ -354,7 +373,7 @@ export function renderSimulationResults(results) {
   tableWrapper.appendChild(table);
   root.appendChild(tableWrapper);
 
-  // Back button
+  // Back
   const backBtn = document.createElement('button');
   backBtn.textContent = '← Back to Menu';
   backBtn.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400';
