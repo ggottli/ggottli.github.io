@@ -1,0 +1,12 @@
+{
+    "name": "clear-the-deck-sim",
+    "version": "1.0.0",
+    "description": "Simulation harness for Clear the Deck game",
+    "type": "module",
+    "scripts": {
+      "sim": "node simulate.js"
+    },
+    "author": "",
+    "license": "MIT"
+  }
+  
