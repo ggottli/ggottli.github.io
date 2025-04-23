@@ -249,21 +249,22 @@
             let chats = [];
             let currentChatIndex = -1;
             let generator = null;
+
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
 
-            // Load and initialize the pipeline
             async function loadGenerator() {
+                const { env, pipeline } = window.transformers;
+                env.localModelPath = "./model/";
+                env.allowRemoteModels = false;
+
                 try {
                     console.log(
-                        "Attempting to load model from: ./model/chat_model",
+                        "Loading model from:",
+                        env.localModelPath + "chat_model",
                     );
-                    generator = await window.transformers.pipeline(
-                        "text-generation",
-                        "./model/chat_model",
-                    );
-                    console.log("Model loaded successfully:", generator);
-                    // Enable input once model is ready
+                    generator = await pipeline("text-generation", "chat_model");
+                    console.log("Model loaded!", generator);
                     userInput.disabled = false;
                     sendBtn.disabled = false;
                     userInput.placeholder = "Type your message...";
@@ -274,7 +275,6 @@
             }
             loadGenerator();
 
-            // Persistence
             function saveChats() {
                 localStorage.setItem("chats", JSON.stringify(chats));
             }
@@ -367,7 +367,6 @@
             }
 
             async function generateReply(text) {
-                // If generator not ready, wait for it
                 if (!generator) {
                     await loadGenerator();
                 }
