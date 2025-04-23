@@ -219,6 +219,8 @@
                 border-radius: 4px;
             }
         </style>
+        <!-- UMD build for browser -->
+        <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js"></script>
     </head>
     <body>
         <div class="sidebar">
@@ -244,18 +246,11 @@
                 </form>
             </div>
         </div>
-        <script type="module">
-            import {
-                pipeline,
-                env,
-            } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
+        <script>
+            // Grab pipeline
+            const { pipeline } = window.transformers;
 
-            // Configure for local-only loading
-            env.localModelPath = "./model/";
-            env.allowRemoteModels = false;
-            env.allowLocalModels = true;
-
-            // UI elements
+            // Elements
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
             const chatForm = document.getElementById("chat-form");
@@ -268,8 +263,8 @@
             let currentChatIndex = -1;
             let generator;
 
-            // Load the pipeline
-            pipeline("text-generation", "chat_model")
+            // Load remote pipeline
+            pipeline("text-generation", "microsoft/DialoGPT-small")
                 .then((pipe) => {
                     generator = pipe;
                     userInput.disabled = false;
@@ -362,12 +357,10 @@
             async function generateReply(text) {
                 if (!generator) return "Model not ready";
                 try {
-                    const output = await generator(text, {
-                        max_new_tokens: 50,
-                    });
-                    return output[0]?.generated_text.trim();
+                    const out = await generator(text, { max_new_tokens: 50 });
+                    return out[0]?.generated_text.trim();
                 } catch (e) {
-                    console.error("Generation error:", e);
+                    console.error(e);
                     return "Error generating response.";
                 }
             }
@@ -385,10 +378,10 @@
                 hideTyping();
                 addMessage(r, "bot");
             };
-            async function regenerate(idx) {
-                const msg = chats[currentChatIndex][idx - 1]?.text;
+            async function regenerate(i) {
+                const msg = chats[currentChatIndex][i - 1]?.text;
                 if (!msg) return;
-                chats[currentChatIndex].splice(idx, 1);
+                chats[currentChatIndex].splice(i, 1);
                 renderChat();
                 showTyping();
                 await new Promise((r) =>
