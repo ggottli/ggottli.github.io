@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chatbot</title>
+  <title>Static Chatbot Interface</title>
   <style>
     :root {
       --sidebar-bg: #202123;
@@ -16,7 +16,7 @@
       --sidebar-text: #ffffff;
       --placeholder: #8b8a8f;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { display: flex; height: 100vh; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--text-color); background: var(--main-bg); }
     .sidebar { width: 260px; background: var(--sidebar-bg); display: flex; flex-direction: column; }
     .sidebar-header { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; border-bottom: 1px solid #3e3f41; }
@@ -30,7 +30,7 @@
     .main-header { height: 60px; background: var(--header-bg); display: flex; align-items: center; padding: 0 1rem; font-size: 1rem; color: var(--sidebar-text); border-bottom: 1px solid #3e3f41; }
     .main-body { flex: 1; overflow-y: auto; padding: 1rem; position: relative; }
     .welcome { text-align: center; margin-top: 2rem; color: var(--placeholder); }
-    .chat-item { max-width: 70%; padding: 0.6rem 0.8rem; margin: 0.5rem 0; border-radius: 15px; line-height: 1.4; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; display: inline-block; position: relative; }
+    .chat-item { max-width: 70%; padding: 0.6rem 0.8rem; margin: 0.5rem 0; border-radius: 15px; line-height: 1.4; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; position: relative; }
     .chat-item.visible { opacity: 1; transform: translateY(0); }
     .chat-item.bot { background: var(--bot-bg); color: #ffffff; align-self: flex-start; }
     .chat-item.user { background: var(--user-bg); color: #ffffff; align-self: flex-end; }
@@ -38,28 +38,20 @@
     .chat-item.bot:hover .regenerate { opacity: 1; }
     .input-container { padding: 0.5rem; border-top: 1px solid #3e3f41; background: var(--input-bg); }
     .input-container form { display: flex; }
-    .input-container input[type="text"] {
-      flex: 1; padding: 0.6rem 0.8rem; font-size: 0.95rem;
-      border: none; border-radius: 4px;
-      background: #55555d; color: var(--text-color);
-    }
+    .input-container input[type="text"] { flex: 1; padding: 0.6rem 0.8rem; font-size: 0.95rem; border: none; border-radius: 4px; background: #55555d; color: var(--text-color); }
     .input-container input[type="text"]::placeholder { color: var(--placeholder); }
-    .input-container button {
-      margin-left: 0.5rem; padding: 0 1rem; font-size: 0.95rem;
-      border: none; border-radius: 4px;
-      background: #10a37f; color: #ffffff; cursor: pointer;
-    }
+    .input-container button { margin-left: 0.5rem; padding: 0 1rem; font-size: 0.95rem; border: none; border-radius: 4px; background: #10a37f; color: #ffffff; cursor: pointer; }
     #typing-indicator { display: flex; align-items: center; height: 24px; margin: 0.5rem; }
     .dot { width: 8px; height: 8px; margin: 0 2px; background: var(--placeholder); border-radius: 50%; opacity: 0.4; animation: blink 1s infinite; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
     .dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes blink { 0%, 80%, 100% { opacity: 0.4; } 40% { opacity: 1; } }
-    /* Scrollbars */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: var(--main-bg); }
     ::-webkit-scrollbar-thumb { background: #5a5a60; border-radius: 4px; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <!-- Transformers.js for in-browser inference -->
+  <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js"></script>
 </head>
 <body>
   <div class="sidebar">
@@ -82,19 +74,18 @@
   <script>
     let chats = [];
     let currentChatIndex = -1;
-    let model;
+    let generator = null;
 
-    // Load TFJS model (place your distilled model at /model/chat_model/model.json)
-    async function loadModel() {
+    // Initialize the pipeline
+    async function loadGenerator() {
       try {
-        model = await tf.loadGraphModel('/model/chat_model/model.json');
+        generator = await window.transformers.pipeline('text-generation', 'model/chat_model');
       } catch (e) {
-        console.warn('Model load failed, falling back to echo.');
+        console.warn('Failed to load transformer pipeline:', e);
       }
     }
-    loadModel();
+    loadGenerator();
 
-    // Persistence
     function saveChats() { localStorage.setItem('chats', JSON.stringify(chats)); }
     function loadChats() {
       const stored = localStorage.getItem('chats');
@@ -102,7 +93,6 @@
       if (!chats.length) newChat();
     }
 
-    // UI elements
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const mainBody = document.getElementById('main-body');
@@ -125,8 +115,7 @@
         item.textContent = 'Chat ' + (idx + 1);
         item.addEventListener('click', () => {
           currentChatIndex = idx;
-          renderHistory();
-          renderChat();
+          renderHistory(); renderChat();
         });
         chatHistorySidebar.appendChild(item);
       });
@@ -145,7 +134,6 @@
           const bubble = document.createElement('div');
           bubble.classList.add('chat-item', msg.sender);
           bubble.textContent = msg.text;
-          // add regenerate for bot
           if (msg.sender === 'bot') {
             const btn = document.createElement('button');
             btn.classList.add('regenerate');
@@ -154,7 +142,6 @@
             bubble.appendChild(btn);
           }
           mainBody.appendChild(bubble);
-          // animate in
           requestAnimationFrame(() => bubble.classList.add('visible'));
         });
       }
@@ -162,7 +149,7 @@
       saveChats();
     }
 
-    function addMessageToSession(text, sender) {
+    function addMessage(text, sender) {
       chats[currentChatIndex].push({ text, sender });
       renderChat();
     }
@@ -176,40 +163,40 @@
       mainBody.appendChild(indicator);
       mainBody.scrollTop = mainBody.scrollHeight;
     }
+
     function hideTyping() {
       const ind = document.getElementById('typing-indicator');
       if (ind) ind.remove();
     }
 
     async function generateReply(text) {
-      if (model) {
-        // TODO: implement tokenization & inference
-        // const inputTensor = ...;
-        // const output = model.execute({ input: inputTensor });
-        // return decodeOutput(output);
+      if (!generator) return 'Loading model...';
+      try {
+        const outputs = await generator(text, { max_new_tokens: 50 });
+        return outputs[0]?.generated_text.trim();
+      } catch (e) {
+        console.error(e);
+        return 'Error generating response.';
       }
-      return 'You said: ' + text;
     }
 
     chatForm.addEventListener('submit', async e => {
       e.preventDefault();
       const text = userInput.value.trim(); if (!text) return;
-      addMessageToSession(text, 'user');
+      addMessage(text, 'user');
       userInput.value = '';
       showTyping();
       const delay = 300 + Math.random() * 500;
       await new Promise(r => setTimeout(r, delay));
       const reply = await generateReply(text);
       hideTyping();
-      addMessageToSession(reply, 'bot');
+      addMessage(reply, 'bot');
     });
 
     async function regenerate(idx) {
-      // get corresponding user message (assumes user-msg before bot-msg)
       const session = chats[currentChatIndex];
       const userMsg = session[idx - 1]?.text;
       if (!userMsg) return;
-      // remove old bot message
       session.splice(idx, 1);
       renderChat();
       showTyping();
@@ -217,10 +204,10 @@
       await new Promise(r => setTimeout(r, delay));
       const reply = await generateReply(userMsg);
       hideTyping();
-      addMessageToSession(reply, 'bot');
+      addMessage(reply, 'bot');
     }
 
-    newChatBtn.addEventListener('click', () => newChat());
+    newChatBtn.addEventListener('click', newChat);
     window.addEventListener('load', loadChats);
   </script>
 </body>
