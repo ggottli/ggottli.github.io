@@ -5,17 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Static Chatbot Interface</title>
   <style>
-    :root {
-      --sidebar-bg: #202123;
-      --main-bg: #343541;
-      --header-bg: #202123;
-      --input-bg: #40414f;
-      --bot-bg: #444654;
-      --user-bg: #11a37f;
-      --text-color: #d1d5db;
-      --sidebar-text: #ffffff;
-      --placeholder: #8b8a8f;
-    }
+    :root { --sidebar-bg: #202123; --main-bg: #343541; --header-bg: #202123; --input-bg: #40414f; --bot-bg: #444654; --user-bg: #11a37f; --text-color: #d1d5db; --sidebar-text: #ffffff; --placeholder: #8b8a8f; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { display: flex; height: 100vh; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--text-color); background: var(--main-bg); }
     .sidebar { width: 260px; background: var(--sidebar-bg); display: flex; flex-direction: column; }
@@ -30,7 +20,7 @@
     .main-header { height: 60px; background: var(--header-bg); display: flex; align-items: center; padding: 0 1rem; font-size: 1rem; color: var(--sidebar-text); border-bottom: 1px solid #3e3f41; }
     .main-body { flex: 1; overflow-y: auto; padding: 1rem; position: relative; }
     .welcome { text-align: center; margin-top: 2rem; color: var(--placeholder); }
-    .chat-item { max-width: 70%; padding: 0.6rem 0.8rem; margin: 0.5rem 0; border-radius: 15px; line-height: 1.4; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; position: relative; display: inline-block; }
+    .chat-item { max-width: 70%; padding: 0.6rem 0.8rem; margin: 0.5rem 0; border-radius: 15px; line-height: 1.4; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; position: relative; }
     .chat-item.visible { opacity: 1; transform: translateY(0); }
     .chat-item.bot { background: var(--bot-bg); color: #fff; align-self: flex-start; }
     .chat-item.user { background: var(--user-bg); color: #fff; align-self: flex-end; }
@@ -46,10 +36,11 @@
     .dot { width: 8px; height: 8px; margin: 0 2px; background: var(--placeholder); border-radius: 50%; opacity: 0.4; animation: blink 1s infinite; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
     .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes blink { 0%,80%,100%{opacity:0.4;}40%{opacity:1;} }
-    ::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-track{background:var(--main-bg);} ::-webkit-scrollbar-thumb{background:#5a5a60;border-radius:4px;}
+    @keyframes blink { 0%, 80%, 100% { opacity: 0.4; } 40% { opacity: 1; } }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--main-bg); }
+    ::-webkit-scrollbar-thumb { background: #5a5a60; border-radius: 4px; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js"></script>
 </head>
 <body>
   <div class="sidebar">
@@ -64,75 +55,67 @@
     <div class="main-body" id="main-body"></div>
     <div class="input-container">
       <form id="chat-form">
-        <input type="text" id="user-input" placeholder="Loading model..." disabled autocomplete="off" />
+        <input type="text" id="user-input" placeholder="Starting model..." disabled autocomplete="off" />
         <button type="submit" id="send-btn" disabled>Send</button>
       <//form>
     </div>
   </div>
-  <script>
-    // Elements
+  <script type="module">
+    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0';
+
+    // Configure local model path and disable remote fetching
+    env.localModelPath = './model/';
+    env.allowRemoteModels = false;
+
+    // UI elements
     const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const chatForm = document.getElementById('chat-form');
-    const mainBody = document.getElementById('main-body');
-    const chatHistorySidebar = document.getElementById('chat-history-sidebar');
+    const sendBtn   = document.getElementById('send-btn');
+    const chatForm  = document.getElementById('chat-form');
+    const mainBody  = document.getElementById('main-body');
+    const historyEl = document.getElementById('chat-history-sidebar');
     const newChatBtn = document.getElementById('new-chat');
 
     // Chat state
     let chats = [];
     let currentChatIndex = -1;
-    let generator = null;
+    let generator;
 
-    // Initialize Transformers.js pipeline
-    async function loadGenerator() {
-      const { env, pipeline } = window.transformers;
-      env.localModelPath = './model/';
-      env.allowRemoteModels = false;
-      try {
-        console.log('Loading model from:', env.localModelPath + 'chat_model');
-        generator = await pipeline('text-generation', 'chat_model');
-        console.log('Model loaded:', generator);
+    // Load model pipeline
+    pipeline('text-generation', 'chat_model')
+      .then(pipe => {
+        generator = pipe;
         userInput.disabled = false;
-        sendBtn.disabled = false;
+        sendBtn.disabled   = false;
         userInput.placeholder = 'Type your message...';
-      } catch (err) {
-        console.error('Failed to load model:', err);
+      })
+      .catch(err => {
+        console.error('Model load error:', err);
         userInput.placeholder = 'Failed to load model';
-      }
-    }
-    loadGenerator();
+      });
 
-    // Persistent storage
-    function saveChats() {
-      localStorage.setItem('chats', JSON.stringify(chats));
-    }
+    // Persistence
+    function saveChats()   { localStorage.setItem('chats', JSON.stringify(chats)); }
     function loadChats() {
       const stored = localStorage.getItem('chats');
       if (stored) chats = JSON.parse(stored);
       if (!chats.length) newChat();
     }
 
-    // UI functions
+    // UI rendering
     function newChat() {
       chats.push([]);
       currentChatIndex = chats.length - 1;
-      renderHistory();
-      renderChat();
+      renderHistory(); renderChat();
     }
 
     function renderHistory() {
-      chatHistorySidebar.innerHTML = '';
+      historyEl.innerHTML = '';
       chats.forEach((_, idx) => {
         const item = document.createElement('div');
-        item.classList.add('history-item');
-        if (idx === currentChatIndex) item.classList.add('active');
+        item.className = 'history-item' + (idx === currentChatIndex ? ' active' : '');
         item.textContent = 'Chat ' + (idx + 1);
-        item.addEventListener('click', () => {
-          currentChatIndex = idx;
-          renderHistory();
-          renderChat();
-        });
-        chatHistorySidebar.appendChild(item);
+        item.onclick = () => { currentChatIndex = idx; renderHistory(); renderChat(); };
+        historyEl.appendChild(item);
       });
     }
 
@@ -141,20 +124,16 @@
       const session = chats[currentChatIndex];
       if (!session.length) {
         const welcome = document.createElement('div');
-        welcome.classList.add('welcome');
+        welcome.className = 'welcome';
         welcome.textContent = 'Welcome! Start typing to chat.';
         mainBody.appendChild(welcome);
       } else {
         session.forEach((msg, i) => {
           const bubble = document.createElement('div');
-          bubble.classList.add('chat-item', msg.sender);
+          bubble.className = 'chat-item ' + msg.sender;
           bubble.textContent = msg.text;
           if (msg.sender === 'bot') {
-            const btn = document.createElement('button');
-            btn.classList.add('regenerate');
-            btn.textContent = '↻';
-            btn.addEventListener('click', () => regenerate(i));
-            bubble.appendChild(btn);
+            const btn = document.createElement('button'); btn.className = 'regenerate'; btn.textContent = '↻'; btn.onclick = () => regenerate(i); bubble.appendChild(btn);
           }
           mainBody.appendChild(bubble);
           requestAnimationFrame(() => bubble.classList.add('visible'));
@@ -165,68 +144,45 @@
     }
 
     function addMessage(text, sender) {
-      chats[currentChatIndex].push({ text, sender });
-      renderChat();
+      chats[currentChatIndex].push({ text, sender }); renderChat();
     }
 
     function showTyping() {
-      const indicator = document.createElement('div');
-      indicator.id = 'typing-indicator';
-      ['','',''].forEach(() => {
-        const dot = document.createElement('div');
-        dot.classList.add('dot');
-        indicator.appendChild(dot);
-      });
-      mainBody.appendChild(indicator);
-      mainBody.scrollTop = mainBody.scrollHeight;
+      const indicator = document.createElement('div'); indicator.id = 'typing-indicator';
+      [1,2,3].forEach(() => { const dot = document.createElement('div'); dot.className = 'dot'; indicator.appendChild(dot); });
+      mainBody.appendChild(indicator); mainBody.scrollTop = mainBody.scrollHeight;
     }
 
     function hideTyping() {
-      const ind = document.getElementById('typing-indicator');
-      if (ind) ind.remove();
+      const ind = document.getElementById('typing-indicator'); if (ind) ind.remove();
     }
 
     async function generateReply(text) {
-      if (!generator) await loadGenerator();
+      if (!generator) return 'Model not ready';
       try {
-        const outputs = await generator(text, { max_new_tokens: 50 });
-        return outputs[0]?.generated_text.trim();
-      } catch (err) {
-        console.error('Generation error:', err);
+        const out = await generator(text, { max_new_tokens: 50 });
+        return out[0]?.generated_text.trim();
+      } catch (e) {
+        console.error('Generation error:', e);
         return 'Error generating response.';
       }
     }
 
-    // Event listeners
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = userInput.value.trim();
-      if (!text) return;
-      addMessage(text, 'user');
-      userInput.value = '';
-      showTyping();
-      const delay = 300 + Math.random() * 500;
-      await new Promise(r => setTimeout(r, delay));
-      const reply = await generateReply(text);
-      hideTyping();
-      addMessage(reply, 'bot');
+    chatForm.addEventListener('submit', async e => {
+      e.preventDefault(); const txt = userInput.value.trim(); if (!txt) return;
+      addMessage(txt, 'user'); userInput.value = ''; showTyping();
+      const delay = 300 + Math.random()*500; await new Promise(r => setTimeout(r, delay));
+      const reply = await generateReply(txt); hideTyping(); addMessage(reply, 'bot');
     });
 
     async function regenerate(idx) {
-      const session = chats[currentChatIndex];
-      const userMsg = session[idx - 1]?.text;
-      if (!userMsg) return;
-      session.splice(idx, 1);
-      renderChat();
-      showTyping();
-      const delay = 300 + Math.random() * 500;
-      await new Promise(r => setTimeout(r, delay));
-      const reply = await generateReply(userMsg);
-      hideTyping();
-      addMessage(reply, 'bot');
+      const msg = chats[currentChatIndex][idx-1]?.text; if (!msg) return;
+      chats[currentChatIndex].splice(idx, 1); renderChat(); showTyping();
+      const delay = 300 + Math.random()*500; await new Promise(r => setTimeout(r, delay));
+      const reply = await generateReply(msg); hideTyping(); addMessage(reply, 'bot');
     }
 
-    newChatBtn.addEventListener('click', newChat);
+    newChatBtn.onclick = newChat;
     window.addEventListener('load', loadChats);
   </script>
 </body>
