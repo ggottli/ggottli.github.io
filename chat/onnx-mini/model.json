@@ -1,0 +1,4 @@
+{
+  "format": "onnx",
+  "weights": ["onnx/model.onnx"]
+}
