@@ -258,7 +258,10 @@
             // allow same-origin model loading
             env.allowRemoteModels = true;
 
-            // DOM elements
+            // base URL of your site
+            const BASE = window.location.origin;
+
+            // grab DOM elements
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
             const chatForm = document.getElementById("chat-form");
@@ -395,10 +398,10 @@
                 loadChats();
                 (async () => {
                     try {
-                        // point at your local model manifest
+                        // load from your local model folder
                         generator = await pipeline(
                             "text-generation",
-                            "/chat/model/chat_model/model.json",
+                            `${BASE}/chat/model/chat_model/model.json`,
                         );
                         userInput.disabled = false;
                         sendBtn.disabled = false;
