@@ -4,8 +4,6 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Chatbot Interface</title>
-
-        <!-- point to your favicon in /chat/ -->
         <link rel="icon" href="./favicon.ico" />
 
         <style>
@@ -256,9 +254,9 @@
             } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
 
             // ───────── LOCAL-ONLY MODEL LOADING ─────────
-            env.allowRemoteModels = false; // disable any remote fetch
-            env.allowLocalModels = true; // enable loading from disk
-            env.localModelPath = "./model"; // relative to this file
+            env.allowRemoteModels = false;
+            env.allowLocalModels = true;
+            env.localModelPath = "."; // look for ./onnx-mini
 
             // ───────── DOM REFS & STATE ─────────
             const userInput = document.getElementById("user-input");
@@ -359,6 +357,19 @@
                     return "Error generating response.";
                 }
             }
+            async function regenerate(i) {
+                const msg = chats[currentChatIndex][i - 1]?.text;
+                if (!msg) return;
+                chats[currentChatIndex].splice(i, 1);
+                renderChat();
+                showTyping();
+                await new Promise((r) =>
+                    setTimeout(r, 300 + Math.random() * 500),
+                );
+                const r = await generateReply(msg);
+                hideTyping();
+                addMessage(r, "bot");
+            }
 
             chatForm.onsubmit = async (e) => {
                 e.preventDefault();
@@ -375,30 +386,16 @@
                 addMessage(r, "bot");
             };
 
-            async function regenerate(i) {
-                const msg = chats[currentChatIndex][i - 1]?.text;
-                if (!msg) return;
-                chats[currentChatIndex].splice(i, 1);
-                renderChat();
-                showTyping();
-                await new Promise((r) =>
-                    setTimeout(r, 300 + Math.random() * 500),
-                );
-                const r = await generateReply(msg);
-                hideTyping();
-                addMessage(r, "bot");
-            }
-
             newChatBtn.onclick = newChat;
 
             window.addEventListener("load", () => {
                 loadChats();
                 (async () => {
                     try {
-                        // Load from ./model/chat_model/model.json
+                        // ─── load from onnx-mini ───
                         generator = await pipeline(
                             "text-generation",
-                            "chat_model",
+                            "onnx-mini",
                         );
                         userInput.disabled = false;
                         sendBtn.disabled = false;
