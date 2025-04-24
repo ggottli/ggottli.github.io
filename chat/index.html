@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Static Chatbot Interface</title>
+        <title>Chatbot Interface</title>
         <!-- explicit favicon reference -->
         <link rel="icon" href="/chat/favicon.ico" />
 
@@ -233,7 +233,7 @@
             <div class="chat-history" id="chat-history-sidebar"></div>
         </div>
         <div class="main">
-            <div class="main-header">Static Chatbot</div>
+            <div class="main-header">Chatbot</div>
             <div class="main-body" id="main-body"></div>
             <div class="input-container">
                 <form id="chat-form">
@@ -255,13 +255,11 @@
                 env,
             } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
 
-            // allow same-origin model loading
+            // allow same-origin + local files only
             env.allowRemoteModels = true;
+            env.localFilesOnly = true;
 
-            // base URL of your site
-            const BASE = window.location.origin;
-
-            // grab DOM elements
+            // DOM elements
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
             const chatForm = document.getElementById("chat-form");
@@ -398,14 +396,13 @@
                 loadChats();
                 (async () => {
                     try {
-                        // load from your local model folder
                         generator = await pipeline(
                             "text-generation",
-                            `${BASE}/chat/model/chat_model/model.json`,
+                            "./model/chat_model/model.json",
                         );
                         userInput.disabled = false;
                         sendBtn.disabled = false;
-                        userInput.placeholder = "Type your message...";
+                        userInput.placeholder = "Type your message…";
                     } catch (err) {
                         console.error("Model load error:", err);
                         userInput.placeholder = "Failed to load model";
