@@ -3,25 +3,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="/apple-touch-icon.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="32x32"
-            href="/favicon-32x32.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="16x16"
-            href="/favicon-16x16.png"
-        />
-        <link rel="manifest" href="/site.webmanifest" />
-        <title>Chatbot</title>
+        <title>Static Chatbot Interface</title>
+        <!-- explicit favicon reference -->
+        <link rel="icon" href="/chat/favicon.ico" />
+
         <style>
             :root {
                 --sidebar-bg: #202123;
@@ -248,7 +233,7 @@
             <div class="chat-history" id="chat-history-sidebar"></div>
         </div>
         <div class="main">
-            <div class="main-header">Chatbot</div>
+            <div class="main-header">Static Chatbot</div>
             <div class="main-body" id="main-body"></div>
             <div class="input-container">
                 <form id="chat-form">
@@ -264,14 +249,13 @@
             </div>
         </div>
 
-        <!-- === module script for Xenova Transformers === -->
         <script type="module">
             import {
                 pipeline,
                 env,
             } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
 
-            // allow loading models from Hugging Face
+            // allow same-origin model loading
             env.allowRemoteModels = true;
 
             // DOM elements
@@ -282,12 +266,12 @@
             const historyEl = document.getElementById("chat-history-sidebar");
             const newChatBtn = document.getElementById("new-chat");
 
-            // Chat state
+            // chat state
             let chats = [];
             let currentChatIndex = -1;
             let generator;
 
-            // Load or initialize chats
+            // persist chats
             const saveChats = () =>
                 localStorage.setItem("chats", JSON.stringify(chats));
             const loadChats = () => {
@@ -296,7 +280,7 @@
                 if (!chats.length) newChat();
             };
 
-            // UI helpers
+            // UI functions
             function newChat() {
                 chats.push([]);
                 currentChatIndex = chats.length - 1;
@@ -375,6 +359,7 @@
                     return "Error generating response.";
                 }
             }
+
             chatForm.onsubmit = async (e) => {
                 e.preventDefault();
                 const t = userInput.value.trim();
@@ -389,6 +374,7 @@
                 hideTyping();
                 addMessage(r, "bot");
             };
+
             async function regenerate(i) {
                 const msg = chats[currentChatIndex][i - 1]?.text;
                 if (!msg) return;
@@ -402,15 +388,17 @@
                 hideTyping();
                 addMessage(r, "bot");
             }
+
             newChatBtn.onclick = newChat;
+
             window.addEventListener("load", () => {
                 loadChats();
-                // asynchronously initialize the model
                 (async () => {
                     try {
+                        // point at your local model manifest
                         generator = await pipeline(
                             "text-generation",
-                            "microsoft/DialoGPT-small",
+                            "/chat/model/chat_model/model.json",
                         );
                         userInput.disabled = false;
                         sendBtn.disabled = false;
