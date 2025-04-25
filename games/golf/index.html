@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Retro Golf</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="top-bar">
+            <button id="prev-hole">← Hole</button>
+            <span id="hole-label">Hole 1 (Par 3)</span>
+            <button id="next-hole">Hole →</button>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="ui">
+            <div id="club-selector">
+                <button id="prev-club">◀</button>
+                <span id="current-club">Wedge</span>
+                <button id="next-club">▶</button>
+            </div>
+            <div id="aim-controls">
+                <button id="aim-left">⟵</button>
+                <button id="aim-right">⟶</button>
+                <span id="aim-angle">0°</span>
+            </div>
+            <button id="swing">Swing</button>
+        </div>
+
+        <script src="game.js"></script>
+    </body>
+</html>
