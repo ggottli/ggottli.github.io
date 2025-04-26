@@ -1,0 +1,181 @@
+:root {
+    --bg: #1e1e27;
+    --board-bg: #2d2f35;
+    --cell-bg: #26282f;
+    --grid-line: #3e4148;
+    --highlight: rgba(81, 144, 252, 0.3);
+    --blue: #5190fc;
+    --red: #f14f4f;
+    --card-bg: #2d2f35;
+    --card-border: #3e4148;
+}
+
+/* GLOBAL RESET & LAYOUT */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    background: var(--bg);
+    color: #eee;
+    font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 40px 0;
+}
+#onitama-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* TURN TITLE */
+#turn-title {
+    font-size: 2.5rem;
+    margin-bottom: 24px;
+}
+
+/* CARD ROWS */
+.cards-row {
+    display: flex;
+    gap: 20px;
+    margin: 16px 0;
+    justify-content: center;
+}
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 120px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s,
+        opacity 0.15s;
+}
+.card.disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+.card.selected {
+    box-shadow: 0 0 8px var(--blue);
+    transform: translateY(-4px);
+}
+.card:hover:not(.disabled) {
+    transform: translateY(-2px);
+}
+
+/* card name */
+.card-name {
+    color: #ccc;
+    margin: 8px 0;
+    font-size: 1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* card grid */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 2px;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 8px;
+}
+.card-cell {
+    background: transparent;
+    border: 1px solid var(--grid-line);
+    border-radius: 2px;
+}
+.card-cell.center {
+    background: #fff;
+}
+.card-cell.move.player {
+    background: var(--blue);
+}
+.card-cell.move.opponent {
+    background: var(--red);
+}
+
+/* BOARD */
+.board {
+    display: grid;
+    grid-template-columns: repeat(5, 64px);
+    grid-template-rows: repeat(5, 64px);
+    background: var(--board-bg);
+    border: 2px solid var(--grid-line);
+    border-radius: 6px;
+    gap: 2px;
+    margin: 0 auto;
+}
+
+/* CELLS */
+.cell {
+    background: var(--cell-bg);
+    border: 1px solid var(--grid-line);
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+}
+.cell.highlight {
+    background: var(--highlight);
+}
+
+/* PIECES (pure CSS + Unicode) */
+.piece {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    line-height: 1;
+    width: 1em;
+    height: 1em;
+}
+.piece.student::before {
+    content: "♟";
+}
+.piece.master::before {
+    content: "♔";
+    font-size: 2.4rem;
+}
+/* little base bar beneath every piece */
+.piece::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.8em;
+    height: 4px;
+    background: currentColor;
+    border-radius: 2px;
+}
+.piece.player {
+    color: var(--blue);
+}
+.piece.opponent {
+    color: var(--red);
+}
+
+/* responsive */
+@media (max-width: 600px) {
+    #turn-title {
+        font-size: 1.8rem;
+    }
+    .board {
+        grid-template-columns: repeat(5, 48px);
+        grid-template-rows: repeat(5, 48px);
+        gap: 2px;
+    }
+    .card {
+        width: 80px;
+    }
+}

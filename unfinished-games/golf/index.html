@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Retro Golf</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="top-bar">
+            <button id="prev-hole">← Hole</button>
+            <span id="hole-label">Hole 1 (Par 3)</span>
+            <button id="next-hole">Hole →</button>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="ui">
+            <!-- Aim controls block -->
+            <div class="ui-block" id="aim-block">
+                <button class="ui-btn orange" id="aim-left">◀</button>
+                <div class="ui-display">aim</div>
+                <button class="ui-btn orange" id="aim-right">▶</button>
+            </div>
+
+            <!-- Club selector block -->
+            <div class="ui-block" id="club-block">
+                <div class="ui-display hatched" id="club-display">
+                    <span id="current-club">Wedge</span>
+                </div>
+                <div class="ui-arrows">
+                    <button class="ui-btn orange" id="next-club">▲</button>
+                    <button class="ui-btn orange" id="prev-club">▼</button>
+                </div>
+            </div>
+
+            <!-- shot-meter DOM widget -->
+            <div id="shot-meter">
+                <canvas
+                    id="shot-meter-canvas"
+                    width="120"
+                    height="120"
+                ></canvas>
+                <div id="indicator"></div>
+            </div>
+
+            <!-- Swing button -->
+            <button id="swing" class="swing-btn">Swing</button>
+        </div>
+
+        <script src="game.js"></script>
+    </body>
+</html>

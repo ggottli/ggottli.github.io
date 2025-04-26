@@ -1,0 +1,131 @@
+/* overall reset */
+body {
+    margin: 0;
+    background: #6b8f3f;
+    font-family: monospace;
+    user-select: none;
+}
+
+/* Top bar */
+#top-bar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-weight: bold;
+}
+
+/* Canvas styling */
+canvas {
+    display: block;
+    margin: 0 auto;
+    background: #8fc975;
+    image-rendering: pixelated;
+}
+
+/* UI container */
+#ui {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+/* Each mini panel */
+.ui-block {
+    display: flex;
+    align-items: center;
+    background: #2b3a20;
+    padding: 4px;
+    border: 2px solid #556644;
+}
+
+/* Arrow buttons */
+.ui-btn {
+    background: #c04e1a;
+    border: 2px solid #332811;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    color: white;
+    cursor: pointer;
+    line-height: 0;
+}
+.ui-btn.orange:hover {
+    background: #dd5e2a;
+}
+
+/* The center display in each block */
+.ui-display {
+    background: #1f221a;
+    color: #e8e8e8;
+    padding: 0 8px;
+    margin: 0 4px;
+    font-size: 14px;
+    text-align: center;
+    line-height: 32px;
+}
+
+/* Hatched shading behind club text */
+.hatched {
+    background-image:
+        linear-gradient(45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%);
+    background-size: 8px 8px;
+}
+
+/* Up/down arrows stack next to club display */
+.ui-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Swing button */
+.swing-btn {
+    background: #cc5522;
+    border: 2px solid #552811;
+    color: white;
+    font-weight: bold;
+    padding: 8px 24px;
+    font-size: 18px;
+    cursor: pointer;
+}
+.swing-btn:hover {
+    background: #dd6633;
+}
+
+/* ===== Shot Meter ===== */
+#shot-meter {
+    position: relative;
+    width: 60px; /* show only the right half of a 120×120 gauge */
+    height: 120px; /* full height */
+    overflow: hidden; /* clip off the left half */
+    margin-right: 16px;
+}
+
+#shot-meter-canvas {
+    position: absolute;
+    top: 0;
+    left: -60px; /* shift the full 120px canvas left by half */
+    width: 120px;
+    height: 120px;
+}
+
+#indicator {
+    position: absolute;
+    left: 0; /* pivot sits at the very left edge of our 60px clip */
+    top: 0;
+    width: 2px;
+    height: 60px; /* radius of the semi-circle */
+    background: #fff;
+    transform-origin: 0% 100%; /* bottom-left corner of this div */
+    transform: rotate(
+        180deg
+    ); /* we’ll change this in JS, but default can be down */
+    pointer-events: none;
+}
