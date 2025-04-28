@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <title>Bible Journaling</title>
+
+        <!-- Biblical serif font -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+
+    <body>
+        <header>
+            <h1>Bible Journaling App</h1>
+        </header>
+
+        <div class="container">
+            <!-- Timeline & Add Entry button -->
+            <aside id="timeline">
+                <!-- populated by script.js -->
+            </aside>
+
+            <main id="main-content">
+                <!-- Initial setup -->
+                <div id="setup">
+                    <h2>Set Up Your Plan</h2>
+
+                    <!-- Mode switch -->
+                    <label>
+                        Mode:
+                        <select id="plan-mode">
+                            <option value="book">Book &amp; Chapter</option>
+                            <option value="topic">Topic</option>
+                        </select>
+                    </label>
+
+                    <!-- Book & Chapter inputs -->
+                    <div id="book-setup">
+                        <label>
+                            Book:
+                            <select id="book-name">
+                                <option value="">-- choose a book --</option>
+                                <option>Genesis</option>
+                                <option>Exodus</option>
+                                <option>Leviticus</option>
+                                <option>Numbers</option>
+                                <option>Deuteronomy</option>
+                                <option>Joshua</option>
+                                <option>Judges</option>
+                                <option>Ruth</option>
+                                <option>1 Samuel</option>
+                                <option>2 Samuel</option>
+                                <option>1 Kings</option>
+                                <option>2 Kings</option>
+                                <option>1 Chronicles</option>
+                                <option>2 Chronicles</option>
+                                <option>Ezra</option>
+                                <option>Nehemiah</option>
+                                <option>Esther</option>
+                                <option>Job</option>
+                                <option>Psalms</option>
+                                <option>Proverbs</option>
+                                <option>Ecclesiastes</option>
+                                <option>Song of Solomon</option>
+                                <option>Isaiah</option>
+                                <option>Jeremiah</option>
+                                <option>Lamentations</option>
+                                <option>Ezekiel</option>
+                                <option>Daniel</option>
+                                <option>Hosea</option>
+                                <option>Joel</option>
+                                <option>Amos</option>
+                                <option>Obadiah</option>
+                                <option>Jonah</option>
+                                <option>Micah</option>
+                                <option>Nahum</option>
+                                <option>Habakkuk</option>
+                                <option>Zephaniah</option>
+                                <option>Haggai</option>
+                                <option>Zechariah</option>
+                                <option>Malachi</option>
+                                <option>Matthew</option>
+                                <option>Mark</option>
+                                <option>Luke</option>
+                                <option>John</option>
+                                <option>Acts</option>
+                                <option>Romans</option>
+                                <option>1 Corinthians</option>
+                                <option>2 Corinthians</option>
+                                <option>Galatians</option>
+                                <option>Ephesians</option>
+                                <option>Philippians</option>
+                                <option>Colossians</option>
+                                <option>1 Thessalonians</option>
+                                <option>2 Thessalonians</option>
+                                <option>1 Timothy</option>
+                                <option>2 Timothy</option>
+                                <option>Titus</option>
+                                <option>Philemon</option>
+                                <option>Hebrews</option>
+                                <option>James</option>
+                                <option>1 Peter</option>
+                                <option>2 Peter</option>
+                                <option>1 John</option>
+                                <option>2 John</option>
+                                <option>3 John</option>
+                                <option>Jude</option>
+                                <option>Revelation</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Chapter:
+                            <input
+                                type="number"
+                                id="start-chap"
+                                min="1"
+                                value="1"
+                            />
+                        </label>
+                    </div>
+
+                    <!-- Topic input -->
+                    <div id="topic-setup" class="hidden">
+                        <label>
+                            Topic:
+                            <select id="topic-name">
+                                <option value="">-- select topic --</option>
+                                <option value="Faith">Faith</option>
+                                <option value="Love">Love</option>
+                                <option value="Hope">Hope</option>
+                                <option value="Grace">Grace</option>
+                                <option value="Forgiveness">Forgiveness</option>
+                                <option value="Prayer">Prayer</option>
+                                <option value="Salvation">Salvation</option>
+                                <option value="Trust">Trust</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <!-- Translation selector -->
+                    <label>
+                        Translation:
+                        <select id="translation">
+                            <option value="kjv">KJV</option>
+                            <option value="esv">ESV</option>
+                            <option value="web">WEB</option>
+                            <!-- add more bible-api.com codes as needed -->
+                        </select>
+                    </label>
+
+                    <button id="start-plan">Start Plan</button>
+                </div>
+
+                <!-- Journal view -->
+                <div id="journal" class="hidden">
+                    <div class="entry-header">
+                        <span>
+                            Chapter: <strong id="chap-num-display"></strong>
+                        </span>
+                        <button id="change-chapter">Change Chapter</button>
+                    </div>
+
+                    <div id="passage-container">
+                        <h2 id="passage-ref"></h2>
+                        <div id="passage-text"></div>
+                    </div>
+
+                    <textarea
+                        id="entry"
+                        placeholder="Write your reflection here…"
+                    ></textarea>
+                    <button id="save-entry">Save Entry</button>
+
+                    <div class="controls">
+                        <button id="export-json">Export Progress</button>
+                        <label class="import-label">
+                            Import Progress
+                            <input
+                                type="file"
+                                id="import-json"
+                                accept=".json"
+                                hidden
+                            />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- DEVOTIONAL -->
+                <div id="devotional" class="hidden">
+                    <h2>Daily Devotional</h2>
+                    <p id="dev-date" class="dev-meta"></p>
+                    <h3 id="dev-title"></h3>
+                    <p id="dev-ref" class="dev-meta"></p>
+                    <div id="dev-body"></div>
+                    <button id="refresh-dev">Refresh</button>
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <small>
+                Built with ❤️ and
+                <a href="https://bible-api.com/">Bible-API</a>
+            </small>
+        </footer>
+
+        <script src="script.js"></script>
+    </body>
+</html>

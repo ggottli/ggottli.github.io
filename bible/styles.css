@@ -1,0 +1,230 @@
+/* —— Theme & Reset —— */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: "Cinzel", serif;
+    background: #f7efe5;
+    color: #3a2f2f;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+a {
+    color: #8b4513;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Header & Footer */
+header,
+footer {
+    background: #5c1a00;
+    color: #f7efe5;
+    text-align: center;
+    padding: 1rem;
+}
+footer a {
+    color: #f7efe5;
+}
+
+/* Layout */
+.container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+}
+
+/* Timeline sidebar */
+#timeline {
+    background: #fff7f0;
+    border-right: 2px solid #e1dada;
+    padding: 1rem;
+    overflow-y: auto;
+}
+#timeline button#add-entry {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    background: #5c1a00;
+    color: #f7efe5;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+#timeline button#add-entry:hover {
+    background: #4e1600;
+}
+#timeline .day {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    background: #f3e8e2;
+    cursor: pointer;
+}
+#timeline .day.active {
+    background: #e1dada;
+    font-weight: bold;
+}
+
+/* Main content */
+#main-content {
+    padding: 1rem;
+}
+.hidden {
+    display: none;
+}
+
+/* Setup form */
+#setup {
+    max-width: 400px;
+    margin: 0 auto;
+    background: #fff7f0;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+}
+#setup label {
+    display: block;
+    margin: 0.6rem 0;
+}
+#setup input,
+#setup select {
+    width: 100%;
+    padding: 0.4rem;
+    margin-top: 0.2rem;
+    border: 1px solid #e1dada;
+    border-radius: 4px;
+}
+#setup button {
+    margin-top: 1rem;
+    padding: 0.6rem 1.2rem;
+    background: #5c1a00;
+    color: #f7efe5;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+#setup button:hover {
+    background: #4e1600;
+}
+
+/* Journal view */
+.entry-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+}
+.entry-header button {
+    padding: 0.4rem 0.8rem;
+    background: #5c1a00;
+    color: #f7efe5;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.entry-header button:hover {
+    background: #4e1600;
+}
+
+#passage-container {
+    margin-bottom: 1rem;
+    background: #fffdfa;
+    padding: 1rem;
+    border: 1px solid #e1dada;
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+#passage-ref {
+    margin-bottom: 0.5rem;
+    color: #5c1a00;
+    font-size: 1.2rem;
+}
+
+#entry {
+    width: 100%;
+    min-height: 150px;
+    padding: 0.6rem;
+    border: 1px solid #e1dada;
+    border-radius: 6px;
+    background: #fffdfa;
+    resize: vertical;
+    margin-bottom: 1rem;
+}
+
+button,
+.import-label {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+button:hover,
+.import-label:hover {
+    opacity: 0.9;
+}
+
+button#save-entry {
+    background: #5c1a00;
+    color: #f7efe5;
+    margin-bottom: 1rem;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+}
+.import-label {
+    background: #e1dada;
+    color: #3a2f2f;
+}
+
+#book-setup,
+#topic-setup {
+    margin-bottom: 1rem;
+}
+.hidden {
+    display: none;
+}
+
+/* DEVOTIONAL STYLES */
+#devotional {
+    padding: 1rem;
+}
+#devotional .dev-meta {
+    color: #5c1a00;
+    font-style: italic;
+    margin-bottom: 0.4rem;
+}
+#devotional h3 {
+    margin-top: 0;
+    color: #5c1a00;
+}
+#devotional #dev-body {
+    background: #fffdfa;
+    border: 1px solid #e1dada;
+    border-radius: 6px;
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+#refresh-dev {
+    background: #5c1a00;
+    color: #f7efe5;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+#refresh-dev:hover {
+    background: #4e1600;
+}
