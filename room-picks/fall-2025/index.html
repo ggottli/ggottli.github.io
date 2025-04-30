@@ -171,7 +171,24 @@
             </div>
 
             <div class="card" id="order-card">
-                <h2>4. Pick Order &amp; Assign</h2>
+                <h2>
+                    4. Pick Order &amp; Assign
+                    <button
+                        id="reset-picks"
+                        style="
+                            float: right;
+                            background: var(--dark);
+                            color: var(--light);
+                            border: none;
+                            padding: 0.4rem 0.8rem;
+                            border-radius: 4px;
+                            font-size: 0.9rem;
+                            cursor: pointer;
+                        "
+                    >
+                        Reset Picks
+                    </button>
+                </h2>
                 <ul id="pick-order"></ul>
             </div>
         </main>
@@ -376,6 +393,13 @@
                     save();
                     renderAll();
                 }
+            };
+
+            // Reset all room assignments but keep the same group order
+            document.getElementById("reset-picks").onclick = () => {
+                rooms.forEach((r) => (r.assignedTo = null));
+                save(); // persist the cleared assignments
+                renderAll(); // re-render rooms + order
             };
 
             // EXPORT / IMPORT
