@@ -2,7 +2,7 @@
   "people": [
     {
       "name": "Owen Hooper",
-      "points": 492
+      "points": 492.4
     },
     {
       "name": "Charles Cook",
@@ -10,27 +10,27 @@
     },
     {
       "name": "Bobby Frassinelli",
-      "points": 1742
+      "points": 1742.5
     },
     {
       "name": "Ben Heav",
-      "points": 1765
+      "points": 1765.65
     },
     {
       "name": "Fraga",
-      "points": 1792
+      "points": 1792.5
     },
     {
       "name": "Billy Hand",
-      "points": 1897
+      "points": 1897.2
     },
     {
       "name": "Austin Goodrich",
-      "points": 1914
+      "points": 1914.3
     },
     {
       "name": "Tommy Boyles",
-      "points": 1916
+      "points": 1916.25
     },
     {
       "name": "Danny Francis",
@@ -42,11 +42,11 @@
     },
     {
       "name": "Ryan Barrera",
-      "points": 1974
+      "points": 1974.75
     },
     {
       "name": "Reece Lampert",
-      "points": 1979
+      "points": 1979.55
     },
     {
       "name": "Will Sautter",
@@ -58,11 +58,11 @@
     },
     {
       "name": "Lucas Timm",
-      "points": 1990
+      "points": 1990.5
     },
     {
       "name": "Esteban Sweet",
-      "points": 1996
+      "points": 1996.35
     },
     {
       "name": "Zach Thieme",
@@ -70,15 +70,15 @@
     },
     {
       "name": "Rahul Selvan",
-      "points": 2009
+      "points": 2009.5
     },
     {
       "name": "Charlie Featherson",
-      "points": 2011
+      "points": 2011.95
     },
     {
       "name": "Nate Stevens",
-      "points": 2047
+      "points": 2047.7
     },
     {
       "name": "Zac Romps",
@@ -90,7 +90,7 @@
     },
     {
       "name": "Samuel Anderson",
-      "points": 2068
+      "points": 2068.6
     },
     {
       "name": "Oscar Murillo",
@@ -98,7 +98,7 @@
     },
     {
       "name": "Michael Sorrells",
-      "points": 2112
+      "points": 2112.5
     },
     {
       "name": "Nolan Schofield",
@@ -106,11 +106,11 @@
     },
     {
       "name": "Colin Crean",
-      "points": 2116
+      "points": 2116.5
     },
     {
       "name": "Charlie Bendell",
-      "points": 2132
+      "points": 2132.5
     },
     {
       "name": "Charlie McClelland",
@@ -118,15 +118,15 @@
     },
     {
       "name": "Mason Snyder",
-      "points": 2154
+      "points": 2154.9
     },
     {
       "name": "Oscar Katz",
-      "points": 2157
+      "points": 2157.35
     },
     {
       "name": "Reis Whitney",
-      "points": 2168
+      "points": 2168.4
     },
     {
       "name": "Shank",
@@ -134,19 +134,23 @@
     },
     {
       "name": "Coleton",
-      "points": 2176
+      "points": 2176.5
     },
     {
       "name": "Sean Gregg",
-      "points": 2182
+      "points": 2182.4
     },
     {
       "name": "Aaron Norwood",
       "points": 2183
     },
     {
+      "name": "Jake Johns",
+      "points": 2183.25
+    },
+    {
       "name": "Josh Ball",
-      "points": 2200
+      "points": 2200.15
     },
     {
       "name": "Brayden Stanovich",
@@ -154,11 +158,11 @@
     },
     {
       "name": "Danny Ward",
-      "points": 2203
+      "points": 2203.85
     },
     {
       "name": "Jacob Pilon",
-      "points": 2204
+      "points": 2204.3
     },
     {
       "name": "Adrien Cadio",
@@ -166,7 +170,7 @@
     },
     {
       "name": "Nick Huser",
-      "points": 2279
+      "points": 2279.1
     },
     {
       "name": "Parker Hellyer",
@@ -178,7 +182,7 @@
     },
     {
       "name": "Ian Kuchinski",
-      "points": 2319
+      "points": 2319.6
     },
     {
       "name": "Ian Kim",
@@ -186,21 +190,20 @@
     },
     {
       "name": "Ben Mclaughlin",
-      "points": 2366
+      "points": 2366.2
     },
     {
       "name": "Zach Guy",
       "points": 2370
-    },
-    {
-      "name": "Jake Johns",
-      "points": 2183
     }
   ],
   "groups": [],
   "rooms": [
     {
       "name": "Archon"
+    },
+    {
+      "name": "Utopia"
     },
     {
       "name": "20"
@@ -267,9 +270,6 @@
     },
     {
       "name": "44"
-    },
-    {
-      "name": "Utopia"
     }
   ]
 }
