@@ -1,0 +1,275 @@
+{
+  "people": [
+    {
+      "name": "Owen Hooper",
+      "points": 492
+    },
+    {
+      "name": "Charles Cook",
+      "points": 1716
+    },
+    {
+      "name": "Bobby Frassinelli",
+      "points": 1742
+    },
+    {
+      "name": "Ben Heav",
+      "points": 1765
+    },
+    {
+      "name": "Fraga",
+      "points": 1792
+    },
+    {
+      "name": "Billy Hand",
+      "points": 1897
+    },
+    {
+      "name": "Austin Goodrich",
+      "points": 1914
+    },
+    {
+      "name": "Tommy Boyles",
+      "points": 1916
+    },
+    {
+      "name": "Danny Francis",
+      "points": 1927
+    },
+    {
+      "name": "Jack Kelly",
+      "points": 1935
+    },
+    {
+      "name": "Ryan Barrera",
+      "points": 1974
+    },
+    {
+      "name": "Reece Lampert",
+      "points": 1979
+    },
+    {
+      "name": "Will Sautter",
+      "points": 1984
+    },
+    {
+      "name": "Karson Stefaniak",
+      "points": 1989
+    },
+    {
+      "name": "Lucas Timm",
+      "points": 1990
+    },
+    {
+      "name": "Esteban Sweet",
+      "points": 1996
+    },
+    {
+      "name": "Zach Thieme",
+      "points": 2005
+    },
+    {
+      "name": "Rahul Selvan",
+      "points": 2009
+    },
+    {
+      "name": "Charlie Featherson",
+      "points": 2011
+    },
+    {
+      "name": "Nate Stevens",
+      "points": 2047
+    },
+    {
+      "name": "Zac Romps",
+      "points": 2056
+    },
+    {
+      "name": "Ben Brown",
+      "points": 2057
+    },
+    {
+      "name": "Samuel Anderson",
+      "points": 2068
+    },
+    {
+      "name": "Oscar Murillo",
+      "points": 2081
+    },
+    {
+      "name": "Michael Sorrells",
+      "points": 2112
+    },
+    {
+      "name": "Nolan Schofield",
+      "points": 2114
+    },
+    {
+      "name": "Colin Crean",
+      "points": 2116
+    },
+    {
+      "name": "Charlie Bendell",
+      "points": 2132
+    },
+    {
+      "name": "Charlie McClelland",
+      "points": 2134
+    },
+    {
+      "name": "Mason Snyder",
+      "points": 2154
+    },
+    {
+      "name": "Oscar Katz",
+      "points": 2157
+    },
+    {
+      "name": "Reis Whitney",
+      "points": 2168
+    },
+    {
+      "name": "Shank",
+      "points": 2169
+    },
+    {
+      "name": "Coleton",
+      "points": 2176
+    },
+    {
+      "name": "Sean Gregg",
+      "points": 2182
+    },
+    {
+      "name": "Aaron Norwood",
+      "points": 2183
+    },
+    {
+      "name": "Josh Ball",
+      "points": 2200
+    },
+    {
+      "name": "Brayden Stanovich",
+      "points": 2203
+    },
+    {
+      "name": "Danny Ward",
+      "points": 2203
+    },
+    {
+      "name": "Jacob Pilon",
+      "points": 2204
+    },
+    {
+      "name": "Adrien Cadio",
+      "points": 2279
+    },
+    {
+      "name": "Nick Huser",
+      "points": 2279
+    },
+    {
+      "name": "Parker Hellyer",
+      "points": 2285
+    },
+    {
+      "name": "Brandon Cook",
+      "points": 2318
+    },
+    {
+      "name": "Ian Kuchinski",
+      "points": 2319
+    },
+    {
+      "name": "Ian Kim",
+      "points": 2327
+    },
+    {
+      "name": "Ben Mclaughlin",
+      "points": 2366
+    },
+    {
+      "name": "Zach Guy",
+      "points": 2370
+    },
+    {
+      "name": "Jake Johns",
+      "points": 2183
+    }
+  ],
+  "groups": [],
+  "rooms": [
+    {
+      "name": "Archon"
+    },
+    {
+      "name": "20"
+    },
+    {
+      "name": "22"
+    },
+    {
+      "name": "23"
+    },
+    {
+      "name": "24"
+    },
+    {
+      "name": "25"
+    },
+    {
+      "name": "26"
+    },
+    {
+      "name": "27"
+    },
+    {
+      "name": "28"
+    },
+    {
+      "name": "29"
+    },
+    {
+      "name": "31"
+    },
+    {
+      "name": "32"
+    },
+    {
+      "name": "33"
+    },
+    {
+      "name": "34"
+    },
+    {
+      "name": "35"
+    },
+    {
+      "name": "36"
+    },
+    {
+      "name": "37"
+    },
+    {
+      "name": "38"
+    },
+    {
+      "name": "39"
+    },
+    {
+      "name": "41"
+    },
+    {
+      "name": "42"
+    },
+    {
+      "name": "43"
+    },
+    {
+      "name": "44"
+    },
+    {
+      "name": "Utopia"
+    }
+  ]
+}
