@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <title>Air Notes</title>
+        <style>
+            /* full-screen cloudy background */
+            body,
+            html {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
+                overflow: hidden;
+                font-family: sans-serif;
+            }
+            /* container to catch clicks */
+            #container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+            }
+            /* drawing canvas */
+            #drawingCanvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 500;
+            }
+            /* individual note styling */
+            .note {
+                position: absolute;
+                width: 220px;
+                min-height: 120px;
+                background: rgba(255, 255, 255, 0.8);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            /* toolbar (hidden by default) */
+            .toolbar {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                padding: 4px;
+                background: rgba(255, 255, 255, 0.9);
+                cursor: move;
+                user-select: none;
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+            /* show toolbar on hover or active edit */
+            .note:hover .toolbar,
+            .note.active .toolbar {
+                opacity: 1;
+            }
+            .toolbar button {
+                border: none;
+                background: none;
+                font-size: 14px;
+                cursor: pointer;
+            }
+            .toolbar input[type="color"] {
+                border: none;
+                background: none;
+                padding: 0;
+                width: 24px;
+                height: 24px;
+                cursor: pointer;
+            }
+            /* editable content area with placeholder */
+            .content {
+                padding: 8px;
+                min-height: 80px;
+                outline: none;
+                overflow: auto;
+            }
+            .content[data-placeholder]:empty:before {
+                content: attr(data-placeholder);
+                color: #aaa;
+                pointer-events: none;
+            }
+            /* save button */
+            #saveBtn {
+                position: fixed;
+                top: 12px;
+                right: 12px;
+                padding: 8px 12px;
+                background: #007acc;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                font-size: 14px;
+                z-index: 1000;
+            }
+            /* tool toggle container - right positioned dynamically */
+            #toolContainer {
+                position: fixed;
+                top: 12px;
+                z-index: 1000;
+            }
+            #toolToggle {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                border: none;
+                background: #fff;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                font-size: 20px;
+                cursor: pointer;
+                position: relative;
+                transition: transform 0.3s;
+            }
+            .tool-menu {
+                position: absolute;
+                top: 50%;
+                right: 100%;
+                transform: translateY(-50%) scale(0);
+                transform-origin: center right;
+                display: flex;
+                gap: 8px;
+                transition:
+                    transform 0.3s,
+                    opacity 0.3s;
+                opacity: 0;
+            }
+            .tool-menu.open {
+                transform: translateY(-50%) scale(1);
+                opacity: 1;
+            }
+            .tool-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                border: none;
+                background: #fff;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+                font-size: 16px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <canvas id="drawingCanvas"></canvas>
+
+        <!-- Fixed buttons -->
+        <div id="toolContainer">
+            <button id="toolToggle">🗒️</button>
+            <div class="tool-menu" id="toolMenu">
+                <button class="tool-btn" data-tool="note" title="Note">
+                    🗒️
+                </button>
+                <button class="tool-btn" data-tool="pen" title="Pen">✏️</button>
+                <button
+                    class="tool-btn"
+                    data-tool="highlight"
+                    title="Highlight"
+                >
+                    🖍️
+                </button>
+            </div>
+        </div>
+        <button id="saveBtn">Save Notes</button>
+
+        <script>
+            const container = document.getElementById("container");
+            const saveBtn = document.getElementById("saveBtn");
+            const toolContainer = document.getElementById("toolContainer");
+            const toolToggle = document.getElementById("toolToggle");
+            const toolMenu = document.getElementById("toolMenu");
+            const drawingCanvas = document.getElementById("drawingCanvas");
+            const ctx = drawingCanvas.getContext("2d");
+
+            let currentTool = "note";
+            let drawing = false;
+
+            // Update toggle icon
+            function updateToolIcon() {
+                const icons = { note: "🗒️", pen: "✏️", highlight: "🖍️" };
+                toolToggle.textContent = icons[currentTool] || "🗒️";
+            }
+            // Enable/disable drawing
+            function updateDrawingState() {
+                drawingCanvas.style.pointerEvents =
+                    currentTool === "pen" || currentTool === "highlight"
+                        ? "auto"
+                        : "none";
+            }
+
+            // Dynamically position tool toggle left of Save button
+            function updateToolPosition() {
+                const spacing = 8; // px
+                const saveRect = saveBtn.getBoundingClientRect();
+                const rightVal = window.innerWidth - (saveRect.left - spacing);
+                toolContainer.style.right = rightVal + "px";
+            }
+
+            // Initialize canvas size
+            function setCanvasSize() {
+                drawingCanvas.width = container.clientWidth;
+                drawingCanvas.height = container.clientHeight;
+                drawingCanvas.style.pointerEvents = "none";
+            }
+
+            // Create a new note at (x,y)
+            function createNote(x, y) {
+                const note = document.createElement("div");
+                note.className = "note";
+                note.style.left = x + "px";
+                note.style.top = y + "px";
+
+                const toolbar = document.createElement("div");
+                toolbar.className = "toolbar";
+
+                const boldBtn = document.createElement("button");
+                boldBtn.innerHTML = "<b>B</b>";
+                boldBtn.onclick = () => document.execCommand("bold");
+                const highlightBtn = document.createElement("button");
+                highlightBtn.textContent = "🖍";
+                highlightBtn.onclick = () =>
+                    document.execCommand("backColor", false, "#ffff00");
+                const textColor = document.createElement("input");
+                textColor.type = "color";
+                textColor.oninput = (e) =>
+                    document.execCommand("foreColor", false, e.target.value);
+                const bgColor = document.createElement("input");
+                bgColor.type = "color";
+                bgColor.oninput = (e) =>
+                    (note.style.backgroundColor = e.target.value + "cc");
+                const delBtn = document.createElement("button");
+                delBtn.textContent = "✕";
+                delBtn.onclick = () => note.remove();
+
+                [boldBtn, highlightBtn, textColor, bgColor, delBtn].forEach(
+                    (el) => toolbar.appendChild(el),
+                );
+                const content = document.createElement("div");
+                content.className = "content";
+                content.contentEditable = "true";
+                content.spellcheck = false;
+                content.setAttribute("data-placeholder", "New note...");
+
+                note.appendChild(toolbar);
+                note.appendChild(content);
+                container.appendChild(note);
+
+                // Auto-focus new note
+                content.focus();
+                const range = document.createRange();
+                range.selectNodeContents(content);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+                note.classList.add("active");
+                content.addEventListener("focus", () =>
+                    note.classList.add("active"),
+                );
+                content.addEventListener("blur", () =>
+                    note.classList.remove("active"),
+                );
+
+                // Drag logic for notes
+                let dragging = false,
+                    startX,
+                    startY,
+                    origX,
+                    origY;
+                toolbar.addEventListener("mousedown", (e) => {
+                    dragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    origX = note.offsetLeft;
+                    origY = note.offsetTop;
+                    e.preventDefault();
+                });
+                document.addEventListener("mousemove", (e) => {
+                    if (!dragging) return;
+                    note.style.left = origX + (e.clientX - startX) + "px";
+                    note.style.top = origY + (e.clientY - startY) + "px";
+                });
+                document.addEventListener("mouseup", () => {
+                    dragging = false;
+                });
+            }
+
+            // Setup events
+            window.addEventListener("resize", () => {
+                setCanvasSize();
+                updateToolPosition();
+            });
+            window.addEventListener("DOMContentLoaded", () => {
+                setCanvasSize();
+                updateToolPosition();
+                updateDrawingState();
+                updateToolIcon();
+            });
+
+            // Tool toggle and selection
+            toolToggle.onclick = () => toolMenu.classList.toggle("open");
+            document.querySelectorAll(".tool-btn").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    currentTool = e.currentTarget.dataset.tool;
+                    updateToolIcon();
+                    updateDrawingState();
+                    toolMenu.classList.remove("open");
+                });
+            });
+
+            // Drawing on canvas
+            drawingCanvas.addEventListener("mousedown", (e) => {
+                if (currentTool === "pen" || currentTool === "highlight") {
+                    drawing = true;
+                    ctx.beginPath();
+                    ctx.moveTo(e.offsetX, e.offsetY);
+                    ctx.strokeStyle =
+                        currentTool === "pen" ? "#000" : "#ffff00";
+                    ctx.lineWidth = currentTool === "pen" ? 2 : 10;
+                    ctx.globalAlpha = currentTool === "pen" ? 1 : 0.3;
+                }
+            });
+            drawingCanvas.addEventListener("mousemove", (e) => {
+                if (drawing) {
+                    ctx.lineTo(e.offsetX, e.offsetY);
+                    ctx.stroke();
+                }
+            });
+            ["mouseup", "mouseout"].forEach((evt) =>
+                drawingCanvas.addEventListener(evt, () => {
+                    drawing = false;
+                    ctx.globalAlpha = 1;
+                }),
+            );
+
+            // Note creation
+            container.addEventListener("click", (e) => {
+                if (e.target === container && currentTool === "note") {
+                    createNote(e.offsetX, e.offsetY);
+                }
+            });
+
+            // Save notes
+            saveBtn.onclick = () => {
+                const notes = container.querySelectorAll(".note .content");
+                let txt = "";
+                notes.forEach(
+                    (div, i) =>
+                        (txt += `Note ${i + 1}:\n${div.innerText.trim()}\n\n`),
+                );
+                const blob = new Blob([txt], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "notes_summary.txt";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            };
+        </script>
+    </body>
+</html>
