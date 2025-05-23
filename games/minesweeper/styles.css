@@ -1,0 +1,121 @@
+/* -------- Global -------- */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #121212;
+    color: #e0e0e0;
+    font-family: sans-serif;
+    margin: 0;
+    padding: 1rem;
+}
+
+.controls {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+button,
+select {
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #2a2a2a;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+button:hover,
+select:hover {
+    background: #2a2a2a;
+}
+
+/* -------- Board & Cells -------- */
+.board {
+    display: grid;
+    gap: 2px;
+    background: #2a2a2a;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.cell {
+    width: 32px;
+    height: 32px;
+    background: #2b2b2b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    transition:
+        background 0.1s,
+        transform 0.1s;
+}
+.cell:hover {
+    background: #3a3a3a;
+    transform: translateY(-1px);
+}
+
+/* Revealed state */
+.cell.revealed {
+    cursor: default;
+    background: #424242;
+    border-color: #555;
+    box-shadow:
+        inset 2px 2px 5px rgba(0, 0, 0, 0.6),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.05);
+}
+
+/* Flag & Mine icons */
+.cell.flagged::after {
+    content: "🚩";
+    font-size: 1.2em;
+}
+.cell.mine::after {
+    content: "💣";
+    font-size: 1.2em;
+}
+
+/* Number colors */
+.cell[data-num="1"] {
+    color: #66b0ff;
+} /* bright blue */
+.cell[data-num="2"] {
+    color: #7fff7f;
+} /* lime green */
+.cell[data-num="3"] {
+    color: #ff6666;
+} /* coral red */
+.cell[data-num="4"] {
+    color: #ffcc66;
+} /* gold */
+.cell[data-num="5"] {
+    color: #ff66cc;
+} /* magenta */
+.cell[data-num="6"] {
+    color: #66ffff;
+} /* cyan */
+.cell[data-num="7"] {
+    color: #cccccc;
+} /* light gray */
+.cell[data-num="8"] {
+    color: #999999;
+} /* medium gray */
+
+/* -------- Stats -------- */
+.stats {
+    display: flex;
+    gap: 1rem;
+}
+#mine-count,
+#timer {
+    background: #1e1e1e;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: 1px solid #2a2a2a;
+}

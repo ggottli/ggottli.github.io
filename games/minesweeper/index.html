@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Minesweeper</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="controls">
+            <select id="size">
+                <option value="9">9×9 (10 mines)</option>
+                <option value="16">16×16 (40 mines)</option>
+                <option value="custom">Custom…</option>
+            </select>
+            <button id="reset">New Game</button>
+            <div class="stats">
+                <span id="mine-count">Mines: 0</span>
+                <span id="timer">Time: 0s</span>
+            </div>
+        </div>
+        <div id="board" class="board"></div>
+        <script src="script.js"></script>
+    </body>
+</html>
