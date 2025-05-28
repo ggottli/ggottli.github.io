@@ -4,278 +4,568 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Smart Assistant</title>
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
-            /* Reset & base */
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
+            /* Custom scrollbar for a cleaner look (optional) */
+            #chat::-webkit-scrollbar {
+                width: 8px;
             }
-            html,
-            body {
-                width: 100%;
-                height: 100%;
+            #chat::-webkit-scrollbar-track {
+                background: #2d3748; /* Tailwind gray-800 */
             }
-            body {
-                font-family: "Segoe UI", Tahoma, sans-serif;
-                background: #121212;
-                color: #e0e0e0;
-                overflow: hidden;
-            }
-            /* Fullscreen chat container */
-            #chat-container {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-                width: 100%;
-                background: #18191a;
-            }
-            /* Header */
-            #chat-header {
-                background: #0a84ff;
-                color: #fff;
-                text-align: center;
-                font-size: 1.25em;
-                padding: 16px;
-                font-weight: bold;
-                flex-shrink: 0;
-            }
-            /* Message area */
-            #chat {
-                flex: 1;
-                padding: 16px;
-                overflow-y: auto;
-            }
-            .bubble {
-                max-width: 70%;
-                margin-bottom: 12px;
-                padding: 12px 16px;
-                border-radius: 20px;
-                line-height: 1.4;
-                word-wrap: break-word;
-                transition: background 0.2s ease;
-            }
-            .bubble.user {
-                background: #0a84ff;
-                color: #fff;
-                align-self: flex-end;
-                border-bottom-right-radius: 4px;
-            }
-            .bubble.bot {
-                background: #2c2f33;
-                color: #e0e0e0;
-                align-self: flex-start;
-                border-bottom-left-radius: 4px;
-            }
-            /* Controls */
-            #controls {
-                flex-shrink: 0;
-                display: flex;
-                align-items: center;
-                padding: 10px;
-                background: #1f1f1f;
-                border-top: 1px solid #333;
-                gap: 8px;
-            }
-            .mode-btn {
-                font-size: 0.95em;
-                padding: 6px 12px;
-                color: #0a84ff;
-                background: none;
+            #chat::-webkit-scrollbar-thumb {
+                background: #4a5568; /* Tailwind gray-600 */
                 border-radius: 4px;
-                cursor: pointer;
-                transition:
-                    background 0.2s,
-                    color 0.2s;
-                border: none;
             }
-            .mode-btn.active {
-                background: #0a84ff;
-                color: #121212;
-                font-weight: 600;
+            #chat::-webkit-scrollbar-thumb:hover {
+                background: #718096; /* Tailwind gray-500 */
             }
-            #user-input {
-                flex: 1;
-                padding: 10px 14px;
-                border: 1px solid #333;
-                border-radius: 20px;
-                outline: none;
-                font-size: 1em;
-                background: #2c2f33;
-                color: #e0e0e0;
+            /* Basic body styling */
+            body {
+                font-family:
+                    "Inter", sans-serif; /* Using Inter font, common with Tailwind */
             }
-            #user-input::placeholder {
-                color: #888;
+            /* Animation for mic button when listening */
+            .mic-listening {
+                animation: pulse 1.5s infinite;
             }
-            #send-btn,
-            #mic-btn {
-                background: none;
-                border: none;
-                cursor: pointer;
-                font-size: 1.2em;
-                color: #0a84ff;
-                padding: 6px;
-                border-radius: 50%;
-                transition: background 0.2s;
-            }
-            #send-btn:hover,
-            #mic-btn:hover {
-                background: rgba(10, 132, 255, 0.2);
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); /* Tailwind blue-500 with opacity */
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+                }
             }
         </style>
     </head>
-    <body>
-        <div id="chat-container">
-            <div id="chat-header">Smart Assistant</div>
-            <div id="chat"></div>
-            <div id="controls">
-                <button id="text-btn" class="mode-btn active">Text</button>
-                <button id="speech-btn" class="mode-btn">Speech</button>
+    <body
+        class="bg-gray-900 text-gray-200 flex items-center justify-center h-screen overflow-hidden"
+    >
+        <div
+            id="chat-container"
+            class="flex flex-col h-full max-h-[95vh] w-full max-w-2xl bg-gray-800 shadow-2xl rounded-lg"
+        >
+            <div
+                id="chat-header"
+                class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center text-lg font-semibold p-4 rounded-t-lg flex-shrink-0"
+            >
+                Smart Assistant
+            </div>
+
+            <div id="chat" class="flex-1 p-4 space-y-4 overflow-y-auto">
+                <div
+                    class="bubble bot bg-gray-700 text-gray-200 rounded-lg p-3 max-w-xs md:max-w-md self-start rounded-bl-none shadow"
+                >
+                    Hello! How can I assist you today?
+                </div>
+            </div>
+
+            <div
+                id="loading-indicator"
+                class="hidden p-4 text-center text-sm text-gray-400"
+            >
+                <div class="inline-flex items-center">
+                    <svg
+                        class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        ></circle>
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                    Thinking...
+                </div>
+            </div>
+
+            <div
+                id="controls"
+                class="flex-shrink-0 p-3 bg-gray-700 border-t border-gray-600 rounded-b-lg flex items-center gap-2"
+            >
+                <button
+                    id="text-btn"
+                    class="mode-btn bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-150 text-sm"
+                >
+                    Text
+                </button>
+                <button
+                    id="speech-btn"
+                    class="mode-btn bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-150 text-sm"
+                >
+                    Speech
+                </button>
                 <input
                     type="text"
                     id="user-input"
                     placeholder="Ask me anything…"
-                    autocomplete="off"
+                    class="flex-1 p-2.5 border border-gray-500 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-600 text-gray-200 placeholder-gray-400 text-sm"
                 />
-                <button id="send-btn" title="Send">➤</button>
-                <button id="mic-btn" style="display: none" title="Speak">
-                    🎤
+                <button
+                    id="send-btn"
+                    title="Send"
+                    class="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        class="w-5 h-5"
+                    >
+                        <path
+                            d="M3.105 3.105a1.5 1.5 0 012.122-.001L19.41 11.191a1.515 1.515 0 010 2.618L5.227 21.999a1.5 1.5 0 01-2.122-2.121l1.328-1.328a.75.75 0 00-.091-1.009L2.12 15.317a1.5 1.5 0 01-.001-2.121l1.328-1.328a.75.75 0 001.009-.091L6.683 9.55a1.5 1.5 0 012.121-.001l1.328 1.328a.75.75 0 001.009.091l2.224 2.224a1.5 1.5 0 01.001 2.121l-1.328 1.328a.75.75 0 00.091 1.009l2.224 2.224a1.5 1.5 0 01-2.121 2.121L3.105 3.105zM15.53 8.47a.75.75 0 00-1.06 0l-2.225 2.224a.75.75 0 00.091 1.009l-1.328 1.328a1.5 1.5 0 01-2.121-.001L6.667 10.8a.75.75 0 00-1.009-.091L3.434 9.382a1.5 1.5 0 01-.001-2.121l2.224-2.225a.75.75 0 00.091-1.009L4.42 2.7a1.5 1.5 0 012.121-.001l11.192 11.191a.75.75 0 001.06-1.06L15.53 8.47z"
+                        />
+                    </svg>
+                </button>
+                <button
+                    id="mic-btn"
+                    title="Speak"
+                    class="hidden p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        class="w-5 h-5"
+                    >
+                        <path d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4z" />
+                        <path
+                            d="M5.5 9.5A.5.5 0 016 9h8a.5.5 0 010 1H6a.5.5 0 01-.5-.5z"
+                        />
+                        <path
+                            d="M3 7.5A2.5 2.5 0 015.5 5H6v2.5a2.5 2.5 0 005 0V5h.5A2.5 2.5 0 0117 7.5v5a2.5 2.5 0 01-2.5 2.5h-9A2.5 2.5 0 013 12.5v-5z"
+                        />
+                    </svg>
                 </button>
             </div>
         </div>
 
         <script>
-            const WOLFRAM_APP_ID = "WA77V4-E8KPTV98GG";
-            let currentMode = "text";
+            const WOLFRAM_APP_ID = "WA77V4-E8KPTV98GG"; // Your Wolfram Alpha App ID
+            let currentMode = "text"; // "text" or "speech"
+            let isListening = false; // For speech recognition state
 
-            // Elements
+            // DOM Elements
             const chatEl = document.getElementById("chat");
             const textBtn = document.getElementById("text-btn");
             const speechBtn = document.getElementById("speech-btn");
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
             const micBtn = document.getElementById("mic-btn");
+            const loadingIndicator =
+                document.getElementById("loading-indicator");
 
-            // Speech Recognition
+            // --- Speech Recognition Setup ---
             let recognition;
-            if (
-                "SpeechRecognition" in window ||
-                "webkitSpeechRecognition" in window
-            ) {
-                const SpeechRec =
-                    window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRec();
+            const SpeechRecognition =
+                window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
                 recognition.lang = "en-US";
-                recognition.continuous = false;
-                recognition.interimResults = false;
-                recognition.onresult = async (e) => {
-                    const query = e.results[0][0].transcript.trim();
-                    appendChat("user", query);
-                    const reply = await getAnswer(query);
-                    appendChat("bot", reply);
-                    if (currentMode === "speech") speak(reply);
+                recognition.continuous = false; // Process single utterances
+                recognition.interimResults = false; // Get final results
+
+                recognition.onstart = () => {
+                    isListening = true;
+                    micBtn.classList.add("mic-listening", "bg-red-700"); // Visual feedback
+                    micBtn.classList.remove("bg-red-500");
+                    console.log("Speech recognition started...");
                 };
+
+                recognition.onresult = async (event) => {
+                    const transcript = event.results[0][0].transcript.trim();
+                    console.log("Speech recognized:", transcript);
+                    if (transcript) {
+                        appendMessage("user", transcript);
+                        await processQuery(transcript);
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error:", event.error);
+                    let errorMessage = "Sorry, I couldn't understand that.";
+                    if (event.error === "no-speech") {
+                        errorMessage =
+                            "I didn't hear anything. Please try again.";
+                    } else if (event.error === "audio-capture") {
+                        errorMessage =
+                            "Audio capture failed. Please check your microphone.";
+                    } else if (event.error === "not-allowed") {
+                        errorMessage =
+                            "Microphone access denied. Please enable it in your browser settings.";
+                    }
+                    appendMessage("bot", errorMessage);
+                    if (currentMode === "speech") {
+                        // Only switch if still in speech mode
+                        switchMode("text"); // Revert to text mode on critical errors
+                    }
+                };
+
+                recognition.onend = () => {
+                    isListening = false;
+                    micBtn.classList.remove("mic-listening", "bg-red-700");
+                    micBtn.classList.add("bg-red-500");
+                    console.log("Speech recognition ended.");
+                    // If in speech mode and not intentionally stopped, could auto-restart or prompt
+                };
+            } else {
+                console.warn(
+                    "Speech Recognition API not supported in this browser.",
+                );
+                speechBtn.disabled = true;
+                speechBtn.classList.add("opacity-50", "cursor-not-allowed");
+                speechBtn.title = "Speech input not supported by your browser";
             }
 
-            // Mode switching
+            // --- Event Listeners ---
             textBtn.addEventListener("click", () => switchMode("text"));
-            speechBtn.addEventListener("click", () => switchMode("speech"));
+            speechBtn.addEventListener("click", () => {
+                if (SpeechRecognition) {
+                    switchMode("speech");
+                } else {
+                    appendMessage(
+                        "bot",
+                        "Speech input is not supported by your browser.",
+                    );
+                }
+            });
+
             sendBtn.addEventListener("click", handleTextQuery);
             userInput.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") handleTextQuery();
+                if (e.key === "Enter" && !e.shiftKey) {
+                    // Send on Enter, allow Shift+Enter for new line
+                    e.preventDefault(); // Prevent new line in input
+                    handleTextQuery();
+                }
             });
-            micBtn.addEventListener(
-                "click",
-                () => recognition && recognition.start(),
-            );
 
+            micBtn.addEventListener("click", () => {
+                if (!SpeechRecognition) return;
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    try {
+                        recognition.start();
+                    } catch (error) {
+                        console.error(
+                            "Error starting speech recognition:",
+                            error,
+                        );
+                        appendMessage(
+                            "bot",
+                            "Could not start microphone. Please check permissions.",
+                        );
+                        if (currentMode === "speech") switchMode("text");
+                    }
+                }
+            });
+
+            // --- Core Functions ---
             function switchMode(mode) {
                 currentMode = mode;
+                userInput.value = ""; // Clear input on mode switch
+
                 if (mode === "text") {
-                    textBtn.classList.add("active");
-                    speechBtn.classList.remove("active");
-                    userInput.style.display = "block";
-                    sendBtn.style.display = "inline";
+                    textBtn.classList.replace("bg-gray-600", "bg-blue-500");
+                    textBtn.classList.replace(
+                        "hover:bg-gray-500",
+                        "hover:bg-blue-600",
+                    );
+                    speechBtn.classList.replace("bg-blue-500", "bg-gray-600");
+                    speechBtn.classList.replace(
+                        "hover:bg-blue-600",
+                        "hover:bg-gray-500",
+                    );
+
+                    userInput.style.display = "flex";
+                    sendBtn.style.display = "block";
                     micBtn.style.display = "none";
                     userInput.focus();
+                    if (isListening) recognition.stop();
                 } else {
-                    speechBtn.classList.add("active");
-                    textBtn.classList.remove("active");
+                    // Speech mode
+                    speechBtn.classList.replace("bg-gray-600", "bg-blue-500");
+                    speechBtn.classList.replace(
+                        "hover:bg-gray-500",
+                        "hover:bg-blue-600",
+                    );
+                    textBtn.classList.replace("bg-blue-500", "bg-gray-600");
+                    textBtn.classList.replace(
+                        "hover:bg-blue-600",
+                        "hover:bg-gray-500",
+                    );
+
                     userInput.style.display = "none";
                     sendBtn.style.display = "none";
-                    micBtn.style.display = "inline";
+                    micBtn.style.display = "block";
+                    if (!isListening && recognition) {
+                        // Start listening if not already
+                        try {
+                            recognition.start();
+                        } catch (error) {
+                            console.error(
+                                "Error auto-starting speech recognition:",
+                                error,
+                            );
+                            appendMessage(
+                                "bot",
+                                "Could not start microphone. Please check permissions and try again.",
+                            );
+                            switchMode("text"); // Fallback to text mode
+                        }
+                    }
                 }
-                userInput.value = "";
             }
 
-            // Handle text query
             async function handleTextQuery() {
                 const query = userInput.value.trim();
                 if (!query) return;
-                appendChat("user", query);
-                userInput.value = "";
-                const reply = await getAnswer(query);
-                appendChat("bot", reply);
-                // only speak in speech mode
-                if (currentMode === "speech") speak(reply);
+                appendMessage("user", query);
+                userInput.value = ""; // Clear input after sending
+                await processQuery(query);
             }
 
-            // Append chat bubbles
-            function appendChat(who, text) {
+            async function processQuery(query) {
+                showLoading(true);
+                let reply = await getAnswer(query);
+                showLoading(false);
+                appendMessage("bot", reply);
+                if (currentMode === "speech" && window.speechSynthesis) {
+                    speak(reply);
+                }
+            }
+
+            function appendMessage(sender, text) {
                 const bubble = document.createElement("div");
-                bubble.className = `bubble ${who}`;
+                bubble.classList.add(
+                    "bubble",
+                    "p-3",
+                    "rounded-lg",
+                    "max-w-xs",
+                    "md:max-w-md",
+                    "shadow",
+                );
                 bubble.textContent = text;
+
+                if (sender === "user") {
+                    bubble.classList.add(
+                        "bg-blue-500",
+                        "text-white",
+                        "self-end",
+                        "rounded-br-none",
+                        "ml-auto",
+                    );
+                } else {
+                    // bot
+                    bubble.classList.add(
+                        "bg-gray-700",
+                        "text-gray-200",
+                        "self-start",
+                        "rounded-bl-none",
+                    );
+                }
                 chatEl.appendChild(bubble);
-                chatEl.scrollTop = chatEl.scrollHeight;
+                chatEl.scrollTop = chatEl.scrollHeight; // Scroll to bottom
             }
 
-            // Text-to-Speech
-            function speak(txt) {
-                if (!window.speechSynthesis) return;
-                const ut = new SpeechSynthesisUtterance(txt);
-                window.speechSynthesis.speak(ut);
+            function showLoading(isLoading) {
+                if (isLoading) {
+                    loadingIndicator.classList.remove("hidden");
+                } else {
+                    loadingIndicator.classList.add("hidden");
+                }
             }
 
-            // Orchestrate queries
+            function speak(text) {
+                if (!text || !window.speechSynthesis) return;
+                // Cancel any previous speech
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = "en-US"; // Ensure correct language for synthesis
+                // You can add more utterance configurations here (e.g., voice, rate, pitch)
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // --- API Calls ---
             async function getAnswer(input) {
-                let r = await queryWolfram(input);
-                if (r) return r;
-                try {
-                    return await queryWiki(input);
-                } catch {
-                    return "Sorry, I couldn't find an answer.";
+                // Try Wolfram Alpha first
+                let wolframResult = await queryWolfram(input);
+                if (
+                    wolframResult &&
+                    !wolframResult.startsWith("WolframAlpha Error:") &&
+                    wolframResult.toLowerCase() !==
+                        "wolfram alpha did not understand your query"
+                ) {
+                    return wolframResult;
                 }
-            }
 
-            /**
-             * Use a CORS proxy (AllOrigins) to fetch WolframAlpha JSON
-             * because the Wolfram API doesn't send Access-Control-Allow-Origin.
-             */
-            async function queryWolfram(input) {
-                const wolframUrl = `https://api.wolframalpha.com/v2/query?appid=${WOLFRAM_APP_ID}&input=${encodeURIComponent(input)}&output=json`;
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(wolframUrl)}`;
+                // Then try Wikipedia
                 try {
-                    const res = await fetch(proxyUrl);
-                    const data = await res.json();
-                    if (data.queryresult?.success) {
-                        return data.queryresult.pods
-                            .map((p) => p.subpods[0].plaintext)
-                            .join("\n");
+                    let wikiResult = await queryWiki(input);
+                    if (
+                        wikiResult &&
+                        wikiResult !== "No summary found on Wikipedia."
+                    ) {
+                        return wikiResult;
                     }
-                } catch (e) {
-                    console.error("Wolfram fetch error:", e);
+                } catch (error) {
+                    console.error("Wikipedia query error:", error);
+                    // Don't return error message here, let it fall through or be handled by Wolfram's error
                 }
-                return null;
+
+                // If Wolfram had an error or no specific result, and Wikipedia also failed or had no result
+                if (
+                    wolframResult &&
+                    wolframResult.startsWith("WolframAlpha Error:")
+                ) {
+                    return wolframResult; // Return Wolfram's specific error
+                }
+                if (
+                    wolframResult &&
+                    wolframResult.toLowerCase() ===
+                        "wolfram alpha did not understand your query"
+                ) {
+                    return "I'm having a bit of trouble understanding that. Could you try phrasing it differently?";
+                }
+
+                return "Sorry, I couldn't find a clear answer for that. Please try asking in a different way.";
             }
 
-            // Wikipedia summary
-            async function queryWiki(input) {
-                const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(input)}`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error();
-                const { extract } = await res.json();
-                return extract;
+            async function queryWolfram(input) {
+                const wolframUrl = `https://api.wolframalpha.com/v2/query?appid=${WOLFRAM_APP_ID}&input=${encodeURIComponent(input)}&output=json&format=plaintext`; // Requesting plaintext
+                // Using a CORS proxy. Replace with your own or a more reliable one if needed.
+                // allorigins.win can be unreliable or slow. Consider alternatives for production.
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(wolframUrl)}`;
+
+                try {
+                    const response = await fetch(proxyUrl, {
+                        signal: AbortSignal.timeout(8000),
+                    }); // 8-second timeout
+                    if (!response.ok) {
+                        console.error(
+                            "Wolfram Proxy Error:",
+                            response.status,
+                            await response.text(),
+                        );
+                        return `WolframAlpha Error: Could not reach the service (proxy status ${response.status}).`;
+                    }
+                    const data = await response.json();
+
+                    if (data.queryresult && data.queryresult.success) {
+                        // Find the "Result" pod or the first pod with useful plaintext
+                        const resultPod = data.queryresult.pods?.find(
+                            (pod) => pod.primary && pod.subpods?.[0]?.plaintext,
+                        );
+                        if (resultPod) {
+                            return resultPod.subpods[0].plaintext.trim();
+                        }
+                        // Fallback: join primary pods if "Result" isn't found or isn't primary
+                        const primaryPods = data.queryresult.pods?.filter(
+                            (pod) => pod.primary && pod.subpods?.[0]?.plaintext,
+                        );
+                        if (primaryPods && primaryPods.length > 0) {
+                            return primaryPods
+                                .map((p) => p.subpods[0].plaintext.trim())
+                                .join("\n\n");
+                        }
+                        // Fallback: join first few pods if no primary ones are useful
+                        const interpretationPod = data.queryresult.pods?.find(
+                            (pod) =>
+                                pod.id === "Input" ||
+                                pod.title === "Input interpretation",
+                        );
+                        const firstMeaningfulPod = data.queryresult.pods?.find(
+                            (pod) =>
+                                pod.id !== "Input" &&
+                                pod.subpods?.[0]?.plaintext &&
+                                pod.subpods[0].plaintext.trim() !== "",
+                        );
+
+                        if (firstMeaningfulPod) {
+                            return firstMeaningfulPod.subpods[0].plaintext.trim();
+                        }
+                        return "Wolfram Alpha processed the query, but I couldn't extract a concise answer.";
+                    } else if (data.queryresult && data.queryresult.error) {
+                        console.warn(
+                            "Wolfram API Error:",
+                            data.queryresult.error,
+                        );
+                        return `WolframAlpha Error: ${data.queryresult.error.msg || "Failed to process query."}`;
+                    } else if (
+                        data.queryresult &&
+                        !data.queryresult.success &&
+                        data.queryresult.didyoumeans
+                    ) {
+                        return `Wolfram Alpha did not understand your query. Did you mean: ${data.queryresult.didyoumeans.val}?`;
+                    } else if (
+                        data.queryresult &&
+                        data.queryresult.numpods === 0
+                    ) {
+                        return "Wolfram Alpha did not find any information for your query.";
+                    }
+                    return "Wolfram Alpha did not understand your query.";
+                } catch (error) {
+                    console.error("Wolfram fetch/processing error:", error);
+                    if (error.name === "AbortError") {
+                        return "WolframAlpha Error: The request timed out.";
+                    }
+                    return "WolframAlpha Error: Could not fetch data. The service might be down or there's a network issue.";
+                }
             }
+
+            async function queryWiki(input) {
+                const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(input.replace(/\s+/g, "_"))}`; // Replace spaces with underscores for Wikipedia
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            "Api-User-Agent":
+                                "SmartAssistant/1.0 (your-email@example.com)",
+                        }, // Good practice for Wikipedia API
+                        signal: AbortSignal.timeout(7000), // 7-second timeout
+                    });
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            return "No summary found on Wikipedia for that topic.";
+                        }
+                        throw new Error(
+                            `Wikipedia API error: ${response.status}`,
+                        );
+                    }
+                    const data = await response.json();
+                    if (data.type === "disambiguation") {
+                        return `That term is ambiguous on Wikipedia. Can you be more specific? (e.g., ${data.title} (topic))`;
+                    }
+                    return data.extract || "No summary found on Wikipedia.";
+                } catch (error) {
+                    console.error("Wikipedia fetch error:", error);
+                    if (error.name === "AbortError") {
+                        return "Wikipedia Error: The request timed out.";
+                    }
+                    return "Wikipedia Error: Could not fetch data from Wikipedia.";
+                }
+            }
+
+            // Initial setup
+            switchMode("text"); // Start in text mode
+            appendMessage(
+                "bot",
+                "Welcome! I can fetch information from WolframAlpha and Wikipedia. How can I help?",
+            );
         </script>
     </body>
 </html>
