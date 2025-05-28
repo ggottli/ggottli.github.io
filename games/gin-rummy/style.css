@@ -1,0 +1,362 @@
+/* General Body and Game Container Styling */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 8px;
+    background: linear-gradient(
+        to bottom right,
+        #166534,
+        #15803d,
+        #10b981
+    ); /* from-green-800 via-green-600 to-emerald-500 */
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    font-size: 14px; /* Base for sm text */
+}
+
+#game-container {
+    max-width: 1000px; /* max-w-7xl (approx) */
+    width: 100%;
+    background-color: rgba(
+        255,
+        255,
+        255,
+        0.1
+    ); /* Light backdrop for sections if needed */
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Header and Scores */
+header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+header h1 {
+    font-size: 2.25rem; /* text-4xl */
+    font-weight: bold;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.scores {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    color: white;
+    font-size: 1.125rem; /* text-lg */
+}
+.score .icon {
+    margin-right: 8px;
+}
+
+/* Message Area */
+#message-area {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 12px;
+    display: inline-flex; /* Simulates inline-flex for centering */
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto 16px auto; /* Centering the block */
+    display: flex; /* Changed to flex for easier centering */
+    justify-content: center;
+    max-width: 450px; /* max-w-sm */
+}
+#message-area .icon {
+    font-size: 1.25rem; /* w-5 h-5 */
+    color: #2563eb; /* text-blue-600 */
+}
+#game-message {
+    color: #1f2937; /* text-gray-800 */
+    font-weight: 500; /* font-medium */
+    font-size: 1rem; /* text-base */
+}
+
+/* Hand Areas (Computer & Player) */
+#computer-area,
+#player-area {
+    margin-bottom: 24px;
+    min-height: 160px; /* Approximate height for cards */
+}
+#computer-area h3,
+#player-area h3,
+#playing-field h4 {
+    color: white;
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 600; /* font-semibold */
+    margin-bottom: 8px;
+    text-align: center;
+}
+.hand-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    min-height: 100px; /* Min height for cards (md:h-24) */
+}
+.hand-info {
+    text-align: center;
+    margin-top: 8px;
+    color: white;
+    font-size: 0.875rem; /* text-sm */
+}
+.knock-status {
+    margin-top: 4px;
+    font-weight: bold;
+    min-height: 20px; /* For consistent layout */
+}
+.knock-status.gin {
+    color: #facc15; /* text-yellow-300 */
+}
+.knock-status.knock {
+    color: #fb923c; /* text-orange-300 */
+}
+
+/* Playing Field (Stock & Discard) */
+#playing-field {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 24px;
+}
+#stock-pile-area,
+#discard-pile-area {
+    text-align: center;
+}
+#stock-pile-count,
+#discard-pile-count {
+    color: white;
+    font-size: 0.75rem; /* text-xs */
+    margin-top: 4px;
+}
+
+/* Card Styling */
+.card {
+    width: 64px; /* md:w-16 */
+    height: 96px; /* md:h-24 */
+    border: 2px solid #d1d5db; /* border-gray-300 */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem; /* sm:text-sm */
+    font-weight: bold;
+    background-color: white;
+    user-select: none; /* Prevent text selection on drag */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.card:hover:not(.back):not(.empty) {
+    border-color: #9ca3af; /* hover:border-gray-400 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* hover:shadow-md */
+    transform: translateY(-2px); /* hover:-translate-y-1 */
+}
+.card.back {
+    background-color: #2563eb; /* bg-blue-600 */
+    border-color: #1d4ed8; /* border-blue-700 */
+    color: white;
+    font-size: 2rem;
+}
+.card.selected {
+    background-color: #fef9c3; /* bg-yellow-200 */
+    border-color: #fcd34d; /* border-yellow-400 */
+    transform: translateY(-8px); /* transform -translate-y-2 */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15); /* shadow-lg */
+}
+.card.dragged-over-slot {
+    /* For styling the card in the slot being dragged over */
+    background-color: #dcfce7; /* bg-green-100 or similar for slot highlight */
+    border-color: #4ade80; /* border-green-400 */
+    transform: scale(1.05);
+}
+.player-card-slot.drag-over-active {
+    /* For the slot div itself */
+    background-color: rgba(74, 222, 128, 0.3); /* bg-green-500 bg-opacity-30 */
+    border-radius: 8px; /* To match card */
+    outline: 2px dashed #4ade80;
+}
+
+.card-placeholder.empty {
+    width: 64px;
+    height: 96px;
+    border: 2px dashed #9ca3af; /* border-gray-400 */
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+.card .rank {
+    font-size: 0.85rem; /* text-xs */
+}
+.card .suit {
+    font-size: 1.25rem; /* md:text-lg */
+}
+.card.red-suit .rank,
+.card.red-suit .suit {
+    color: #dc2626; /* text-red-600 */
+}
+.card.black-suit .rank,
+.card.black-suit .suit {
+    color: #000000; /* text-black */
+}
+
+/* Draggable placeholder/ghost image */
+.dragging {
+    opacity: 0.5;
+    border: 2px dashed #0ea5e9; /* Example */
+}
+
+/* Action Buttons */
+#action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    min-height: 50px; /* To prevent layout shifts */
+}
+#action-buttons button {
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px; /* py-2 px-4 sm:px-6 */
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 1rem; /* text-base */
+    border: none;
+}
+#action-buttons button:hover {
+    transform: scale(1.05);
+}
+#new-game-button {
+    background-color: #2563eb; /* bg-blue-600 */
+}
+#new-game-button:hover {
+    background-color: #1d4ed8; /* hover:bg-blue-700 */
+}
+#knock-button {
+    background-color: #f97316; /* bg-orange-500 */
+}
+#knock-button:hover {
+    background-color: #ea580c; /* hover:bg-orange-600 */
+}
+
+/* Rules Area */
+#rules-area {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 0.875rem; /* text-sm */
+}
+#rules-area h4 {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #1f2937; /* Overriding general h4 color for this section */
+    text-align: left;
+}
+#rules-area ul {
+    list-style-position: inside;
+    padding-left: 0;
+    margin: 0;
+    space-y: 4px; /* Approximation */
+    color: #374151; /* text-gray-700 */
+}
+#rules-area ul li {
+    margin-bottom: 4px; /* Simulates space-y-1 */
+}
+
+/* Animations (Simple examples) */
+.card-animation-draw {
+    animation: bounceIn 0.7s ease;
+}
+.card-animation-discard {
+    animation: pulse nhẹ 0.7s ease; /* nhẹ means light/gentle in Vietnamese, was probably a typo or placeholder, using 'pulse' */
+}
+.card-animation-computer-draw {
+    animation: pingEffect 1s ease;
+}
+.card-animation-computer-discard {
+    animation: pulse nhẹ 1s ease; /* Assuming similar pulse effect */
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+@keyframes pulseEffect {
+    /* 'pulse nhẹ' can be a simple pulse */
+    0% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+    } /* yellow-400 approx */
+    70% {
+        box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
+}
+@keyframes pingEffect {
+    /* Simple opacity flash for ping */
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+        transform: scale(1.1);
+    }
+}
+
+/* Responsive adjustments (basic example) */
+@media (max-width: 600px) {
+    body {
+        font-size: 12px;
+        padding: 4px;
+    }
+    header h1 {
+        font-size: 1.75rem;
+    }
+    .scores {
+        font-size: 1rem;
+        gap: 16px;
+    }
+    .card {
+        width: 52px;
+        height: 78px;
+    }
+    .card .suit {
+        font-size: 1rem;
+    }
+    #action-buttons button {
+        padding: 8px 12px;
+        font-size: 0.875rem;
+    }
+    #playing-field {
+        gap: 16px;
+    }
+}
+
+/* Player card slot wrapper for drag and drop */
+.player-card-slot {
+    /* No specific style needed unless for highlighting drop target */
+    padding: 2px; /* To provide some space for drag-over highlight */
+}
