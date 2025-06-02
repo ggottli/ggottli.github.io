@@ -129,3 +129,8 @@ canvas {
     ); /* we’ll change this in JS, but default can be down */
     pointer-events: none;
 }
+
+#total-score-label {
+    margin-left: 20px; /* Space it out from the hole label */
+    min-width: 100px; /* Give it some space */
+}
