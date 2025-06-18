@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Euchre League</title>
+  <!-- Supabase JS (ESM) -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="app">
+    <!-- LOGIN -->
+    <section id="login" class="section">
+      <h1>Euchre League</h1>
+      <div class="field">
+        <label for="loginName">Name:</label>
+        <input type="text" id="loginName" placeholder="Your Name" required />
+      </div>
+      <div class="field">
+        <label for="loginEmail">Email:</label>
+        <input type="email" id="loginEmail" placeholder="you@thgrp.com" required />
+      </div>
+      <button id="loginBtn">Log In</button>
+      <p id="loginMsg" class="error"></p>
+    </section>
+
+    <!-- LEAGUE SELECTION -->
+    <section id="join" class="section hidden">
+      <h2>Welcome, <span id="tempName"></span>!</h2>
+      <div class="field">
+        <label for="leagueSelect">League:</label>
+        <select id="leagueSelect">
+          <option value="competitive">Competitive</option>
+          <option value="casual">Casual</option>
+        </select>
+      </div>
+      <button id="joinBtn">Join League</button>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="section hidden">
+      <header class="dashboard-header">
+        <h2>Welcome, <span id="userName"></span>!</h2>
+        <button id="logoutBtn" class="danger">Logout</button>
+      </header>
+      <nav class="tabs">
+        <button data-tab="pairings" class="tab active">Pairings</button>
+        <button data-tab="scores" class="tab">Enter Scores</button>
+        <button data-tab="history" class="tab">History</button>
+        <button data-tab="leaderboard" class="tab">Leaderboard</button>
+      </nav>
+      <div id="content" class="content-area"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // Initialize Supabase
+    const SUPA_URL = 'https://didwbzlecssxmaohjyqe.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZHdiemxlY3NzeG1hb2hqeXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTY1OTAsImV4cCI6MjA2NTgzMjU5MH0.VP07HMW5-s3Q2ewAluufQz5oPDHtfTAEguadFY3inT4';
+    const supabase = createClient(SUPA_URL, SUPA_KEY);
+
+    // Shortcuts
+    const $ = selector => document.querySelector(selector);
+    const $all = selector => Array.from(document.querySelectorAll(selector));
+
+    // Sections & Elements
+    const loginSec = $('#login');
+    const joinSec = $('#join');
+    const dashSec = $('#dashboard');
+    const loginMsg = $('#loginMsg');
+    const tempName = $('#tempName');
+    const userName = $('#userName');
+    const content = $('#content');
+
+    let currentUser = null;
+
+    // Show/hide sections
+    function showSection(id) {
+      [loginSec, joinSec, dashSec].forEach(sec => {
+        sec.classList.toggle('hidden', sec.id !== id);
+      });
+    }
+
+    // Tab navigation
+    function selectTab(tab) {
+      $all('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      content.innerHTML = '';
+      if (tab === 'pairings') loadPairings();
+      if (tab === 'scores') loadScoreEntry();
+      if (tab === 'history') loadHistory();
+      if (tab === 'leaderboard') loadLeaderboard();
+    }
+
+    // Event listeners
+    $('#loginBtn').addEventListener('click', handleLogin);
+    $('#joinBtn').addEventListener('click', handleJoin);
+    $('#logoutBtn').addEventListener('click', handleLogout);
+    $all('.tab').forEach(btn => btn.addEventListener('click', () => selectTab(btn.dataset.tab)));
+
+    // Handle login
+    async function handleLogin() {
+      const name = $('#loginName').value.trim();
+      const email = $('#loginEmail').value.trim();
+      if (!name || !email) {
+        loginMsg.textContent = 'Please enter both name and email.';
+        return;
+      }
+      loginMsg.textContent = '';
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('id,name,league')
+        .eq('email', email)
+        .maybeSingle();
+      if (error) {
+        loginMsg.textContent = error.message;
+        return;
+      }
+      if (user) {
+        currentUser = { ...user, email };
+        userName.textContent = user.name;
+        selectTab('pairings');
+        showSection('dashboard');
+      } else {
+        currentUser = { name, email };
+        tempName.textContent = name;
+        showSection('join');
+      }
+    }
+
+    // Handle league join
+    async function handleJoin() {
+      const league = $('#leagueSelect').value;
+      const { data, error } = await supabase
+        .from('users')
+        .insert({ name: currentUser.name, email: currentUser.email, league })
+        .select('id,name,league')
+        .single();
+      if (error) {
+        alert('Error creating user: ' + error.message);
+        return;
+      }
+      currentUser = data;
+      userName.textContent = data.name;
+      showSection('dashboard');
+      selectTab('pairings');
+    }
+
+    // Handle logout
+    function handleLogout() {
+      currentUser = null;
+      $('#loginName').value = '';
+      $('#loginEmail').value = '';
+      showSection('login');
+    }
+
+    // Load Pairings
+    async function loadPairings() {
+      const { data: allUsers } = await supabase.from('users').select('id,name');
+      const nameMap = Object.fromEntries(allUsers.map(u => [u.id, u.name]));
+      const { data: matchups } = await supabase
+        .from('matchups')
+        .select('week,player_ids')
+        .contains('player_ids', [currentUser.id])
+        .order('week', { ascending: true });
+      if (!matchups.length) {
+        content.innerHTML = '<p>No pairings yet.</p>';
+        return;
+      }
+      content.innerHTML = matchups
+        .map(m => {
+          const partners = m.player_ids.filter(id => id !== currentUser.id).map(id => nameMap[id]).join(', ');
+          return `<div class="card"><strong>Week ${m.week}:</strong> ${partners}</div>`;
+        })
+        .join('');
+    }
+
+    // Load Score Entry
+    async function loadScoreEntry() {
+      const [{ data: matchups }, { data: results }] = await Promise.all([
+        supabase.from('matchups').select('id,week,player_ids').contains('player_ids', [currentUser.id]),
+        supabase.from('results').select('matchup_id')
+      ]);
+      const done = new Set(results.map(r => r.matchup_id));
+      const pending = matchups.filter(m => !done.has(m.id));
+      if (!pending.length) {
+        content.innerHTML = '<p>No pending score entries. Nice!</p>';
+        return;
+      }
+      const { data: users } = await supabase.from('users').select('id,name');
+      const nameMap = Object.fromEntries(users.map(u => [u.id, u.name]));
+      content.innerHTML = pending
+        .map(m => `
+          <form id="fm-${m.id}" class="card">
+            <h4>Week ${m.week}</h4>
+            ${m.player_ids
+              .map(pid => `
+                <div class="field">
+                  <label>${nameMap[pid]}:</label>
+                  <input type="number" name="pts-${pid}" min="0" value="0" required />
+                </div>
+              `)
+              .join('')}
+            <div class="field">
+              <label>Winner:</label>
+              <select name="win" required>
+                <option value="">-- choose --</option>
+                ${m.player_ids.map(pid => `<option value="${pid}">${nameMap[pid]}</option>`).join('')}
+              </select>
+            </div>
+            <button type="submit">Submit</button>
+          </form>
+        `)
+        .join('');
+      pending.forEach(m => {
+        document.getElementById(`fm-${m.id}`).onsubmit = async e => {
+          e.preventDefault();
+          const form = e.target;
+          const scores = m.player_ids.map(pid => ({ user_id: pid, points: parseInt(form[`pts-${pid}`].value, 10) }));
+          const winner = form.win.value;
+          await supabase.from('results').insert([{ matchup_id: m.id, scores, winner_ids: [winner] }]);
+          selectTab('scores');
+        };
+      });
+    }
+
+    // Load History
+    async function loadHistory() {
+      const [{ data: users }, { data: rows }] = await Promise.all([
+        supabase.from('users').select('id,name'),
+        supabase
+          .from('results')
+          .select('submitted_at,scores,winner_ids,matchup:matchups(week)')
+          .contains('matchup.player_ids', [currentUser.id])
+          .order('submitted_at', { ascending: false })
+      ]);
+      const nameMap = Object.fromEntries(users.map(u => [u.id, u.name]));
+      if (!rows.length) {
+        content.innerHTML = '<p>No history yet.</p>';
+        return;
+      }
+      content.innerHTML = rows
+        .map(r => `
+          <div class="card">
+            <h4>Week ${r.matchup.week}</h4>
+            <small>${new Date(r.submitted_at).toLocaleString()}</small>
+            <ul>
+              ${r.scores
+                .map(s => `<li>${nameMap[s.user_id]}: ${s.points} ${r.winner_ids.includes(s.user_id) ? '🏆' : ''}</li>`)
+                .join('')}
+            </ul>
+          </div>
+        `)
+        .join('');
+    }
+
+    // Load Leaderboard
+    async function loadLeaderboard() {
+      const [{ data: users }, { data: results }] = await Promise.all([
+        supabase.from('users').select('id,name'),
+        supabase.from('results').select('scores,winner_ids')
+      ]);
+      const stats = {};
+      users.forEach(u => (stats[u.id] = { name: u.name, wins: 0, pts: 0, games: 0 }));
+      results.forEach(r => {
+        r.scores.forEach(s => {
+          stats[s.user_id].pts += s.points;
+          stats[s.user_id].games += 1;
+        });
+        r.winner_ids.forEach(w => (stats[w].wins += 1));
+      });
+      const rows = Object.values(stats)
+        .sort((a, b) => b.wins - a.wins || b.pts - a.pts)
+        .map(u => `
+          <tr>
+            <td>${u.name}</td><td>${u.wins}</td><td>${u.pts}</td><td>${u.games}</td><td>${u.games ? (u.pts / u.games).toFixed(1) : '0.0'}</td>
+          </tr>
+        `)
+        .join('');
+      content.innerHTML = `<table>
+          <thead><tr><th>Player</th><th>Wins</th><th>Points</th><th>Games</th><th>Avg</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    // Initial view
+    showSection('login');
+  </script>
