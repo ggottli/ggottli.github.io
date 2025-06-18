@@ -1,219 +1,691 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Euchre League</title>
-  <!-- Supabase JS (ESM) -->
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <main id="app">
-    <!-- LOGIN -->
-    <section id="login" class="section">
-      <h1>THG Euchre League</h1>
-      <div class="field">
-        <label for="loginName">Name:</label>
-        <input type="text" id="loginName" placeholder="First Last" required />
-      </div>
-      <div class="field">
-        <label for="loginEmail">Email:</label>
-        <input type="email" id="loginEmail" placeholder="you@heritage.com" required />
-      </div>
-      <button id="loginBtn">Log In</button>
-      <p id="loginMsg" class="error"></p>
-    </section>
 
-    <!-- LEAGUE SELECTION -->
-    <section id="join" class="section hidden">
-      <h2>Welcome, <span id="tempName"></span>!</h2>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Euchre League</title>
+    <!-- Supabase JS (ESM) -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <main id="app">
+        <!-- LOGIN -->
+        <section id="login" class="section">
+            <h1>The Heritage Group Euchre League</h1>
+            <div class="field">
+                <label for="loginName">Name:</label>
+                <input type="text" id="loginName" placeholder="First Last" required />
+            </div>
+            <div class="field">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" placeholder="you@thgrp.com" required />
+            </div>
+            <button id="loginBtn">Log In</button>
+            <p id="loginMsg" class="error"></p>
+        </section>
+
+        <!-- LEAGUE SELECTION -->
+        <section id="join" class="section hidden">
+            <h2>Welcome, <span id="tempName"></span>!</h2>
+            <div class="field">
+                <label for="leagueSelect">League:</label>
+                <select id="leagueSelect">
+                    <option value="competitive">Competitive</option>
+                    <option value="casual">Casual</option>
+                </select>
+            </div>
+            <button id="joinBtn">Join League</button>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="section hidden">
+            <header class="dashboard-header">
+                <h2>Welcome, <span id="userName"></span>!</h2>
+                <button id="logoutBtn" class="danger">Logout</button>
+            </header>
+            <nav class="tabs">
+                <button data-tab="announcements" class="tab active">Announcements</button>
+                <button data-tab="pairings" class="tab">Pairings</button>
+                <button data-tab="scores" class="tab">Enter Scores</button>
+                <button data-tab="history" class="tab">History</button>
+                <button data-tab="leaderboard" class="tab">Leaderboard</button>
+                <button data-tab="admin" id="adminTab" class="tab hidden">Admin</button>
+            </nav>
+            <div id="content" class="content-area"></div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // --- INIT SUPABASE ---
+        const SUPA_URL = 'https://didwbzlecssxmaohjyqe.supabase.co';
+        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZHdiemxlY3NzeG1hb2hqeXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTY1OTAsImV4cCI6MjA2NTgzMjU5MH0.VP07HMW5-s3Q2ewAluufQz5oPDHtfTAEguadFY3inT4';
+        const supabase = createClient(SUPA_URL, SUPA_KEY);
+
+        // --- HELPERS ---
+        const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+        function generateCombos(players) {
+            const [a, b, c, d] = players;
+            return [
+                [[a, b], [c, d]],
+                [[a, c], [b, d]],
+                [[a, d], [b, c]]
+            ];
+        }
+
+        // DOM shortcuts
+        const $ = s => document.querySelector(s);
+        const $all = s => Array.from(document.querySelectorAll(s));
+        const loginSec = $('#login'), joinSec = $('#join'), dashSec = $('#dashboard');
+        const loginMsg = $('#loginMsg'), tempName = $('#tempName'), userName = $('#userName');
+        const content = $('#content'), adminTab = $('#adminTab');
+
+        let currentUser = null;
+
+        function showSection(id) {
+            [loginSec, joinSec, dashSec].forEach(s => s.classList.toggle('hidden', s.id !== id));
+        }
+        function selectTab(tab) {
+            $all('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+            content.innerHTML = '';
+            switch (tab) {
+                case 'announcements': loadAnnouncements(); break;
+                case 'pairings': loadPairings(); break;
+                case 'scores': loadScoreEntry(); break;
+                case 'history': loadHistory(); break;
+                case 'leaderboard': loadLeaderboard(); break;
+                case 'admin': loadAdmin(); break;
+            }
+        }
+
+        // --- AUTH & NAV ---
+        $('#loginBtn').onclick = handleLogin;
+        $('#joinBtn').onclick = handleJoin;
+        $('#logoutBtn').onclick = handleLogout;
+        $all('.tab').forEach(btn => btn.addEventListener('click', () => selectTab(btn.dataset.tab)));
+
+        async function handleLogin() {
+            const name = $('#loginName').value.trim();
+            const email = $('#loginEmail').value.trim();
+            if (!name || !email) { loginMsg.textContent = 'Enter both name & email.'; return; }
+            loginMsg.textContent = '';
+            if (name.toLowerCase() === 'admin' && email.toLowerCase() === 'admin') {
+                currentUser = { id: 'admin', name: 'Admin', role: 'admin' };
+                setupDashboard(); return;
+            }
+            const { data: user, error } = await supabase
+                .from('users').select('id,name,league').eq('email', email).maybeSingle();
+            if (error) { loginMsg.textContent = error.message; return; }
+            if (user) {
+                currentUser = { ...user }; setupDashboard();
+            } else {
+                currentUser = { name, email }; tempName.textContent = name; showSection('join');
+            }
+        }
+
+        async function handleJoin() {
+            const league = $('#leagueSelect').value;
+            const { data, error } = await supabase
+                .from('users').insert({ name: currentUser.name, email: currentUser.email, league })
+                .select('id,name,league').single();
+            if (error) return alert(error.message);
+            currentUser = data; setupDashboard();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            $('#loginName').value = ''; $('#loginEmail').value = '';
+            adminTab.classList.add('hidden');
+            showSection('login');
+        }
+
+        function setupDashboard() {
+            userName.textContent = currentUser.name;
+            if (currentUser.role === 'admin') adminTab.classList.remove('hidden');
+            showSection('dashboard');
+            selectTab(currentUser.role === 'admin' ? 'admin' : 'announcements');
+        }
+
+        // --- ANNOUNCEMENTS ---
+        async function loadAnnouncements() {
+            // fetch announcements
+            const { data, error } = await supabase
+                .from('announcements')
+                .select('id,title,body,created_at')
+                .order('created_at', { ascending: false });
+            if (error) {
+                content.innerHTML = `<p>Error loading announcements: ${error.message}</p>`;
+                return;
+            }
+            let html = '<h3>Announcements</h3>';
+            // if admin, show create form
+            if (currentUser.role === 'admin') {
+                html += `
+          <form id="announceForm" class="card">
+            <h4>New Announcement</h4>
+            <div class="field">
+              <label>Title:</label>
+              <input type="text" name="title" required />
+            </div>
+            <div class="field">
+              <label>Message:</label>
+              <textarea name="body" rows="3" required></textarea>
+            </div>
+            <button type="submit">Send</button>
+          </form>`;
+            }
+            // list existing
+            html += data.map(a => `
+        <div class="card">
+          <h4>${a.title}</h4>
+          <small>${new Date(a.created_at).toLocaleString()}</small>
+          <p>${a.body}</p>
+        </div>`).join('');
+            content.innerHTML = html;
+            if (currentUser.role === 'admin') {
+                document.getElementById('announceForm').onsubmit = async e => {
+                    e.preventDefault();
+                    const f = e.target;
+                    await supabase.from('announcements').insert({
+                        title: f.title.value,
+                        body: f.body.value
+                    });
+                    loadAnnouncements();
+                };
+            }
+        }
+
+        // --- PAIRINGS ---
+        async function loadPairings() {
+            const [{ data: users, error: uErr }, { data: groups, error: gErr }] = await Promise.all([
+                supabase.from('users').select('id,name,league'),
+                supabase.from('matchups').select('week,player_ids,bye').order('week', { ascending: true })
+            ]);
+            if (uErr || gErr) {
+                content.innerHTML = `<p>Error: ${(uErr || gErr).message}</p>`; return;
+            }
+            const nameMap = Object.fromEntries(users.map(u => [u.id, u.name]));
+            const my = groups.filter(g => g.player_ids.includes(currentUser.id));
+            if (!my.length) { content.innerHTML = '<p>No pairings yet.</p>'; return; }
+            content.innerHTML = my.map(g => {
+                if (g.bye) return `<div class="card"><strong>Week ${g.week}:</strong> Bye</div>`;
+                const partners = g.player_ids.filter(id => id !== currentUser.id).map(id => nameMap[id]).join(', ');
+                return `<div class="card"><strong>Week ${g.week}:</strong> ${partners}</div>`;
+            }).join('');
+        }
+
+        // --- ENTER SCORES ---
+        async function loadScoreEntry() {
+            const [gRes, rRes, uRes] = await Promise.all([
+                supabase.from('matchups').select('id,week,player_ids,league,bye').order('week', { ascending: true }),
+                supabase.from('results').select('matchup_id,game_num,combo_index,scores'),
+                supabase.from('users').select('id,name,league')
+            ]);
+            if (gRes.error || rRes.error || uRes.error) {
+                content.innerHTML = `<p>Error loading games: ${(gRes.error || rRes.error || uRes.error).message}</p>`;
+                return;
+            }
+            const nm = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
+            const myGroups = gRes.data.filter(g => g.player_ids.includes(currentUser.id));
+            if (!myGroups.length) { content.innerHTML = '<p>No pending score entries.</p>'; return; }
+            let html = '';
+            const combosCache = {};
+            for (const mg of myGroups) {
+                if (mg.bye) {
+                    html += `<div class="card"><h4>Week ${mg.week}</h4><p>Bye week!</p></div>`;
+                    continue;
+                }
+                combosCache[mg.id] = generateCombos(mg.player_ids);
+                html += `<div class="card"><h4>Week ${mg.week}</h4>`;
+                for (let game = 1; game <= 3; game++) {
+                    const existing = rRes.data.find(r => r.matchup_id === mg.id && r.game_num === game);
+                    html += `
+            <form id="fm-${mg.id}-${game}" class="game-form">
+              <h5>Game ${game}</h5>
+              <div class="field"><label>Pairings:</label>
+                ${combosCache[mg.id].map((c, i) => `
+                  <div>
+                    <input type="radio" name="combo" value="${i}"
+                      ${existing && existing.combo_index === i ? 'checked' : ''} required />
+                    ${nm[c[0][0]]}/${nm[c[0][1]]} vs ${nm[c[1][0]]}/${nm[c[1][1]]}
+                  </div>`).join('')}
+              </div>
+              ${mg.player_ids.map(pid => `
+                <div class="field">
+                  <label>${nm[pid]}:</label>
+                  <input type="number" name="pts-${pid}" min="0"
+                    value="${existing ? existing.scores.find(s => s.user_id === pid).points : 0}" required />
+                </div>`).join('')}
+              <button type="submit">Submit Game ${game}</button>
+            </form>`;
+                }
+                html += '</div>';
+            }
+            content.innerHTML = html;
+            myGroups.forEach(mg => {
+                if (mg.bye) return;
+                for (let game = 1; game <= 3; game++) {
+                    document.getElementById(`fm-${mg.id}-${game}`).onsubmit = async e => {
+                        e.preventDefault();
+                        const f = e.target;
+                        const comboIndex = parseInt(f.combo.value, 10);
+                        const teams = combosCache[mg.id][comboIndex];
+                        const [ta, tb] = teams;
+                        const taScore = ta.reduce((s, p) => s + parseInt(f[`pts-${p}`].value, 10), 0);
+                        const tbScore = tb.reduce((s, p) => s + parseInt(f[`pts-${p}`].value, 10), 0);
+                        const scores = mg.player_ids.map(pid => ({
+                            user_id: pid,
+                            points: ta.includes(pid) ? taScore : tbScore
+                        }));
+                        const winners = taScore > tbScore ? ta : tb;
+                        await supabase.from('results').upsert({
+                            matchup_id: mg.id,
+                            game_num: game,
+                            combo_index: comboIndex,
+                            scores,
+                            winner_ids: winners
+                        }, { onConflict: ['matchup_id', 'game_num'] });
+                        selectTab('scores');
+                    };
+                }
+            });
+        }
+
+        // --- HISTORY ---
+        async function loadHistory() {
+            const [rRes, mRes, uRes] = await Promise.all([
+                supabase.from('results').select('submitted_at,scores,winner_ids,game_num,matchup_id'),
+                supabase.from('matchups').select('id,week,player_ids'),
+                supabase.from('users').select('id,name')
+            ]);
+            if (rRes.error || mRes.error || uRes.error) {
+                content.innerHTML = `<p>Error loading history: ${(rRes.error || mRes.error || uRes.error).message}</p>`;
+                return;
+            }
+            const nm = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
+            const rows = rRes.data.filter(r => {
+                const mu = mRes.data.find(m => m.id === r.matchup_id);
+                return mu && mu.player_ids.includes(currentUser.id);
+            });
+            if (!rows.length) { content.innerHTML = '<p>No history.</p>'; return; }
+            content.innerHTML = rows.map(r => {
+                const mu = mRes.data.find(m => m.id === r.matchup_id);
+                return `
+          <div class="card">
+            <h4>Week ${mu.week} - Game ${r.game_num}</h4>
+            <small>${new Date(r.submitted_at).toLocaleString()}</small>
+            <ul>${r.scores.map(s => `
+              <li>${nm[s.user_id]}: ${s.points}${r.winner_ids.includes(s.user_id) ? ' 🏆' : ''}</li>`
+                ).join('')}</ul>
+          </div>`;
+            }).join('');
+        }
+
+        // --- LEADERBOARD ---
+        async function loadLeaderboard() {
+            const [{ data: users, error: uErr }, { data: res, error: rErr }] = await Promise.all([
+                supabase.from('users').select('id,name,league'),
+                supabase.from('results').select('scores,winner_ids')
+            ]);
+            if (uErr || rErr) {
+                content.innerHTML = `<p>Error: ${(uErr || rErr).message}</p>`; return;
+            }
+            // only competitive users
+            const comp = users.filter(u => u.league === 'competitive');
+            const stats = {};
+            comp.forEach(u => stats[u.id] = { name: u.name, wins: 0, pts: 0, games: 0 });
+            res.forEach(r => {
+                r.scores.forEach(s => {
+                    if (stats[s.user_id]) {
+                        stats[s.user_id].pts += s.points;
+                        stats[s.user_id].games++;
+                    }
+                });
+                r.winner_ids.forEach(w => {
+                    if (stats[w]) stats[w].wins++;
+                });
+            });
+            const rows = Object.values(stats)
+                .sort((a, b) => b.wins - a.wins || b.pts - a.pts)
+                .map(u => `
+          <tr>
+            <td>${u.name}</td><td>${u.wins}</td><td>${u.pts}</td>
+            <td>${u.games}</td><td>${u.games ? (u.pts / u.games).toFixed(1) : '0.0'}</td>
+          </tr>`).join('');
+            content.innerHTML = `
+        <table>
+          <thead><tr>
+            <th>Player</th><th>Wins</th><th>Points</th><th>Games</th><th>Avg</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+        }
+
+        // --- ADMIN PANEL ---
+        let pairingPreview = [];
+        async function loadAdmin() {
+            // fetch users & matchups
+            const [uRes, mRes] = await Promise.all([
+                supabase.from('users').select('id,name,email,league'),
+                supabase.from('matchups').select('id,week,league,player_ids').order('week', { ascending: true })
+            ]);
+            if (uRes.error || mRes.error) {
+                content.innerHTML = `<p>Error loading admin: ${(uRes.error || mRes.error).message}</p>`;
+                return;
+            }
+            const users = uRes.data;
+            const groups = mRes.data;
+            const nameMap = Object.fromEntries(users.map(u => [u.id, u.name]));
+
+            // render top-level structure
+            content.innerHTML = `
+    <div class="card">
+      <h4>Matchup Management</h4>
       <div class="field">
-        <label for="leagueSelect">League:</label>
-        <select id="leagueSelect">
+        <label>Filter League:</label>
+        <select id="filterLeagueAdmin">
+          <option value="all">All</option>
           <option value="competitive">Competitive</option>
           <option value="casual">Casual</option>
         </select>
       </div>
-      <button id="joinBtn">Join League</button>
-    </section>
+      <table>
+        <thead>
+          <tr><th>Week</th><th>League</th><th>Players</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="matchupAdminRows"></tbody>
+      </table>
+    </div>
 
-    <!-- DASHBOARD -->
-    <section id="dashboard" class="section hidden">
-      <header class="dashboard-header">
-        <h2>Welcome, <span id="userName"></span>!</h2>
-        <button id="logoutBtn" class="danger">Logout</button>
-      </header>
-      <nav class="tabs">
-        <button data-tab="pairings" class="tab active">Pairings</button>
-        <button data-tab="scores" class="tab">Enter Scores</button>
-        <button data-tab="history" class="tab">History</button>
-        <button data-tab="leaderboard" class="tab">Leaderboard</button>
-        <button data-tab="admin" id="adminTab" class="tab hidden">Admin</button>
-      </nav>
-      <div id="content" class="content-area"></div>
-    </section>
-  </main>
+    <div class="card">
+      <h4>User Management</h4>
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>League</th><th>Action</th></tr></thead>
+        <tbody>
+          ${users.map(u => `
+            <tr>
+              <td>${u.name}</td>
+              <td>${u.email}</td>
+              <td>${u.league}</td>
+              <td>${u.id === 'admin' ? '' : `<button class="btnRemoveUser" data-id="${u.id}">Remove</button>`}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    <div class="card">
+      <h4>Generate Pairings</h4>
+      <button id="btnPreview">Preview Pairings</button>
+      <div id="previewContainer" style="margin-top:1em;"></div>
+    </div>
+  `;
 
-    // Initialize Supabase
-    const SUPA_URL = 'https://didwbzlecssxmaohjyqe.supabase.co';
-    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZHdiemxlY3NzeG1hb2hqeXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTY1OTAsImV4cCI6MjA2NTgzMjU5MH0.VP07HMW5-s3Q2ewAluufQz5oPDHtfTAEguadFY3inT4';
-    const supabase = createClient(SUPA_URL, SUPA_KEY);
+            // --- Matchup Management logic ---
+            const filter = document.getElementById('filterLeagueAdmin');
+            function renderMatchups() {
+                const league = filter.value;
+                document.getElementById('matchupAdminRows').innerHTML = groups
+                    .filter(g => league === 'all' || g.league === league)
+                    .map(g => `
+        <tr>
+          <td>${g.week}</td>
+          <td>${g.league}</td>
+          <td>${g.player_ids.map(id => nameMap[id]).join(', ')}</td>
+          <td>
+            <button class="btnEditMatch" data-id="${g.id}">Edit</button>
+            <button class="btnRemoveMatch" data-id="${g.id}">Remove</button>
+          </td>
+        </tr>
+      `).join('');
 
-    // Shortcuts
-    const $ = selector => document.querySelector(selector);
-    const $all = selector => Array.from(document.querySelectorAll(selector));
+                // remove
+                document.querySelectorAll('.btnRemoveMatch').forEach(b => {
+                    b.onclick = async () => {
+                        if (!confirm('Delete this matchup?')) return;
+                        await supabase.from('matchups').delete().eq('id', b.dataset.id);
+                        loadAdmin();
+                    };
+                });
+                // edit
+                document.querySelectorAll('.btnEditMatch').forEach(b => {
+                    b.onclick = () => {
+                        const mg = groups.find(x => x.id == b.dataset.id);
+                        startEditMatchup(mg, users);
+                    };
+                });
+            }
+            filter.onchange = renderMatchups;
+            renderMatchups();
 
-    // Sections & Elements
-    const loginSec = $('#login');
-    const joinSec = $('#join');
-    const dashSec = $('#dashboard');
-    const loginMsg = $('#loginMsg');
-    const tempName = $('#tempName');
-    const userName = $('#userName');
-    const content = $('#content');
-    const adminTab = $('#adminTab');
+            // --- User Removal ---
+            document.querySelectorAll('.btnRemoveUser').forEach(btn => {
+                btn.onclick = async () => {
+                    if (!confirm('Remove this user and all their data?')) return;
+                    const { error } = await supabase.from('users').delete().eq('id', btn.dataset.id);
+                    if (error) return alert('Error: ' + error.message);
+                    loadAdmin();
+                };
+            });
 
-    let currentUser = null;
+            // --- Generate Pairings Preview ---
+            document.getElementById('btnPreview').onclick = previewPairings;
+        }
 
-    // Show/hide sections
-    function showSection(id) {
-      [loginSec, joinSec, dashSec].forEach(sec => {
-        sec.classList.toggle('hidden', sec.id !== id);
-      });
-    }
+        // --- PREVIEW pairings (no DB write) ---
+        async function previewPairings() {
+            // clear old
+            pairingPreview = [];
+            // compute next week
+            const { data: last } = await supabase
+                .from('matchups')
+                .select('week')
+                .order('week', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            const nextWeek = (last?.week || 0) + 1;
 
-    // Tab navigation
-    function selectTab(tab) {
-      $all('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
-      content.innerHTML = '';
-      switch(tab) {
-        case 'pairings': loadPairings(); break;
-        case 'scores': loadScoreEntry(); break;
-        case 'history': loadHistory(); break;
-        case 'leaderboard': loadLeaderboard(); break;
-        case 'admin': loadAdmin(); break;
-      }
-    }
+            // fetch users by league
+            const { data: usersList } = await supabase.from('users').select('id,league');
+            const byLeague = usersList.reduce((acc, u) => {
+                (acc[u.league] = acc[u.league] || []).push(u.id);
+                return acc;
+            }, {});
 
-    // Event listeners
-    $('#loginBtn').addEventListener('click', handleLogin);
-    $('#joinBtn').addEventListener('click', handleJoin);
-    $('#logoutBtn').addEventListener('click', handleLogout);
-    $all('.tab').forEach(btn => btn.addEventListener('click', () => selectTab(btn.dataset.tab)));
+            // build preview
+            Object.entries(byLeague).forEach(([league, ids]) => {
+                const sh = shuffle(ids);
+                for (let i = 0; i < sh.length; i += 4) {
+                    const chunk = sh.slice(i, i + 4);
+                    if (chunk.length === 4) {
+                        pairingPreview.push({ week: nextWeek, league, player_ids: chunk, bye: null });
+                    } else {
+                        pairingPreview.push({ week: nextWeek, league, player_ids: chunk, bye: chunk });
+                    }
+                }
+            });
 
-    // Handle login
-    async function handleLogin() {
-      const name = $('#loginName').value.trim();
-      const email = $('#loginEmail').value.trim();
-      if (!name || !email) {
-        loginMsg.textContent = 'Please enter both name and email.';
-        return;
-      }
-      loginMsg.textContent = '';
-      // Admin bypass
-      if (name.toLowerCase() === 'admin' && email.toLowerCase() === 'admin') {
-        currentUser = { id: 'admin', name: 'Admin', email: 'admin', role: 'admin' };
-        setupDashboard();
-        return;
-      }
-      // Regular user flow
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('id,name,league')
-        .eq('email', email)
-        .maybeSingle();
-      if (error) {
-        loginMsg.textContent = error.message;
-        return;
-      }
-      if (user) {
-        currentUser = { ...user, email };
-      } else {
-        currentUser = { name, email };
-        tempName.textContent = name;
-        showSection('join');
-        return;
-      }
-      setupDashboard();
-    }
+            // fetch all user names
+            const { data: usersData } = await supabase
+                .from('users')
+                .select('id,name');
+            const nameMap = Object.fromEntries(usersData.map(u => [u.id, u.name]));
+            renderPreview(nameMap);
+        }
 
-    function setupDashboard() {
-      userName.textContent = currentUser.name;
-      // reveal admin tab if admin
-      if (currentUser.role === 'admin') {
-        adminTab.classList.remove('hidden');
-      }
-      showSection('dashboard');
-      selectTab(currentUser.role === 'admin' ? 'admin' : 'pairings');
-    }
+        // --- RENDER the Preview + Approve/Regenerate ---
+        function renderPreview(nameMap) {
+            const container = document.getElementById('previewContainer');
+            if (!pairingPreview.length) {
+                container.innerHTML = '<p>No preview available.</p>';
+                return;
+            }
+            container.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Week</th><th>League</th><th>Players</th><th>Bye?</th>
+      </tr></thead>
+      <tbody>
+        ${pairingPreview.map(p => `
+          <tr>
+            <td>${p.week}</td>
+            <td>${p.league}</td>
+            <td>${p.player_ids.map(id => nameMap[id]||id).join(', ')}</td>
+            <td>${p.bye ? 'YES' : 'NO'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:1em;">
+      <button id="btnApprove">Approve & Submit</button>
+      <button id="btnRegenerate">Regenerate</button>
+    </div>
+  `;
+            document.getElementById('btnApprove').onclick = approvePreview;
+            document.getElementById('btnRegenerate').onclick = previewPairings;
+        }
 
-    // Handle league join
-    async function handleJoin() {
-      const league = $('#leagueSelect').value;
-      const { data, error } = await supabase
-        .from('users')
-        .insert({ name: currentUser.name, email: currentUser.email, league })
-        .select('id,name,league')
-        .single();
-      if (error) {
-        alert('Error creating user: ' + error.message);
-        return;
-      }
-      currentUser = data;
-      setupDashboard();
-    }
+        // --- APPROVE preview (write to DB) ---
+        async function approvePreview() {
+            const { error } = await supabase
+                .from('matchups')
+                .insert(pairingPreview);
+            if (error) return alert('Error inserting: ' + error.message);
+            pairingPreview = [];
+            alert('Pairings submitted!');
+            loadAdmin();
+        }
 
-    // Handle logout
-    function handleLogout() {
-      currentUser = null;
-      $('#loginName').value = '';
-      $('#loginEmail').value = '';
-      adminTab.classList.add('hidden');
-      showSection('login');
-    }
+        // --- EDIT MATCHUP: 2-step (players → scores) ---
+        function startEditMatchup(mg, allUsers) {
+            const leagueUsers = allUsers.filter(u => u.league === mg.league);
+            // STEP 1: edit players
+            let html = `<div class="card">
+    <h4>Edit Week ${mg.week} (${mg.league}) — Step 1: Players</h4>
+    <form id="editPlayersForm">`;
+            for (let i = 0; i < 4; i++) {
+                html += `
+      <div class="field">
+        <label>Slot ${i + 1}:</label>
+        <select name="pl${i}" required>
+          ${leagueUsers.map(u => `
+            <option value="${u.id}" ${u.id === mg.player_ids[i] ? 'selected' : ''}>
+              ${u.name}
+            </option>`).join('')}
+        </select>
+      </div>`;
+            }
+            html += `
+      <div class="buttons">
+        <button type="submit">Next: Scores</button>
+        <button type="button" id="cancelPlayers">Cancel</button>
+      </div>
+    </form>
+  </div>`;
+            content.innerHTML = html;
 
-    // --- Tab Content Functions ---
-    async function loadPairings() {
-      // existing logic...
-    }
-    async function loadScoreEntry() {
-      // existing logic...
-    }
-    async function loadHistory() {
-      // existing logic...
-    }
-    async function loadLeaderboard() {
-      // existing logic...
-    }
+            document.getElementById('cancelPlayers').onclick = loadAdmin;
+            document.getElementById('editPlayersForm').onsubmit = async e => {
+                e.preventDefault();
+                const f = e.target;
+                const newPlayers = [0, 1, 2, 3].map(i => f[`pl${i}`].value);
+                await supabase.from('matchups')
+                    .update({ player_ids: newPlayers })
+                    .eq('id', mg.id);
+                // go step 2
+                editScoresStep(mg.id, newPlayers, mg.league);
+            };
+        }
 
-    // Admin panel
-    async function loadAdmin() {
-      content.innerHTML = `
-        <div class="card">
-          <h4>Admin Controls</h4>
-          <button id="genPair">Generate Pairings</button>
-          <button id="viewAllPair">View All Pairings</button>
-          <button id="editScores">Edit All Scores</button>
-        </div>
-      `;
-      document.getElementById('genPair').onclick = async () => {
-        // call edge function
-        const { data, error } = await supabase.functions.invoke('generatePairings');
-        alert(error ? error.message : 'Pairings generated successfully');
-      };
-      document.getElementById('viewAllPair').onclick = async () => {
-        const { data: all } = await supabase.from('matchups').select('*').order('week');
-        content.innerHTML += `<pre>${JSON.stringify(all, null, 2)}</pre>`;
-      };
-      document.getElementById('editScores').onclick = () => {
-        selectTab('scores');
-      };
-    }
+        // --- EDIT SCORES (Step 2) ---
+        async function editScoresStep(matchupId, playerIds, league) {
+            // fetch existing results
+            const { data: results } = await supabase
+                .from('results')
+                .select('game_num,combo_index,scores')
+                .eq('matchup_id', matchupId);
 
-    // Initial view
-    showSection('login');
-  </script>
+            // build form
+            const combos = generateCombos(playerIds);
+            const nm = Object.fromEntries(await supabase.from('users').select('id,name').then(r => r.data.map(u => [u.id, u.name])));
+            let html = `<div class="card">
+    <h4>Edit Scores for Week (ID ${matchupId}) — Step 2: Scores</h4>
+    <form id="editScoresForm">`;
+            for (let game = 1; game <= 3; game++) {
+                const ex = results.find(r => r.game_num === game) || {};
+                // pairing select
+                html += `<h5>Game ${game}</h5>
+      <div class="field">
+        <label>Pairing:</label>
+        <select name="combo${game}" required>
+          ${combos.map((c, i) => `
+            <option value="${i}" ${ex.combo_index === i ? 'selected' : ''}>
+              ${nm[c[0][0]]}/${nm[c[0][1]]} vs ${nm[c[1][0]]}/${nm[c[1][1]]}
+            </option>`).join('')}
+        </select>
+      </div>`;
+                // scores
+                const scores = ex.scores || playerIds.map(p => ({ user_id: p, points: 0 }));
+                for (const { user_id, points } of scores) {
+                    html += `
+        <div class="field">
+          <label>${nm[user_id]}:</label>
+          <input type="number" name="pts${game}_${user_id}" min="0" value="${points}" required />
+        </div>`;
+                }
+            }
+            html += `
+      <div class="buttons">
+        <button type="submit">Save All</button>
+        <button type="button" id="cancelScores">Cancel</button>
+      </div>
+    </form>
+  </div>`;
+            content.innerHTML = html;
+
+            document.getElementById('cancelScores').onclick = loadAdmin;
+            document.getElementById('editScoresForm').onsubmit = async e => {
+                e.preventDefault();
+                const f = e.target;
+                // upsert each game
+                for (let game = 1; game <= 3; game++) {
+                    const combo = parseInt(f[`combo${game}`].value, 10);
+                    // collect scores
+                    const scoresArr = playerIds.map(pid => ({
+                        user_id: pid,
+                        points: parseInt(f[`pts${game}_${pid}`].value, 10)
+                    }));
+                    // determine winners
+                    const t = combos[combo];
+                    const sumA = t[0].reduce((s, p) =>
+                        s + scoresArr.find(x => x.user_id === p).points, 0);
+                    const sumB = t[1].reduce((s, p) =>
+                        s + scoresArr.find(x => x.user_id === p).points, 0);
+                    const winners = sumA >= sumB ? t[0] : t[1];
+
+                    await supabase.from('results').upsert({
+                        matchup_id: matchupId,
+                        game_num: game,
+                        combo_index: combo,
+                        scores: scoresArr,
+                        winner_ids: winners
+                    }, { onConflict: ['matchup_id', 'game_num'] });
+                }
+                alert('Matchup updated!');
+                loadAdmin();
+            };
+        }
+
+
+
+
+        // --- BOOT ---
+        showSection('login');
+    </script>
+</body>
+
+</html>
