@@ -166,7 +166,29 @@ small {
   color: var(--color-text-light);
 }
 
-/* 12) Scrollable tabs on very narrow screens */
+/* 12) Pairings tab: opt-in toggle card */
+.opt-in-card {
+  border-left-color: var(--color-accent);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+.opt-in-field {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+.opt-in-field label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+#optInToggle {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+/* 13) Scrollable tabs on very narrow screens */
 @media (max-width: 600px) {
   .tabs {
     overflow-x: auto;
