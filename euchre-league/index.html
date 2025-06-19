@@ -46,14 +46,17 @@
                 <h2>Welcome, <span id="userName"></span>!</h2>
                 <button id="logoutBtn" class="danger">Logout</button>
             </header>
+
             <nav class="tabs">
                 <button data-tab="announcements" class="tab active">Announcements</button>
                 <button data-tab="pairings" class="tab">Pairings</button>
                 <button data-tab="scores" class="tab">Enter Scores</button>
                 <button data-tab="history" class="tab">History</button>
                 <button data-tab="leaderboard" class="tab">Leaderboard</button>
+                <button data-tab="rules" class="tab">Rules</button>
                 <button data-tab="admin" id="adminTab" class="tab hidden">Admin</button>
             </nav>
+
             <div id="content" class="content-area"></div>
         </section>
     </main>
@@ -86,6 +89,7 @@
 
         let currentUser = null;
 
+        // Show/hide views
         function showSection(id) {
             [loginSec, joinSec, dashSec].forEach(s => s.classList.toggle('hidden', s.id !== id));
         }
@@ -98,6 +102,7 @@
                 case 'scores': loadScoreEntry(); break;
                 case 'history': loadHistory(); break;
                 case 'leaderboard': loadLeaderboard(); break;
+                case 'rules': loadRules(); break;
                 case 'admin': loadAdmin(); break;
             }
         }
@@ -111,7 +116,9 @@
         async function handleLogin() {
             const name = $('#loginName').value.trim();
             const email = $('#loginEmail').value.trim();
-            if (!name || !email) { loginMsg.textContent = 'Enter both name & email.'; return; }
+            if (!name || !email) {
+                loginMsg.textContent = 'Enter both name & email.'; return;
+            }
             loginMsg.textContent = '';
             if (name.toLowerCase() === 'admin' && email.toLowerCase() === 'admin') {
                 currentUser = { id: 'admin', name: 'Admin', role: 'admin' };
@@ -123,15 +130,25 @@
             if (user) {
                 currentUser = { ...user }; setupDashboard();
             } else {
-                currentUser = { name, email }; tempName.textContent = name; showSection('join');
+                currentUser = { name, email };
+                tempName.textContent = name;
+                showSection('join');
             }
         }
 
+        // ensure new users start opted-in
         async function handleJoin() {
             const league = $('#leagueSelect').value;
             const { data, error } = await supabase
-                .from('users').insert({ name: currentUser.name, email: currentUser.email, league })
-                .select('id,name,league').single();
+                .from('users')
+                .insert({
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    league,
+                    opted_in: true
+                })
+                .select('id,name,league')
+                .single();
             if (error) return alert(error.message);
             currentUser = data; setupDashboard();
         }
@@ -152,7 +169,6 @@
 
         // --- ANNOUNCEMENTS ---
         async function loadAnnouncements() {
-            // fetch announcements
             const { data, error } = await supabase
                 .from('announcements')
                 .select('id,title,body,created_at')
@@ -162,14 +178,13 @@
                 return;
             }
             let html = '<h3>Announcements</h3>';
-            // if admin, show create form
             if (currentUser.role === 'admin') {
                 html += `
           <form id="announceForm" class="card">
             <h4>New Announcement</h4>
             <div class="field">
               <label>Title:</label>
-              <input type="text" name="title" required />
+              <input type="text" name="title" required/>
             </div>
             <div class="field">
               <label>Message:</label>
@@ -178,7 +193,6 @@
             <button type="submit">Send</button>
           </form>`;
             }
-            // list existing
             html += data.map(a => `
         <div class="card">
           <h4>${a.title}</h4>
@@ -201,129 +215,334 @@
 
         // --- PAIRINGS ---
         async function loadPairings() {
-            const [{ data: users, error: uErr }, { data: groups, error: gErr }] = await Promise.all([
-                supabase.from('users').select('id,name,league'),
-                supabase.from('matchups').select('week,player_ids,bye').order('week', { ascending: true })
-            ]);
-            if (uErr || gErr) {
-                content.innerHTML = `<p>Error: ${(uErr || gErr).message}</p>`; return;
+            // 1) Fetch this user’s opted-in flag
+            const { data: me, error: meErr } = await supabase
+                .from('users')
+                .select('opted_in')
+                .eq('id', currentUser.id)
+                .single();
+            if (meErr) {
+                content.innerHTML = `<p>Error loading status: ${meErr.message}</p>`;
+                return;
             }
-            const nameMap = Object.fromEntries(users.map(u => [u.id, u.name]));
-            const my = groups.filter(g => g.player_ids.includes(currentUser.id));
-            if (!my.length) { content.innerHTML = '<p>No pairings yet.</p>'; return; }
-            content.innerHTML = my.map(g => {
-                if (g.bye) return `<div class="card"><strong>Week ${g.week}:</strong> Bye</div>`;
-                const partners = g.player_ids.filter(id => id !== currentUser.id).map(id => nameMap[id]).join(', ');
-                return `<div class="card"><strong>Week ${g.week}:</strong> ${partners}</div>`;
-            }).join('');
+
+            // 2) Render the opt-in toggle + placeholder
+            content.innerHTML = `
+    <div class="card opt-in-card">
+      <div class="field opt-in-field">
+        <label for="optInToggle">Playing this week?</label>
+        <input type="checkbox" id="optInToggle" ${me.opted_in ? 'checked' : ''}/>
+      </div>
+    </div>
+    <div id="pairingsContainer"></div>
+  `;
+            const toggle = document.getElementById('optInToggle');
+            toggle.addEventListener('change', async e => {
+                const checked = e.target.checked;
+                const { error: updErr } = await supabase
+                    .from('users')
+                    .update({ opted_in: checked })
+                    .eq('id', currentUser.id);
+                if (updErr) alert('Error saving your choice: ' + updErr.message);
+                renderPairs(checked);
+            });
+
+            // 3) Initial render
+            renderPairs(me.opted_in);
+
+            // 4) Helper: fetch + render all weeks (past & current)
+            async function renderPairs(isIn) {
+                const container = document.getElementById('pairingsContainer');
+
+                const [uRes, mRes] = await Promise.all([
+                    supabase.from('users').select('id,name'),
+                    supabase.from('matchups').select('week,player_ids,bye').order('week', { ascending: true })
+                ]);
+                if (uRes.error || mRes.error) {
+                    container.innerHTML = `<p>Error loading pairings: ${(uRes.error || mRes.error).message}</p>`;
+                    return;
+                }
+
+                const nameMap = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
+                const allGroups = mRes.data;
+                if (!allGroups.length) {
+                    container.innerHTML = '<p>No pairings generated yet.</p>';
+                    return;
+                }
+
+                // build unique, sorted week list
+                const weeks = Array.from(new Set(allGroups.map(g => g.week))).sort((a, b) => a - b);
+                const maxWeek = weeks[weeks.length - 1];
+
+                let html = '';
+                for (const week of weeks) {
+                    // get all groups for this week
+                    const weekGroups = allGroups.filter(g => g.week === week);
+                    // find any bye and play group
+                    const byeG = weekGroups.find(g => Array.isArray(g.bye) && g.bye.includes(currentUser.id));
+                    const playG = weekGroups.find(g => Array.isArray(g.player_ids) && g.player_ids.includes(currentUser.id) && !byeG);
+
+                    if (week < maxWeek) {
+                        // past weeks: only show if you played or were on bye
+                        if (playG) {
+                            const partners = playG.player_ids.filter(id => id !== currentUser.id)
+                                .map(id => nameMap[id]).join(', ');
+                            html += `<div class="card"><strong>Week ${week}:</strong> ${partners}</div>`;
+                        } else if (byeG) {
+                            html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                        }
+                    } else {
+                        // current week: unified "No game!" for opt-out or bye
+                        if (!isIn || byeG) {
+                            html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                        } else if (playG) {
+                            const partners = playG.player_ids.filter(id => id !== currentUser.id)
+                                .map(id => nameMap[id]).join(', ');
+                            html += `<div class="card"><strong>Week ${week}:</strong> ${partners}</div>`;
+                        } else {
+                            // in case you’re in neither array (shouldn’t happen)
+                            html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                        }
+                    }
+                }
+
+                container.innerHTML = html;
+            }
         }
 
         // --- ENTER SCORES ---
         async function loadScoreEntry() {
-            const [gRes, rRes, uRes] = await Promise.all([
-                supabase.from('matchups').select('id,week,player_ids,league,bye').order('week', { ascending: true }),
-                supabase.from('results').select('matchup_id,game_num,combo_index,scores'),
-                supabase.from('users').select('id,name,league')
+            // 1) Fetch all matchups, results, and user names
+            const [mRes, rRes, uRes] = await Promise.all([
+                supabase.from('matchups')
+                    .select('id, week, player_ids, bye')
+                    .order('week', { ascending: true }),
+                supabase.from('results')
+                    .select('matchup_id, game_num, combo_index, scores'),
+                supabase.from('users')
+                    .select('id, name')
             ]);
-            if (gRes.error || rRes.error || uRes.error) {
-                content.innerHTML = `<p>Error loading games: ${(gRes.error || rRes.error || uRes.error).message}</p>`;
+            if (mRes.error || rRes.error || uRes.error) {
+                content.innerHTML = `<p>Error loading scores: ${(mRes.error || rRes.error || uRes.error).message}</p>`;
                 return;
             }
-            const nm = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
-            const myGroups = gRes.data.filter(g => g.player_ids.includes(currentUser.id));
-            if (!myGroups.length) { content.innerHTML = '<p>No pending score entries.</p>'; return; }
-            let html = '';
+
+            const nameMap = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
+            const allGroups = mRes.data;
+            const weeks = Array.from(new Set(allGroups.map(g => g.week))).sort((a, b) => a - b);
             const combosCache = {};
-            for (const mg of myGroups) {
-                if (mg.bye) {
-                    html += `<div class="card"><h4>Week ${mg.week}</h4><p>Bye week!</p></div>`;
+            let html = '';
+
+            // 2) Build one card per week
+            for (const week of weeks) {
+                // find this week's group & bye info
+                const weekGroups = allGroups.filter(g => g.week === week);
+                const group = weekGroups.find(g =>
+                    Array.isArray(g.player_ids) && g.player_ids.includes(currentUser.id)
+                );
+                const onBye = weekGroups.some(g =>
+                    Array.isArray(g.bye) && g.bye.includes(currentUser.id)
+                );
+
+                if (!group || onBye) {
+                    html += `
+        <div class="card">
+          <h4>Week ${week}</h4>
+          <p>No game!</p>
+        </div>`;
                     continue;
                 }
-                combosCache[mg.id] = generateCombos(mg.player_ids);
-                html += `<div class="card"><h4>Week ${mg.week}</h4>`;
+
+                // user has a group this week
+                combosCache[group.id] = generateCombos(group.player_ids);
+                html += `<div class="card"><h4>Week ${week}</h4>`;
+
                 for (let game = 1; game <= 3; game++) {
-                    const existing = rRes.data.find(r => r.matchup_id === mg.id && r.game_num === game);
+                    const existing = rRes.data.find(r =>
+                        r.matchup_id === group.id && r.game_num === game
+                    );
+                    const combos = combosCache[group.id];
+                    const teamA = combos[existing?.combo_index ?? 0][0];
+                    const teamB = combos[existing?.combo_index ?? 0][1];
+
                     html += `
-            <form id="fm-${mg.id}-${game}" class="game-form">
-              <h5>Game ${game}</h5>
-              <div class="field"><label>Pairings:</label>
-                ${combosCache[mg.id].map((c, i) => `
-                  <div>
-                    <input type="radio" name="combo" value="${i}"
-                      ${existing && existing.combo_index === i ? 'checked' : ''} required />
-                    ${nm[c[0][0]]}/${nm[c[0][1]]} vs ${nm[c[1][0]]}/${nm[c[1][1]]}
-                  </div>`).join('')}
-              </div>
-              ${mg.player_ids.map(pid => `
-                <div class="field">
-                  <label>${nm[pid]}:</label>
-                  <input type="number" name="pts-${pid}" min="0"
-                    value="${existing ? existing.scores.find(s => s.user_id === pid).points : 0}" required />
-                </div>`).join('')}
-              <button type="submit">Submit Game ${game}</button>
-            </form>`;
+        <form id="fm-${group.id}-${game}" class="game-form">
+          <h5>Game ${game}</h5>
+          <div class="field"><label>Pairings:</label>
+            ${combos.map((c, i) => `
+              <div>
+                <input type="radio"
+                       name="combo-${group.id}-${game}"
+                       value="${i}"
+                       ${existing && existing.combo_index === i ? 'checked' : ''}
+                       ${existing ? 'disabled' : ''}
+                       required />
+                ${nameMap[c[0][0]]}/${nameMap[c[0][1]]}
+                 vs ${nameMap[c[1][0]]}/${nameMap[c[1][1]]}
+              </div>`).join('')}
+          </div>
+
+          <div class="field">
+            <label>Team A Score:</label>
+            <input type="number"
+                   name="scoreA-${group.id}-${game}"
+                   min="0"
+                   value="${existing
+                            ? existing.scores.find(s => teamA.includes(s.user_id)).points
+                            : ''}"
+                   ${existing ? 'disabled' : ''}
+                   required />
+          </div>
+          <div class="field">
+            <label>Team B Score:</label>
+            <input type="number"
+                   name="scoreB-${group.id}-${game}"
+                   min="0"
+                   value="${existing
+                            ? existing.scores.find(s => teamB.includes(s.user_id)).points
+                            : ''}"
+                   ${existing ? 'disabled' : ''}
+                   required />
+          </div>
+
+          ${existing
+                            ? `<p><em>Already submitted</em></p>`
+                            : `<button type="submit">Submit Game ${game}</button>`}
+        </form>`;
                 }
-                html += '</div>';
+
+                html += `</div>`;
             }
+
+            // 3) Render to page
             content.innerHTML = html;
-            myGroups.forEach(mg => {
-                if (mg.bye) return;
+
+            // 4) Attach handlers only to forms without existing data
+            for (const week of weeks) {
+                const weekGroups = allGroups.filter(g => g.week === week);
+                const group = weekGroups.find(g =>
+                    Array.isArray(g.player_ids) && g.player_ids.includes(currentUser.id)
+                );
+                const onBye = weekGroups.some(g =>
+                    Array.isArray(g.bye) && g.bye.includes(currentUser.id)
+                );
+                if (!group || onBye) continue;
+
+                const combos = combosCache[group.id];
+
                 for (let game = 1; game <= 3; game++) {
-                    document.getElementById(`fm-${mg.id}-${game}`).onsubmit = async e => {
+                    const existing = rRes.data.find(r =>
+                        r.matchup_id === group.id && r.game_num === game
+                    );
+                    if (existing) continue;
+
+                    const form = document.getElementById(`fm-${group.id}-${game}`);
+                    if (!form) continue;
+
+                    form.onsubmit = async e => {
                         e.preventDefault();
                         const f = e.target;
-                        const comboIndex = parseInt(f.combo.value, 10);
-                        const teams = combosCache[mg.id][comboIndex];
-                        const [ta, tb] = teams;
-                        const taScore = ta.reduce((s, p) => s + parseInt(f[`pts-${p}`].value, 10), 0);
-                        const tbScore = tb.reduce((s, p) => s + parseInt(f[`pts-${p}`].value, 10), 0);
-                        const scores = mg.player_ids.map(pid => ({
+                        const comboIndex = parseInt(f[`combo-${group.id}-${game}`].value, 10);
+                        const [ta, tb] = combos[comboIndex];
+                        const scoreA = parseInt(f[`scoreA-${group.id}-${game}`].value, 10);
+                        const scoreB = parseInt(f[`scoreB-${group.id}-${game}`].value, 10);
+
+                        const scores = group.player_ids.map(pid => ({
                             user_id: pid,
-                            points: ta.includes(pid) ? taScore : tbScore
+                            points: ta.includes(pid) ? scoreA : scoreB
                         }));
-                        const winners = taScore > tbScore ? ta : tb;
+                        const winners = scoreA > scoreB ? ta : tb;
+
                         await supabase.from('results').upsert({
-                            matchup_id: mg.id,
+                            matchup_id: group.id,
                             game_num: game,
                             combo_index: comboIndex,
                             scores,
                             winner_ids: winners
                         }, { onConflict: ['matchup_id', 'game_num'] });
+
                         selectTab('scores');
                     };
                 }
-            });
+            }
         }
 
         // --- HISTORY ---
         async function loadHistory() {
+            // 1) Fetch all results, matchups, and user names in parallel
             const [rRes, mRes, uRes] = await Promise.all([
-                supabase.from('results').select('submitted_at,scores,winner_ids,game_num,matchup_id'),
-                supabase.from('matchups').select('id,week,player_ids'),
-                supabase.from('users').select('id,name')
+                supabase.from('results')
+                    .select('submitted_at, scores, winner_ids, game_num, matchup_id'),
+                supabase.from('matchups')
+                    .select('id, week, player_ids, bye'),
+                supabase.from('users')
+                    .select('id, name')
             ]);
+
+            // 2) Handle any errors
             if (rRes.error || mRes.error || uRes.error) {
                 content.innerHTML = `<p>Error loading history: ${(rRes.error || mRes.error || uRes.error).message}</p>`;
                 return;
             }
-            const nm = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
-            const rows = rRes.data.filter(r => {
-                const mu = mRes.data.find(m => m.id === r.matchup_id);
-                return mu && mu.player_ids.includes(currentUser.id);
-            });
-            if (!rows.length) { content.innerHTML = '<p>No history.</p>'; return; }
-            content.innerHTML = rows.map(r => {
-                const mu = mRes.data.find(m => m.id === r.matchup_id);
-                return `
+
+            // 3) Build lookup maps
+            const nameMap = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
+
+            // 4) Gather all distinct weeks, sorted
+            const weeks = Array.from(new Set(mRes.data.map(m => m.week))).sort((a, b) => a - b);
+
+            // 5) Render one card per week
+            let html = '';
+            for (const week of weeks) {
+                // find all matchups for this week
+                const weekMatchups = mRes.data.filter(m => m.week === week);
+
+                // find the ones you participated in
+                const userMatchups = weekMatchups.filter(m =>
+                    Array.isArray(m.player_ids) && m.player_ids.includes(currentUser.id)
+                );
+
+                if (userMatchups.length === 0) {
+                    // you neither played nor were assigned a bye: No game!
+                    html += `
+        <div class="card">
+          <h4>Week ${week}</h4>
+          <p>No game!</p>
+        </div>`;
+                    continue;
+                }
+
+                // for each matchup you had, show its results (or a placeholder if none)
+                for (const mu of userMatchups) {
+                    const results = rRes.data.filter(r => r.matchup_id === mu.id);
+
+                    if (results.length === 0) {
+                        html += `
           <div class="card">
-            <h4>Week ${mu.week} - Game ${r.game_num}</h4>
-            <small>${new Date(r.submitted_at).toLocaleString()}</small>
-            <ul>${r.scores.map(s => `
-              <li>${nm[s.user_id]}: ${s.points}${r.winner_ids.includes(s.user_id) ? ' 🏆' : ''}</li>`
-                ).join('')}</ul>
+            <h4>Week ${week}</h4>
+            <p>No results submitted yet.</p>
           </div>`;
-            }).join('');
+                    } else {
+                        for (const r of results) {
+                            html += `
+            <div class="card">
+              <h4>Week ${week} - Game ${r.game_num}</h4>
+              <small>${new Date(r.submitted_at).toLocaleString()}</small>
+              <ul>
+                ${r.scores.map(s =>
+                                `<li>${nameMap[s.user_id]}: ${s.points}${r.winner_ids.includes(s.user_id) ? ' 🏆' : ''}</li>`
+                            ).join('')}
+              </ul>
+            </div>`;
+                        }
+                    }
+                }
+            }
+
+            // 6) Inject into the page
+            content.innerHTML = html;
         }
+
 
         // --- LEADERBOARD ---
         async function loadLeaderboard() {
@@ -334,7 +553,6 @@
             if (uErr || rErr) {
                 content.innerHTML = `<p>Error: ${(uErr || rErr).message}</p>`; return;
             }
-            // only competitive users
             const comp = users.filter(u => u.league === 'competitive');
             const stats = {};
             comp.forEach(u => stats[u.id] = { name: u.name, wins: 0, pts: 0, games: 0 });
@@ -345,9 +563,7 @@
                         stats[s.user_id].games++;
                     }
                 });
-                r.winner_ids.forEach(w => {
-                    if (stats[w]) stats[w].wins++;
-                });
+                r.winner_ids.forEach(w => { if (stats[w]) stats[w].wins++; });
             });
             const rows = Object.values(stats)
                 .sort((a, b) => b.wins - a.wins || b.pts - a.pts)
@@ -358,19 +574,73 @@
           </tr>`).join('');
             content.innerHTML = `
         <table>
-          <thead><tr>
-            <th>Player</th><th>Wins</th><th>Points</th><th>Games</th><th>Avg</th>
-          </tr></thead>
+          <thead>
+            <tr><th>Player</th><th>Wins</th><th>Points</th><th>Games</th><th>Avg</th></tr>
+          </thead>
           <tbody>${rows}</tbody>
         </table>`;
         }
+
+        // --- RULES ---
+        function loadRules() {
+            content.innerHTML = `
+    <div class="card">
+      <h4>League Structure</h4>
+      <p>We run two concurrent leagues:</p>
+      <ul>
+        <li><strong>Competitive:</strong></li>
+          <ul>
+            <li>8-week season, 4-player groups, 3 games/week (to 10 points), rotating partners each game.</li>
+            <li>Groups determined Monday morning. Games must be played and submitted by Friday that week.</li>
+            <li>Ability to opt in or out for the next week before groups are made.</li>
+            <li>Standings ordered by wins with points as a tiebreaker</li>
+          </ul>
+        <li><strong>Casual:</strong></li>
+          <ul>
+            <li>8-week season, 4-player groups, optional rotation and scoring.</li>
+            <li>Groups determined Monday morning. Play when best fits for everyone.</li>
+            <li>Ability to opt in or out for the next week before groups are made.</li>
+            <li>No score tracking or leaderboards</li>
+          </ul>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>Basic Euchre Rules</h4>
+      <ul>
+        <li>Deal starts with the holder of the first Black Jack and moves clockwise.</li>
+        <li>After shuffle, offer cut to the player to your right, then begin dealing.</li>
+        <li>Deal must happen clockwise in 2 rounds. Typically in a 2-3 or 3-2 pattern so that every player gets 5 cards.</li>
+        <li>No "Steal the Deal" rule. Deal must follow proper order.</li>
+        <li>Misdeal voids the hand, and the deal passes to the next player.</li>
+        <li>“Stick the Dealer” if no one orders up.</li>
+        <li>No “Farmer’s Hand” rule.</li>
+        <li>No "Partner's Best" rule when going alone.</li>
+        <li>Each game played to 10 points.</li>
+        <li>Scoring:
+          <ul>
+            <li>1 point for calling trump and winning majority of tricks.</li>
+            <li>2 points for calling trump and winning all 5 tricks.</li>
+            <li>2 points awarded to defenders on a Euchre.</li>
+            <li>2 points for opposing team reneging (failing to follow suit when able to).</li>
+            <li>4 points for going alone and winning all 5 tricks.</li>
+          </ul>
+        </li>
+        <li>Trump order: Jack of trump, Jack of same color, Ace, King, Queen, 10, 9.</li>
+        <li>Follow suit if you can; otherwise you may trump or discard.</li>
+        <li>The highest card of led suit wins, unless trumped.</li>
+      </ul>
+    </div>
+  `;
+        }
+
 
         // --- ADMIN PANEL ---
         let pairingPreview = [];
         async function loadAdmin() {
             // fetch users & matchups
             const [uRes, mRes] = await Promise.all([
-                supabase.from('users').select('id,name,email,league'),
+                supabase.from('users').select('id,name,email,league,opted_in'),
                 supabase.from('matchups').select('id,week,league,player_ids').order('week', { ascending: true })
             ]);
             if (uRes.error || mRes.error) {
@@ -404,13 +674,14 @@
     <div class="card">
       <h4>User Management</h4>
       <table>
-        <thead><tr><th>Name</th><th>Email</th><th>League</th><th>Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>League</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
           ${users.map(u => `
             <tr>
               <td>${u.name}</td>
               <td>${u.email}</td>
               <td>${u.league}</td>
+              <td>${u.opted_in ? 'Opted In' : 'Opted Out'}</td>
               <td>${u.id === 'admin' ? '' : `<button class="btnRemoveUser" data-id="${u.id}">Remove</button>`}</td>
             </tr>
           `).join('')}
@@ -447,7 +718,7 @@
                 document.querySelectorAll('.btnRemoveMatch').forEach(b => {
                     b.onclick = async () => {
                         if (!confirm('Delete this matchup?')) return;
-                        await supabase.from('matchups').delete().eq('id', b.dataset.id);
+                        await supabase.from('matchups').delete().eq('id', Number(b.dataset.id));
                         loadAdmin();
                     };
                 });
@@ -490,7 +761,10 @@
             const nextWeek = (last?.week || 0) + 1;
 
             // fetch users by league
-            const { data: usersList } = await supabase.from('users').select('id,league');
+            const { data: usersList, error: usrErr } = await supabase
+                .from('users')
+                .select('id,league')
+                .eq('opted_in', true);
             const byLeague = usersList.reduce((acc, u) => {
                 (acc[u.league] = acc[u.league] || []).push(u.id);
                 return acc;
@@ -534,7 +808,7 @@
           <tr>
             <td>${p.week}</td>
             <td>${p.league}</td>
-            <td>${p.player_ids.map(id => nameMap[id]||id).join(', ')}</td>
+            <td>${p.player_ids.map(id => nameMap[id] || id).join(', ')}</td>
             <td>${p.bye ? 'YES' : 'NO'}</td>
           </tr>
         `).join('')}
@@ -679,9 +953,6 @@
                 loadAdmin();
             };
         }
-
-
-
 
         // --- BOOT ---
         showSection('login');
