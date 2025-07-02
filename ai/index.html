@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AI News Hub - Latest AI News & Research</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .header {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                padding: 30px;
+                margin-bottom: 30px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 3em;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 15px;
+                font-weight: 800;
+            }
+
+            .header p {
+                font-size: 1.2em;
+                color: #666;
+                margin-bottom: 25px;
+            }
+
+            .controls {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 25px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                color: white;
+                font-size: 14px;
+            }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            }
+
+            .btn.active {
+                background: linear-gradient(45deg, #764ba2, #667eea);
+                transform: scale(1.05);
+            }
+
+            .refresh-btn {
+                background: linear-gradient(45deg, #28a745, #20c997);
+                margin-left: 20px;
+            }
+
+            .refresh-btn:hover {
+                box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+            }
+
+            .search-bar {
+                position: relative;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .search-bar input {
+                width: 100%;
+                padding: 15px 50px 15px 20px;
+                border: none;
+                border-radius: 25px;
+                font-size: 16px;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+
+            .search-bar .search-icon {
+                position: absolute;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #667eea;
+            }
+
+            .news-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 25px;
+            }
+
+            .news-section {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                padding: 25px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease;
+            }
+
+            .news-section:hover {
+                transform: translateY(-5px);
+            }
+
+            .section-title {
+                font-size: 1.5em;
+                font-weight: 700;
+                margin-bottom: 20px;
+                color: #333;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .section-title i {
+                color: #667eea;
+                font-size: 1.2em;
+            }
+
+            .article {
+                padding: 15px 0;
+                border-bottom: 1px solid #eee;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+
+            .article:last-child {
+                border-bottom: none;
+            }
+
+            .article:hover {
+                background: rgba(102, 126, 234, 0.05);
+                border-radius: 10px;
+                padding: 15px;
+                margin: 0 -15px;
+            }
+
+            .article-title {
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 8px;
+                line-height: 1.4;
+            }
+
+            .article-title:hover {
+                color: #667eea;
+            }
+
+            .article-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.9em;
+                color: #666;
+                margin-bottom: 8px;
+            }
+
+            .source {
+                font-weight: 500;
+                color: #764ba2;
+            }
+
+            .time {
+                opacity: 0.8;
+            }
+
+            .article-summary {
+                color: #555;
+                line-height: 1.5;
+                font-size: 0.95em;
+            }
+
+            .trending-indicator {
+                display: inline-block;
+                background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+                color: white;
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-size: 0.8em;
+                font-weight: 600;
+                margin-left: 8px;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.7;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            .loading {
+                text-align: center;
+                padding: 40px;
+                color: #666;
+            }
+
+            .spinner {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #667eea;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .load-more-container {
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .load-more-btn {
+                padding: 12px 30px;
+                border: none;
+                border-radius: 20px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 14px;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                color: white;
+                transition: all 0.3s ease;
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            }
+
+            .load-more-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            }
+
+            .load-more-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .error-message {
+                background: rgba(255, 107, 107, 0.1);
+                border: 1px solid rgba(255, 107, 107, 0.3);
+                color: #721c24;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .success-message {
+                background: rgba(40, 167, 69, 0.1);
+                border: 1px solid rgba(40, 167, 69, 0.3);
+                color: #155724;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .last-updated {
+                text-align: center;
+                color: rgba(255, 255, 255, 0.8);
+                font-size: 0.9em;
+                margin-top: 10px;
+            }
+
+            @media (max-width: 768px) {
+                .header h1 {
+                    font-size: 2em;
+                }
+                .news-grid {
+                    grid-template-columns: 1fr;
+                }
+                .controls {
+                    flex-direction: column;
+                    align-items: center;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1><i class="fas fa-robot"></i> AI News Hub</h1>
+                <p>
+                    Your comprehensive source for AI news, research, and
+                    industry updates
+                </p>
+
+                <div class="controls">
+                    <button class="btn active" data-category="all">
+                        All News
+                    </button>
+                    <button class="btn" data-category="breaking">
+                        Breaking
+                    </button>
+                    <button class="btn" data-category="research">
+                        Research
+                    </button>
+                    <button class="btn" data-category="business">
+                        Business
+                    </button>
+                    <button class="btn" data-category="tools">Tools</button>
+                    <button class="btn refresh-btn" id="refreshBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <div class="search-bar">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search AI news..."
+                    />
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+
+                <div class="last-updated" id="lastUpdatedTime"></div>
+            </div>
+
+            <div id="statusMessage"></div>
+
+            <div class="news-grid" id="newsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading latest AI news...</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            class AINewsAggregator {
+                constructor() {
+                    this.articles = [];
+                    this.currentCategory = "all";
+                    this.searchTerm = "";
+                    this.corsProxy = "https://api.allorigins.win/raw?url=";
+                    this.cacheKey = "aiNewsCache";
+                    this.cacheDuration = 15 * 60 * 1000; // 15 minutes
+
+                    this.sectionArticleCounts = {};
+                    this.articlesPerLoad = 5;
+
+                    this.sources = [
+                        {
+                            name: "TechCrunch AI",
+                            url: "https://techcrunch.com/category/artificial-intelligence/feed/",
+                            category: "business",
+                        },
+                        {
+                            name: "MIT Technology Review",
+                            url: "https://www.technologyreview.com/topic/artificial-intelligence/feed/",
+                            category: "research",
+                        },
+                        {
+                            name: "AI News",
+                            url: "https://artificialintelligence-news.com/feed/",
+                            category: "business",
+                        },
+                        {
+                            name: "VentureBeat AI",
+                            url: "https://feeds.feedburner.com/venturebeat/SZYF",
+                            category: "business",
+                        },
+                        {
+                            name: "The Verge AI",
+                            url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+                            category: "tools",
+                        },
+                        {
+                            name: "ArXiv CS.AI",
+                            url: "http://export.arxiv.org/rss/cs.AI",
+                            category: "research",
+                        },
+                        {
+                            name: "Google AI Blog",
+                            url: "https://ai.googleblog.com/feeds/posts/default",
+                            category: "research",
+                        },
+                        {
+                            name: "OpenAI Blog",
+                            url: "https://openai.com/blog/rss.xml",
+                            category: "breaking",
+                        },
+                        {
+                            name: "Towards Data Science AI",
+                            url: "https://towardsdatascience.com/feed/tagged/artificial-intelligence",
+                            category: "research",
+                        },
+                        {
+                            name: "AI Research Blog",
+                            url: "https://blog.research.google/feeds/posts/default/-/Artificial%20Intelligence",
+                            category: "research",
+                        },
+                    ];
+
+                    this.init();
+                }
+
+                init() {
+                    this.bindEvents();
+                    this.loadNews();
+                    this.startAutoRefresh();
+                }
+
+                bindEvents() {
+                    document
+                        .querySelectorAll(".btn[data-category]")
+                        .forEach((btn) => {
+                            btn.addEventListener("click", (e) => {
+                                document
+                                    .querySelectorAll(".btn[data-category]")
+                                    .forEach((b) =>
+                                        b.classList.remove("active"),
+                                    );
+                                e.target.classList.add("active");
+                                this.currentCategory =
+                                    e.target.dataset.category;
+                                this.renderNews();
+                            });
+                        });
+
+                    document
+                        .getElementById("searchInput")
+                        .addEventListener("input", (e) => {
+                            this.searchTerm = e.target.value.toLowerCase();
+                            this.renderNews();
+                        });
+
+                    document
+                        .getElementById("refreshBtn")
+                        .addEventListener("click", () => this.loadNews(true));
+
+                    document
+                        .getElementById("newsGrid")
+                        .addEventListener("click", (e) => {
+                            const articleLink =
+                                e.target.closest(".article")?.dataset.link;
+                            if (articleLink) window.open(articleLink, "_blank");
+
+                            const loadMoreBtn =
+                                e.target.closest(".load-more-btn");
+                            if (loadMoreBtn) {
+                                const category = loadMoreBtn.dataset.category;
+                                this.sectionArticleCounts[category] +=
+                                    this.articlesPerLoad;
+                                this.renderNews();
+                            }
+                        });
+                }
+
+                async loadNews(forceRefresh = false) {
+                    const cachedData = JSON.parse(
+                        localStorage.getItem(this.cacheKey),
+                    );
+
+                    if (
+                        !forceRefresh &&
+                        cachedData &&
+                        new Date().getTime() - cachedData.timestamp <
+                            this.cacheDuration
+                    ) {
+                        this.articles = cachedData.articles.map((article) => ({
+                            ...article,
+                            pubDate: new Date(article.pubDate),
+                        }));
+                        this.updateLastUpdated(cachedData.timestamp);
+                        this.renderNews();
+                        return;
+                    }
+
+                    this.showLoading();
+                    this.showMessage(
+                        "Fetching fresh news from RSS feeds...",
+                        "info",
+                    );
+
+                    try {
+                        const promises = this.sources.map((source) =>
+                            this.fetchFromSource(source),
+                        );
+                        const results = await Promise.allSettled(promises);
+
+                        let fetchedArticles = [];
+                        let successfulSources = 0;
+
+                        results.forEach((result) => {
+                            if (
+                                result.status === "fulfilled" &&
+                                result.value.length > 0
+                            ) {
+                                fetchedArticles.push(...result.value);
+                                successfulSources++;
+                            }
+                        });
+
+                        fetchedArticles.sort((a, b) => b.pubDate - a.pubDate);
+                        this.articles = fetchedArticles;
+
+                        const timestamp = new Date().getTime();
+                        localStorage.setItem(
+                            this.cacheKey,
+                            JSON.stringify({
+                                articles: this.articles,
+                                timestamp,
+                            }),
+                        );
+
+                        this.updateLastUpdated(timestamp);
+                        this.renderNews();
+
+                        if (successfulSources > 0) {
+                            this.showMessage(
+                                `Successfully loaded ${this.articles.length} articles from ${successfulSources} sources.`,
+                                "success",
+                            );
+                            setTimeout(() => this.hideMessage(), 3000);
+                        } else {
+                            this.showMessage(
+                                "Unable to load news feeds. This may be due to CORS restrictions. Please try again later.",
+                                "error",
+                            );
+                        }
+                    } catch (error) {
+                        console.error("Error loading news:", error);
+                        this.showMessage(
+                            "An unexpected error occurred while loading news.",
+                            "error",
+                        );
+                    }
+                }
+
+                async fetchFromSource(source) {
+                    try {
+                        const proxyUrl = `${this.corsProxy}${encodeURIComponent(source.url)}`;
+                        const response = await fetch(proxyUrl);
+                        if (!response.ok)
+                            throw new Error(
+                                `HTTP error! status: ${response.status}`,
+                            );
+                        const text = await response.text();
+                        return this.parseRSS(text, source);
+                    } catch (error) {
+                        console.error(`Error fetching ${source.name}:`, error);
+                        return [];
+                    }
+                }
+
+                parseRSS(rssText, source) {
+                    try {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(rssText, "text/xml");
+                        const items = doc.querySelectorAll("item, entry");
+                        return Array.from(items, (item) =>
+                            this.parseArticle(item, source),
+                        ).filter(Boolean);
+                    } catch (error) {
+                        console.error("Error parsing RSS:", error);
+                        return [];
+                    }
+                }
+
+                parseArticle(item, source) {
+                    const title = this.getTextContent(item, "title");
+                    const description = this.getTextContent(
+                        item,
+                        "description, summary, content",
+                    );
+
+                    if (!this.isAIRelated(title, description)) return null;
+
+                    let link = this.getTextContent(item, "link, id");
+                    const linkElement = item.querySelector("link");
+                    if (linkElement?.getAttribute("href")) {
+                        link = linkElement.getAttribute("href");
+                    }
+
+                    const pubDateStr = this.getTextContent(
+                        item,
+                        "pubDate, published, updated",
+                    );
+
+                    return {
+                        title: this.cleanText(title),
+                        summary: this.cleanText(description, 150),
+                        link: link,
+                        source: source.name,
+                        category: source.category,
+                        pubDate: pubDateStr ? new Date(pubDateStr) : new Date(),
+                        trending: this.isTrending(title, description),
+                    };
+                }
+
+                getTextContent(item, selectors) {
+                    for (const selector of selectors.split(", ")) {
+                        const element = item.querySelector(selector);
+                        if (element) return element.textContent || "";
+                    }
+                    return "";
+                }
+
+                cleanText(text, maxLength = 250) {
+                    const cleaned = text
+                        .replace(/<[^>]*>/g, "")
+                        .replace(/&[^;]+;/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                    return cleaned.length > maxLength
+                        ? `${cleaned.substring(0, maxLength)}...`
+                        : cleaned;
+                }
+
+                isAIRelated(title, description) {
+                    const aiKeywords = [
+                        "artificial intelligence",
+                        "ai",
+                        "machine learning",
+                        "ml",
+                        "deep learning",
+                        "neural network",
+                        "gpt",
+                        "chatgpt",
+                        "openai",
+                        "anthropic",
+                        "claude",
+                        "transformer",
+                        "llm",
+                        "large language model",
+                        "generative ai",
+                        "computer vision",
+                        "nlp",
+                        "natural language processing",
+                        "automation",
+                        "robotics",
+                        "algorithm",
+                        "data science",
+                        "predictive",
+                        "cognitive",
+                    ];
+                    const text = (title + " " + description).toLowerCase();
+                    return aiKeywords.some((keyword) => text.includes(keyword));
+                }
+
+                isTrending(title, description) {
+                    const trendingKeywords = [
+                        "breakthrough",
+                        "launches",
+                        "announces",
+                        "reveals",
+                        "unveils",
+                        "record",
+                        "first",
+                        "new",
+                        "latest",
+                        "breaking",
+                        "major",
+                        "revolutionary",
+                        "game-changing",
+                        "milestone",
+                    ];
+                    const text = (title + " " + description).toLowerCase();
+                    return trendingKeywords.some((keyword) =>
+                        text.includes(keyword),
+                    );
+                }
+
+                getTimeAgo(date) {
+                    const now = new Date();
+                    const diffInSeconds = Math.floor((now - date) / 1000);
+
+                    if (diffInSeconds < 60) return "Just now";
+                    const minutes = Math.floor(diffInSeconds / 60);
+                    if (minutes < 60) return `${minutes}m ago`;
+                    const hours = Math.floor(minutes / 60);
+                    if (hours < 24) return `${hours}h ago`;
+                    const days = Math.floor(hours / 24);
+                    return `${days}d ago`;
+                }
+
+                renderNews() {
+                    const newsGrid = document.getElementById("newsGrid");
+
+                    let filteredArticles = this.articles;
+                    if (this.currentCategory !== "all") {
+                        filteredArticles = filteredArticles.filter(
+                            (a) => a.category === this.currentCategory,
+                        );
+                    }
+                    if (this.searchTerm) {
+                        filteredArticles = filteredArticles.filter(
+                            (a) =>
+                                a.title
+                                    .toLowerCase()
+                                    .includes(this.searchTerm) ||
+                                a.summary
+                                    .toLowerCase()
+                                    .includes(this.searchTerm),
+                        );
+                    }
+
+                    if (filteredArticles.length === 0) {
+                        newsGrid.innerHTML = `<div class="news-section"><p style="text-align: center; color: #666; padding: 40px;">No articles found matching your criteria.</p></div>`;
+                        return;
+                    }
+
+                    const groupedArticles =
+                        this.groupByCategory(filteredArticles);
+                    newsGrid.innerHTML = Object.entries(groupedArticles)
+                        .map(([category, articles]) =>
+                            this.renderSection(category, articles),
+                        )
+                        .join("");
+                }
+
+                renderSection(category, articles) {
+                    if (
+                        !this.sectionArticleCounts[category] ||
+                        this.currentCategory !== "all"
+                    ) {
+                        this.sectionArticleCounts[category] =
+                            this.articlesPerLoad;
+                    }
+
+                    const articlesToShow = articles.slice(
+                        0,
+                        this.sectionArticleCounts[category],
+                    );
+                    const remainingCount =
+                        articles.length - articlesToShow.length;
+
+                    const sectionInfo = this.getCategoryInfo(category);
+
+                    const articlesHtml = articlesToShow
+                        .map(
+                            (article) => `
+                        <div class="article" data-link="${article.link}">
+                            <div class="article-title">
+                                ${article.title}
+                                ${article.trending ? '<span class="trending-indicator">TRENDING</span>' : ""}
+                            </div>
+                            <div class="article-meta">
+                                <span class="source">${article.source}</span>
+                                <span class="time">${this.getTimeAgo(article.pubDate)}</span>
+                            </div>
+                            <div class="article-summary">${article.summary}</div>
+                        </div>
+                    `,
+                        )
+                        .join("");
+
+                    const loadMoreButtonHtml =
+                        remainingCount > 0
+                            ? `
+                        <div class="load-more-container">
+                            <button class="load-more-btn" data-category="${category}">
+                                Load More (${remainingCount} remaining)
+                            </button>
+                        </div>
+                    `
+                            : "";
+
+                    return `
+                        <div class="news-section">
+                            <h2 class="section-title">
+                                <i class="${sectionInfo.icon}"></i>
+                                ${sectionInfo.title}
+                            </h2>
+                            ${articlesHtml}
+                            ${loadMoreButtonHtml}
+                        </div>
+                    `;
+                }
+
+                groupByCategory(articles) {
+                    return articles.reduce((groups, article) => {
+                        const category = article.category || "general";
+                        if (!groups[category]) groups[category] = [];
+                        groups[category].push(article);
+                        return groups;
+                    }, {});
+                }
+
+                getCategoryInfo(category) {
+                    const categoryMap = {
+                        breaking: {
+                            title: "Breaking News",
+                            icon: "fas fa-bolt",
+                        },
+                        research: {
+                            title: "Research & Papers",
+                            icon: "fas fa-microscope",
+                        },
+                        business: {
+                            title: "Business & Industry",
+                            icon: "fas fa-chart-line",
+                        },
+                        tools: {
+                            title: "Tools & Applications",
+                            icon: "fas fa-tools",
+                        },
+                        general: {
+                            title: "General AI News",
+                            icon: "fas fa-newspaper",
+                        },
+                    };
+                    return categoryMap[category] || categoryMap.general;
+                }
+
+                showLoading() {
+                    document.getElementById("newsGrid").innerHTML =
+                        `<div class="loading"><div class="spinner"></div><p>Loading latest AI news...</p></div>`;
+                }
+
+                showMessage(message, type) {
+                    const statusMessage =
+                        document.getElementById("statusMessage");
+                    const className =
+                        type === "error"
+                            ? "error-message"
+                            : type === "success"
+                              ? "success-message"
+                              : "info-message";
+                    statusMessage.innerHTML = `<div class="${className}">${message}</div>`;
+                }
+
+                hideMessage() {
+                    document.getElementById("statusMessage").innerHTML = "";
+                }
+
+                updateLastUpdated(timestamp) {
+                    const date = new Date(timestamp);
+                    document.getElementById("lastUpdatedTime").textContent =
+                        `Last updated: ${date.toLocaleTimeString()}`;
+                }
+
+                startAutoRefresh() {
+                    setInterval(() => this.loadNews(true), this.cacheDuration);
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                new AINewsAggregator();
+            });
+        </script>
+    </body>
+</html>
