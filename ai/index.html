@@ -85,15 +85,6 @@
                 transform: scale(1.05);
             }
 
-            .refresh-btn {
-                background: linear-gradient(45deg, #28a745, #20c997);
-                margin-left: 20px;
-            }
-
-            .refresh-btn:hover {
-                box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
-            }
-
             .search-bar {
                 position: relative;
                 max-width: 400px;
@@ -338,16 +329,13 @@
                     <button class="btn" data-category="trending">
                         <i class="fas fa-fire"></i> Trending
                     </button>
+                    <button class="btn" data-category="industry">
+                        Industry
+                    </button>
                     <button class="btn" data-category="research">
                         Research
                     </button>
-                    <button class="btn" data-category="business">
-                        Business
-                    </button>
-                    <button class="btn" data-category="tools">Tools</button>
-                    <button class="btn refresh-btn" id="refreshBtn">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
+                    <button class="btn" data-category="media">Media</button>
                 </div>
 
                 <div class="search-bar">
@@ -388,17 +376,8 @@
                     this.currentCategory = "all";
                     this.searchTerm = "";
                     this.currentPage = 1;
-                    this.articlesPerPage = 20; // Increased articles per page
+                    this.articlesPerPage = 20;
 
-                    // ==============================================================================
-                    // IMPORTANT: CHANGE THIS URL
-                    // ==============================================================================
-                    // This must be the URL to your *static* articles.json file on PythonAnywhere.
-                    // To get this, go to your Web tab on PythonAnywhere. Under "Static files",
-                    // set the URL to `/articles.json` and the Directory to the folder where your
-                    // script saves the file (e.g., `/home/ggottli/mysite`).
-                    // The final URL will be `https://ggottli.pythonanywhere.com/articles.json`.
-                    // ==============================================================================
                     this.articlesUrl =
                         "https://ggottli.pythonanywhere.com/articles.json";
 
@@ -423,7 +402,7 @@
                                 e.currentTarget.classList.add("active");
                                 this.currentCategory =
                                     e.currentTarget.dataset.category;
-                                this.currentPage = 1; // Reset to first page on category change
+                                this.currentPage = 1;
                                 this.renderNews();
                             });
                         });
@@ -432,13 +411,9 @@
                         .getElementById("searchInput")
                         .addEventListener("input", (e) => {
                             this.searchTerm = e.target.value.toLowerCase();
-                            this.currentPage = 1; // Reset to first page on search
+                            this.currentPage = 1;
                             this.renderNews();
                         });
-
-                    document
-                        .getElementById("refreshBtn")
-                        .addEventListener("click", () => this.loadNews());
 
                     document
                         .getElementById("loadMoreBtn")
@@ -457,9 +432,8 @@
                 }
 
                 async loadNews() {
-                    this.showLoading("Fetching latest news from the server...");
+                    this.showLoading("Fetching latest news...");
                     try {
-                        // Add a cache-busting parameter to the URL to get the freshest file
                         const response = await fetch(
                             `${this.articlesUrl}?t=${new Date().getTime()}`,
                         );
@@ -470,7 +444,6 @@
                         }
                         const articles = await response.json();
 
-                        // Add the 'trending' flag on the client-side
                         this.articles = articles.map((article) => ({
                             ...article,
                             trending: this.isTrending(
@@ -493,7 +466,6 @@
                         );
                         document.getElementById("newsGrid").innerHTML = "";
                     } finally {
-                        // Auto-hide success message after 3 seconds
                         setTimeout(() => this.hideMessage(), 3000);
                     }
                 }
@@ -548,7 +520,6 @@
                     const loadMoreContainer =
                         document.getElementById("loadMoreContainer");
 
-                    // Filter articles first
                     this.filteredArticles = this.articles.filter((article) => {
                         const categoryMatch =
                             this.currentCategory === "all" ||
@@ -574,7 +545,6 @@
                         return;
                     }
 
-                    // Paginate the filtered articles
                     const articlesToShow = this.filteredArticles.slice(
                         0,
                         this.currentPage * this.articlesPerPage,
@@ -600,7 +570,6 @@
 
                     newsGrid.innerHTML = sectionHtml;
 
-                    // Show or hide the "Load More" button
                     if (articlesToShow.length < this.filteredArticles.length) {
                         const remaining =
                             this.filteredArticles.length -
@@ -635,17 +604,17 @@
                             title: "Trending News",
                             icon: "fas fa-fire",
                         },
+                        industry: {
+                            title: "Industry News",
+                            icon: "fas fa-building",
+                        },
                         research: {
-                            title: "Research & Papers",
-                            icon: "fas fa-microscope",
+                            title: "Research & Labs",
+                            icon: "fas fa-flask",
                         },
-                        business: {
-                            title: "Business & Industry",
-                            icon: "fas fa-chart-line",
-                        },
-                        tools: {
-                            title: "Tools & Applications",
-                            icon: "fas fa-tools",
+                        media: {
+                            title: "Media & Commentary",
+                            icon: "fas fa-video",
                         },
                     };
                     return (
