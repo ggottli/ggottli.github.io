@@ -1,157 +1,195 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Greg Gottlieb - Portfolio</title>
-    <style>
-        body {
-            background-color: #1E1E1E;
-            color: #FFFFFF;
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Greg Gottlieb - Portfolio</title>
+        <style>
+            body {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                font-family: "Courier New", monospace;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
 
-        #terminal {
-            background-color: #2E2E2E;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            width: 80%;
-            max-width: 600px;
-        }
+            #terminal {
+                background-color: #2e2e2e;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                width: 80%;
+                max-width: 600px;
+            }
 
-        .command {
-            color: #00FF00;
-        }
+            .command {
+                color: #00ff00;
+            }
 
-        .output {
-            color: #FFFFFF;
-        }
+            .output {
+                color: #ffffff;
+            }
 
-        .comment {
-            color: #808080;
-        }
+            .comment {
+                color: #808080;
+            }
 
-        a.link {
-            color: #00FFFF;
-            text-decoration: none;
-        }
+            a.link {
+                color: #00ffff;
+                text-decoration: none;
+            }
 
-        a.link:hover {
-            text-decoration: underline;
-            color: #FFFFFF;
-        }
+            a.link:hover {
+                text-decoration: underline;
+                color: #ffffff;
+            }
 
-        /* Search style */
-        #searchInput, #searchForm button {
-            background-color: #333;
-            border: none;
-            color: #00FF00;
-            padding: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-        }
+            /* Search style */
+            #searchInput,
+            #searchForm button {
+                background-color: #333;
+                border: none;
+                color: #00ff00;
+                padding: 5px;
+                font-family: "Courier New", monospace;
+                font-size: 16px;
+            }
 
-        #searchInput {
-            margin-right: 10px;
-            width: calc(100% - 80px);
-        }
-
-        #searchForm button {
-            padding: 5px 15px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: #1E1E1E;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        #searchForm button:hover {
-            background-color: #45a049;
-        }
-
-        #searchInput:focus, #searchForm button:focus {
-            outline: none;
-        }
-
-        @media (max-width: 600px) {
-            #searchInput, #searchForm button {
-                display: block;
-                width: 100%;
-                box-sizing: border-box;
+            #searchInput {
+                margin-right: 10px;
+                width: calc(100% - 80px);
             }
 
             #searchForm button {
-                margin-top: 10px;
+                padding: 5px 15px;
+                cursor: pointer;
+                background-color: #4caf50;
+                color: #1e1e1e;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
-        }
-    </style>
-</head>
-<body>
-    <div id="terminal">
-        <div class="command">> welcome_message</div>
-        <div class="output">Hello, I'm Greg Gottlieb, a passionate developer.</div>
-        
-        <div class="command">> about</div>
-        <div class="output">Lifelong learner looking for software opportunites in AI</div>
 
-        <div class="command">> skills</div>
-        <div class="output">Python, Java, C, C++, R, SQL, HTML, CSS, Git</div>
-
-        <div class="command">> projects</div>
-        <div class="output">
-            - Dashboards<br>
-            - Marketplace
-        </div>
-
-        <div class="command">> contact</div>
-        <div class="output">Feel free to reach out over <a href="mailto:greggottlieb4@gmail.com" class="link">email</a> or connect on <a href="https://www.linkedin.com/in/gregory-gottlieb" class="link">LinkedIn</a></div>
-        
-        <div class="command">> resume</div>
-        <div class="output">Check out my resume: <a href="2024 Resume.pdf" class="link" target="_blank">Resume</a></div>
-
-        <!-- <div class="comment"># Thank you for visiting my portfolio!</div> -->
-
-        <!-- Search bar -->
-        <div class="command">> search</div>
-        <div class="output">
-            <form id="searchForm" style="display: flex; align-items: center;">
-                <input type="text" id="searchInput" placeholder="Type 'home', 'about', 'projects', etc." autofocus>
-                <button type="submit">Go</button>
-            </form>
-        </div>
-    </div>
-    <script>
-        document.getElementById('searchForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            var userInput = document.getElementById('searchInput').value.toLowerCase();
-            switch (userInput) {
-                case 'home':
-                case 'welcome':
-                    window.location.href = 'index.html';
-                    break;
-                case 'about':
-                    window.location.href = 'about.html';
-                    break;
-                case 'projects':
-                    window.location.href = 'projects.html';
-                    break;
-                case 'resume':
-                    window.location.href = '2024 Resume.pdf';
-                    break;
-                case 'contact':
-                    window.location.href = 'https://www.linkedin.com/in/gregory-gottlieb';
-                    break;
-                default:
-                    alert('Invalid command. Try "home", "about", "projects", etc.');
+            #searchForm button:hover {
+                background-color: #45a049;
             }
-        });
-    </script>
-</body>
+
+            #searchInput:focus,
+            #searchForm button:focus {
+                outline: none;
+            }
+
+            @media (max-width: 600px) {
+                #searchInput,
+                #searchForm button {
+                    display: block;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                #searchForm button {
+                    margin-top: 10px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="terminal">
+            <div class="command">> welcome_message</div>
+            <div class="output">
+                Hello, I'm Greg Gottlieb, a passionate developer.
+            </div>
+
+            <div class="command">> about</div>
+            <div class="output">
+                Lifelong learner looking for software opportunites in AI
+            </div>
+
+            <div class="command">> skills</div>
+            <div class="output">
+                Python, Java, C, C++, R, SQL, HTML, CSS, Git
+            </div>
+
+            <div class="command">> projects</div>
+            <div class="output">
+                - Dashboards<br />
+                - Marketplace
+            </div>
+
+            <div class="command">> contact</div>
+            <div class="output">
+                Feel free to reach out over
+                <a href="mailto:greggottlieb4@gmail.com" class="link">email</a>
+                or connect on
+                <a
+                    href="https://www.linkedin.com/in/gregory-gottlieb"
+                    class="link"
+                    >LinkedIn</a
+                >
+            </div>
+
+            <div class="command">> resume</div>
+            <div class="output">
+                Check out my resume:
+                <a href="portfolio/2024 Resume.pdf" class="link" target="_blank"
+                    >Resume</a
+                >
+            </div>
+
+            <!-- <div class="comment"># Thank you for visiting my portfolio!</div> -->
+
+            <!-- Search bar -->
+            <div class="command">> search</div>
+            <div class="output">
+                <form
+                    id="searchForm"
+                    style="display: flex; align-items: center"
+                >
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Type 'home', 'about', 'projects', etc."
+                        autofocus
+                    />
+                    <button type="submit">Go</button>
+                </form>
+            </div>
+        </div>
+        <script>
+            document
+                .getElementById("searchForm")
+                .addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    var userInput = document
+                        .getElementById("searchInput")
+                        .value.toLowerCase();
+                    switch (userInput) {
+                        case "home":
+                        case "welcome":
+                            window.location.href = "portfolio/index.html";
+                            break;
+                        case "about":
+                            window.location.href = "portfolio/about.html";
+                            break;
+                        case "projects":
+                            window.location.href = "portfolio/projects.html";
+                            break;
+                        case "resume":
+                            window.location.href = "portfolio/2024 Resume.pdf";
+                            break;
+                        case "contact":
+                            window.location.href =
+                                "https://www.linkedin.com/in/gregory-gottlieb";
+                            break;
+                        default:
+                            alert(
+                                'Invalid command. Try "home", "about", "projects", etc.',
+                            );
+                    }
+                });
+        </script>
+    </body>
 </html>
