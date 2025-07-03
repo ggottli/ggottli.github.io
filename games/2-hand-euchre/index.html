@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Two-Handed Euchre</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                font-family: "Poppins", sans-serif;
+                background-color: #1a202c;
+                background-image: radial-gradient(circle, #3c366b, #1a202c);
+                color: #e2e8f0;
+                overflow-x: hidden;
+            }
+            .card {
+                width: 60px;
+                height: 90px;
+                border-radius: 6px;
+                border: 1px solid #4a5568;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                font-weight: bold;
+                position: relative;
+                transition:
+                    transform 0.3s ease-in-out,
+                    box-shadow 0.3s ease-in-out;
+                user-select: none;
+                background-color: #2d3748;
+                box-shadow:
+                    0 2px 4px rgba(0, 0, 0, 0.3),
+                    0 8px 16px rgba(0, 0, 0, 0.2);
+            }
+            .card.playable {
+                cursor: pointer;
+            }
+            .card.playable:hover {
+                transform: translateY(-10px) scale(1.08);
+                box-shadow:
+                    0 0 25px rgba(56, 189, 248, 0.7),
+                    0 6px 12px rgba(0, 0, 0, 0.4);
+                border-color: #38bdf8;
+            }
+            .card.face-down {
+                background-image:
+                    radial-gradient(
+                        circle at 20% 20%,
+                        #60a5fa 5%,
+                        transparent 6%
+                    ),
+                    radial-gradient(
+                        circle at 80% 20%,
+                        #60a5fa 5%,
+                        transparent 6%
+                    ),
+                    radial-gradient(
+                        circle at 50% 50%,
+                        #60a5fa 10%,
+                        transparent 11%
+                    ),
+                    radial-gradient(
+                        circle at 20% 80%,
+                        #60a5fa 5%,
+                        transparent 6%
+                    ),
+                    radial-gradient(
+                        circle at 80% 80%,
+                        #60a5fa 5%,
+                        transparent 6%
+                    ),
+                    linear-gradient(to bottom right, #1e40af, #3b82f6);
+            }
+            .card.red {
+                color: #f87171;
+            }
+            .card.black {
+                color: #f0f9ff;
+            }
+            .card-rank {
+                font-size: 1.8rem;
+            }
+            .card-suit {
+                font-size: 1.2rem;
+            }
+
+            @media (min-width: 640px) {
+                .card {
+                    width: 80px;
+                    height: 120px;
+                    border-radius: 8px;
+                }
+                .card-rank {
+                    font-size: 2.5rem;
+                }
+                .card-suit {
+                    font-size: 1.5rem;
+                }
+            }
+
+            .message-box {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(26, 32, 44, 0.95);
+                border: 1px solid #4a5568;
+                padding: 2rem;
+                border-radius: 1rem;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                z-index: 50;
+                text-align: center;
+                width: 90%;
+                max-width: 450px;
+            }
+            .trump-btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                transition:
+                    background-color 0.2s,
+                    transform 0.2s;
+            }
+            .trump-btn:hover {
+                transform: scale(1.05);
+            }
+
+            /* --- Animations --- */
+            .trick-card-enter {
+                animation: card-fly-in 0.5s ease-out forwards;
+            }
+            @keyframes card-fly-in {
+                from {
+                    transform: scale(0.5) translateY(-100px);
+                    opacity: 0;
+                }
+                to {
+                    transform: scale(1) translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            .fly-off-player {
+                animation: fly-off-player 0.8s ease-in forwards;
+            }
+            @keyframes fly-off-player {
+                to {
+                    transform: translateY(300px) scale(0.2);
+                    opacity: 0;
+                }
+            }
+
+            .fly-off-bot {
+                animation: fly-off-bot 0.8s ease-in forwards;
+            }
+            @keyframes fly-off-bot {
+                to {
+                    transform: translateY(-300px) scale(0.2);
+                    opacity: 0;
+                }
+            }
+        </style>
+    </head>
+    <body
+        class="flex flex-col items-center justify-center min-h-screen p-2 sm:p-4"
+    >
+        <div id="game-container" class="w-full max-w-5xl mx-auto">
+            <!-- Scoreboard & Trump -->
+            <div
+                class="flex justify-between items-center mb-4 p-3 sm:p-4 bg-gray-900/50 rounded-lg shadow-lg border border-gray-700"
+            >
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <h1
+                        class="text-base sm:text-xl md:text-2xl font-bold text-cyan-400"
+                    >
+                        Two-Handed Euchre
+                    </h1>
+                    <button
+                        id="rules-btn"
+                        class="text-xs sm:text-sm bg-gray-700 hover:bg-gray-600 text-cyan-300 font-semibold py-1 px-3 rounded-full transition-colors"
+                    >
+                        Rules
+                    </button>
+                </div>
+                <div id="trump-display" class="text-center">
+                    <h2 class="text-base sm:text-lg font-semibold">Trump</h2>
+                    <p id="trump-suit" class="text-2xl sm:text-3xl font-bold">
+                        -
+                    </p>
+                </div>
+                <div class="flex space-x-2 sm:space-x-4 md:space-x-8">
+                    <div class="text-center">
+                        <h2 class="text-base sm:text-lg font-semibold">
+                            Player
+                        </h2>
+                        <p
+                            id="player-score"
+                            class="text-xl sm:text-2xl font-bold text-green-400"
+                        >
+                            0
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-base sm:text-lg font-semibold">Bot</h2>
+                        <p
+                            id="bot-score"
+                            class="text-xl sm:text-2xl font-bold text-red-400"
+                        >
+                            0
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bot's Area -->
+            <div class="mb-6">
+                <h3 class="text-lg sm:text-xl font-semibold mb-3 text-center">
+                    Bot (<span id="bot-trick-count">0</span> tricks)
+                </h3>
+                <div
+                    id="bot-in-hand-area"
+                    class="flex justify-center space-x-2 mb-4"
+                ></div>
+                <div
+                    id="bot-table-area"
+                    class="grid grid-cols-4 gap-2 md:gap-4"
+                ></div>
+            </div>
+
+            <!-- Trick Area -->
+            <div
+                id="trick-area"
+                class="flex justify-center items-center my-2 sm:my-4 h-32 sm:h-40 bg-gray-800/50 rounded-lg p-4 space-x-4 border border-gray-700"
+            >
+                <div id="player-trick-card" class="card hidden"></div>
+                <div id="bot-trick-card" class="card hidden"></div>
+            </div>
+
+            <!-- Player's Area -->
+            <div class="mt-6">
+                <h3 class="text-lg sm:text-xl font-semibold mb-3 text-center">
+                    Player (<span id="player-trick-count">0</span> tricks)
+                </h3>
+                <div
+                    id="player-table-area"
+                    class="grid grid-cols-4 gap-2 md:gap-4 mb-4"
+                ></div>
+                <div
+                    id="player-in-hand-area"
+                    class="flex justify-center space-x-2"
+                ></div>
+            </div>
+        </div>
+
+        <!-- Message Box / Modal -->
+        <div id="message-box" class="hidden message-box">
+            <h3 id="message-title" class="text-2xl font-bold mb-4"></h3>
+            <div id="message-text" class="mb-6"></div>
+            <div
+                id="message-buttons"
+                class="flex justify-center flex-wrap gap-2"
+            ></div>
+        </div>
+
+        <script>
+            // --- DOM Elements ---
+            const playerScoreEl = document.getElementById("player-score");
+            const botScoreEl = document.getElementById("bot-score");
+            const playerTrickCountEl =
+                document.getElementById("player-trick-count");
+            const botTrickCountEl = document.getElementById("bot-trick-count");
+            const botTableArea = document.getElementById("bot-table-area");
+            const playerTableArea =
+                document.getElementById("player-table-area");
+            const playerInHandArea = document.getElementById(
+                "player-in-hand-area",
+            );
+            const botInHandArea = document.getElementById("bot-in-hand-area");
+            const playerTrickCardEl =
+                document.getElementById("player-trick-card");
+            const botTrickCardEl = document.getElementById("bot-trick-card");
+            const messageBox = document.getElementById("message-box");
+            const messageTitle = document.getElementById("message-title");
+            const messageText = document.getElementById("message-text");
+            const messageButtons = document.getElementById("message-buttons");
+            const trumpSuitEl = document.getElementById("trump-suit");
+            const rulesBtn = document.getElementById("rules-btn");
+
+            // --- Game State ---
+            let playerScore = 0,
+                botScore = 0,
+                playerTricks = 0,
+                botTricks = 0;
+            let deck = [],
+                playerHand,
+                botHand;
+            let trumpSuit = "",
+                trumpCaller = "",
+                currentTurn = "",
+                trickWinner = "";
+            let leadCard = null,
+                trickCards = [];
+            let isPlayerDealer = false;
+            let handOver = false;
+
+            // --- Card Definitions ---
+            const suits = { S: "♠", H: "♥", D: "♦", C: "♣" };
+            const ranks = ["9", "10", "J", "Q", "K", "A"];
+            const suitColors = { S: "black", H: "red", D: "red", C: "black" };
+            const sameColorSuits = { S: "C", C: "S", H: "D", D: "H" };
+
+            // --- Game Logic ---
+
+            function createDeck() {
+                deck = [];
+                for (const s in suits)
+                    for (const r of ranks) deck.push({ rank: r, suit: s });
+            }
+            function shuffleDeck() {
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+            }
+
+            function dealCards() {
+                playerHand = {
+                    inHand: [],
+                    tableFaceUp: [...Array(4)],
+                    tableFaceDown: [],
+                };
+                botHand = {
+                    inHand: [],
+                    tableFaceUp: [...Array(4)],
+                    tableFaceDown: [],
+                };
+                for (let i = 0; i < 4; i++) {
+                    playerHand.tableFaceDown.push(deck.pop());
+                    botHand.tableFaceDown.push(deck.pop());
+                }
+                for (let i = 0; i < 4; i++) {
+                    playerHand.tableFaceUp[i] = deck.pop();
+                    botHand.tableFaceUp[i] = deck.pop();
+                }
+                for (let i = 0; i < 4; i++) {
+                    playerHand.inHand.push(deck.pop());
+                    botHand.inHand.push(deck.pop());
+                }
+            }
+
+            function createCardElement(card, id) {
+                const el = document.createElement("div");
+                if (card) {
+                    el.className = `card ${suitColors[card.suit]}`;
+                    el.innerHTML = `<span class="card-rank">${card.rank}</span><span class="card-suit">${suits[card.suit]}</span>`;
+                    el.dataset.rank = card.rank;
+                    el.dataset.suit = card.suit;
+                    if (id) el.id = id;
+                } else {
+                    el.className = "card face-down";
+                }
+                return el;
+            }
+
+            function renderHands() {
+                playerTableArea.innerHTML = "";
+                botTableArea.innerHTML = "";
+                playerInHandArea.innerHTML = "";
+                botInHandArea.innerHTML = "";
+
+                for (let i = 0; i < 4; i++) {
+                    const pContainer = document.createElement("div");
+                    pContainer.style.position = "relative";
+                    pContainer.style.width = "fit-content";
+                    pContainer.style.margin = "auto";
+                    if (
+                        playerHand.tableFaceDown[i] ||
+                        playerHand.tableFaceUp[i]
+                    ) {
+                        const fdEl = createCardElement(null);
+                        pContainer.appendChild(fdEl);
+                        if (playerHand.tableFaceUp[i]) {
+                            const fuEl = createCardElement(
+                                playerHand.tableFaceUp[i],
+                                `player-fu-${i}`,
+                            );
+                            fuEl.style.position = "absolute";
+                            fuEl.style.top = "0";
+                            fuEl.style.left = "0";
+                            if (playerHand.tableFaceDown[i]) {
+                                fuEl.style.top = "-4px";
+                                fuEl.style.left = "-4px";
+                            }
+                            pContainer.appendChild(fuEl);
+                        }
+                    }
+                    playerTableArea.appendChild(pContainer);
+
+                    const bContainer = document.createElement("div");
+                    bContainer.style.position = "relative";
+                    bContainer.style.width = "fit-content";
+                    bContainer.style.margin = "auto";
+                    if (botHand.tableFaceDown[i] || botHand.tableFaceUp[i]) {
+                        const fdEl = createCardElement(null);
+                        bContainer.appendChild(fdEl);
+                        if (botHand.tableFaceUp[i]) {
+                            const fuEl = createCardElement(
+                                botHand.tableFaceUp[i],
+                                `bot-fu-${i}`,
+                            );
+                            fuEl.style.position = "absolute";
+                            fuEl.style.top = "0";
+                            fuEl.style.left = "0";
+                            if (botHand.tableFaceDown[i]) {
+                                fuEl.style.top = "-4px";
+                                fuEl.style.left = "-4px";
+                            }
+                            bContainer.appendChild(fuEl);
+                        }
+                    }
+                    botTableArea.appendChild(bContainer);
+                }
+
+                playerHand.inHand.forEach((card, i) => {
+                    if (card)
+                        playerInHandArea.appendChild(
+                            createCardElement(card, `player-inhand-${i}`),
+                        );
+                });
+
+                const botInHandCount = botHand.inHand.filter((c) => c).length;
+                for (let i = 0; i < botInHandCount; i++) {
+                    botInHandArea.appendChild(createCardElement(null));
+                }
+
+                updatePlayableCards();
+            }
+
+            function showMessage(title, text, buttons) {
+                messageTitle.textContent = title;
+                messageText.innerHTML = text;
+                messageButtons.innerHTML = "";
+                buttons.forEach((btn) => {
+                    const buttonEl = document.createElement("button");
+                    buttonEl.textContent = btn.text;
+                    buttonEl.className = btn.class;
+                    buttonEl.onclick = () => {
+                        messageBox.classList.add("hidden");
+                        btn.callback();
+                    };
+                    messageButtons.appendChild(buttonEl);
+                });
+                messageBox.classList.remove("hidden");
+            }
+
+            function showRules() {
+                const rulesTitle = "Two-Handed Euchre Rules";
+                const rulesText = `
+                <div class="text-left text-xs sm:text-sm space-y-2">
+                    <p><strong>Objective:</strong> Be the first player to score 31 points.</p>
+                    <p><strong>Cards:</strong> Uses a 24-card deck (9, 10, J, Q, K, A of all suits).</p>
+                    <p><strong>The Bowers:</strong> The Jack of the trump suit is the 'Right Bower' (highest trump). The other Jack of the same color is the 'Left Bower' (2nd highest trump) and is considered part of the trump suit.</p>
+                    <p><strong>Dealing:</strong> Each player gets 4 cards face-down, 4 face-up on top, and 4 in their hand.</p>
+                    <p><strong>Trump:</strong> The non-dealer chooses trump or passes. If they pass, the dealer MUST choose trump.</p>
+                    <p><strong>Playing:</strong> You can play any face-up card or any card from your hand. You must follow the lead suit if possible. When a face-up card from the table is played, the card underneath is flipped over.</p>
+                    <p><strong>Scoring:</strong> The player who chose trump must win at least 7 of the 12 tricks. If they succeed, both players get 1 point per trick won. If they fail, their opponent gets 12 points.</p>
+                </div>
+            `;
+                showMessage(rulesTitle, rulesText, [
+                    {
+                        text: "Close",
+                        class: "trump-btn bg-cyan-600",
+                        callback: () => {},
+                    },
+                ]);
+            }
+
+            function beginTrumpSelection() {
+                const chooser = isPlayerDealer ? "bot" : "player";
+                if (chooser === "player") promptPlayerToChooseTrump();
+                else setTimeout(botDecidesTrumpOrPass, 800);
+            }
+
+            function promptPlayerToChooseTrump() {
+                const buttons = Object.keys(suits).map((s) => ({
+                    text: suits[s],
+                    class: `trump-btn bg-blue-700 hover:bg-blue-600`,
+                    callback: () => setTrump(s, "player"),
+                }));
+                buttons.push({
+                    text: "Pass",
+                    class: "trump-btn bg-red-700 hover:bg-red-600",
+                    callback: () => {
+                        setTimeout(botChoosesTrump, 800);
+                    },
+                });
+                showMessage(
+                    "Choose Trump or Pass",
+                    "You have the first option to select the trump suit.",
+                    buttons,
+                );
+            }
+
+            function promptPlayerToChooseTrumpMandatory() {
+                const buttons = Object.keys(suits).map((s) => ({
+                    text: suits[s],
+                    class: `trump-btn bg-blue-700 hover:bg-blue-600`,
+                    callback: () => setTrump(s, "player"),
+                }));
+                showMessage(
+                    "You Must Choose Trump",
+                    "The bot passed. You must select the trump suit.",
+                    buttons,
+                );
+            }
+
+            function botDecidesTrumpOrPass() {
+                const suitCounts = { S: 0, H: 0, D: 0, C: 0 };
+                [...botHand.inHand, ...botHand.tableFaceUp]
+                    .filter((c) => c)
+                    .forEach((c) => suitCounts[c.suit]++);
+                const bestSuit = Object.keys(suitCounts).reduce((a, b) =>
+                    suitCounts[a] > suitCounts[b] ? a : b,
+                );
+                if (suitCounts[bestSuit] >= 3) {
+                    setTrump(bestSuit, "bot");
+                } else {
+                    showMessage(
+                        "Bot Passes",
+                        "The bot passes the choice to you.",
+                        [
+                            {
+                                text: "OK",
+                                class: "trump-btn bg-cyan-600",
+                                callback: promptPlayerToChooseTrumpMandatory,
+                            },
+                        ],
+                    );
+                }
+            }
+
+            function botChoosesTrump() {
+                const suitCounts = { S: 0, H: 0, D: 0, C: 0 };
+                [...botHand.inHand, ...botHand.tableFaceUp]
+                    .filter((c) => c)
+                    .forEach((c) => suitCounts[c.suit]++);
+                const bestSuit = Object.keys(suitCounts).reduce((a, b) =>
+                    suitCounts[a] > suitCounts[b] ? a : b,
+                );
+                setTrump(bestSuit, "bot");
+            }
+
+            function setTrump(suit, caller) {
+                trumpSuit = suit;
+                trumpCaller = caller;
+                trumpSuitEl.textContent = suits[trumpSuit];
+                trumpSuitEl.className = `text-2xl sm:text-3xl font-bold ${suitColors[trumpSuit]}`;
+                showMessage(
+                    "Trump Chosen!",
+                    `The trump suit is ${suits[trumpSuit]}. Let the game begin!`,
+                    [
+                        {
+                            text: "Start Playing",
+                            class: "trump-btn bg-green-600 hover:bg-green-500",
+                            callback: startHandPlay,
+                        },
+                    ],
+                );
+            }
+
+            function startHandPlay() {
+                currentTurn = isPlayerDealer ? "bot" : "player";
+                trickWinner = "";
+                if (currentTurn === "player") updatePlayableCards();
+                else setTimeout(botPlayCard, 800);
+            }
+
+            function nextTurn() {
+                currentTurn = trickWinner;
+                if (currentTurn === "player") updatePlayableCards();
+                else setTimeout(botPlayCard, 800);
+            }
+
+            function getEffectiveSuit(card) {
+                if (!card || !trumpSuit) return card ? card.suit : null;
+                const leftBowerSuit = sameColorSuits[trumpSuit];
+                if (card.rank === "J" && card.suit === leftBowerSuit) {
+                    return trumpSuit;
+                }
+                return card.suit;
+            }
+
+            function getCardValue(card) {
+                if (!card) return 0;
+                const effectiveSuit = getEffectiveSuit(card);
+                const rankValue = ranks.indexOf(card.rank);
+
+                if (effectiveSuit === trumpSuit) {
+                    if (card.rank === "J" && card.suit === trumpSuit) return 20;
+                    if (card.rank === "J" && card.suit !== trumpSuit) return 19;
+                    return 10 + rankValue;
+                }
+                return rankValue;
+            }
+
+            function updatePlayableCards() {
+                document
+                    .querySelectorAll(".card")
+                    .forEach((c) => c.classList.remove("playable"));
+                if (currentTurn !== "player") return;
+
+                const playableCards = getPlayerPlayableCards();
+                playableCards.forEach((cardInfo) => {
+                    const el = document.getElementById(cardInfo.id);
+                    if (el) {
+                        el.classList.add("playable");
+                        el.onclick = () => playerPlayCard(cardInfo);
+                    }
+                });
+            }
+
+            function getPlayerPlayableCards() {
+                const allPlayerCards = [
+                    ...playerHand.inHand.map((c, i) => ({
+                        card: c,
+                        id: `player-inhand-${i}`,
+                        source: "inHand",
+                        index: i,
+                    })),
+                    ...playerHand.tableFaceUp.map((c, i) => ({
+                        card: c,
+                        id: `player-fu-${i}`,
+                        source: "tableFaceUp",
+                        index: i,
+                    })),
+                ].filter((item) => item.card);
+
+                if (!leadCard) return allPlayerCards;
+
+                const effectiveLeadSuit = getEffectiveSuit(leadCard);
+                const cardsInLeadSuit = allPlayerCards.filter(
+                    (item) => getEffectiveSuit(item.card) === effectiveLeadSuit,
+                );
+
+                return cardsInLeadSuit.length > 0
+                    ? cardsInLeadSuit
+                    : allPlayerCards;
+            }
+
+            function playerPlayCard(cardInfo) {
+                if (currentTurn !== "player" || handOver) return;
+
+                let playedCard;
+
+                if (cardInfo.source === "inHand") {
+                    playedCard = playerHand.inHand.splice(
+                        cardInfo.index,
+                        1,
+                        null,
+                    )[0];
+                } else {
+                    playedCard = playerHand.tableFaceUp.splice(
+                        cardInfo.index,
+                        1,
+                        null,
+                    )[0];
+                }
+
+                renderHands();
+
+                playerTrickCardEl.innerHTML =
+                    createCardElement(playedCard).innerHTML;
+                playerTrickCardEl.className =
+                    createCardElement(playedCard).className;
+                playerTrickCardEl.classList.remove("hidden", "playable");
+                playerTrickCardEl.classList.add("trick-card-enter");
+
+                trickCards.push({ player: "player", card: playedCard });
+
+                if (!leadCard) {
+                    leadCard = playedCard;
+                    currentTurn = "bot";
+                    updatePlayableCards();
+                    setTimeout(botPlayCard, 800);
+                } else {
+                    currentTurn = "";
+                    updatePlayableCards();
+                    setTimeout(evaluateTrick, 1000);
+                }
+            }
+
+            function botPlayCard() {
+                if (currentTurn !== "bot" || handOver) return;
+
+                const allBotCards = getBotPlayableCards();
+                let cardToPlayInfo;
+
+                if (!leadCard) {
+                    cardToPlayInfo = allBotCards.sort(
+                        (a, b) => getCardValue(b.card) - getCardValue(a.card),
+                    )[0];
+                } else {
+                    const effectiveLeadSuit = getEffectiveSuit(leadCard);
+                    const cardsInLeadSuit = allBotCards.filter(
+                        (item) =>
+                            getEffectiveSuit(item.card) === effectiveLeadSuit,
+                    );
+
+                    if (cardsInLeadSuit.length > 0) {
+                        cardToPlayInfo = cardsInLeadSuit.sort(
+                            (a, b) =>
+                                getCardValue(b.card) - getCardValue(a.card),
+                        )[0];
+                    } else {
+                        cardToPlayInfo = allBotCards.sort(
+                            (a, b) =>
+                                getCardValue(a.card) - getCardValue(b.card),
+                        )[0];
+                    }
+                }
+
+                let playedCard;
+                if (cardToPlayInfo.source === "inHand") {
+                    playedCard = botHand.inHand.splice(
+                        cardToPlayInfo.index,
+                        1,
+                        null,
+                    )[0];
+                } else {
+                    playedCard = botHand.tableFaceUp.splice(
+                        cardToPlayInfo.index,
+                        1,
+                        null,
+                    )[0];
+                }
+
+                botTrickCardEl.innerHTML =
+                    createCardElement(playedCard).innerHTML;
+                botTrickCardEl.className = `card ${suitColors[playedCard.suit]}`;
+                botTrickCardEl.classList.remove("hidden");
+                botTrickCardEl.classList.add("trick-card-enter");
+
+                trickCards.push({ player: "bot", card: playedCard });
+
+                if (!leadCard) {
+                    leadCard = playedCard;
+                    currentTurn = "player";
+                    renderHands();
+                } else {
+                    currentTurn = "";
+                    renderHands();
+                    setTimeout(evaluateTrick, 1000);
+                }
+            }
+
+            function getBotPlayableCards() {
+                return [
+                    ...botHand.inHand.map((c, i) => ({
+                        card: c,
+                        source: "inHand",
+                        index: i,
+                    })),
+                    ...botHand.tableFaceUp.map((c, i) => ({
+                        card: c,
+                        id: `bot-fu-${i}`,
+                        source: "tableFaceUp",
+                        index: i,
+                    })),
+                ].filter((item) => item.card);
+            }
+
+            function evaluateTrick() {
+                if (trickCards.length < 2) return;
+
+                const leadInfo = trickCards.find(
+                    (info) => info.card === leadCard,
+                );
+                const followInfo = trickCards.find(
+                    (info) => info.card !== leadCard,
+                );
+
+                if (!leadInfo || !followInfo) {
+                    clearTrick();
+                    return;
+                }
+
+                const leadCardData = leadInfo.card;
+                const followCardData = followInfo.card;
+                const effectiveLeadSuit = getEffectiveSuit(leadCardData);
+                const effectiveFollowSuit = getEffectiveSuit(followCardData);
+                let winnerInfo;
+
+                if (effectiveFollowSuit === trumpSuit) {
+                    winnerInfo =
+                        effectiveLeadSuit === trumpSuit &&
+                        getCardValue(leadCardData) >
+                            getCardValue(followCardData)
+                            ? leadInfo
+                            : followInfo;
+                } else if (effectiveLeadSuit === trumpSuit) {
+                    winnerInfo = leadInfo;
+                } else if (effectiveFollowSuit === effectiveLeadSuit) {
+                    winnerInfo =
+                        getCardValue(followCardData) >
+                        getCardValue(leadCardData)
+                            ? followInfo
+                            : leadInfo;
+                } else {
+                    winnerInfo = leadInfo;
+                }
+
+                trickWinner = winnerInfo.player;
+
+                if (trickWinner === "player") playerTricks++;
+                else botTricks++;
+
+                playerTrickCountEl.textContent = playerTricks;
+                botTrickCountEl.textContent = botTricks;
+
+                const animationClass =
+                    trickWinner === "player" ? "fly-off-player" : "fly-off-bot";
+                playerTrickCardEl.classList.add(animationClass);
+                botTrickCardEl.classList.add(animationClass);
+
+                setTimeout(clearTrick, 800);
+            }
+
+            function clearTrick() {
+                playerTrickCardEl.classList.add("hidden");
+                botTrickCardEl.classList.add("hidden");
+                playerTrickCardEl.className = "card hidden";
+                botTrickCardEl.className = "card hidden";
+                leadCard = null;
+                trickCards = [];
+
+                flipExposedCards();
+            }
+
+            function flipExposedCards() {
+                let cardsFlipped = false;
+                for (let i = 0; i < 4; i++) {
+                    if (
+                        playerHand.tableFaceUp[i] === null &&
+                        playerHand.tableFaceDown[i] !== null
+                    ) {
+                        playerHand.tableFaceUp[i] = playerHand.tableFaceDown[i];
+                        playerHand.tableFaceDown[i] = null;
+                        cardsFlipped = true;
+                    }
+                    if (
+                        botHand.tableFaceUp[i] === null &&
+                        botHand.tableFaceDown[i] !== null
+                    ) {
+                        botHand.tableFaceUp[i] = botHand.tableFaceDown[i];
+                        botHand.tableFaceDown[i] = null;
+                        cardsFlipped = true;
+                    }
+                }
+                renderHands();
+
+                if (playerTricks + botTricks === 12) {
+                    setTimeout(endHand, 500);
+                } else {
+                    setTimeout(nextTurn, 150);
+                }
+            }
+
+            function endHand() {
+                handOver = true;
+                let winnerText = "";
+
+                if (trumpCaller === "player") {
+                    if (playerTricks >= 7) {
+                        playerScore += playerTricks;
+                        botScore += botTricks;
+                        winnerText = `You made trump! You get ${playerTricks} points.`;
+                    } else {
+                        botScore += 12;
+                        winnerText = `You failed to make trump! Bot gets 12 points.`;
+                    }
+                } else {
+                    if (botTricks >= 7) {
+                        botScore += botTricks;
+                        playerScore += playerTricks;
+                        winnerText = `Bot made trump! Bot gets ${botTricks} points.`;
+                    } else {
+                        playerScore += 12;
+                        winnerText = `Bot failed to make trump! You get 12 points.`;
+                    }
+                }
+                playerScoreEl.textContent = playerScore;
+                botScoreEl.textContent = botScore;
+
+                if (playerScore >= 31 || botScore >= 31) {
+                    const finalWinner =
+                        playerScore >= botScore ? "Player" : "Bot";
+                    showMessage(
+                        `${finalWinner} Wins the Game!`,
+                        `Final Score: Player ${playerScore} - Bot ${botScore}`,
+                        [
+                            {
+                                text: "Play Again",
+                                class: "trump-btn bg-cyan-600",
+                                callback: resetGame,
+                            },
+                        ],
+                    );
+                } else {
+                    showMessage("Hand Over", winnerText, [
+                        {
+                            text: "Next Hand",
+                            class: "trump-btn bg-cyan-600",
+                            callback: startNewHand,
+                        },
+                    ]);
+                }
+            }
+
+            function startNewHand() {
+                handOver = false;
+                playerTricks = 0;
+                botTricks = 0;
+                playerTrickCountEl.textContent = "0";
+                botTrickCountEl.textContent = "0";
+                trumpSuitEl.textContent = "-";
+                trumpSuitEl.className = "text-2xl sm:text-3xl font-bold";
+                isPlayerDealer = !isPlayerDealer;
+                createDeck();
+                shuffleDeck();
+                dealCards();
+                renderHands();
+                beginTrumpSelection();
+            }
+
+            function resetGame() {
+                playerScore = 0;
+                botScore = 0;
+                playerScoreEl.textContent = "0";
+                botScoreEl.textContent = "0";
+                isPlayerDealer = false;
+                startNewHand();
+            }
+
+            window.onload = () => {
+                showMessage(
+                    "Welcome to Euchre!",
+                    "A two-handed variation. Get ready to play.",
+                    [
+                        {
+                            text: "Start Game",
+                            class: "trump-btn bg-cyan-600 hover:bg-cyan-500",
+                            callback: resetGame,
+                        },
+                    ],
+                );
+                rulesBtn.addEventListener("click", showRules);
+            };
+        </script>
+    </body>
+</html>
