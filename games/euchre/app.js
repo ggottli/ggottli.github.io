@@ -1,18 +1,17 @@
-// Euchre Simulator - Core Logic
+// Euchre Simulator - Full-featured with Step-By-Step Insights
 class EuchreSimulator {
   constructor() {
     this.suits = ["S", "H", "D", "C"];
     this.ranks = ["9", "T", "J", "Q", "K", "A"];
     this.suitSymbols = { S: "♠", H: "♥", D: "♦", C: "♣" };
     this.rankNames = { 9: "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" };
-
-    this.currentGame = null;
     this.resetBatchStats();
-
     this.initializeUI();
+
+    this.sbsGame = null;
   }
 
-  // Card utilities
+  // --- Core Game Logic & AI ---
   createDeck() {
     const deck = [];
     for (const suit of this.suits) {
@@ -22,7 +21,6 @@ class EuchreSimulator {
     }
     return deck;
   }
-
   shuffleDeck(deck) {
     const shuffled = [...deck];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -31,20 +29,16 @@ class EuchreSimulator {
     }
     return shuffled;
   }
-
   getCardValue(card, trumpSuit, leadSuit = null) {
     const { suit, rank } = card;
     const effectiveSuit = this.getEffectiveSuit(card, trumpSuit);
     let value = 0;
-
     const rankValues = { A: 6, K: 5, Q: 4, J: 3, T: 2, 9: 1 };
-
     if (effectiveSuit === trumpSuit) {
       value = 100;
       if (rank === "J") {
-        if (suit === trumpSuit)
-          value += 20; // Right bower
-        else value += 15; // Left bower
+        if (suit === trumpSuit) value += 20;
+        else value += 15;
       } else {
         value += rankValues[rank];
       }
@@ -56,86 +50,47 @@ class EuchreSimulator {
     }
     return value;
   }
-
   getSameColorSuit(suit) {
     const colorMap = { S: "C", C: "S", H: "D", D: "H" };
     return colorMap[suit];
   }
-
   getEffectiveSuit(card, trumpSuit) {
     if (card.rank === "J" && this.getSameColorSuit(card.suit) === trumpSuit) {
       return trumpSuit;
     }
     return card.suit;
   }
-
   cardToString(card) {
+    if (!card) return "";
     return `${this.rankNames[card.rank]}${this.suitSymbols[card.suit]}`;
   }
-
-  // Game logic
+  stringToCard(str) {
+    if (!str) return null;
+    const suitSymbol = str.slice(-1);
+    const rankStr = str.slice(0, -1);
+    const suit = Object.keys(this.suitSymbols).find(
+      (s) => this.suitSymbols[s] === suitSymbol,
+    );
+    const rank = Object.keys(this.rankNames).find(
+      (r) => this.rankNames[r] === rankStr,
+    );
+    return { suit, rank };
+  }
   deal(dealerIndex = 3) {
     const deck = this.shuffleDeck(this.createDeck());
     const hands = [[], [], [], []];
-
     for (let i = 0; i < 20; i++) {
       hands[(dealerIndex + 1 + i) % 4].push(deck[i]);
     }
-
     const upcard = deck[20];
     return { hands, upcard, dealer: dealerIndex };
   }
-
-  calculateHandScore(hand, trumpSuit) {
-    let score = 0;
-    let trumpCount = 0;
-    let hasRight = false;
-    let hasLeft = false;
-
-    for (const card of hand) {
-      const effectiveSuit = this.getEffectiveSuit(card, trumpSuit);
-      if (effectiveSuit === trumpSuit) {
-        trumpCount++;
-        if (card.rank === "J") {
-          if (card.suit === trumpSuit) hasRight = true;
-          else hasLeft = true;
-        }
-        score += this.getCardValue(card, trumpSuit);
-      } else if (card.rank === "A") {
-        score += 4;
-      }
-    }
-
-    if (hasRight) score += 10;
-    if (hasLeft) score += 5;
-    score += Math.pow(trumpCount, 2);
-
-    return score;
-  }
-
-  shouldBid(hand, upcard, trumpSuit, aggressiveness, isRoundTwo, isDealer) {
-    const handWithUpcard = !isRoundTwo && isDealer ? [...hand, upcard] : hand;
-    const handScore = this.calculateHandScore(handWithUpcard, trumpSuit);
-
-    let baseThreshold = isRoundTwo ? 28 : 35;
-    if (isDealer) baseThreshold -= 5;
-
-    const threshold = baseThreshold - (aggressiveness - 50) * 0.15;
-    const shouldCall = handScore >= threshold;
-    if (!shouldCall) return { bid: false };
-
-    const lonerThreshold = 65 - (aggressiveness - 50) * 0.1;
-    return { bid: true, loner: handScore >= lonerThreshold };
-  }
-
   dealerDiscard(hand, trumpSuit) {
     let discardCandidate = null;
     let lowestValue = Infinity;
-
     const nonTrumpCards = hand.filter(
       (c) => this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
     );
-
     if (nonTrumpCards.length > 0) {
       for (const card of nonTrumpCards) {
         const value = this.getCardValue(card, trumpSuit);
@@ -151,21 +106,17 @@ class EuchreSimulator {
       );
       discardCandidate = sortedTrump[0];
     }
-
     const index = hand.findIndex((c) => c === discardCandidate);
     if (index > -1) {
       hand.splice(index, 1);
     }
   }
-
   determineWinner(trick, trickPlayers, trumpSuit, leadSuit) {
     let winnerIndex = 0;
     let highestValue = -1;
-
     for (let i = 0; i < trick.length; i++) {
       const card = trick[i];
       const value = this.getCardValue(card, trumpSuit, leadSuit);
-
       if (value > highestValue) {
         highestValue = value;
         winnerIndex = i;
@@ -173,69 +124,6 @@ class EuchreSimulator {
     }
     return trickPlayers[winnerIndex];
   }
-
-  playCard(hand, trick, trumpSuit, leadSuit, aggressiveness) {
-    // FIX: The entire card playing logic is updated to use the 'aggressiveness' parameter.
-    const validCards = this.getValidCards(hand, leadSuit, trumpSuit);
-    if (validCards.length === 1) return validCards[0];
-
-    // Sort cards from lowest value to highest
-    validCards.sort(
-      (a, b) =>
-        this.getCardValue(a, trumpSuit, leadSuit) -
-        this.getCardValue(b, trumpSuit, leadSuit),
-    );
-    const lowestCard = validCards[0];
-    const highestCard = validCards[validCards.length - 1];
-
-    if (leadSuit === null) {
-      // We are leading the trick
-      // An aggressive player is more likely to lead with their highest card.
-      // We'll use a random roll against their aggressiveness score.
-      const roll = Math.random() * 100;
-      if (roll < aggressiveness) {
-        return highestCard; // Play high
-      } else {
-        return lowestCard; // Play low
-      }
-    } else {
-      // We are following
-      const currentWinningCard = [...trick].sort(
-        (a, b) =>
-          this.getCardValue(b, trumpSuit, leadSuit) -
-          this.getCardValue(a, trumpSuit, leadSuit),
-      )[0];
-      const winningValue = this.getCardValue(
-        currentWinningCard,
-        trumpSuit,
-        leadSuit,
-      );
-
-      // Find all cards in our hand that can win the trick
-      const winningCards = validCards.filter(
-        (c) => this.getCardValue(c, trumpSuit, leadSuit) > winningValue,
-      );
-
-      if (winningCards.length > 0) {
-        // We have at least one card that can win the trick.
-        // Aggressive players will be more willing to use a winning card.
-        const willingnessToWin = 20 + aggressiveness; // Base 20% + aggressiveness score
-        const roll = Math.random() * 100;
-
-        if (roll < willingnessToWin) {
-          // Play the SMALLEST card that can still win the trick.
-          return winningCards[0];
-        } else {
-          // Decided to be conservative and save high cards.
-          return lowestCard;
-        }
-      } else {
-        // We cannot win the trick, so we must play our lowest card (sluff).
-        return lowestCard;
-      }
-    }
-  }
-
   getValidCards(hand, leadSuit, trumpSuit) {
     if (!leadSuit) return hand;
     const cardsInLeadSuit = hand.filter(
@@ -243,18 +131,151 @@ class EuchreSimulator {
     );
     return cardsInLeadSuit.length > 0 ? cardsInLeadSuit : hand;
   }
+  calculateHandScore(hand, trumpSuit) {
+    let score = 0;
+    let trumpCount = 0;
+    let hasRight = false;
+    let hasLeft = false;
+    for (const card of hand) {
+      if (this.getEffectiveSuit(card, trumpSuit) === trumpSuit) {
+        trumpCount++;
+        if (card.rank === "J") {
+          if (card.suit === trumpSuit) hasRight = true;
+          else hasLeft = true;
+        }
+      }
+    }
+    if (hasRight && hasLeft) score += 30;
+    else if (hasRight) score += 15;
+    else if (hasLeft) score += 8;
+    score += Math.pow(trumpCount, 2.5);
+    score +=
+      hand.filter(
+        (c) =>
+          c.rank === "A" && this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
+      ).length * 3;
+    return score;
+  }
+  getBestCall(hand, potentialSuits, upcard, isRoundTwo, settings) {
+    let bestCall = { suit: null, score: -1, loner: false };
+    const callThreshold = isRoundTwo
+      ? settings.r2Threshold
+      : settings.r1Threshold;
+    const handForEval = isRoundTwo ? hand : [...hand, upcard];
+    for (const suit of potentialSuits) {
+      const score = this.calculateHandScore(handForEval, suit);
+      if (score > bestCall.score) {
+        bestCall.score = score;
+        bestCall.suit = suit;
+      }
+    }
+    if (bestCall.score >= callThreshold) {
+      if (bestCall.score >= settings.lonerThreshold) {
+        bestCall.loner = true;
+      }
+      return bestCall;
+    }
+    return null;
+  }
+  playCard(
+    hand,
+    trick,
+    trumpSuit,
+    leadSuit,
+    settings,
+    playersInTrick = [],
+    myPlayerIndex,
+  ) {
+    const validCards = this.getValidCards(hand, leadSuit, trumpSuit);
+    if (validCards.length === 1) return validCards[0];
+    validCards.sort(
+      (a, b) =>
+        this.getCardValue(a, trumpSuit, leadSuit) -
+        this.getCardValue(b, trumpSuit, leadSuit),
+    );
+    const lowestCard = validCards[0];
+    const highestCard = validCards[validCards.length - 1];
+    if (leadSuit === null) {
+      const trumpInHand = validCards.filter(
+        (c) => this.getEffectiveSuit(c, trumpSuit) === trumpSuit,
+      );
+      const offSuitInHand = validCards.filter(
+        (c) => this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
+      );
+      if (settings.leadStyle === "trump_heavy" && trumpInHand.length > 0)
+        return trumpInHand[trumpInHand.length - 1];
+      if (settings.leadStyle === "off_suit_first" && offSuitInHand.length > 0)
+        return offSuitInHand[offSuitInHand.length - 1];
+      return highestCard;
+    } else {
+      if (trick.length === 0) return lowestCard;
+      const winnerSoFar = this.determineWinner(
+        trick,
+        playersInTrick,
+        trumpSuit,
+        leadSuit,
+      );
+      if (settings.protectPartner && winnerSoFar % 2 === myPlayerIndex % 2) {
+        return lowestCard;
+      }
+      const winningCardInTrick = trick.find(
+        (c, i) => playersInTrick[i] === winnerSoFar,
+      );
+      const winningValue = this.getCardValue(
+        winningCardInTrick,
+        trumpSuit,
+        leadSuit,
+      );
+      const winningCards = validCards.filter(
+        (c) => this.getCardValue(c, trumpSuit, leadSuit) > winningValue,
+      );
+      return winningCards.length > 0 ? winningCards[0] : lowestCard;
+    }
+  }
 
-  // Simulation methods
+  // --- BATCH SIMULATION LOGIC ---
+  resetBatchStats() {
+    this.batchStats = {
+      totalGames: 0,
+      totalHands: 0,
+      teamWins: [0, 0],
+      stickTheDealerHands: 0,
+      stickTheDealerEuchres: 0,
+      playerStats: Array(4)
+        .fill(0)
+        .map(() => ({
+          calls: 0,
+          passes: 0,
+          round1Calls: 0,
+          round2Calls: 0,
+          stuckAsDealer: 0,
+          lonerAttempts: 0,
+          lonerSuccesses: 0,
+          handsAsMaker: 0,
+          euchresAgainst: 0,
+          euchresFor: 0,
+        })),
+      cardStats: {},
+    };
+    const deck = this.createDeck();
+    for (const card of deck) {
+      const key = `${card.rank}${card.suit}`;
+      this.batchStats.cardStats[key] = {
+        plays: 0,
+        trickWins: 0,
+        inHandOnCall: 0,
+        inHandOnPass: 0,
+      };
+    }
+  }
   runBatchSimulation(numGames) {
     this.resetBatchStats();
     const settings = this.getPlayerSettings();
     let completed = 0;
-
     const runBatch = () => {
       const batchSize = Math.min(100, numGames - completed);
       for (let i = 0; i < batchSize; i++) {
-        const result = this.simulateGame(settings);
-        this.updateBatchStats(result);
+        this.simulateGame(settings);
       }
       completed += batchSize;
       this.updateProgress(completed / numGames);
@@ -266,312 +287,584 @@ class EuchreSimulator {
     };
     runBatch();
   }
-
   simulateGame(settings) {
-    const game = {
-      score: [0, 0],
-      hands: 0,
-      euchres: [0, 0],
-      loners: [0, 0],
-      cardImpact: [],
-    };
+    const game = { score: [0, 0], hands: 0 };
     let dealerIndex = Math.floor(Math.random() * 4);
-
     while (game.score[0] < 10 && game.score[1] < 10) {
       const handResult = this.simulateHand(settings, dealerIndex);
-
-      const winningTeam = handResult.winner % 2;
-      game.score[winningTeam] += handResult.points;
+      game.score[handResult.winner] += handResult.points;
       game.hands++;
-
-      if (handResult.euchre) {
-        game.euchres[winningTeam]++;
-      }
-      if (handResult.loner) {
-        game.loners[handResult.maker % 2]++;
-      }
-      game.cardImpact.push(...handResult.cardImpact);
       dealerIndex = (dealerIndex + 1) % 4;
     }
-
-    return {
-      ...game,
-      winner: game.score[0] >= 10 ? 0 : 1,
-    };
+    this.batchStats.totalGames++;
+    this.batchStats.teamWins[game.score[0] >= 10 ? 0 : 1]++;
   }
 
+  // FIX: Added the missing statistics collection for TCI.
   simulateHand(settings, dealerIndex) {
+    this.batchStats.totalHands++;
     const { hands, upcard } = this.deal(dealerIndex);
     const stickTheDealer = document.getElementById("stick-dealer").checked;
-
     let trumpSuit = null;
     let maker = -1;
     let loner = false;
     let currentHands = hands.map((h) => [...h]);
 
-    // Round 1 bidding
     for (let i = 0; i < 4; i++) {
       const playerIndex = (dealerIndex + 1 + i) % 4;
-      const bid = this.shouldBid(
+      const call = this.getBestCall(
         currentHands[playerIndex],
+        [upcard.suit],
         upcard,
-        upcard.suit,
-        settings[playerIndex].aggressiveness,
         false,
-        playerIndex === dealerIndex,
+        settings[playerIndex],
       );
-      if (bid.bid) {
-        trumpSuit = upcard.suit;
+
+      if (call) {
+        this.batchStats.playerStats[playerIndex].calls++;
+        this.batchStats.playerStats[playerIndex].round1Calls++;
+        currentHands[playerIndex].forEach((c) => {
+          this.batchStats.cardStats[`${c.rank}${c.suit}`].inHandOnCall++;
+        });
+        trumpSuit = call.suit;
         maker = playerIndex;
-        loner = bid.loner;
+        loner = call.loner;
         currentHands[dealerIndex].push(upcard);
         this.dealerDiscard(currentHands[dealerIndex], trumpSuit);
         break;
+      } else {
+        this.batchStats.playerStats[playerIndex].passes++;
+        currentHands[playerIndex].forEach((c) => {
+          this.batchStats.cardStats[`${c.rank}${c.suit}`].inHandOnPass++;
+        });
       }
     }
-
-    // Round 2 bidding
     if (trumpSuit === null) {
+      const otherSuits = this.suits.filter((s) => s !== upcard.suit);
       for (let i = 0; i < 4; i++) {
         const playerIndex = (dealerIndex + 1 + i) % 4;
-        const otherSuits = this.suits.filter((s) => s !== upcard.suit);
-        for (const suit of otherSuits) {
-          const bid = this.shouldBid(
-            currentHands[playerIndex],
-            upcard,
-            suit,
-            settings[playerIndex].aggressiveness,
-            true,
-            playerIndex === dealerIndex,
-          );
-          if (bid.bid) {
-            trumpSuit = suit;
-            maker = playerIndex;
-            loner = bid.loner;
-            break;
-          }
+        const call = this.getBestCall(
+          currentHands[playerIndex],
+          otherSuits,
+          upcard,
+          true,
+          settings[playerIndex],
+        );
+        if (call) {
+          this.batchStats.playerStats[playerIndex].calls++;
+          this.batchStats.playerStats[playerIndex].round2Calls++;
+          currentHands[playerIndex].forEach((c) => {
+            this.batchStats.cardStats[`${c.rank}${c.suit}`].inHandOnCall++;
+          });
+          trumpSuit = call.suit;
+          maker = playerIndex;
+          loner = call.loner;
+          break;
+        } else {
+          this.batchStats.playerStats[playerIndex].passes++;
+          currentHands[playerIndex].forEach((c) => {
+            this.batchStats.cardStats[`${c.rank}${c.suit}`].inHandOnPass++;
+          });
         }
-        if (trumpSuit) break;
       }
     }
-
-    // Stick the Dealer
     if (trumpSuit === null && stickTheDealer) {
       maker = dealerIndex;
-      let bestSuit = "";
-      let bestScore = -1;
-      for (const suit of this.suits.filter((s) => s !== upcard.suit)) {
-        const score = this.calculateHandScore(currentHands[maker], suit);
-        if (score > bestScore) {
-          bestScore = score;
-          bestSuit = suit;
-        }
-      }
-      trumpSuit = bestSuit || this.suits.filter((s) => s !== upcard.suit)[0];
+      const otherSuits = this.suits.filter((s) => s !== upcard.suit);
+      const call = this.getBestCall(
+        currentHands[maker],
+        otherSuits,
+        upcard,
+        true,
+        settings[maker],
+      ) || { suit: otherSuits[0], loner: false };
+      trumpSuit = call.suit;
+      loner = call.loner;
+      this.batchStats.playerStats[maker].calls++;
+      this.batchStats.playerStats[maker].stuckAsDealer++;
+      this.batchStats.stickTheDealerHands++;
     }
-
     if (trumpSuit === null) {
       return this.simulateHand(settings, (dealerIndex + 1) % 4);
     }
-
+    if (loner) {
+      this.batchStats.playerStats[maker].lonerAttempts++;
+    }
+    this.batchStats.playerStats[maker].handsAsMaker++;
     let tricksWon = [0, 0];
     let leader = (dealerIndex + 1) % 4;
-    const handCardImpact = [];
-
     for (let trickNum = 0; trickNum < 5; trickNum++) {
       const trickCards = [];
       let playersInTrick = [];
       let leadSuit = null;
       const makerPartner = (maker + 2) % 4;
-
       let playerOrder = [];
       for (let i = 0; i < 4; i++) {
-        const currentPlayerIndex = (leader + i) % 4;
-        if (loner && currentPlayerIndex === makerPartner) {
-          continue;
-        }
-        playerOrder.push(currentPlayerIndex);
+        const cpi = (leader + i) % 4;
+        if (loner && cpi === makerPartner) continue;
+        playerOrder.push(cpi);
       }
       playersInTrick = playerOrder;
-
-      for (const currentPlayerIndex of playersInTrick) {
+      for (const cpi of playersInTrick) {
         const card = this.playCard(
-          currentHands[currentPlayerIndex],
+          currentHands[cpi],
           trickCards,
           trumpSuit,
           leadSuit,
-          settings[currentPlayerIndex].aggressiveness,
+          settings[cpi],
+          playersInTrick,
+          cpi,
         );
+        this.batchStats.cardStats[`${card.rank}${card.suit}`].plays++;
         if (trickCards.length === 0) {
           leadSuit = this.getEffectiveSuit(card, trumpSuit);
-          handCardImpact.push({ card: card, seat: currentPlayerIndex });
         }
         trickCards.push(card);
-        currentHands[currentPlayerIndex] = currentHands[
-          currentPlayerIndex
-        ].filter((c) => c !== card);
+        currentHands[cpi] = currentHands[cpi].filter(
+          (c) => !(c.rank === card.rank && c.suit === card.suit),
+        );
       }
-
       const winnerOfTrick = this.determineWinner(
         trickCards,
         playersInTrick,
         trumpSuit,
         leadSuit,
       );
+      const winningCard = trickCards[playersInTrick.indexOf(winnerOfTrick)];
+      this.batchStats.cardStats[`${winningCard.rank}${winningCard.suit}`]
+        .trickWins++;
       tricksWon[winnerOfTrick % 2]++;
       leader = winnerOfTrick;
     }
-
     const makerTeam = maker % 2;
     const makersTricks = tricksWon[makerTeam];
     let points = 0;
     let isEuchre = false;
-
     if (makersTricks < 3) {
       points = 2;
       isEuchre = true;
+      this.batchStats.playerStats[maker].euchresAgainst++;
+      this.batchStats.playerStats[(maker + 1) % 4].euchresFor++;
+      this.batchStats.playerStats[(maker + 3) % 4].euchresFor++;
+      if (
+        this.batchStats.playerStats[maker].stuckAsDealer > 0 &&
+        this.batchStats.stickTheDealerHands >
+          this.batchStats.stickTheDealerEuchres
+      ) {
+        if (dealerIndex === maker) this.batchStats.stickTheDealerEuchres++;
+      }
     } else {
       if (loner) {
         points = makersTricks === 5 ? 4 : 1;
+        this.batchStats.playerStats[maker].lonerSuccesses++;
       } else {
         points = makersTricks === 5 ? 2 : 1;
       }
     }
-
-    const winningTeamIndex = isEuchre ? 1 - makerTeam : makerTeam;
-
-    const finalCardImpact = handCardImpact.map((impact) => ({
-      ...impact,
-      handWinner: winningTeamIndex,
-    }));
-
-    return {
-      winner: winningTeamIndex,
-      points: points,
-      euchre: isEuchre,
-      loner: loner && makersTricks >= 3,
-      maker: maker,
-      cardImpact: finalCardImpact,
-    };
+    return { winner: isEuchre ? 1 - makerTeam : makerTeam, points };
   }
 
-  resetBatchStats() {
-    this.batchStats = {
-      totalGames: 0,
-      teamWins: [0, 0],
-      gamesTo10: [],
-      euchres: [0, 0],
-      loners: [0, 0],
-      cardImpact: {},
-    };
-  }
-
-  updateBatchStats(result) {
-    this.batchStats.totalGames++;
-    this.batchStats.teamWins[result.winner]++;
-    this.batchStats.gamesTo10.push(result.hands);
-    this.batchStats.euchres[0] += result.euchres[0];
-    this.batchStats.euchres[1] += result.euchres[1];
-    this.batchStats.loners[0] += result.loners[0];
-    this.batchStats.loners[1] += result.loners[1];
-
-    for (const impact of result.cardImpact) {
-      const key = `${impact.card.rank}${impact.card.suit}-${impact.seat}`;
-      if (!this.batchStats.cardImpact[key]) {
-        this.batchStats.cardImpact[key] = { wins: 0, total: 0 };
-      }
-      this.batchStats.cardImpact[key].total++;
-      if (impact.handWinner === impact.seat % 2) {
-        this.batchStats.cardImpact[key].wins++;
-      }
+  // --- STEP-BY-STEP & INSIGHT ENGINE LOGIC ---
+  getBestPlayWithInsight(playerIndex, gameState) {
+    const validPlays = this.getValidCards(
+      gameState.hands[playerIndex],
+      gameState.leadSuit,
+      gameState.trumpSuit,
+    );
+    if (validPlays.length === 1) {
+      return [
+        {
+          card: validPlays[0],
+          winRate: 100,
+          isBest: true,
+          notes: "Only valid card.",
+        },
+      ];
     }
+    const insights = [];
+    const SIMULATION_COUNT = 250;
+    for (const cardToTest of validPlays) {
+      let wins = 0;
+      for (let i = 0; i < SIMULATION_COUNT; i++) {
+        if (this.runMonteCarloPlay(playerIndex, cardToTest, gameState)) {
+          wins++;
+        }
+      }
+      insights.push({
+        card: cardToTest,
+        winRate: (wins / SIMULATION_COUNT) * 100,
+      });
+    }
+    insights.sort((a, b) => b.winRate - a.winRate);
+    if (insights.length > 0) {
+      insights[0].isBest = true;
+      insights[0].notes = "Highest statistical chance to win the trick.";
+    }
+    return insights;
+  }
+  runMonteCarloPlay(playerIndex, cardToPlay, originalGameState) {
+    let gameState = JSON.parse(JSON.stringify(originalGameState));
+    let hands = gameState.hands;
+    const knownCards = new Set([
+      ...hands[playerIndex].map((c) => `${c.rank}${c.suit}`),
+      ...gameState.trickCards.map((c) => `${c.rank}${c.suit}`),
+    ]);
+    const deck = this.createDeck();
+    let unknownCards = deck.filter(
+      (c) => !knownCards.has(`${c.rank}${c.suit}`),
+    );
+    unknownCards = this.shuffleDeck(unknownCards);
+    for (let i = 0; i < 4; i++) {
+      if (i === playerIndex) continue;
+      hands[i] = unknownCards.splice(0, hands[i].length);
+    }
+    let trick = [...gameState.trickCards];
+    let playersInTrick = [...gameState.playersInTrick];
+    trick.push(cardToPlay);
+    playersInTrick.push(playerIndex);
+    const playerOrder = this.getPlayerOrder(gameState.leader);
+    const startIndex = playersInTrick.length;
+    for (let i = startIndex; i < playerOrder.length; i++) {
+      const currentPlayer = playerOrder[i];
+      if (gameState.loner && currentPlayer === (gameState.maker + 2) % 4)
+        continue;
+      const valid = this.getValidCards(
+        hands[currentPlayer],
+        gameState.leadSuit,
+        gameState.trumpSuit,
+      );
+      const card = valid[Math.floor(Math.random() * valid.length)];
+      trick.push(card);
+      playersInTrick.push(currentPlayer);
+    }
+    const trickWinner = this.determineWinner(
+      trick,
+      playersInTrick,
+      gameState.trumpSuit,
+      gameState.leadSuit,
+    );
+    return trickWinner % 2 === playerIndex % 2;
+  }
+  getPlayerOrder(leader) {
+    let order = [];
+    for (let i = 0; i < 4; i++) {
+      order.push((leader + i) % 4);
+    }
+    return order;
   }
 
-  // UI Methods
+  // --- UI and State Management ---
+
   initializeUI() {
-    this.populateCardSelectors();
     this.bindEventListeners();
     this.updateUI();
-  }
-
-  populateCardSelectors() {
-    const options = [""];
-    const fullDeck = this.createDeck();
-    for (const card of fullDeck) {
-      options.push(this.cardToString(card));
-    }
-
-    document.querySelectorAll(".card-selector").forEach((select) => {
-      select.innerHTML = options
-        .map((opt) => `<option value="${opt}">${opt}</option>`)
-        .join("");
-    });
-
-    const upcardSelect = document.getElementById("upcard-selector");
-    upcardSelect.innerHTML =
-      '<option value="random">Random Upcard</option>' +
-      options
-        .slice(1)
-        .map((opt) => `<option value="${opt}">${opt}</option>`)
-        .join("");
+    this.populateCustomHandSelectors();
   }
 
   bindEventListeners() {
-    document.querySelectorAll('input[name="mode"]').forEach((radio) => {
-      radio.addEventListener("change", () => this.updateUI());
-    });
-
-    document.querySelectorAll(".aggression-slider").forEach((slider) => {
-      slider.addEventListener("input", (e) => {
-        const valueSpan = e.target
-          .closest(".aggression-control")
-          .querySelector(".aggression-value");
-        valueSpan.textContent = e.target.value;
-      });
-    });
-
-    document.querySelectorAll(".strategy-preset").forEach((select) => {
-      select.addEventListener("change", (e) => {
-        const row = e.target.closest(".player-row");
-        const slider = row.querySelector(".aggression-slider");
-        const valueSpan = row.querySelector(".aggression-value");
-
-        const presets = { conservative: 25, normal: 50, aggressive: 75 };
-        slider.value = presets[e.target.value];
-        valueSpan.textContent = slider.value;
-      });
-    });
-
-    document.querySelectorAll('input[name^="card-setup"]').forEach((radio) => {
-      radio.addEventListener("change", (e) => {
-        const row = e.target.closest(".player-row");
-        const customCards = row.querySelector(".custom-cards");
-        customCards.classList.toggle("hidden", e.target.value !== "custom");
-      });
-    });
-
-    document.getElementById("run-simulation").addEventListener("click", () => {
-      const numSims = parseInt(
-        document.getElementById("num-simulations").value,
+    document
+      .querySelectorAll('input[name="mode"]')
+      .forEach((radio) =>
+        radio.addEventListener("change", () => this.updateUI()),
       );
-      this.runBatchSimulation(numSims);
-    });
-
     document
-      .getElementById("deal-hand")
-      .addEventListener("click", () => this.startStepMode());
-    document
-      .getElementById("next-trick")
-      .addEventListener("click", () => this.nextTrick());
+      .getElementById("run-simulation")
+      .addEventListener("click", () =>
+        this.runBatchSimulation(
+          parseInt(document.getElementById("num-simulations").value),
+        ),
+      );
     document
       .getElementById("reset-simulation")
       .addEventListener("click", () => this.resetSimulation());
+    document
+      .getElementById("deal-hand")
+      .addEventListener("click", () => this.handleDealRandomSbs());
+    document
+      .getElementById("deal-random-sbs")
+      .addEventListener("click", () => this.handleDealRandomSbs());
+    document
+      .getElementById("start-custom-hand")
+      .addEventListener("click", () => this.handleStartCustomHand());
+    document
+      .getElementById("next-trick")
+      .addEventListener("click", () => this.advanceSbsGame());
   }
 
+  populateCustomHandSelectors() {
+    const deck = this.createDeck();
+    const options = deck
+      .map(
+        (c) =>
+          `<option value="${this.cardToString(c)}">${this.cardToString(c)}</option>`,
+      )
+      .join("");
+    for (let i = 1; i <= 4; i++) {
+      const container = document.getElementById(`custom-hand-${i}`);
+      let selectors = "";
+      for (let j = 0; j < 5; j++) {
+        selectors += `<select class="form-control">${options}</select>`;
+      }
+      container.innerHTML = selectors;
+    }
+    document.getElementById("custom-upcard").innerHTML =
+      `<option value="">-</option>${options}`;
+  }
+  handleDealRandomSbs() {
+    const { hands, upcard, dealer } = this.deal();
+    this.startStepByStepMode(hands, upcard, dealer);
+  }
+  handleStartCustomHand() {
+    const hands = [[], [], [], []];
+    let upcard = null;
+    let error = false;
+    const seenCards = new Set();
+    for (let i = 1; i <= 4; i++) {
+      const selectors = document.querySelectorAll(`#custom-hand-${i} select`);
+      selectors.forEach((sel) => {
+        const cardStr = sel.value;
+        if (seenCards.has(cardStr)) error = true;
+        seenCards.add(cardStr);
+        hands[i - 1].push(this.stringToCard(cardStr));
+      });
+    }
+    const upcardStr = document.getElementById("custom-upcard").value;
+    if (seenCards.has(upcardStr) || !upcardStr) error = true;
+    upcard = this.stringToCard(upcardStr);
+    if (error) {
+      alert(
+        "Error: Duplicate or missing cards selected. Each of the 21 cards must be unique.",
+      );
+      return;
+    }
+    this.startStepByStepMode(hands, upcard);
+  }
+
+  startStepByStepMode(hands, upcard, dealer = 3) {
+    this.sbsGame = {
+      phase: "bidding",
+      hands: hands.map((h) => [...h]),
+      initialHands: JSON.parse(JSON.stringify(hands)),
+      upcard: upcard,
+      dealer: dealer,
+      currentPlayer: (dealer + 1) % 4,
+      biddingRound: 1,
+      log: [`Hand dealt. Player ${dealer + 2} starts bidding.`],
+      score: [0, 0],
+      trumpSuit: null,
+      maker: -1,
+      loner: false,
+      currentTrick: 0,
+      trickCards: [],
+      playersInTrick: [],
+      leader: (dealer + 1) % 4,
+      leadSuit: null,
+      tricksWon: [0, 0],
+    };
+    document.getElementById("next-trick").textContent = "Auto-Play Next Move";
+    this.updateSbsUI();
+    this.clearInsights();
+  }
+
+  // FIX: The game loop is now truly step-by-step and waits for the user.
+  advanceSbsGame() {
+    if (!this.sbsGame || this.sbsGame.phase === "finished") {
+      alert("Please start a new hand to play.");
+      return;
+    }
+
+    const game = this.sbsGame;
+    const settings = this.getPlayerSettings();
+    const player = game.currentPlayer;
+
+    if (game.phase === "bidding") {
+      const potentialSuits =
+        game.biddingRound === 1
+          ? [game.upcard.suit]
+          : this.suits.filter((s) => s !== game.upcard.suit);
+      const call = this.getBestCall(
+        game.hands[player],
+        potentialSuits,
+        game.upcard,
+        game.biddingRound === 2,
+        settings[player],
+      );
+
+      if (call) {
+        game.trumpSuit = call.suit;
+        game.maker = player;
+        game.loner = call.loner;
+        game.phase = "playing";
+        game.currentPlayer = game.leader;
+        game.log.push(
+          `Player ${player + 1} calls ${this.suitSymbols[game.trumpSuit]} trump.`,
+        );
+        if (game.biddingRound === 1) {
+          game.hands[game.dealer].push(game.upcard);
+          this.dealerDiscard(game.hands[game.dealer], game.trumpSuit);
+          game.log.push(`Dealer (P${game.dealer + 1}) picks up the upcard.`);
+        }
+      } else {
+        game.log.push(`Player ${player + 1} passes.`);
+        game.currentPlayer = (game.currentPlayer + 1) % 4;
+        if (game.currentPlayer === (game.dealer + 1) % 4) {
+          game.biddingRound++;
+          if (game.biddingRound > 2) {
+            if (document.getElementById("stick-dealer").checked) {
+              game.log.push("All players passed. Dealer is stuck.");
+              game.maker = game.dealer;
+              const otherSuits = this.suits.filter(
+                (s) => s !== game.upcard.suit,
+              );
+              const stuckCall = this.getBestCall(
+                game.hands[game.maker],
+                otherSuits,
+                game.upcard,
+                true,
+                settings[game.maker],
+              ) || { suit: otherSuits[0], loner: false };
+              game.trumpSuit = stuckCall.suit;
+              game.loner = stuckCall.loner;
+              game.phase = "playing";
+              game.currentPlayer = game.leader;
+              game.log.push(
+                `Dealer is stuck with ${this.suitSymbols[game.trumpSuit]} trump.`,
+              );
+            } else {
+              game.log.push("All players passed twice. It's a misdeal.");
+              game.phase = "finished";
+            }
+          }
+        }
+      }
+    } else if (game.phase === "playing") {
+      const insights = this.getBestPlayWithInsight(player, game);
+      this.displayInsights(insights, player);
+      const bestMove = insights.find((i) => i.isBest).card;
+      game.log.push(
+        `Player ${player + 1} plays ${this.cardToString(bestMove)}.`,
+      );
+      if (game.trickCards.length === 0)
+        game.leadSuit = this.getEffectiveSuit(bestMove, game.trumpSuit);
+      game.trickCards.push(bestMove);
+      game.playersInTrick.push(player);
+      game.hands[player] = game.hands[player].filter(
+        (c) => !(c.rank === bestMove.rank && c.suit === bestMove.suit),
+      );
+
+      const playersInRound = game.loner ? 3 : 4;
+      if (game.trickCards.length >= playersInRound) {
+        this.updateSbsUI(); // Update to show the full trick
+        const winner = this.determineWinner(
+          game.trickCards,
+          game.playersInTrick,
+          game.trumpSuit,
+          game.leadSuit,
+        );
+        setTimeout(() => {
+          // Pause to let user see the completed trick
+          game.log.push(`--- Player ${winner + 1} wins the trick. ---`);
+          game.tricksWon[winner % 2]++;
+          game.leader = winner;
+          game.currentPlayer = winner;
+          game.trickCards = [];
+          game.playersInTrick = [];
+          game.leadSuit = null;
+          game.currentTrick++;
+          this.clearInsights();
+          this.updateSbsUI();
+
+          if (game.currentTrick === 5) {
+            const makerTeam = game.maker % 2;
+            if (game.tricksWon[makerTeam] >= 3) {
+              game.log.push(
+                `Makers win the hand with ${game.tricksWon[makerTeam]} tricks.`,
+              );
+            } else {
+              game.log.push(`Makers get euchred!`);
+            }
+            game.phase = "finished";
+            document.getElementById("next-trick").textContent = "Hand Over";
+            this.updateSbsUI();
+          }
+        }, 1200);
+        return; // Stop execution until next button click
+      } else {
+        game.currentPlayer = this.getPlayerOrder(game.leader)[
+          game.playersInTrick.length
+        ];
+      }
+    }
+
+    this.updateSbsUI();
+  }
+
+  updateSbsUI() {
+    if (!this.sbsGame) {
+      document.getElementById("step-results").style.display = "none";
+      return;
+    }
+    document.getElementById("step-results").style.display = "block";
+    const game = this.sbsGame;
+    for (let i = 0; i < 4; i++) {
+      const handDiv = document
+        .getElementById(`player-${i + 1}-sbs`)
+        .querySelector(".cards");
+      handDiv.innerHTML = game.hands[i]
+        .map((c) => `<span class="card-display">${this.cardToString(c)}</span>`)
+        .join("");
+    }
+    const trickDiv = document.getElementById("trick-cards");
+    trickDiv.innerHTML = "";
+    const playerOrder = this.getPlayerOrder(game.leader);
+    for (let i = 0; i < 4; i++) {
+      const seat = playerOrder[i];
+      const cardPlayed = game.playersInTrick.includes(seat)
+        ? game.trickCards[game.playersInTrick.indexOf(seat)]
+        : null;
+      const placeholder = document.createElement("div");
+      placeholder.className = "trick-card";
+      if (seat === game.currentPlayer && game.phase !== "finished") {
+        placeholder.classList.add("current-player");
+      }
+      placeholder.innerHTML = `<span class="seat-label">${["N", "E", "S", "W"][seat]}</span><div class="card-placeholder ${cardPlayed ? "played" : ""}">${cardPlayed ? this.cardToString(cardPlayed) : ""}</div>`;
+      trickDiv.appendChild(placeholder);
+    }
+    document.getElementById("trump-suit").textContent = game.trumpSuit
+      ? this.suitSymbols[game.trumpSuit]
+      : "-";
+    document.getElementById("upcard-display").textContent = this.cardToString(
+      game.upcard,
+    );
+    document.getElementById("game-log").innerHTML = game.log
+      .map((msg) => `<p>${msg}</p>`)
+      .join("");
+    document.getElementById("game-log").scrollTop =
+      document.getElementById("game-log").scrollHeight;
+    if (game.phase !== "playing") {
+      this.clearInsights();
+    }
+  }
+  displayInsights(insights, playerIndex) {
+    const tableBody = document.getElementById("move-insights-table");
+    tableBody.innerHTML = insights
+      .map(
+        (i) =>
+          `<tr class="${i.isBest ? "is-best" : ""}"><td>${this.cardToString(i.card)}</td><td>${i.winRate.toFixed(1)}%</td><td>${i.notes || ""}</td></tr>`,
+      )
+      .join("");
+    document.getElementById("insight-player-name").textContent =
+      `for Player ${playerIndex + 1}`;
+  }
+  clearInsights() {
+    document.getElementById("move-insights-table").innerHTML = "";
+    document.getElementById("insight-player-name").textContent = "";
+  }
+
+  // FIX: Swiching to Step mode now correctly shows the panel.
   updateUI() {
     const mode = document.querySelector('input[name="mode"]:checked').value;
     const isBatch = mode === "batch";
-
     document
       .getElementById("batch-settings")
       .classList.toggle("hidden", !isBatch);
@@ -583,140 +876,120 @@ class EuchreSimulator {
       .classList.toggle("hidden", !isBatch);
     document.getElementById("deal-hand").classList.toggle("hidden", isBatch);
     document.getElementById("next-trick").classList.toggle("hidden", isBatch);
-    document.getElementById("step-results").classList.toggle("hidden", isBatch);
+    const sbsPanel = document.getElementById("step-results");
+    sbsPanel.style.display = isBatch ? "none" : "block";
+    if (isBatch) {
+      this.sbsGame = null;
+      this.updateSbsUI();
+    }
   }
 
+  displayBatchResults() {
+    const {
+      totalGames,
+      totalHands,
+      teamWins,
+      stickTheDealerHands,
+      stickTheDealerEuchres,
+      playerStats,
+      cardStats,
+    } = this.batchStats;
+    const teamStatsBody = document.getElementById("team-stats");
+    const avgHands = totalGames > 0 ? (totalHands / totalGames).toFixed(1) : 0;
+    teamStatsBody.innerHTML = `<tr><td>Team 1&3</td><td>${totalGames > 0 ? ((teamWins[0] / totalGames) * 100).toFixed(1) : 0}%</td><td>${avgHands}</td></tr><tr><td>Team 2&4</td><td>${totalGames > 0 ? ((teamWins[1] / totalGames) * 100).toFixed(1) : 0}%</td><td>${avgHands}</td></tr>`;
+    const gameStatsBody = document.getElementById("game-stats");
+    const stdEuchreRate =
+      stickTheDealerHands > 0
+        ? ((stickTheDealerEuchres / stickTheDealerHands) * 100).toFixed(1)
+        : 0;
+    gameStatsBody.innerHTML = `<tr><td>"Stick the Dealer" Hands</td><td>${totalHands > 0 ? ((stickTheDealerHands / totalHands) * 100).toFixed(1) : 0}%</td><td>Percentage of all hands where the dealer was stuck.</td></tr><tr><td>"Stick the Dealer" Euchre Rate</td><td>${stdEuchreRate}%</td><td>Of the times the dealer was stuck, how often they were euchred.</td></tr>`;
+    const playerStatsBody = document.getElementById("player-stats");
+    playerStatsBody.innerHTML = playerStats
+      .map((p, i) => {
+        const totalDecisions = p.calls + p.passes;
+        const callRate =
+          totalDecisions > 0
+            ? ((p.calls / totalDecisions) * 100).toFixed(1)
+            : 0;
+        const makerWinRate =
+          p.handsAsMaker > 0
+            ? (
+                ((p.handsAsMaker - p.euchresAgainst) / p.handsAsMaker) *
+                100
+              ).toFixed(1)
+            : 0;
+        const lonerSuccessRate =
+          p.lonerAttempts > 0
+            ? ((p.lonerSuccesses / p.lonerAttempts) * 100).toFixed(1)
+            : 0;
+        return `<tr><td>Seat ${i + 1}</td><td>${callRate}%</td><td>${p.round1Calls} / ${p.round2Calls}</td><td>${makerWinRate}%</td><td>${p.euchresFor} / ${p.euchresAgainst}</td><td>${p.lonerAttempts}</td><td>${lonerSuccessRate}%</td></tr>`;
+      })
+      .join("");
+    const cardPowerBody = document.getElementById("card-power-stats");
+    const overallCallRate =
+      playerStats.reduce((sum, p) => sum + p.calls, 0) /
+      playerStats.reduce((sum, p) => sum + p.calls + p.passes, 0);
+    const sortedDeck = this.createDeck().sort(
+      (a, b) => this.getCardValue(b, "S") - this.getCardValue(a, "S"),
+    );
+    cardPowerBody.innerHTML = sortedDeck
+      .map((card) => {
+        const key = `${card.rank}${card.suit}`;
+        const stats = cardStats[key];
+        const twr =
+          stats.plays > 0
+            ? ((stats.trickWins / stats.plays) * 100).toFixed(1)
+            : 0;
+        const inHandTotal =
+          (stats.inHandOnCall || 0) + (stats.inHandOnPass || 0);
+        const cardCallRate =
+          inHandTotal > 0
+            ? (stats.inHandOnCall || 0) / inHandTotal
+            : overallCallRate;
+        const tci =
+          overallCallRate > 0
+            ? ((cardCallRate - overallCallRate) / overallCallRate) * 100
+            : 0;
+        return `<tr><td>${this.cardToString(card)}</td><td>${twr}%</td><td style="color: ${tci >= 0 ? "green" : "red"}">${tci >= 0 ? "+" : ""}${tci.toFixed(1)}%</td></tr>`;
+      })
+      .join("");
+  }
   getPlayerSettings() {
     const settings = [];
     for (let i = 1; i <= 4; i++) {
       const row = document.querySelector(`[data-seat="${i}"]`);
       settings.push({
         name: row.querySelector(".player-name").value,
-        aggressiveness: parseInt(row.querySelector(".aggression-slider").value),
+        r1Threshold: parseInt(row.querySelector(".bidding-threshold-r1").value),
+        r2Threshold: parseInt(row.querySelector(".bidding-threshold-r2").value),
+        lonerThreshold: parseInt(row.querySelector(".loner-threshold").value),
+        leadStyle: row.querySelector(".lead-style").value,
+        protectPartner: row.querySelector(".protect-partner").checked,
       });
     }
     return settings;
   }
-
   updateProgress(progress) {
     const progressBar = document.getElementById("progress-bar");
     const progressFill = progressBar.querySelector(".progress-fill");
     const progressText = progressBar.querySelector(".progress-text");
-
     progressBar.classList.remove("hidden");
     progressFill.style.width = `${progress * 100}%`;
     progressText.textContent = `${Math.round(progress * 100)}%`;
-
     if (progress >= 1) {
       setTimeout(() => progressBar.classList.add("hidden"), 1000);
     }
   }
-
-  displayBatchResults() {
-    const stats = this.batchStats;
-    const teamStatsBody = document.getElementById("team-stats");
-    const avgHands =
-      stats.totalGames > 0
-        ? (
-            stats.gamesTo10.reduce((a, b) => a + b, 0) / stats.totalGames
-          ).toFixed(1)
-        : 0;
-
-    teamStatsBody.innerHTML = `
-            <tr>
-                <td>Team 1&3</td>
-                <td>${stats.totalGames > 0 ? ((stats.teamWins[0] / stats.totalGames) * 100).toFixed(1) : 0}%</td>
-                <td>${avgHands}</td>
-                <td>${stats.euchres[0]}</td>
-                <td>${stats.loners[0]}</td>
-            </tr>
-            <tr>
-                <td>Team 2&4</td>
-                <td>${stats.totalGames > 0 ? ((stats.teamWins[1] / stats.totalGames) * 100).toFixed(1) : 0}%</td>
-                <td>${avgHands}</td>
-                <td>${stats.euchres[1]}</td>
-                <td>${stats.loners[1]}</td>
-            </tr>
-        `;
-    this.displayCardImpact();
-  }
-
-  displayCardImpact() {
-    const cardImpactBody = document.getElementById("card-impact");
-    cardImpactBody.innerHTML = "";
-    const cardData = {};
-
-    for (const [key, data] of Object.entries(this.batchStats.cardImpact)) {
-      const [cardStr, seat] = key.split("-");
-      const seatNum = parseInt(seat);
-
-      if (!cardData[cardStr]) {
-        cardData[cardStr] = ["-", "-", "-", "-"];
-      }
-
-      const winRate =
-        data.total > 0 ? ((data.wins / data.total) * 100).toFixed(1) : "0.0";
-      cardData[cardStr][seatNum] = `${winRate}%`;
-    }
-
-    const sortedDeck = this.createDeck().sort(
-      (a, b) => this.getCardValue(b, "S") - this.getCardValue(a, "S"),
-    );
-
-    const rows = sortedDeck
-      .map((card) => {
-        const cardKey = `${card.rank}${card.suit}`;
-        const cardDisplay = this.cardToString(card);
-        const data = cardData[cardKey] || ["-", "-", "-", "-"];
-        return `
-                <tr>
-                    <td>${cardDisplay}</td>
-                    <td>${data[0]}</td>
-                    <td>${data[1]}</td>
-                    <td>${data[2]}</td>
-                    <td>${data[3]}</td>
-                </tr>
-            `;
-      })
-      .join("");
-
-    cardImpactBody.innerHTML = rows;
-  }
-
   resetSimulation() {
-    this.currentGame = null;
+    this.sbsGame = null;
+    this.updateSbsUI();
+    this.clearInsights();
     this.resetBatchStats();
-
     document.getElementById("team-stats").innerHTML = "";
-    document.getElementById("card-impact").innerHTML = "";
-    document.getElementById("game-log").innerHTML =
-      '<p>Click "Run" or "Deal" to start.</p>';
-    document.getElementById("team1-score").textContent = "0";
-    document.getElementById("team2-score").textContent = "0";
-    document.getElementById("trump-suit").textContent = "-";
-    document.getElementById("upcard-display").textContent = "-";
-
-    for (let i = 1; i <= 4; i++) {
-      const playerHand = document
-        .getElementById(`player-${i}`)
-        .querySelector(".cards");
-      if (playerHand) playerHand.innerHTML = "";
-    }
-
-    document.querySelectorAll(".card-placeholder").forEach((p) => {
-      p.textContent = "";
-      p.classList.remove("played");
-    });
-
+    document.getElementById("game-stats").innerHTML = "";
+    document.getElementById("player-stats").innerHTML = "";
+    document.getElementById("card-power-stats").innerHTML = "";
     document.getElementById("progress-bar").classList.add("hidden");
-  }
-
-  // The step-by-step mode would need a significant rewrite to match the new simulation engine.
-  startStepMode() {
-    alert("Step-by-step mode is not fully implemented in this version.");
-  }
-  nextTrick() {
-    alert("Step-by-step mode is not fully implemented in this version.");
   }
 }
 
