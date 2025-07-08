@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Euchre Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="py-16">
+            <h1>Euchre Simulator</h1>
+            <p class="color-text-secondary">Run customizable simulations of 4-player partnership Euchre</p>
+        </header>
+
+        <div class="simulator-layout">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="card">
+                    <div class="card__header">
+                        <h3>Simulation Settings</h3>
+                    </div>
+                    <div class="card__body">
+                        <!-- Mode Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Simulation Mode</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="mode" value="batch" checked>
+                                    Batch/Stats Mode
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="mode" value="step">
+                                    Step-by-Step Mode
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Batch Settings -->
+                        <div id="batch-settings" class="batch-settings">
+                            <div class="form-group">
+                                <label class="form-label" for="num-simulations">Number of Simulations</label>
+                                <input type="number" id="num-simulations" class="form-control" value="10000" min="1" max="1000000">
+                            </div>
+                        </div>
+
+                        <!-- Player Settings -->
+                        <div class="form-group">
+                            <label class="form-label">Player Settings</label>
+                            <div class="player-settings">
+                                <div class="player-row" data-seat="1">
+                                    <div class="player-info">
+                                        <label>Seat 1 (North)</label>
+                                        <input type="text" class="player-name" value="Player 1" placeholder="Player Name">
+                                    </div>
+                                    <div class="player-controls">
+                                        <div class="aggression-control">
+                                            <label>Aggressiveness: <span class="aggression-value">50</span></label>
+                                            <input type="range" class="aggression-slider" min="0" max="100" value="50">
+                                        </div>
+                                        <select class="strategy-preset">
+                                            <option value="conservative">Conservative</option>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="aggressive">Aggressive</option>
+                                        </select>
+                                    </div>
+                                    <div class="card-setup">
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-1" value="random" checked>
+                                            Random Hand
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-1" value="custom">
+                                            Custom Hand
+                                        </label>
+                                        <div class="custom-cards hidden">
+                                            <div class="card-selectors">
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="player-row" data-seat="2">
+                                    <div class="player-info">
+                                        <label>Seat 2 (East)</label>
+                                        <input type="text" class="player-name" value="Player 2" placeholder="Player Name">
+                                    </div>
+                                    <div class="player-controls">
+                                        <div class="aggression-control">
+                                            <label>Aggressiveness: <span class="aggression-value">50</span></label>
+                                            <input type="range" class="aggression-slider" min="0" max="100" value="50">
+                                        </div>
+                                        <select class="strategy-preset">
+                                            <option value="conservative">Conservative</option>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="aggressive">Aggressive</option>
+                                        </select>
+                                    </div>
+                                    <div class="card-setup">
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-2" value="random" checked>
+                                            Random Hand
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-2" value="custom">
+                                            Custom Hand
+                                        </label>
+                                        <div class="custom-cards hidden">
+                                            <div class="card-selectors">
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="player-row" data-seat="3">
+                                    <div class="player-info">
+                                        <label>Seat 3 (South)</label>
+                                        <input type="text" class="player-name" value="Player 3" placeholder="Player Name">
+                                    </div>
+                                    <div class="player-controls">
+                                        <div class="aggression-control">
+                                            <label>Aggressiveness: <span class="aggression-value">50</span></label>
+                                            <input type="range" class="aggression-slider" min="0" max="100" value="50">
+                                        </div>
+                                        <select class="strategy-preset">
+                                            <option value="conservative">Conservative</option>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="aggressive">Aggressive</option>
+                                        </select>
+                                    </div>
+                                    <div class="card-setup">
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-3" value="random" checked>
+                                            Random Hand
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-3" value="custom">
+                                            Custom Hand
+                                        </label>
+                                        <div class="custom-cards hidden">
+                                            <div class="card-selectors">
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="player-row" data-seat="4">
+                                    <div class="player-info">
+                                        <label>Seat 4 (West)</label>
+                                        <input type="text" class="player-name" value="Player 4" placeholder="Player Name">
+                                    </div>
+                                    <div class="player-controls">
+                                        <div class="aggression-control">
+                                            <label>Aggressiveness: <span class="aggression-value">50</span></label>
+                                            <input type="range" class="aggression-slider" min="0" max="100" value="50">
+                                        </div>
+                                        <select class="strategy-preset">
+                                            <option value="conservative">Conservative</option>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="aggressive">Aggressive</option>
+                                        </select>
+                                    </div>
+                                    <div class="card-setup">
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-4" value="random" checked>
+                                            Random Hand
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="card-setup-4" value="custom">
+                                            Custom Hand
+                                        </label>
+                                        <div class="custom-cards hidden">
+                                            <div class="card-selectors">
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                                <select class="card-selector"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trump Card Setup -->
+                        <div class="form-group">
+                            <label class="form-label">Trump Card Setup</label>
+                            <div class="trump-setup">
+                                <select id="upcard-selector" class="form-control">
+                                    <option value="random">Random Upcard</option>
+                                </select>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="stick-dealer">
+                                    Stick the Dealer
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <button id="run-simulation" class="btn btn--primary">Run Simulation</button>
+                            <button id="deal-hand" class="btn btn--secondary hidden">Deal Hand</button>
+                            <button id="next-trick" class="btn btn--secondary hidden">Next Trick</button>
+                            <button id="reset-simulation" class="btn btn--outline">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Area -->
+            <div class="output-area">
+                <div class="card">
+                    <div class="card__header">
+                        <h3>Results</h3>
+                        <div id="progress-bar" class="progress-bar hidden">
+                            <div class="progress-fill"></div>
+                            <span class="progress-text">0%</span>
+                        </div>
+                    </div>
+                    <div class="card__body">
+                        <!-- Batch Results -->
+                        <div id="batch-results" class="batch-results hidden">
+                            <div class="results-section">
+                                <h4>Team Statistics</h4>
+                                <div class="stats-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Team</th>
+                                                <th>Win %</th>
+                                                <th>Avg Games to 10</th>
+                                                <th>Euchres</th>
+                                                <th>Loners</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="team-stats">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="results-section">
+                                <h4>Card Impact Analysis</h4>
+                                <div class="card-impact-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Card</th>
+                                                <th>Seat 1</th>
+                                                <th>Seat 2</th>
+                                                <th>Seat 3</th>
+                                                <th>Seat 4</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="card-impact">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step-by-Step Results -->
+                        <div id="step-results" class="step-results hidden">
+                            <div class="game-state">
+                                <div class="current-score">
+                                    <h4>Score</h4>
+                                    <div class="score-display">
+                                        <span>Team 1&3: <span id="team1-score">0</span></span>
+                                        <span>Team 2&4: <span id="team2-score">0</span></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="trump-display">
+                                    <h4>Trump: <span id="trump-suit">-</span></h4>
+                                    <div class="upcard" id="upcard-display">-</div>
+                                </div>
+                            </div>
+
+                            <div class="game-table">
+                                <div class="player-hands">
+                                    <div class="player-hand" id="player-1">
+                                        <h5>Player 1 (North)</h5>
+                                        <div class="cards"></div>
+                                    </div>
+                                    <div class="player-hand" id="player-2">
+                                        <h5>Player 2 (East)</h5>
+                                        <div class="cards"></div>
+                                    </div>
+                                    <div class="player-hand" id="player-3">
+                                        <h5>Player 3 (South)</h5>
+                                        <div class="cards"></div>
+                                    </div>
+                                    <div class="player-hand" id="player-4">
+                                        <h5>Player 4 (West)</h5>
+                                        <div class="cards"></div>
+                                    </div>
+                                </div>
+
+                                <div class="trick-area">
+                                    <h4>Current Trick</h4>
+                                    <div class="trick-cards" id="trick-cards">
+                                        <div class="trick-card" data-seat="1">
+                                            <span class="seat-label">N</span>
+                                            <div class="card-placeholder"></div>
+                                        </div>
+                                        <div class="trick-card" data-seat="2">
+                                            <span class="seat-label">E</span>
+                                            <div class="card-placeholder"></div>
+                                        </div>
+                                        <div class="trick-card" data-seat="3">
+                                            <span class="seat-label">S</span>
+                                            <div class="card-placeholder"></div>
+                                        </div>
+                                        <div class="trick-card" data-seat="4">
+                                            <span class="seat-label">W</span>
+                                            <div class="card-placeholder"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="game-log">
+                                <h4>Game Log</h4>
+                                <div class="log-content" id="game-log">
+                                    <p>Click "Deal Hand" to start a new game.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
