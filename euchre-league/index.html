@@ -1,185 +1,255 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Euchre League</title>
+        <!-- Supabase JS (ESM) -->
+        <script
+            type="module"
+            src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+        ></script>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Euchre League</title>
-    <!-- Supabase JS (ESM) -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"></script>
-    <link rel="stylesheet" href="styles.css" />
-</head>
+    <body>
+        <main id="app">
+            <!-- LOGIN -->
+            <section id="login" class="section">
+                <h1>The Heritage Group Euchre League</h1>
+                <div class="field">
+                    <label for="loginName">Name:</label>
+                    <input
+                        type="text"
+                        id="loginName"
+                        placeholder="First Last"
+                        required
+                    />
+                </div>
+                <div class="field">
+                    <label for="loginEmail">Email:</label>
+                    <input
+                        type="email"
+                        id="loginEmail"
+                        placeholder="you@thgrp.com"
+                        required
+                    />
+                </div>
+                <button id="loginBtn">Log In</button>
+                <p id="loginMsg" class="error"></p>
+            </section>
 
-<body>
-    <main id="app">
-        <!-- LOGIN -->
-        <section id="login" class="section">
-            <h1>The Heritage Group Euchre League</h1>
-            <div class="field">
-                <label for="loginName">Name:</label>
-                <input type="text" id="loginName" placeholder="First Last" required />
-            </div>
-            <div class="field">
-                <label for="loginEmail">Email:</label>
-                <input type="email" id="loginEmail" placeholder="you@thgrp.com" required />
-            </div>
-            <button id="loginBtn">Log In</button>
-            <p id="loginMsg" class="error"></p>
-        </section>
+            <!-- LEAGUE SELECTION -->
+            <section id="join" class="section hidden">
+                <h2>Welcome, <span id="tempName"></span>!</h2>
+                <div class="field">
+                    <label for="leagueSelect">League:</label>
+                    <select id="leagueSelect">
+                        <option value="competitive">Competitive</option>
+                        <option value="casual">Casual</option>
+                    </select>
+                </div>
+                <button id="joinBtn">Join League</button>
+            </section>
 
-        <!-- LEAGUE SELECTION -->
-        <section id="join" class="section hidden">
-            <h2>Welcome, <span id="tempName"></span>!</h2>
-            <div class="field">
-                <label for="leagueSelect">League:</label>
-                <select id="leagueSelect">
-                    <option value="competitive">Competitive</option>
-                    <option value="casual">Casual</option>
-                </select>
-            </div>
-            <button id="joinBtn">Join League</button>
-        </section>
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="section hidden">
+                <header class="dashboard-header">
+                    <h2>Welcome, <span id="userName"></span>!</h2>
+                    <button id="logoutBtn" class="danger">Logout</button>
+                </header>
 
-        <!-- DASHBOARD -->
-        <section id="dashboard" class="section hidden">
-            <header class="dashboard-header">
-                <h2>Welcome, <span id="userName"></span>!</h2>
-                <button id="logoutBtn" class="danger">Logout</button>
-            </header>
+                <nav class="tabs">
+                    <button data-tab="announcements" class="tab active">
+                        Announcements
+                    </button>
+                    <button data-tab="pairings" class="tab">Pairings</button>
+                    <button data-tab="scores" class="tab">Enter Scores</button>
+                    <button data-tab="history" class="tab">History</button>
+                    <button data-tab="leaderboard" class="tab">
+                        Leaderboard
+                    </button>
+                    <button data-tab="rules" class="tab">Rules</button>
+                    <button data-tab="admin" id="adminTab" class="tab hidden">
+                        Admin
+                    </button>
+                </nav>
 
-            <nav class="tabs">
-                <button data-tab="announcements" class="tab active">Announcements</button>
-                <button data-tab="pairings" class="tab">Pairings</button>
-                <button data-tab="scores" class="tab">Enter Scores</button>
-                <button data-tab="history" class="tab">History</button>
-                <button data-tab="leaderboard" class="tab">Leaderboard</button>
-                <button data-tab="rules" class="tab">Rules</button>
-                <button data-tab="admin" id="adminTab" class="tab hidden">Admin</button>
-            </nav>
+                <div id="content" class="content-area"></div>
+            </section>
+        </main>
 
-            <div id="content" class="content-area"></div>
-        </section>
-    </main>
+        <script type="module">
+            import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+            // --- INIT SUPABASE ---
+            const SUPA_URL = "https://didwbzlecssxmaohjyqe.supabase.co";
+            const SUPA_KEY =
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZHdiemxlY3NzeG1hb2hqeXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTY1OTAsImV4cCI6MjA2NTgzMjU5MH0.VP07HMW5-s3Q2ewAluufQz5oPDHtfTAEguadFY3inT4";
+            const supabase = createClient(SUPA_URL, SUPA_KEY);
 
-        // --- INIT SUPABASE ---
-        const SUPA_URL = 'https://didwbzlecssxmaohjyqe.supabase.co';
-        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZHdiemxlY3NzeG1hb2hqeXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTY1OTAsImV4cCI6MjA2NTgzMjU5MH0.VP07HMW5-s3Q2ewAluufQz5oPDHtfTAEguadFY3inT4';
-        const supabase = createClient(SUPA_URL, SUPA_KEY);
-
-        // --- HELPERS ---
-        const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
-        function generateCombos(players) {
-            const [a, b, c, d] = players;
-            return [
-                [[a, b], [c, d]],
-                [[a, c], [b, d]],
-                [[a, d], [b, c]]
-            ];
-        }
-
-        // DOM shortcuts
-        const $ = s => document.querySelector(s);
-        const $all = s => Array.from(document.querySelectorAll(s));
-        const loginSec = $('#login'), joinSec = $('#join'), dashSec = $('#dashboard');
-        const loginMsg = $('#loginMsg'), tempName = $('#tempName'), userName = $('#userName');
-        const content = $('#content'), adminTab = $('#adminTab');
-
-        let currentUser = null;
-
-        // Show/hide views
-        function showSection(id) {
-            [loginSec, joinSec, dashSec].forEach(s => s.classList.toggle('hidden', s.id !== id));
-        }
-        function selectTab(tab) {
-            $all('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
-            content.innerHTML = '';
-            switch (tab) {
-                case 'announcements': loadAnnouncements(); break;
-                case 'pairings': loadPairings(); break;
-                case 'scores': loadScoreEntry(); break;
-                case 'history': loadHistory(); break;
-                case 'leaderboard': loadLeaderboard(); break;
-                case 'rules': loadRules(); break;
-                case 'admin': loadAdmin(); break;
+            // --- HELPERS ---
+            const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+            function generateCombos(players) {
+                const [a, b, c, d] = players;
+                return [
+                    [
+                        [a, b],
+                        [c, d],
+                    ],
+                    [
+                        [a, c],
+                        [b, d],
+                    ],
+                    [
+                        [a, d],
+                        [b, c],
+                    ],
+                ];
             }
-        }
 
-        // --- AUTH & NAV ---
-        $('#loginBtn').onclick = handleLogin;
-        $('#joinBtn').onclick = handleJoin;
-        $('#logoutBtn').onclick = handleLogout;
-        $all('.tab').forEach(btn => btn.addEventListener('click', () => selectTab(btn.dataset.tab)));
+            // DOM shortcuts
+            const $ = (s) => document.querySelector(s);
+            const $all = (s) => Array.from(document.querySelectorAll(s));
+            const loginSec = $("#login"),
+                joinSec = $("#join"),
+                dashSec = $("#dashboard");
+            const loginMsg = $("#loginMsg"),
+                tempName = $("#tempName"),
+                userName = $("#userName");
+            const content = $("#content"),
+                adminTab = $("#adminTab");
 
-        async function handleLogin() {
-            const name = $('#loginName').value.trim();
-            const email = $('#loginEmail').value.trim();
-            if (!name || !email) {
-                loginMsg.textContent = 'Enter both name & email.'; return;
+            let currentUser = null;
+
+            // Show/hide views
+            function showSection(id) {
+                [loginSec, joinSec, dashSec].forEach((s) =>
+                    s.classList.toggle("hidden", s.id !== id),
+                );
             }
-            loginMsg.textContent = '';
-            if (name.toLowerCase() === 'admin' && email.toLowerCase() === 'admin') {
-                currentUser = { id: 'admin', name: 'Admin', role: 'admin' };
-                setupDashboard(); return;
+            function selectTab(tab) {
+                $all(".tab").forEach((btn) =>
+                    btn.classList.toggle("active", btn.dataset.tab === tab),
+                );
+                content.innerHTML = "";
+                switch (tab) {
+                    case "announcements":
+                        loadAnnouncements();
+                        break;
+                    case "pairings":
+                        loadPairings();
+                        break;
+                    case "scores":
+                        loadScoreEntry();
+                        break;
+                    case "history":
+                        loadHistory();
+                        break;
+                    case "leaderboard":
+                        loadLeaderboard();
+                        break;
+                    case "rules":
+                        loadRules();
+                        break;
+                    case "admin":
+                        loadAdmin();
+                        break;
+                }
             }
-            const { data: user, error } = await supabase
-                .from('users').select('id,name,league').eq('email', email).maybeSingle();
-            if (error) { loginMsg.textContent = error.message; return; }
-            if (user) {
-                currentUser = { ...user }; setupDashboard();
-            } else {
-                currentUser = { name, email };
-                tempName.textContent = name;
-                showSection('join');
+
+            // --- AUTH & NAV ---
+            $("#loginBtn").onclick = handleLogin;
+            $("#joinBtn").onclick = handleJoin;
+            $("#logoutBtn").onclick = handleLogout;
+            $all(".tab").forEach((btn) =>
+                btn.addEventListener("click", () => selectTab(btn.dataset.tab)),
+            );
+
+            async function handleLogin() {
+                const name = $("#loginName").value.trim();
+                const email = $("#loginEmail").value.trim();
+                if (!name || !email) {
+                    loginMsg.textContent = "Enter both name & email.";
+                    return;
+                }
+                loginMsg.textContent = "";
+                if (
+                    name.toLowerCase() === "admin" &&
+                    email.toLowerCase() === "admin"
+                ) {
+                    currentUser = { id: "admin", name: "Admin", role: "admin" };
+                    setupDashboard();
+                    return;
+                }
+                const { data: user, error } = await supabase
+                    .from("users")
+                    .select("id,name,league")
+                    .eq("email", email)
+                    .maybeSingle();
+                if (error) {
+                    loginMsg.textContent = error.message;
+                    return;
+                }
+                if (user) {
+                    currentUser = { ...user };
+                    setupDashboard();
+                } else {
+                    currentUser = { name, email };
+                    tempName.textContent = name;
+                    showSection("join");
+                }
             }
-        }
 
-        // ensure new users start opted-in
-        async function handleJoin() {
-            const league = $('#leagueSelect').value;
-            const { data, error } = await supabase
-                .from('users')
-                .insert({
-                    name: currentUser.name,
-                    email: currentUser.email,
-                    league,
-                    opted_in: true
-                })
-                .select('id,name,league')
-                .single();
-            if (error) return alert(error.message);
-            currentUser = data; setupDashboard();
-        }
-
-        function handleLogout() {
-            currentUser = null;
-            $('#loginName').value = ''; $('#loginEmail').value = '';
-            adminTab.classList.add('hidden');
-            showSection('login');
-        }
-
-        function setupDashboard() {
-            userName.textContent = currentUser.name;
-            if (currentUser.role === 'admin') adminTab.classList.remove('hidden');
-            showSection('dashboard');
-            selectTab(currentUser.role === 'admin' ? 'admin' : 'announcements');
-        }
-
-        // --- ANNOUNCEMENTS ---
-        async function loadAnnouncements() {
-            const { data, error } = await supabase
-                .from('announcements')
-                .select('id,title,body,created_at')
-                .order('created_at', { ascending: false });
-            if (error) {
-                content.innerHTML = `<p>Error loading announcements: ${error.message}</p>`;
-                return;
+            // ensure new users start opted-in
+            async function handleJoin() {
+                const league = $("#leagueSelect").value;
+                const { data, error } = await supabase
+                    .from("users")
+                    .insert({
+                        name: currentUser.name,
+                        email: currentUser.email,
+                        league,
+                        opted_in: true,
+                    })
+                    .select("id,name,league")
+                    .single();
+                if (error) return alert(error.message);
+                currentUser = data;
+                setupDashboard();
             }
-            let html = '<h3>Announcements</h3>';
-            if (currentUser.role === 'admin') {
-                html += `
+
+            function handleLogout() {
+                currentUser = null;
+                $("#loginName").value = "";
+                $("#loginEmail").value = "";
+                adminTab.classList.add("hidden");
+                showSection("login");
+            }
+
+            function setupDashboard() {
+                userName.textContent = currentUser.name;
+                if (currentUser.role === "admin")
+                    adminTab.classList.remove("hidden");
+                showSection("dashboard");
+                selectTab(
+                    currentUser.role === "admin" ? "admin" : "announcements",
+                );
+            }
+
+            // --- ANNOUNCEMENTS ---
+            async function loadAnnouncements() {
+                const { data, error } = await supabase
+                    .from("announcements")
+                    .select("id,title,body,created_at")
+                    .order("created_at", { ascending: false });
+                if (error) {
+                    content.innerHTML = `<p>Error loading announcements: ${error.message}</p>`;
+                    return;
+                }
+                let html = "<h3>Announcements</h3>";
+                if (currentUser.role === "admin") {
+                    html += `
           <form id="announceForm" class="card">
             <h4>New Announcement</h4>
             <div class="field">
@@ -192,194 +262,240 @@
             </div>
             <button type="submit">Send</button>
           </form>`;
-            }
-            html += data.map(a => `
+                }
+                html += data
+                    .map(
+                        (a) => `
         <div class="card">
           <h4>${a.title}</h4>
           <small>${new Date(a.created_at).toLocaleString()}</small>
           <p>${a.body}</p>
-        </div>`).join('');
-            content.innerHTML = html;
-            if (currentUser.role === 'admin') {
-                document.getElementById('announceForm').onsubmit = async e => {
-                    e.preventDefault();
-                    const f = e.target;
-                    await supabase.from('announcements').insert({
-                        title: f.title.value,
-                        body: f.body.value
-                    });
-                    loadAnnouncements();
-                };
-            }
-        }
-
-        // --- PAIRINGS ---
-        async function loadPairings() {
-            // 1) Fetch this user’s opted-in flag
-            const { data: me, error: meErr } = await supabase
-                .from('users')
-                .select('opted_in')
-                .eq('id', currentUser.id)
-                .single();
-            if (meErr) {
-                content.innerHTML = `<p>Error loading status: ${meErr.message}</p>`;
-                return;
+        </div>`,
+                    )
+                    .join("");
+                content.innerHTML = html;
+                if (currentUser.role === "admin") {
+                    document.getElementById("announceForm").onsubmit = async (
+                        e,
+                    ) => {
+                        e.preventDefault();
+                        const f = e.target;
+                        await supabase.from("announcements").insert({
+                            title: f.title.value,
+                            body: f.body.value,
+                        });
+                        loadAnnouncements();
+                    };
+                }
             }
 
-            // 2) Render the opt-in toggle + placeholder
-            content.innerHTML = `
+            // --- PAIRINGS ---
+            async function loadPairings() {
+                // 1) Fetch this user’s opted-in flag
+                const { data: me, error: meErr } = await supabase
+                    .from("users")
+                    .select("opted_in")
+                    .eq("id", currentUser.id)
+                    .single();
+                if (meErr) {
+                    content.innerHTML = `<p>Error loading status: ${meErr.message}</p>`;
+                    return;
+                }
+
+                // 2) Render the opt-in toggle + placeholder
+                content.innerHTML = `
     <div class="card opt-in-card">
       <div class="field opt-in-field">
         <label for="optInToggle">Playing this week?</label>
-        <input type="checkbox" id="optInToggle" ${me.opted_in ? 'checked' : ''}/>
+        <input type="checkbox" id="optInToggle" ${me.opted_in ? "checked" : ""}/>
       </div>
     </div>
     <div id="pairingsContainer"></div>
   `;
-            const toggle = document.getElementById('optInToggle');
-            toggle.addEventListener('change', async e => {
-                const checked = e.target.checked;
-                const { error: updErr } = await supabase
-                    .from('users')
-                    .update({ opted_in: checked })
-                    .eq('id', currentUser.id);
-                if (updErr) alert('Error saving your choice: ' + updErr.message);
-                renderPairs(checked);
-            });
+                const toggle = document.getElementById("optInToggle");
+                toggle.addEventListener("change", async (e) => {
+                    const checked = e.target.checked;
+                    const { error: updErr } = await supabase
+                        .from("users")
+                        .update({ opted_in: checked })
+                        .eq("id", currentUser.id);
+                    if (updErr)
+                        alert("Error saving your choice: " + updErr.message);
+                    renderPairs(checked);
+                });
 
-            // 3) Initial render
-            renderPairs(me.opted_in);
+                // 3) Initial render
+                renderPairs(me.opted_in);
 
-            // 4) Helper: fetch + render all weeks (past & current)
-            async function renderPairs(isIn) {
-                const container = document.getElementById('pairingsContainer');
+                // 4) Helper: fetch + render all weeks (past & current)
+                async function renderPairs(isIn) {
+                    const container =
+                        document.getElementById("pairingsContainer");
 
-                const [uRes, mRes] = await Promise.all([
-                    supabase.from('users').select('id,name'),
-                    supabase.from('matchups').select('week,player_ids,bye').order('week', { ascending: true })
-                ]);
-                if (uRes.error || mRes.error) {
-                    container.innerHTML = `<p>Error loading pairings: ${(uRes.error || mRes.error).message}</p>`;
-                    return;
-                }
+                    const [uRes, mRes] = await Promise.all([
+                        supabase.from("users").select("id,name"),
+                        supabase
+                            .from("matchups")
+                            .select("week,player_ids,bye")
+                            .order("week", { ascending: true }),
+                    ]);
+                    if (uRes.error || mRes.error) {
+                        container.innerHTML = `<p>Error loading pairings: ${(uRes.error || mRes.error).message}</p>`;
+                        return;
+                    }
 
-                const nameMap = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
-                const allGroups = mRes.data;
-                if (!allGroups.length) {
-                    container.innerHTML = '<p>No pairings generated yet.</p>';
-                    return;
-                }
+                    const nameMap = Object.fromEntries(
+                        uRes.data.map((u) => [u.id, u.name]),
+                    );
+                    const allGroups = mRes.data;
+                    if (!allGroups.length) {
+                        container.innerHTML =
+                            "<p>No pairings generated yet.</p>";
+                        return;
+                    }
 
-                // build unique, sorted week list
-                const weeks = Array.from(new Set(allGroups.map(g => g.week))).sort((a, b) => a - b);
-                const maxWeek = weeks[weeks.length - 1];
+                    // build unique, sorted week list
+                    const weeks = Array.from(
+                        new Set(allGroups.map((g) => g.week)),
+                    ).sort((a, b) => a - b);
+                    const maxWeek = weeks[weeks.length - 1];
 
-                let html = '';
-                for (const week of weeks) {
-                    // get all groups for this week
-                    const weekGroups = allGroups.filter(g => g.week === week);
-                    // find any bye and play group
-                    const byeG = weekGroups.find(g => Array.isArray(g.bye) && g.bye.includes(currentUser.id));
-                    const playG = weekGroups.find(g => Array.isArray(g.player_ids) && g.player_ids.includes(currentUser.id) && !byeG);
+                    let html = "";
+                    for (const week of weeks) {
+                        // get all groups for this week
+                        const weekGroups = allGroups.filter(
+                            (g) => g.week === week,
+                        );
+                        // find any bye and play group
+                        const byeG = weekGroups.find(
+                            (g) =>
+                                Array.isArray(g.bye) &&
+                                g.bye.includes(currentUser.id),
+                        );
+                        const playG = weekGroups.find(
+                            (g) =>
+                                Array.isArray(g.player_ids) &&
+                                g.player_ids.includes(currentUser.id) &&
+                                !byeG,
+                        );
 
-                    if (week < maxWeek) {
-                        // past weeks: only show if you played or were on bye
-                        if (playG) {
-                            const partners = playG.player_ids.filter(id => id !== currentUser.id)
-                                .map(id => nameMap[id]).join(', ');
-                            html += `<div class="card"><strong>Week ${week}:</strong> ${partners}</div>`;
-                        } else if (byeG) {
-                            html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
-                        }
-                    } else {
-                        // current week: unified "No game!" for opt-out or bye
-                        if (!isIn || byeG) {
-                            html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
-                        } else if (playG) {
-                            const partners = playG.player_ids.filter(id => id !== currentUser.id)
-                                .map(id => nameMap[id]).join(', ');
-                            html += `<div class="card"><strong>Week ${week}:</strong> ${partners}</div>`;
+                        if (week < maxWeek) {
+                            // past weeks: only show if you played or were on bye
+                            if (playG) {
+                                const partners = playG.player_ids
+                                    .filter((id) => id !== currentUser.id)
+                                    .map((id) => nameMap[id])
+                                    .join(", ");
+                                html += `<div class="card"><strong>Week ${week}:</strong> ${partners}</div>`;
+                            } else if (byeG) {
+                                html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                            }
                         } else {
-                            // in case you’re in neither array (shouldn’t happen)
-                            html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                            // current week: unified "No game!" for opt-out or bye
+                            if (!isIn || byeG) {
+                                html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                            } else if (playG) {
+                                const partners = playG.player_ids
+                                    .filter((id) => id !== currentUser.id)
+                                    .map((id) => nameMap[id])
+                                    .join(", ");
+                                html += `<div class="card"><strong>Week ${week}:</strong> ${partners}</div>`;
+                            } else {
+                                // in case you’re in neither array (shouldn’t happen)
+                                html += `<div class="card"><strong>Week ${week}:</strong> No game!</div>`;
+                            }
                         }
                     }
+
+                    container.innerHTML = html;
+                }
+            }
+
+            // --- ENTER SCORES ---
+            async function loadScoreEntry() {
+                // 1) Fetch all matchups, results, and user names
+                const [mRes, rRes, uRes] = await Promise.all([
+                    supabase
+                        .from("matchups")
+                        .select("id, week, player_ids, bye")
+                        .order("week", { ascending: true }),
+                    supabase
+                        .from("results")
+                        .select("matchup_id, game_num, combo_index, scores"),
+                    supabase.from("users").select("id, name"),
+                ]);
+                if (mRes.error || rRes.error || uRes.error) {
+                    content.innerHTML = `<p>Error loading scores: ${(mRes.error || rRes.error || uRes.error).message}</p>`;
+                    return;
                 }
 
-                container.innerHTML = html;
-            }
-        }
-
-        // --- ENTER SCORES ---
-        async function loadScoreEntry() {
-            // 1) Fetch all matchups, results, and user names
-            const [mRes, rRes, uRes] = await Promise.all([
-                supabase.from('matchups')
-                    .select('id, week, player_ids, bye')
-                    .order('week', { ascending: true }),
-                supabase.from('results')
-                    .select('matchup_id, game_num, combo_index, scores'),
-                supabase.from('users')
-                    .select('id, name')
-            ]);
-            if (mRes.error || rRes.error || uRes.error) {
-                content.innerHTML = `<p>Error loading scores: ${(mRes.error || rRes.error || uRes.error).message}</p>`;
-                return;
-            }
-
-            const nameMap = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
-            const allGroups = mRes.data;
-            const weeks = Array.from(new Set(allGroups.map(g => g.week))).sort((a, b) => a - b);
-            const combosCache = {};
-            let html = '';
-
-            // 2) Build one card per week
-            for (const week of weeks) {
-                // find this week's group & bye info
-                const weekGroups = allGroups.filter(g => g.week === week);
-                const group = weekGroups.find(g =>
-                    Array.isArray(g.player_ids) && g.player_ids.includes(currentUser.id)
+                const nameMap = Object.fromEntries(
+                    uRes.data.map((u) => [u.id, u.name]),
                 );
-                const onBye = weekGroups.some(g =>
-                    Array.isArray(g.bye) && g.bye.includes(currentUser.id)
-                );
+                const allGroups = mRes.data;
+                const weeks = Array.from(
+                    new Set(allGroups.map((g) => g.week)),
+                ).sort((a, b) => a - b);
+                const combosCache = {};
+                let html = "";
 
-                if (!group || onBye) {
-                    html += `
+                // 2) Build one card per week
+                for (const week of weeks) {
+                    // find this week's group & bye info
+                    const weekGroups = allGroups.filter((g) => g.week === week);
+                    const group = weekGroups.find(
+                        (g) =>
+                            Array.isArray(g.player_ids) &&
+                            g.player_ids.includes(currentUser.id),
+                    );
+                    const onBye = weekGroups.some(
+                        (g) =>
+                            Array.isArray(g.bye) &&
+                            g.bye.includes(currentUser.id),
+                    );
+
+                    if (!group || onBye) {
+                        html += `
         <div class="card">
           <h4>Week ${week}</h4>
           <p>No game!</p>
         </div>`;
-                    continue;
-                }
+                        continue;
+                    }
 
-                // user has a group this week
-                combosCache[group.id] = generateCombos(group.player_ids);
-                html += `<div class="card"><h4>Week ${week}</h4>`;
+                    // user has a group this week
+                    combosCache[group.id] = generateCombos(group.player_ids);
+                    html += `<div class="card"><h4>Week ${week}</h4>`;
 
-                for (let game = 1; game <= 3; game++) {
-                    const existing = rRes.data.find(r =>
-                        r.matchup_id === group.id && r.game_num === game
-                    );
-                    const combos = combosCache[group.id];
-                    const teamA = combos[existing?.combo_index ?? 0][0];
-                    const teamB = combos[existing?.combo_index ?? 0][1];
+                    for (let game = 1; game <= 3; game++) {
+                        const existing = rRes.data.find(
+                            (r) =>
+                                r.matchup_id === group.id &&
+                                r.game_num === game,
+                        );
+                        const combos = combosCache[group.id];
+                        const teamA = combos[existing?.combo_index ?? 0][0];
+                        const teamB = combos[existing?.combo_index ?? 0][1];
 
-                    html += `
+                        html += `
         <form id="fm-${group.id}-${game}" class="game-form">
           <h5>Game ${game}</h5>
           <div class="field"><label>Pairings:</label>
-            ${combos.map((c, i) => `
+            ${combos
+                .map(
+                    (c, i) => `
               <div>
                 <input type="radio"
                        name="combo-${group.id}-${game}"
                        value="${i}"
-                       ${existing && existing.combo_index === i ? 'checked' : ''}
-                       ${existing ? 'disabled' : ''}
+                       ${existing && existing.combo_index === i ? "checked" : ""}
+                       ${existing ? "disabled" : ""}
                        required />
                 ${nameMap[c[0][0]]}/${nameMap[c[0][1]]}
                  vs ${nameMap[c[1][0]]}/${nameMap[c[1][1]]}
-              </div>`).join('')}
+              </div>`,
+                )
+                .join("")}
           </div>
 
           <div class="field">
@@ -387,10 +503,14 @@
             <input type="number"
                    name="scoreA-${group.id}-${game}"
                    min="0"
-                   value="${existing
-                            ? existing.scores.find(s => teamA.includes(s.user_id)).points
-                            : ''}"
-                   ${existing ? 'disabled' : ''}
+                   value="${
+                       existing
+                           ? existing.scores.find((s) =>
+                                 teamA.includes(s.user_id),
+                             ).points
+                           : ""
+                   }"
+                   ${existing ? "disabled" : ""}
                    required />
           </div>
           <div class="field">
@@ -398,206 +518,264 @@
             <input type="number"
                    name="scoreB-${group.id}-${game}"
                    min="0"
-                   value="${existing
-                            ? existing.scores.find(s => teamB.includes(s.user_id)).points
-                            : ''}"
-                   ${existing ? 'disabled' : ''}
+                   value="${
+                       existing
+                           ? existing.scores.find((s) =>
+                                 teamB.includes(s.user_id),
+                             ).points
+                           : ""
+                   }"
+                   ${existing ? "disabled" : ""}
                    required />
           </div>
 
-          ${existing
-                            ? `<p><em>Already submitted</em></p>`
-                            : `<button type="submit">Submit Game ${game}</button>`}
+          ${
+              existing
+                  ? `<p><em>Already submitted</em></p>`
+                  : `<button type="submit">Submit Game ${game}</button>`
+          }
         </form>`;
+                    }
+
+                    html += `</div>`;
                 }
 
-                html += `</div>`;
-            }
+                // 3) Render to page
+                content.innerHTML = html;
 
-            // 3) Render to page
-            content.innerHTML = html;
-
-            // 4) Attach handlers only to forms without existing data
-            for (const week of weeks) {
-                const weekGroups = allGroups.filter(g => g.week === week);
-                const group = weekGroups.find(g =>
-                    Array.isArray(g.player_ids) && g.player_ids.includes(currentUser.id)
-                );
-                const onBye = weekGroups.some(g =>
-                    Array.isArray(g.bye) && g.bye.includes(currentUser.id)
-                );
-                if (!group || onBye) continue;
-
-                const combos = combosCache[group.id];
-
-                for (let game = 1; game <= 3; game++) {
-                    const existing = rRes.data.find(r =>
-                        r.matchup_id === group.id && r.game_num === game
+                // 4) Attach handlers only to forms without existing data
+                for (const week of weeks) {
+                    const weekGroups = allGroups.filter((g) => g.week === week);
+                    const group = weekGroups.find(
+                        (g) =>
+                            Array.isArray(g.player_ids) &&
+                            g.player_ids.includes(currentUser.id),
                     );
-                    if (existing) continue;
+                    const onBye = weekGroups.some(
+                        (g) =>
+                            Array.isArray(g.bye) &&
+                            g.bye.includes(currentUser.id),
+                    );
+                    if (!group || onBye) continue;
 
-                    const form = document.getElementById(`fm-${group.id}-${game}`);
-                    if (!form) continue;
+                    const combos = combosCache[group.id];
 
-                    form.onsubmit = async e => {
-                        e.preventDefault();
-                        const f = e.target;
-                        const comboIndex = parseInt(f[`combo-${group.id}-${game}`].value, 10);
-                        const [ta, tb] = combos[comboIndex];
-                        const scoreA = parseInt(f[`scoreA-${group.id}-${game}`].value, 10);
-                        const scoreB = parseInt(f[`scoreB-${group.id}-${game}`].value, 10);
+                    for (let game = 1; game <= 3; game++) {
+                        const existing = rRes.data.find(
+                            (r) =>
+                                r.matchup_id === group.id &&
+                                r.game_num === game,
+                        );
+                        if (existing) continue;
 
-                        const scores = group.player_ids.map(pid => ({
-                            user_id: pid,
-                            points: ta.includes(pid) ? scoreA : scoreB
-                        }));
-                        const winners = scoreA > scoreB ? ta : tb;
+                        const form = document.getElementById(
+                            `fm-${group.id}-${game}`,
+                        );
+                        if (!form) continue;
 
-                        await supabase.from('results').upsert({
-                            matchup_id: group.id,
-                            game_num: game,
-                            combo_index: comboIndex,
-                            scores,
-                            winner_ids: winners
-                        }, { onConflict: ['matchup_id', 'game_num'] });
+                        form.onsubmit = async (e) => {
+                            e.preventDefault();
+                            const f = e.target;
+                            const comboIndex = parseInt(
+                                f[`combo-${group.id}-${game}`].value,
+                                10,
+                            );
+                            const [ta, tb] = combos[comboIndex];
+                            const scoreA = parseInt(
+                                f[`scoreA-${group.id}-${game}`].value,
+                                10,
+                            );
+                            const scoreB = parseInt(
+                                f[`scoreB-${group.id}-${game}`].value,
+                                10,
+                            );
 
-                        selectTab('scores');
-                    };
+                            const scores = group.player_ids.map((pid) => ({
+                                user_id: pid,
+                                points: ta.includes(pid) ? scoreA : scoreB,
+                            }));
+                            const winners = scoreA > scoreB ? ta : tb;
+
+                            await supabase.from("results").upsert(
+                                {
+                                    matchup_id: group.id,
+                                    game_num: game,
+                                    combo_index: comboIndex,
+                                    scores,
+                                    winner_ids: winners,
+                                },
+                                { onConflict: ["matchup_id", "game_num"] },
+                            );
+
+                            selectTab("scores");
+                        };
+                    }
                 }
             }
-        }
 
-        // --- HISTORY ---
-        async function loadHistory() {
-            // 1) Fetch all results, matchups, and user names in parallel
-            const [rRes, mRes, uRes] = await Promise.all([
-                supabase.from('results')
-                    .select('submitted_at, scores, winner_ids, game_num, matchup_id'),
-                supabase.from('matchups')
-                    .select('id, week, player_ids, bye'),
-                supabase.from('users')
-                    .select('id, name')
-            ]);
+            // --- HISTORY ---
+            async function loadHistory() {
+                // 1) Fetch all results, matchups, and user names in parallel
+                const [rRes, mRes, uRes] = await Promise.all([
+                    supabase
+                        .from("results")
+                        .select(
+                            "submitted_at, scores, winner_ids, game_num, matchup_id",
+                        ),
+                    supabase
+                        .from("matchups")
+                        .select("id, week, player_ids, bye"),
+                    supabase.from("users").select("id, name"),
+                ]);
 
-            // 2) Handle any errors
-            if (rRes.error || mRes.error || uRes.error) {
-                content.innerHTML = `<p>Error loading history: ${(rRes.error || mRes.error || uRes.error).message}</p>`;
-                return;
-            }
+                // 2) Handle any errors
+                if (rRes.error || mRes.error || uRes.error) {
+                    content.innerHTML = `<p>Error loading history: ${(rRes.error || mRes.error || uRes.error).message}</p>`;
+                    return;
+                }
 
-            // 3) Build lookup maps
-            const nameMap = Object.fromEntries(uRes.data.map(u => [u.id, u.name]));
-
-            // 4) Gather all distinct weeks, sorted
-            const weeks = Array.from(new Set(mRes.data.map(m => m.week))).sort((a, b) => a - b);
-
-            // 5) Render one card per week
-            let html = '';
-            for (const week of weeks) {
-                // find all matchups for this week
-                const weekMatchups = mRes.data.filter(m => m.week === week);
-
-                // find the ones you participated in
-                const userMatchups = weekMatchups.filter(m =>
-                    Array.isArray(m.player_ids) && m.player_ids.includes(currentUser.id)
+                // 3) Build lookup maps
+                const nameMap = Object.fromEntries(
+                    uRes.data.map((u) => [u.id, u.name]),
                 );
 
-                if (userMatchups.length === 0) {
-                    // you neither played nor were assigned a bye: No game!
-                    html += `
+                // 4) Gather all distinct weeks, sorted
+                const weeks = Array.from(
+                    new Set(mRes.data.map((m) => m.week)),
+                ).sort((a, b) => a - b);
+
+                // 5) Render one card per week
+                let html = "";
+                for (const week of weeks) {
+                    // find all matchups for this week
+                    const weekMatchups = mRes.data.filter(
+                        (m) => m.week === week,
+                    );
+
+                    // find the ones you participated in
+                    const userMatchups = weekMatchups.filter(
+                        (m) =>
+                            Array.isArray(m.player_ids) &&
+                            m.player_ids.includes(currentUser.id),
+                    );
+
+                    if (userMatchups.length === 0) {
+                        // you neither played nor were assigned a bye: No game!
+                        html += `
         <div class="card">
           <h4>Week ${week}</h4>
           <p>No game!</p>
         </div>`;
-                    continue;
-                }
+                        continue;
+                    }
 
-                // for each matchup you had, show its results (or a placeholder if none)
-                for (const mu of userMatchups) {
-                    const results = rRes.data.filter(r => r.matchup_id === mu.id);
+                    // for each matchup you had, show its results (or a placeholder if none)
+                    for (const mu of userMatchups) {
+                        const results = rRes.data.filter(
+                            (r) => r.matchup_id === mu.id,
+                        );
 
-                    if (results.length === 0) {
-                        html += `
+                        if (results.length === 0) {
+                            html += `
           <div class="card">
             <h4>Week ${week}</h4>
             <p>No results submitted yet.</p>
           </div>`;
-                    } else {
-                        for (const r of results) {
-                            html += `
+                        } else {
+                            for (const r of results) {
+                                html += `
             <div class="card">
               <h4>Week ${week} - Game ${r.game_num}</h4>
               <small>${new Date(r.submitted_at).toLocaleString()}</small>
               <ul>
-                ${r.scores.map(s =>
-                                `<li>${nameMap[s.user_id]}: ${s.points}${r.winner_ids.includes(s.user_id) ? ' 🏆' : ''}</li>`
-                            ).join('')}
+                ${r.scores
+                    .map(
+                        (s) =>
+                            `<li>${nameMap[s.user_id]}: ${s.points}${r.winner_ids.includes(s.user_id) ? " 🏆" : ""}</li>`,
+                    )
+                    .join("")}
               </ul>
             </div>`;
+                            }
                         }
                     }
                 }
+
+                // 6) Inject into the page
+                content.innerHTML = html;
             }
 
-            // 6) Inject into the page
-            content.innerHTML = html;
-        }
-
-
-        // --- LEADERBOARD ---
-        async function loadLeaderboard() {
-            const [{ data: users, error: uErr }, { data: res, error: rErr }] = await Promise.all([
-                supabase.from('users').select('id,name,league'),
-                supabase.from('results').select('scores,winner_ids')
-            ]);
-            if (uErr || rErr) {
-                content.innerHTML = `<p>Error: ${(uErr || rErr).message}</p>`; return;
-            }
-            const comp = users.filter(u => u.league === 'competitive');
-            const stats = {};
-            comp.forEach(u => stats[u.id] = { name: u.name, wins: 0, pts: 0, games: 0 });
-            res.forEach(r => {
-                r.scores.forEach(s => {
-                    if (stats[s.user_id]) {
-                        stats[s.user_id].pts += s.points;
-                        stats[s.user_id].games++;
-                    }
+            // --- LEADERBOARD ---
+            async function loadLeaderboard() {
+                const [
+                    { data: users, error: uErr },
+                    { data: res, error: rErr },
+                ] = await Promise.all([
+                    supabase.from("users").select("id,name,league"),
+                    supabase.from("results").select("scores,winner_ids"),
+                ]);
+                if (uErr || rErr) {
+                    content.innerHTML = `<p>Error: ${(uErr || rErr).message}</p>`;
+                    return;
+                }
+                const comp = users.filter((u) => u.league === "competitive");
+                const stats = {};
+                comp.forEach(
+                    (u) =>
+                        (stats[u.id] = {
+                            name: u.name,
+                            wins: 0,
+                            pts: 0,
+                            games: 0,
+                        }),
+                );
+                res.forEach((r) => {
+                    r.scores.forEach((s) => {
+                        if (stats[s.user_id]) {
+                            stats[s.user_id].pts += s.points;
+                            stats[s.user_id].games++;
+                        }
+                    });
+                    r.winner_ids.forEach((w) => {
+                        if (stats[w]) stats[w].wins++;
+                    });
                 });
-                r.winner_ids.forEach(w => { if (stats[w]) stats[w].wins++; });
-            });
-            const rows = Object.values(stats)
-                .sort((a, b) => b.wins - a.wins || b.pts - a.pts)
-                .map(u => `
+                const rows = Object.values(stats)
+                    .sort((a, b) => b.wins - a.wins || b.pts - a.pts)
+                    .map(
+                        (u) => `
           <tr>
             <td>${u.name}</td><td>${u.wins}</td><td>${u.pts}</td>
-            <td>${u.games}</td><td>${u.games ? (u.pts / u.games).toFixed(1) : '0.0'}</td>
-          </tr>`).join('');
-            content.innerHTML = `
+            <td>${u.games}</td><td>${u.games ? (u.pts / u.games).toFixed(1) : "0.0"}</td>
+          </tr>`,
+                    )
+                    .join("");
+                content.innerHTML = `
         <table>
           <thead>
             <tr><th>Player</th><th>Wins</th><th>Points</th><th>Games</th><th>Avg</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>`;
-        }
+            }
 
-        // --- RULES ---
-        function loadRules() {
-            content.innerHTML = `
+            // --- RULES ---
+            function loadRules() {
+                content.innerHTML = `
     <div class="card">
       <h4>League Structure</h4>
       <p>We run two concurrent leagues:</p>
       <ul>
         <li><strong>Competitive:</strong></li>
           <ul>
-            <li>8-week season, 4-player groups, 3 games/week (to 10 points), rotating partners each game.</li>
+            <li>4-week season, 4-player groups, 3 games/week (to 10 points), rotating partners each game.</li>
             <li>Groups determined Monday morning. Games must be played and submitted by Friday that week.</li>
             <li>Ability to opt in or out for the next week before groups are made.</li>
             <li>Standings ordered by wins with points as a tiebreaker</li>
           </ul>
         <li><strong>Casual:</strong></li>
           <ul>
-            <li>8-week season, 4-player groups, optional rotation and scoring.</li>
+            <li>4-week season, 4-player groups, optional rotation and scoring.</li>
             <li>Groups determined Monday morning. Play when best fits for everyone.</li>
             <li>Ability to opt in or out for the next week before groups are made.</li>
             <li>No score tracking or leaderboards</li>
@@ -616,7 +794,8 @@
         <li>“Stick the Dealer” if no one orders up.</li>
         <li>No “Farmer’s Hand” rule.</li>
         <li>No "Partner's Best" rule when going alone.</li>
-        <li>Each game played to 10 points.</li>
+        <li>No "Canadian Loner" rule when ordering trump to your partner.</li>
+        <li>Each game consists of two rotations around the table. Every person will deal twice for eight total deals.</li>
         <li>Scoring:
           <ul>
             <li>1 point for calling trump and winning majority of tricks.</li>
@@ -626,33 +805,40 @@
             <li>4 points for going alone and winning all 5 tricks.</li>
           </ul>
         </li>
+        <li>If a game is tied after eight deals, one more hand will be played to determine the winner.</li>
         <li>Trump order: Jack of trump, Jack of same color, Ace, King, Queen, 10, 9.</li>
         <li>Follow suit if you can; otherwise you may trump or discard.</li>
         <li>The highest card of led suit wins, unless trumped.</li>
       </ul>
     </div>
   `;
-        }
-
-
-        // --- ADMIN PANEL ---
-        let pairingPreview = [];
-        async function loadAdmin() {
-            // fetch users & matchups
-            const [uRes, mRes] = await Promise.all([
-                supabase.from('users').select('id,name,email,league,opted_in'),
-                supabase.from('matchups').select('id,week,league,player_ids').order('week', { ascending: true })
-            ]);
-            if (uRes.error || mRes.error) {
-                content.innerHTML = `<p>Error loading admin: ${(uRes.error || mRes.error).message}</p>`;
-                return;
             }
-            const users = uRes.data;
-            const groups = mRes.data;
-            const nameMap = Object.fromEntries(users.map(u => [u.id, u.name]));
 
-            // render top-level structure
-            content.innerHTML = `
+            // --- ADMIN PANEL ---
+            let pairingPreview = [];
+            async function loadAdmin() {
+                // fetch users & matchups
+                const [uRes, mRes] = await Promise.all([
+                    supabase
+                        .from("users")
+                        .select("id,name,email,league,opted_in"),
+                    supabase
+                        .from("matchups")
+                        .select("id,week,league,player_ids")
+                        .order("week", { ascending: true }),
+                ]);
+                if (uRes.error || mRes.error) {
+                    content.innerHTML = `<p>Error loading admin: ${(uRes.error || mRes.error).message}</p>`;
+                    return;
+                }
+                const users = uRes.data;
+                const groups = mRes.data;
+                const nameMap = Object.fromEntries(
+                    users.map((u) => [u.id, u.name]),
+                );
+
+                // render top-level structure
+                content.innerHTML = `
     <div class="card">
       <h4>Matchup Management</h4>
       <div class="field">
@@ -676,15 +862,19 @@
       <table>
         <thead><tr><th>Name</th><th>Email</th><th>League</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
-          ${users.map(u => `
+          ${users
+              .map(
+                  (u) => `
             <tr>
               <td>${u.name}</td>
               <td>${u.email}</td>
               <td>${u.league}</td>
-              <td>${u.opted_in ? 'Opted In' : 'Opted Out'}</td>
-              <td>${u.id === 'admin' ? '' : `<button class="btnRemoveUser" data-id="${u.id}">Remove</button>`}</td>
+              <td>${u.opted_in ? "Opted In" : "Opted Out"}</td>
+              <td>${u.id === "admin" ? "" : `<button class="btnRemoveUser" data-id="${u.id}">Remove</button>`}</td>
             </tr>
-          `).join('')}
+          `,
+              )
+              .join("")}
         </tbody>
       </table>
     </div>
@@ -696,122 +886,153 @@
     </div>
   `;
 
-            // --- Matchup Management logic ---
-            const filter = document.getElementById('filterLeagueAdmin');
-            function renderMatchups() {
-                const league = filter.value;
-                document.getElementById('matchupAdminRows').innerHTML = groups
-                    .filter(g => league === 'all' || g.league === league)
-                    .map(g => `
+                // --- Matchup Management logic ---
+                const filter = document.getElementById("filterLeagueAdmin");
+                function renderMatchups() {
+                    const league = filter.value;
+                    document.getElementById("matchupAdminRows").innerHTML =
+                        groups
+                            .filter(
+                                (g) => league === "all" || g.league === league,
+                            )
+                            .map(
+                                (g) => `
         <tr>
           <td>${g.week}</td>
           <td>${g.league}</td>
-          <td>${g.player_ids.map(id => nameMap[id]).join(', ')}</td>
+          <td>${g.player_ids.map((id) => nameMap[id]).join(", ")}</td>
           <td>
             <button class="btnEditMatch" data-id="${g.id}">Edit</button>
             <button class="btnRemoveMatch" data-id="${g.id}">Remove</button>
           </td>
         </tr>
-      `).join('');
+      `,
+                            )
+                            .join("");
 
-                // remove
-                document.querySelectorAll('.btnRemoveMatch').forEach(b => {
-                    b.onclick = async () => {
-                        if (!confirm('Delete this matchup?')) return;
-                        await supabase.from('matchups').delete().eq('id', Number(b.dataset.id));
+                    // remove
+                    document
+                        .querySelectorAll(".btnRemoveMatch")
+                        .forEach((b) => {
+                            b.onclick = async () => {
+                                if (!confirm("Delete this matchup?")) return;
+                                await supabase
+                                    .from("matchups")
+                                    .delete()
+                                    .eq("id", Number(b.dataset.id));
+                                loadAdmin();
+                            };
+                        });
+                    // edit
+                    document.querySelectorAll(".btnEditMatch").forEach((b) => {
+                        b.onclick = () => {
+                            const mg = groups.find((x) => x.id == b.dataset.id);
+                            startEditMatchup(mg, users);
+                        };
+                    });
+                }
+                filter.onchange = renderMatchups;
+                renderMatchups();
+
+                // --- User Removal ---
+                document.querySelectorAll(".btnRemoveUser").forEach((btn) => {
+                    btn.onclick = async () => {
+                        if (!confirm("Remove this user and all their data?"))
+                            return;
+                        const { error } = await supabase
+                            .from("users")
+                            .delete()
+                            .eq("id", btn.dataset.id);
+                        if (error) return alert("Error: " + error.message);
                         loadAdmin();
                     };
                 });
-                // edit
-                document.querySelectorAll('.btnEditMatch').forEach(b => {
-                    b.onclick = () => {
-                        const mg = groups.find(x => x.id == b.dataset.id);
-                        startEditMatchup(mg, users);
-                    };
-                });
+
+                // --- Generate Pairings Preview ---
+                document.getElementById("btnPreview").onclick = previewPairings;
             }
-            filter.onchange = renderMatchups;
-            renderMatchups();
 
-            // --- User Removal ---
-            document.querySelectorAll('.btnRemoveUser').forEach(btn => {
-                btn.onclick = async () => {
-                    if (!confirm('Remove this user and all their data?')) return;
-                    const { error } = await supabase.from('users').delete().eq('id', btn.dataset.id);
-                    if (error) return alert('Error: ' + error.message);
-                    loadAdmin();
-                };
-            });
+            // --- PREVIEW pairings (no DB write) ---
+            async function previewPairings() {
+                // clear old
+                pairingPreview = [];
+                // compute next week
+                const { data: last } = await supabase
+                    .from("matchups")
+                    .select("week")
+                    .order("week", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                const nextWeek = (last?.week || 0) + 1;
 
-            // --- Generate Pairings Preview ---
-            document.getElementById('btnPreview').onclick = previewPairings;
-        }
+                // fetch users by league
+                const { data: usersList, error: usrErr } = await supabase
+                    .from("users")
+                    .select("id,league")
+                    .eq("opted_in", true);
+                const byLeague = usersList.reduce((acc, u) => {
+                    (acc[u.league] = acc[u.league] || []).push(u.id);
+                    return acc;
+                }, {});
 
-        // --- PREVIEW pairings (no DB write) ---
-        async function previewPairings() {
-            // clear old
-            pairingPreview = [];
-            // compute next week
-            const { data: last } = await supabase
-                .from('matchups')
-                .select('week')
-                .order('week', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            const nextWeek = (last?.week || 0) + 1;
-
-            // fetch users by league
-            const { data: usersList, error: usrErr } = await supabase
-                .from('users')
-                .select('id,league')
-                .eq('opted_in', true);
-            const byLeague = usersList.reduce((acc, u) => {
-                (acc[u.league] = acc[u.league] || []).push(u.id);
-                return acc;
-            }, {});
-
-            // build preview
-            Object.entries(byLeague).forEach(([league, ids]) => {
-                const sh = shuffle(ids);
-                for (let i = 0; i < sh.length; i += 4) {
-                    const chunk = sh.slice(i, i + 4);
-                    if (chunk.length === 4) {
-                        pairingPreview.push({ week: nextWeek, league, player_ids: chunk, bye: null });
-                    } else {
-                        pairingPreview.push({ week: nextWeek, league, player_ids: chunk, bye: chunk });
+                // build preview
+                Object.entries(byLeague).forEach(([league, ids]) => {
+                    const sh = shuffle(ids);
+                    for (let i = 0; i < sh.length; i += 4) {
+                        const chunk = sh.slice(i, i + 4);
+                        if (chunk.length === 4) {
+                            pairingPreview.push({
+                                week: nextWeek,
+                                league,
+                                player_ids: chunk,
+                                bye: null,
+                            });
+                        } else {
+                            pairingPreview.push({
+                                week: nextWeek,
+                                league,
+                                player_ids: chunk,
+                                bye: chunk,
+                            });
+                        }
                     }
-                }
-            });
+                });
 
-            // fetch all user names
-            const { data: usersData } = await supabase
-                .from('users')
-                .select('id,name');
-            const nameMap = Object.fromEntries(usersData.map(u => [u.id, u.name]));
-            renderPreview(nameMap);
-        }
-
-        // --- RENDER the Preview + Approve/Regenerate ---
-        function renderPreview(nameMap) {
-            const container = document.getElementById('previewContainer');
-            if (!pairingPreview.length) {
-                container.innerHTML = '<p>No preview available.</p>';
-                return;
+                // fetch all user names
+                const { data: usersData } = await supabase
+                    .from("users")
+                    .select("id,name");
+                const nameMap = Object.fromEntries(
+                    usersData.map((u) => [u.id, u.name]),
+                );
+                renderPreview(nameMap);
             }
-            container.innerHTML = `
+
+            // --- RENDER the Preview + Approve/Regenerate ---
+            function renderPreview(nameMap) {
+                const container = document.getElementById("previewContainer");
+                if (!pairingPreview.length) {
+                    container.innerHTML = "<p>No preview available.</p>";
+                    return;
+                }
+                container.innerHTML = `
     <table>
       <thead><tr>
         <th>Week</th><th>League</th><th>Players</th><th>Bye?</th>
       </tr></thead>
       <tbody>
-        ${pairingPreview.map(p => `
+        ${pairingPreview
+            .map(
+                (p) => `
           <tr>
             <td>${p.week}</td>
             <td>${p.league}</td>
-            <td>${p.player_ids.map(id => nameMap[id] || id).join(', ')}</td>
-            <td>${p.bye ? 'YES' : 'NO'}</td>
+            <td>${p.player_ids.map((id) => nameMap[id] || id).join(", ")}</td>
+            <td>${p.bye ? "YES" : "NO"}</td>
           </tr>
-        `).join('')}
+        `,
+            )
+            .join("")}
       </tbody>
     </table>
     <div style="margin-top:1em;">
@@ -819,144 +1040,179 @@
       <button id="btnRegenerate">Regenerate</button>
     </div>
   `;
-            document.getElementById('btnApprove').onclick = approvePreview;
-            document.getElementById('btnRegenerate').onclick = previewPairings;
-        }
+                document.getElementById("btnApprove").onclick = approvePreview;
+                document.getElementById("btnRegenerate").onclick =
+                    previewPairings;
+            }
 
-        // --- APPROVE preview (write to DB) ---
-        async function approvePreview() {
-            const { error } = await supabase
-                .from('matchups')
-                .insert(pairingPreview);
-            if (error) return alert('Error inserting: ' + error.message);
-            pairingPreview = [];
-            alert('Pairings submitted!');
-            loadAdmin();
-        }
+            // --- APPROVE preview (write to DB) ---
+            async function approvePreview() {
+                const { error } = await supabase
+                    .from("matchups")
+                    .insert(pairingPreview);
+                if (error) return alert("Error inserting: " + error.message);
+                pairingPreview = [];
+                alert("Pairings submitted!");
+                loadAdmin();
+            }
 
-        // --- EDIT MATCHUP: 2-step (players → scores) ---
-        function startEditMatchup(mg, allUsers) {
-            const leagueUsers = allUsers.filter(u => u.league === mg.league);
-            // STEP 1: edit players
-            let html = `<div class="card">
+            // --- EDIT MATCHUP: 2-step (players → scores) ---
+            function startEditMatchup(mg, allUsers) {
+                const leagueUsers = allUsers.filter(
+                    (u) => u.league === mg.league,
+                );
+                // STEP 1: edit players
+                let html = `<div class="card">
     <h4>Edit Week ${mg.week} (${mg.league}) — Step 1: Players</h4>
     <form id="editPlayersForm">`;
-            for (let i = 0; i < 4; i++) {
-                html += `
+                for (let i = 0; i < 4; i++) {
+                    html += `
       <div class="field">
         <label>Slot ${i + 1}:</label>
         <select name="pl${i}" required>
-          ${leagueUsers.map(u => `
-            <option value="${u.id}" ${u.id === mg.player_ids[i] ? 'selected' : ''}>
+          ${leagueUsers
+              .map(
+                  (u) => `
+            <option value="${u.id}" ${u.id === mg.player_ids[i] ? "selected" : ""}>
               ${u.name}
-            </option>`).join('')}
+            </option>`,
+              )
+              .join("")}
         </select>
       </div>`;
-            }
-            html += `
+                }
+                html += `
       <div class="buttons">
         <button type="submit">Next: Scores</button>
         <button type="button" id="cancelPlayers">Cancel</button>
       </div>
     </form>
   </div>`;
-            content.innerHTML = html;
+                content.innerHTML = html;
 
-            document.getElementById('cancelPlayers').onclick = loadAdmin;
-            document.getElementById('editPlayersForm').onsubmit = async e => {
-                e.preventDefault();
-                const f = e.target;
-                const newPlayers = [0, 1, 2, 3].map(i => f[`pl${i}`].value);
-                await supabase.from('matchups')
-                    .update({ player_ids: newPlayers })
-                    .eq('id', mg.id);
-                // go step 2
-                editScoresStep(mg.id, newPlayers, mg.league);
-            };
-        }
+                document.getElementById("cancelPlayers").onclick = loadAdmin;
+                document.getElementById("editPlayersForm").onsubmit = async (
+                    e,
+                ) => {
+                    e.preventDefault();
+                    const f = e.target;
+                    const newPlayers = [0, 1, 2, 3].map(
+                        (i) => f[`pl${i}`].value,
+                    );
+                    await supabase
+                        .from("matchups")
+                        .update({ player_ids: newPlayers })
+                        .eq("id", mg.id);
+                    // go step 2
+                    editScoresStep(mg.id, newPlayers, mg.league);
+                };
+            }
 
-        // --- EDIT SCORES (Step 2) ---
-        async function editScoresStep(matchupId, playerIds, league) {
-            // fetch existing results
-            const { data: results } = await supabase
-                .from('results')
-                .select('game_num,combo_index,scores')
-                .eq('matchup_id', matchupId);
+            // --- EDIT SCORES (Step 2) ---
+            async function editScoresStep(matchupId, playerIds, league) {
+                // fetch existing results
+                const { data: results } = await supabase
+                    .from("results")
+                    .select("game_num,combo_index,scores")
+                    .eq("matchup_id", matchupId);
 
-            // build form
-            const combos = generateCombos(playerIds);
-            const nm = Object.fromEntries(await supabase.from('users').select('id,name').then(r => r.data.map(u => [u.id, u.name])));
-            let html = `<div class="card">
+                // build form
+                const combos = generateCombos(playerIds);
+                const nm = Object.fromEntries(
+                    await supabase
+                        .from("users")
+                        .select("id,name")
+                        .then((r) => r.data.map((u) => [u.id, u.name])),
+                );
+                let html = `<div class="card">
     <h4>Edit Scores for Week (ID ${matchupId}) — Step 2: Scores</h4>
     <form id="editScoresForm">`;
-            for (let game = 1; game <= 3; game++) {
-                const ex = results.find(r => r.game_num === game) || {};
-                // pairing select
-                html += `<h5>Game ${game}</h5>
+                for (let game = 1; game <= 3; game++) {
+                    const ex = results.find((r) => r.game_num === game) || {};
+                    // pairing select
+                    html += `<h5>Game ${game}</h5>
       <div class="field">
         <label>Pairing:</label>
         <select name="combo${game}" required>
-          ${combos.map((c, i) => `
-            <option value="${i}" ${ex.combo_index === i ? 'selected' : ''}>
+          ${combos
+              .map(
+                  (c, i) => `
+            <option value="${i}" ${ex.combo_index === i ? "selected" : ""}>
               ${nm[c[0][0]]}/${nm[c[0][1]]} vs ${nm[c[1][0]]}/${nm[c[1][1]]}
-            </option>`).join('')}
+            </option>`,
+              )
+              .join("")}
         </select>
       </div>`;
-                // scores
-                const scores = ex.scores || playerIds.map(p => ({ user_id: p, points: 0 }));
-                for (const { user_id, points } of scores) {
-                    html += `
+                    // scores
+                    const scores =
+                        ex.scores ||
+                        playerIds.map((p) => ({ user_id: p, points: 0 }));
+                    for (const { user_id, points } of scores) {
+                        html += `
         <div class="field">
           <label>${nm[user_id]}:</label>
           <input type="number" name="pts${game}_${user_id}" min="0" value="${points}" required />
         </div>`;
+                    }
                 }
-            }
-            html += `
+                html += `
       <div class="buttons">
         <button type="submit">Save All</button>
         <button type="button" id="cancelScores">Cancel</button>
       </div>
     </form>
   </div>`;
-            content.innerHTML = html;
+                content.innerHTML = html;
 
-            document.getElementById('cancelScores').onclick = loadAdmin;
-            document.getElementById('editScoresForm').onsubmit = async e => {
-                e.preventDefault();
-                const f = e.target;
-                // upsert each game
-                for (let game = 1; game <= 3; game++) {
-                    const combo = parseInt(f[`combo${game}`].value, 10);
-                    // collect scores
-                    const scoresArr = playerIds.map(pid => ({
-                        user_id: pid,
-                        points: parseInt(f[`pts${game}_${pid}`].value, 10)
-                    }));
-                    // determine winners
-                    const t = combos[combo];
-                    const sumA = t[0].reduce((s, p) =>
-                        s + scoresArr.find(x => x.user_id === p).points, 0);
-                    const sumB = t[1].reduce((s, p) =>
-                        s + scoresArr.find(x => x.user_id === p).points, 0);
-                    const winners = sumA >= sumB ? t[0] : t[1];
+                document.getElementById("cancelScores").onclick = loadAdmin;
+                document.getElementById("editScoresForm").onsubmit = async (
+                    e,
+                ) => {
+                    e.preventDefault();
+                    const f = e.target;
+                    // upsert each game
+                    for (let game = 1; game <= 3; game++) {
+                        const combo = parseInt(f[`combo${game}`].value, 10);
+                        // collect scores
+                        const scoresArr = playerIds.map((pid) => ({
+                            user_id: pid,
+                            points: parseInt(f[`pts${game}_${pid}`].value, 10),
+                        }));
+                        // determine winners
+                        const t = combos[combo];
+                        const sumA = t[0].reduce(
+                            (s, p) =>
+                                s +
+                                scoresArr.find((x) => x.user_id === p).points,
+                            0,
+                        );
+                        const sumB = t[1].reduce(
+                            (s, p) =>
+                                s +
+                                scoresArr.find((x) => x.user_id === p).points,
+                            0,
+                        );
+                        const winners = sumA >= sumB ? t[0] : t[1];
 
-                    await supabase.from('results').upsert({
-                        matchup_id: matchupId,
-                        game_num: game,
-                        combo_index: combo,
-                        scores: scoresArr,
-                        winner_ids: winners
-                    }, { onConflict: ['matchup_id', 'game_num'] });
-                }
-                alert('Matchup updated!');
-                loadAdmin();
-            };
-        }
+                        await supabase.from("results").upsert(
+                            {
+                                matchup_id: matchupId,
+                                game_num: game,
+                                combo_index: combo,
+                                scores: scoresArr,
+                                winner_ids: winners,
+                            },
+                            { onConflict: ["matchup_id", "game_num"] },
+                        );
+                    }
+                    alert("Matchup updated!");
+                    loadAdmin();
+                };
+            }
 
-        // --- BOOT ---
-        showSection('login');
-    </script>
-</body>
-
+            // --- BOOT ---
+            showSection("login");
+        </script>
+    </body>
 </html>
