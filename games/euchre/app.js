@@ -1,4 +1,144 @@
 // Euchre Simulator - Full-featured with Step-By-Step Insights
+
+class EuchreBot {
+    constructor(strategy, game) {
+        this.strategy = strategy;
+        this.game = game; // Reference to the main game object
+    }
+
+    // --- AI LOGIC (MOVED FROM EuchreSimulator) ---
+
+    calculateHandScore(hand, trumpSuit) {
+        let score = 0;
+        let trumpCount = 0;
+        let hasRight = false;
+        let hasLeft = false;
+        for (const card of hand) {
+            if (this.game.getEffectiveSuit(card, trumpSuit) === trumpSuit) {
+                trumpCount++;
+                if (card.rank === "J") {
+                    if (card.suit === trumpSuit) hasRight = true;
+                    else hasLeft = true;
+                }
+            }
+        }
+        if (hasRight && hasLeft) score += 30;
+        else if (hasRight) score += 15;
+        else if (hasLeft) score += 8;
+        score += Math.pow(trumpCount, 2.5);
+        score +=
+            hand.filter(
+                (c) =>
+                    c.rank === "A" && this.game.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
+            ).length * 3;
+        return score;
+    }
+
+    getBestCall(hand, potentialSuits, upcard, isRoundTwo) {
+        let bestCall = { suit: null, score: -1, loner: false };
+        const callThreshold = isRoundTwo
+            ? this.strategy.r2Threshold
+            : this.strategy.r1Threshold;
+        const handForEval = isRoundTwo ? hand : [...hand, upcard];
+        for (const suit of potentialSuits) {
+            const score = this.calculateHandScore(handForEval, suit);
+            if (score > bestCall.score) {
+                bestCall.score = score;
+                bestCall.suit = suit;
+            }
+        }
+        if (bestCall.score >= callThreshold) {
+            if (bestCall.score >= this.strategy.lonerThreshold) {
+                bestCall.loner = true;
+            }
+            return bestCall;
+        }
+        return null;
+    }
+
+    playCard(
+        hand,
+        trick,
+        trumpSuit,
+        leadSuit,
+        playersInTrick = [],
+        myPlayerIndex,
+        isMaker,
+        partnerIsMaker,
+    ) {
+        const validCards = this.game.getValidCards(hand, leadSuit, trumpSuit);
+        if (validCards.length === 1) return validCards[0];
+
+        // Sort cards from lowest to highest value
+        validCards.sort(
+            (a, b) =>
+                this.game.getCardValue(a, trumpSuit, leadSuit) -
+                this.game.getCardValue(b, trumpSuit, leadSuit),
+        );
+        const lowestCard = validCards[0];
+        const highestCard = validCards[validCards.length - 1];
+
+        // Lead logic
+        if (leadSuit === null) {
+            let cardToLead = highestCard; // Default lead
+            const trumpInHand = validCards.filter(c => this.game.getEffectiveSuit(c, trumpSuit) === trumpSuit);
+            const offSuitInHand = validCards.filter(c => this.game.getEffectiveSuit(c, trumpSuit) !== trumpSuit);
+
+            const leadStrategy = isMaker
+                ? this.strategy.leadWhenMaker
+                : partnerIsMaker
+                    ? this.strategy.leadWhenPartnerMaker
+                    : this.strategy.leadOnDefense;
+
+            if (leadStrategy === 'best_trump' && trumpInHand.length > 0) {
+                cardToLead = trumpInHand[trumpInHand.length - 1];
+            } else if (leadStrategy === 'best_offsuit' && offSuitInHand.length > 0) {
+                cardToLead = offSuitInHand[offSuitInHand.length - 1];
+            }
+            return cardToLead;
+        }
+
+        // Follow logic
+        const winnerSoFar = this.game.determineWinner(
+            trick,
+            playersInTrick,
+            trumpSuit,
+            leadSuit,
+        );
+        const partnerIsWinning = winnerSoFar % 2 === myPlayerIndex % 2;
+
+        if (partnerIsWinning && !this.strategy.trumpWhenPartnerWinning) {
+            return lowestCard; // Play off if partner is winning and strategy says so
+        }
+
+        const winningCardInTrick = trick.find(
+            (c, i) => playersInTrick[i] === winnerSoFar,
+        );
+        const winningValue = this.game.getCardValue(
+            winningCardInTrick,
+            trumpSuit,
+            leadSuit,
+        );
+
+        const canWin = validCards.filter(
+            (c) => this.game.getCardValue(c, trumpSuit, leadSuit) > winningValue,
+        );
+
+        if (canWin.length > 0) {
+            // If we can win, should we?
+            const isOpponentWinning = !partnerIsWinning;
+            if (isOpponentWinning && !this.strategy.overtrumpOpponent) {
+                // Don't overtrump if strategy says not to
+                return lowestCard;
+            }
+            return canWin[0]; // Play lowest winning card
+        }
+
+        return lowestCard; // Can't win, play lowest card
+    }
+}
+
+
 class EuchreSimulator {
   constructor() {
     this.suits = ["S", "H", "D", "C"];
@@ -7,11 +147,12 @@ class EuchreSimulator {
     this.rankNames = { 9: "9", T: "10", J: "J", Q: "Q", K: "K", A: "A" };
     this.resetBatchStats();
     this.initializeUI();
-
     this.sbsGame = null;
+    this.sbsHistory = [];
+    this.bots = this.getPlayerSettings().map(s => new EuchreBot(s, this));
   }
 
-  // --- Core Game Logic & AI ---
+  // --- Core Game Logic ---
   createDeck() {
     const deck = [];
     for (const suit of this.suits) {
@@ -85,30 +226,43 @@ class EuchreSimulator {
     const upcard = deck[20];
     return { hands, upcard, dealer: dealerIndex };
   }
-  dealerDiscard(hand, trumpSuit) {
+  dealerDiscard(hand, trumpSuit, strategy) {
     let discardCandidate = null;
     let lowestValue = Infinity;
-    const nonTrumpCards = hand.filter(
-      (c) => this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
-    );
-    if (nonTrumpCards.length > 0) {
-      for (const card of nonTrumpCards) {
-        const value = this.getCardValue(card, trumpSuit);
-        if (value < lowestValue) {
-          lowestValue = value;
-          discardCandidate = card;
+
+    if (strategy.dealerDiscardStrategy === 'lowest_non_trump') {
+        const nonTrumpCards = hand.filter(
+            (c) => this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
+        );
+        if (nonTrumpCards.length > 0) {
+            for (const card of nonTrumpCards) {
+                const value = this.getCardValue(card, trumpSuit);
+                if (value < lowestValue) {
+                    lowestValue = value;
+                    discardCandidate = card;
+                }
+            }
+        } else {
+            // If all cards are trump, discard the lowest trump
+            const sortedTrump = hand.sort(
+                (a, b) =>
+                    this.getCardValue(a, trumpSuit) - this.getCardValue(b, trumpSuit),
+            );
+            discardCandidate = sortedTrump[0];
         }
-      }
-    } else {
-      const sortedTrump = hand.sort(
-        (a, b) =>
-          this.getCardValue(a, trumpSuit) - this.getCardValue(b, trumpSuit),
-      );
-      discardCandidate = sortedTrump[0];
+    } else { // 'lowest_card'
+        for (const card of hand) {
+            const value = this.getCardValue(card, trumpSuit);
+            if (value < lowestValue) {
+                lowestValue = value;
+                discardCandidate = card;
+            }
+        }
     }
+
     const index = hand.findIndex((c) => c === discardCandidate);
     if (index > -1) {
-      hand.splice(index, 1);
+        hand.splice(index, 1);
     }
   }
   determineWinner(trick, trickPlayers, trumpSuit, leadSuit) {
@@ -131,107 +285,7 @@ class EuchreSimulator {
     );
     return cardsInLeadSuit.length > 0 ? cardsInLeadSuit : hand;
   }
-  calculateHandScore(hand, trumpSuit) {
-    let score = 0;
-    let trumpCount = 0;
-    let hasRight = false;
-    let hasLeft = false;
-    for (const card of hand) {
-      if (this.getEffectiveSuit(card, trumpSuit) === trumpSuit) {
-        trumpCount++;
-        if (card.rank === "J") {
-          if (card.suit === trumpSuit) hasRight = true;
-          else hasLeft = true;
-        }
-      }
-    }
-    if (hasRight && hasLeft) score += 30;
-    else if (hasRight) score += 15;
-    else if (hasLeft) score += 8;
-    score += Math.pow(trumpCount, 2.5);
-    score +=
-      hand.filter(
-        (c) =>
-          c.rank === "A" && this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
-      ).length * 3;
-    return score;
-  }
-  getBestCall(hand, potentialSuits, upcard, isRoundTwo, settings) {
-    let bestCall = { suit: null, score: -1, loner: false };
-    const callThreshold = isRoundTwo
-      ? settings.r2Threshold
-      : settings.r1Threshold;
-    const handForEval = isRoundTwo ? hand : [...hand, upcard];
-    for (const suit of potentialSuits) {
-      const score = this.calculateHandScore(handForEval, suit);
-      if (score > bestCall.score) {
-        bestCall.score = score;
-        bestCall.suit = suit;
-      }
-    }
-    if (bestCall.score >= callThreshold) {
-      if (bestCall.score >= settings.lonerThreshold) {
-        bestCall.loner = true;
-      }
-      return bestCall;
-    }
-    return null;
-  }
-  playCard(
-    hand,
-    trick,
-    trumpSuit,
-    leadSuit,
-    settings,
-    playersInTrick = [],
-    myPlayerIndex,
-  ) {
-    const validCards = this.getValidCards(hand, leadSuit, trumpSuit);
-    if (validCards.length === 1) return validCards[0];
-    validCards.sort(
-      (a, b) =>
-        this.getCardValue(a, trumpSuit, leadSuit) -
-        this.getCardValue(b, trumpSuit, leadSuit),
-    );
-    const lowestCard = validCards[0];
-    const highestCard = validCards[validCards.length - 1];
-    if (leadSuit === null) {
-      const trumpInHand = validCards.filter(
-        (c) => this.getEffectiveSuit(c, trumpSuit) === trumpSuit,
-      );
-      const offSuitInHand = validCards.filter(
-        (c) => this.getEffectiveSuit(c, trumpSuit) !== trumpSuit,
-      );
-      if (settings.leadStyle === "trump_heavy" && trumpInHand.length > 0)
-        return trumpInHand[trumpInHand.length - 1];
-      if (settings.leadStyle === "off_suit_first" && offSuitInHand.length > 0)
-        return offSuitInHand[offSuitInHand.length - 1];
-      return highestCard;
-    } else {
-      if (trick.length === 0) return lowestCard;
-      const winnerSoFar = this.determineWinner(
-        trick,
-        playersInTrick,
-        trumpSuit,
-        leadSuit,
-      );
-      if (settings.protectPartner && winnerSoFar % 2 === myPlayerIndex % 2) {
-        return lowestCard;
-      }
-      const winningCardInTrick = trick.find(
-        (c, i) => playersInTrick[i] === winnerSoFar,
-      );
-      const winningValue = this.getCardValue(
-        winningCardInTrick,
-        trumpSuit,
-        leadSuit,
-      );
-      const winningCards = validCards.filter(
-        (c) => this.getCardValue(c, trumpSuit, leadSuit) > winningValue,
-      );
-      return winningCards.length > 0 ? winningCards[0] : lowestCard;
-    }
-  }
+
 
   // --- BATCH SIMULATION LOGIC ---
   resetBatchStats() {
@@ -312,12 +366,12 @@ class EuchreSimulator {
 
     for (let i = 0; i < 4; i++) {
       const playerIndex = (dealerIndex + 1 + i) % 4;
-      const call = this.getBestCall(
+      const bot = this.bots[playerIndex];
+      const call = bot.getBestCall(
         currentHands[playerIndex],
         [upcard.suit],
         upcard,
         false,
-        settings[playerIndex],
       );
 
       if (call) {
@@ -330,7 +384,7 @@ class EuchreSimulator {
         maker = playerIndex;
         loner = call.loner;
         currentHands[dealerIndex].push(upcard);
-        this.dealerDiscard(currentHands[dealerIndex], trumpSuit);
+        this.dealerDiscard(currentHands[dealerIndex], trumpSuit, this.bots[dealerIndex].strategy);
         break;
       } else {
         this.batchStats.playerStats[playerIndex].passes++;
@@ -343,12 +397,12 @@ class EuchreSimulator {
       const otherSuits = this.suits.filter((s) => s !== upcard.suit);
       for (let i = 0; i < 4; i++) {
         const playerIndex = (dealerIndex + 1 + i) % 4;
-        const call = this.getBestCall(
+        const bot = this.bots[playerIndex];
+        const call = bot.getBestCall(
           currentHands[playerIndex],
           otherSuits,
           upcard,
           true,
-          settings[playerIndex],
         );
         if (call) {
           this.batchStats.playerStats[playerIndex].calls++;
@@ -371,12 +425,11 @@ class EuchreSimulator {
     if (trumpSuit === null && stickTheDealer) {
       maker = dealerIndex;
       const otherSuits = this.suits.filter((s) => s !== upcard.suit);
-      const call = this.getBestCall(
+      const call = this.bots[maker].getBestCall(
         currentHands[maker],
         otherSuits,
         upcard,
         true,
-        settings[maker],
       ) || { suit: otherSuits[0], loner: false };
       trumpSuit = call.suit;
       loner = call.loner;
@@ -406,14 +459,16 @@ class EuchreSimulator {
       }
       playersInTrick = playerOrder;
       for (const cpi of playersInTrick) {
-        const card = this.playCard(
+        const bot = this.bots[cpi];
+        const card = bot.playCard(
           currentHands[cpi],
           trickCards,
           trumpSuit,
           leadSuit,
-          settings[cpi],
           playersInTrick,
           cpi,
+          cpi === maker,
+          cpi === (maker + 2) % 4,
         );
         this.batchStats.cardStats[`${card.rank}${card.suit}`].plays++;
         if (trickCards.length === 0) {
@@ -587,8 +642,19 @@ class EuchreSimulator {
       .getElementById("start-custom-hand")
       .addEventListener("click", () => this.handleStartCustomHand());
     document
-      .getElementById("next-trick")
-      .addEventListener("click", () => this.advanceSbsGame());
+      .getElementById("sbs-play-best")
+      .addEventListener("click", () => this.advanceSbsGame(true));
+    document
+        .getElementById("sbs-undo")
+        .addEventListener("click", () => this.undoSbsMove());
+
+    document.querySelectorAll('.advanced-strategy-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            const panel = e.target.nextElementSibling;
+            panel.classList.toggle('visible');
+        });
+    });
   }
 
   populateCustomHandSelectors() {
@@ -619,28 +685,38 @@ class EuchreSimulator {
     let upcard = null;
     let error = false;
     const seenCards = new Set();
+
     for (let i = 1; i <= 4; i++) {
       const selectors = document.querySelectorAll(`#custom-hand-${i} select`);
-      selectors.forEach((sel) => {
+      for (const sel of selectors) {
         const cardStr = sel.value;
-        if (seenCards.has(cardStr)) error = true;
+        if (!cardStr || seenCards.has(cardStr)) {
+          error = true;
+          break;
+        }
         seenCards.add(cardStr);
         hands[i - 1].push(this.stringToCard(cardStr));
-      });
+      }
+      if (error) break;
     }
+
     const upcardStr = document.getElementById("custom-upcard").value;
-    if (seenCards.has(upcardStr) || !upcardStr) error = true;
-    upcard = this.stringToCard(upcardStr);
+    if (!upcardStr || seenCards.has(upcardStr)) {
+      error = true;
+    }
+
     if (error) {
       alert(
         "Error: Duplicate or missing cards selected. Each of the 21 cards must be unique.",
       );
       return;
     }
+    upcard = this.stringToCard(upcardStr);
     this.startStepByStepMode(hands, upcard);
   }
 
   startStepByStepMode(hands, upcard, dealer = 3) {
+    this.sbsHistory = []; // Clear history
     this.sbsGame = {
       phase: "bidding",
       hands: hands.map((h) => [...h]),
@@ -649,7 +725,7 @@ class EuchreSimulator {
       dealer: dealer,
       currentPlayer: (dealer + 1) % 4,
       biddingRound: 1,
-      log: [`Hand dealt. Player ${dealer + 2} starts bidding.`],
+      log: [`Hand dealt. Player ${dealer + 1} starts bidding.`],
       score: [0, 0],
       trumpSuit: null,
       maker: -1,
@@ -661,33 +737,47 @@ class EuchreSimulator {
       leadSuit: null,
       tricksWon: [0, 0],
     };
-    document.getElementById("next-trick").textContent = "Auto-Play Next Move";
+    this.saveSbsState(); // Save initial state
     this.updateSbsUI();
     this.clearInsights();
   }
 
+  saveSbsState() {
+    this.sbsHistory.push(JSON.parse(JSON.stringify(this.sbsGame)));
+  }
+
+  undoSbsMove() {
+    if (this.sbsHistory.length > 1) {
+      this.sbsHistory.pop(); // Remove current state
+      this.sbsGame = this.sbsHistory[this.sbsHistory.length - 1]; // Restore previous state
+      this.updateSbsUI();
+      this.clearInsights();
+    }
+  }
+
   // FIX: The game loop is now truly step-by-step and waits for the user.
-  advanceSbsGame() {
+  advanceSbsGame(isAuto = false) {
     if (!this.sbsGame || this.sbsGame.phase === "finished") {
       alert("Please start a new hand to play.");
       return;
     }
 
+    this.saveSbsState();
+
     const game = this.sbsGame;
-    const settings = this.getPlayerSettings();
     const player = game.currentPlayer;
+    const bot = this.bots[player];
 
     if (game.phase === "bidding") {
       const potentialSuits =
         game.biddingRound === 1
           ? [game.upcard.suit]
           : this.suits.filter((s) => s !== game.upcard.suit);
-      const call = this.getBestCall(
+      const call = bot.getBestCall(
         game.hands[player],
         potentialSuits,
         game.upcard,
         game.biddingRound === 2,
-        settings[player],
       );
 
       if (call) {
@@ -701,7 +791,7 @@ class EuchreSimulator {
         );
         if (game.biddingRound === 1) {
           game.hands[game.dealer].push(game.upcard);
-          this.dealerDiscard(game.hands[game.dealer], game.trumpSuit);
+          this.dealerDiscard(game.hands[game.dealer], game.trumpSuit, this.bots[game.dealer].strategy);
           game.log.push(`Dealer (P${game.dealer + 1}) picks up the upcard.`);
         }
       } else {
@@ -716,12 +806,11 @@ class EuchreSimulator {
               const otherSuits = this.suits.filter(
                 (s) => s !== game.upcard.suit,
               );
-              const stuckCall = this.getBestCall(
+              const stuckCall = this.bots[game.maker].getBestCall(
                 game.hands[game.maker],
                 otherSuits,
                 game.upcard,
                 true,
-                settings[game.maker],
               ) || { suit: otherSuits[0], loner: false };
               game.trumpSuit = stuckCall.suit;
               game.loner = stuckCall.loner;
@@ -740,62 +829,74 @@ class EuchreSimulator {
     } else if (game.phase === "playing") {
       const insights = this.getBestPlayWithInsight(player, game);
       this.displayInsights(insights, player);
-      const bestMove = insights.find((i) => i.isBest).card;
-      game.log.push(
-        `Player ${player + 1} plays ${this.cardToString(bestMove)}.`,
-      );
-      if (game.trickCards.length === 0)
-        game.leadSuit = this.getEffectiveSuit(bestMove, game.trumpSuit);
-      game.trickCards.push(bestMove);
-      game.playersInTrick.push(player);
-      game.hands[player] = game.hands[player].filter(
-        (c) => !(c.rank === bestMove.rank && c.suit === bestMove.suit),
-      );
 
-      const playersInRound = game.loner ? 3 : 4;
-      if (game.trickCards.length >= playersInRound) {
-        this.updateSbsUI(); // Update to show the full trick
-        const winner = this.determineWinner(
-          game.trickCards,
-          game.playersInTrick,
-          game.trumpSuit,
-          game.leadSuit,
-        );
-        setTimeout(() => {
-          // Pause to let user see the completed trick
-          game.log.push(`--- Player ${winner + 1} wins the trick. ---`);
-          game.tricksWon[winner % 2]++;
-          game.leader = winner;
-          game.currentPlayer = winner;
-          game.trickCards = [];
-          game.playersInTrick = [];
-          game.leadSuit = null;
-          game.currentTrick++;
-          this.clearInsights();
-          this.updateSbsUI();
-
-          if (game.currentTrick === 5) {
-            const makerTeam = game.maker % 2;
-            if (game.tricksWon[makerTeam] >= 3) {
-              game.log.push(
-                `Makers win the hand with ${game.tricksWon[makerTeam]} tricks.`,
-              );
-            } else {
-              game.log.push(`Makers get euchred!`);
-            }
-            game.phase = "finished";
-            document.getElementById("next-trick").textContent = "Hand Over";
-            this.updateSbsUI();
-          }
-        }, 1200);
-        return; // Stop execution until next button click
+      if (isAuto) {
+        const bestMove = insights.find((i) => i.isBest).card;
+        this.playSbsCard(bestMove);
       } else {
-        game.currentPlayer = this.getPlayerOrder(game.leader)[
-          game.playersInTrick.length
-        ];
+        // Manual play is handled by card click events
+        return;
       }
     }
 
+    this.updateSbsUI();
+  }
+
+  playSbsCard(card) {
+    const game = this.sbsGame;
+    const player = game.currentPlayer;
+
+    game.log.push(
+      `Player ${player + 1} plays ${this.cardToString(card)}.`,);
+    if (game.trickCards.length === 0)
+      game.leadSuit = this.getEffectiveSuit(card, game.trumpSuit);
+    game.trickCards.push(card);
+    game.playersInTrick.push(player);
+    game.hands[player] = game.hands[player].filter(
+      (c) => !(c.rank === card.rank && c.suit === card.suit),
+    );
+
+    const playersInRound = game.loner ? 3 : 4;
+    if (game.trickCards.length >= playersInRound) {
+      this.updateSbsUI(); // Update to show the full trick
+      const winner = this.determineWinner(
+        game.trickCards,
+        game.playersInTrick,
+        game.trumpSuit,
+        game.leadSuit,
+      );
+      setTimeout(() => {
+        // Pause to let user see the completed trick
+        game.log.push(`--- Player ${winner + 1} wins the trick. ---`);
+        game.tricksWon[winner % 2]++;
+        game.leader = winner;
+        game.currentPlayer = winner;
+        game.trickCards = [];
+        game.playersInTrick = [];
+        game.leadSuit = null;
+        game.currentTrick++;
+        this.clearInsights();
+        this.updateSbsUI();
+
+        if (game.currentTrick === 5) {
+          const makerTeam = game.maker % 2;
+          if (game.tricksWon[makerTeam] >= 3) {
+            game.log.push(
+              `Makers win the hand with ${game.tricksWon[makerTeam]} tricks.`,
+            );
+          } else {
+            game.log.push(`Makers get euchred!`);
+          }
+          game.phase = "finished";
+          this.updateSbsUI();
+        }
+      }, 1200);
+      return; // Stop execution until next button click
+    } else {
+      game.currentPlayer = this.getPlayerOrder(game.leader)[
+        game.playersInTrick.length
+      ];
+    }
     this.updateSbsUI();
   }
 
@@ -806,16 +907,32 @@ class EuchreSimulator {
     }
     document.getElementById("step-results").style.display = "block";
     const game = this.sbsGame;
+    const validCards = this.getValidCards(
+        game.hands[game.currentPlayer],
+        game.leadSuit,
+        game.trumpSuit
+    );
+
     for (let i = 0; i < 4; i++) {
       const handDiv = document
         .getElementById(`player-${i + 1}-sbs`)
         .querySelector(".cards");
       handDiv.innerHTML = game.hands[i]
-        .map((c) => `<span class="card-display">${this.cardToString(c)}</span>`)
+        .map((c) => {
+            const isPlayable = i === game.currentPlayer && validCards.some(vc => vc.rank === c.rank && vc.suit === c.suit);
+            const cardEl = document.createElement('span');
+            cardEl.className = `card-display ${isPlayable ? 'playable' : ''}`;
+            cardEl.textContent = this.cardToString(c);
+            if (isPlayable) {
+                cardEl.onclick = () => this.playSbsCard(c);
+            }
+            return cardEl.outerHTML;
+        })
         .join("");
     }
     const trickDiv = document.getElementById("trick-cards");
     trickDiv.innerHTML = "";
+
     const playerOrder = this.getPlayerOrder(game.leader);
     for (let i = 0; i < 4; i++) {
       const seat = playerOrder[i];
@@ -874,10 +991,7 @@ class EuchreSimulator {
     document
       .getElementById("batch-results")
       .classList.toggle("hidden", !isBatch);
-    document.getElementById("deal-hand").classList.toggle("hidden", isBatch);
-    document.getElementById("next-trick").classList.toggle("hidden", isBatch);
-    const sbsPanel = document.getElementById("step-results");
-    sbsPanel.style.display = isBatch ? "none" : "block";
+    document.getElementById("step-results").classList.toggle("hidden", isBatch);
     if (isBatch) {
       this.sbsGame = null;
       this.updateSbsUI();
@@ -965,8 +1079,17 @@ class EuchreSimulator {
         lonerThreshold: parseInt(row.querySelector(".loner-threshold").value),
         leadStyle: row.querySelector(".lead-style").value,
         protectPartner: row.querySelector(".protect-partner").checked,
+        // Advanced settings
+        leadWhenMaker: row.querySelector(".lead-when-maker").value,
+        leadWhenPartnerMaker: row.querySelector(".lead-when-partner-maker").value,
+        leadOnDefense: row.querySelector(".lead-on-defense").value,
+        trumpWhenPartnerWinning: row.querySelector(".trump-when-partner-winning").checked,
+        overtrumpOpponent: row.querySelector(".overtrump-opponent").checked,
+        trumpPartnersAce: row.querySelector(".trump-partners-ace").checked,
+        dealerDiscardStrategy: row.querySelector(".dealer-discard-strategy").value,
       });
     }
+    this.bots = settings.map(s => new EuchreBot(s, this));
     return settings;
   }
   updateProgress(progress) {
