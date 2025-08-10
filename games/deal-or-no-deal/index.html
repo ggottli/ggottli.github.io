@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Deal or No Deal: Date Night Edition</title>
+        <style>
+            :root {
+                --bg: #0b1020;
+                --card: #111733;
+                --accent: #ff2d55;
+                --accent-2: #7c5cff;
+                --text: #e8ecff;
+                --muted: #a7b0d9;
+                --good: #00d68f;
+                --bad: #ff4757;
+                --gold: #ffd166;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    Roboto,
+                    Inter,
+                    Helvetica,
+                    Arial,
+                    "Apple Color Emoji",
+                    "Segoe UI Emoji";
+                background:
+                    radial-gradient(
+                        1200px 800px at 20% -10%,
+                        #1b2147 0%,
+                        transparent 60%
+                    ),
+                    radial-gradient(
+                        900px 600px at 120% 10%,
+                        #261b47 0%,
+                        transparent 60%
+                    ),
+                    var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 20px clamp(16px, 4vw, 42px);
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                background: linear-gradient(
+                    180deg,
+                    rgba(11, 16, 32, 0.95),
+                    rgba(11, 16, 32, 0.75) 60%,
+                    transparent
+                );
+                backdrop-filter: blur(8px);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
+            .title {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                font-weight: 800;
+                letter-spacing: 0.5px;
+            }
+            .title .logo {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                background: conic-gradient(
+                    from 0deg,
+                    var(--accent),
+                    var(--accent-2),
+                    var(--gold),
+                    var(--accent)
+                );
+                box-shadow:
+                    0 10px 30px rgba(124, 92, 255, 0.35),
+                    0 4px 14px rgba(255, 45, 85, 0.35);
+                position: relative;
+                isolation: isolate;
+            }
+            .title .logo::after {
+                content: "";
+                position: absolute;
+                inset: 4px;
+                border-radius: 9px;
+                background: var(--card);
+            }
+            .subtitle {
+                color: var(--muted);
+                font-weight: 500;
+            }
+            .controls {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            button {
+                background: linear-gradient(180deg, #2b3269, #1b2147);
+                color: var(--text);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                border-radius: 14px;
+                padding: 10px 14px;
+                font-weight: 700;
+                letter-spacing: 0.3px;
+                cursor: pointer;
+                transition:
+                    transform 0.12s ease,
+                    box-shadow 0.2s ease,
+                    opacity 0.2s;
+                box-shadow:
+                    0 6px 18px rgba(0, 0, 0, 0.35),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            }
+            button:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+            }
+            button:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            .primary {
+                background: linear-gradient(180deg, #ff4778, #c81e51);
+                border-color: rgba(255, 255, 255, 0.18);
+            }
+            .ghost {
+                background: transparent;
+            }
+
+            main {
+                display: grid;
+                grid-template-columns: 320px 1fr;
+                gap: 22px;
+                padding: 22px clamp(16px, 4vw, 42px);
+                width: 100%;
+                max-width: 1200px;
+                margin: 0 auto 60px;
+            }
+            @media (max-width: 980px) {
+                main {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* SIDE BOARD */
+            .board {
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.04),
+                    rgba(255, 255, 255, 0.02)
+                );
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 18px;
+                padding: 16px;
+                position: sticky;
+                top: 86px;
+                height: fit-content;
+                box-shadow:
+                    0 12px 40px rgba(0, 0, 0, 0.25),
+                    inset 0 0 40px rgba(124, 92, 255, 0.08);
+            }
+            .board h2 {
+                margin: 4px 6px 12px;
+                font-size: 18px;
+                letter-spacing: 0.4px;
+            }
+            .board-list {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .slot {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 12px;
+                border-radius: 12px;
+                background: rgba(17, 23, 51, 0.65);
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+            }
+            .slot .name {
+                font-weight: 700;
+            }
+            .slot .rank {
+                font-size: 12px;
+                color: var(--muted);
+            }
+            .slot.revealed {
+                filter: grayscale(1) brightness(0.7);
+                opacity: 0.6;
+                text-decoration: line-through;
+            }
+            .slot.good {
+                background: rgba(0, 214, 143, 0.12);
+                border-color: rgba(0, 214, 143, 0.4);
+            }
+            .slot.mid {
+                background: rgba(124, 92, 255, 0.12);
+                border-color: rgba(124, 92, 255, 0.35);
+            }
+            .slot.high {
+                background: rgba(255, 209, 102, 0.12);
+                border-color: rgba(255, 209, 102, 0.35);
+            }
+
+            /* CASE GRID */
+            .stage {
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.04),
+                    rgba(255, 255, 255, 0.02)
+                );
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 22px;
+                padding: 20px;
+                position: relative;
+                box-shadow:
+                    0 12px 40px rgba(0, 0, 0, 0.25),
+                    inset 0 0 40px rgba(255, 71, 120, 0.06);
+                overflow: hidden;
+            }
+            .status {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 14px;
+                background: rgba(0, 0, 0, 0.25);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                margin-bottom: 16px;
+            }
+            .status strong {
+                letter-spacing: 0.4px;
+            }
+            .picks {
+                color: var(--gold);
+                font-weight: 800;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 14px;
+                padding: 6px;
+                place-items: stretch;
+            }
+            @media (max-width: 860px) {
+                .grid {
+                    grid-template-columns: repeat(5, 1fr);
+                }
+            }
+            @media (max-width: 560px) {
+                .grid {
+                    grid-template-columns: repeat(4, 1fr);
+                }
+            }
+
+            .case {
+                position: relative;
+                border-radius: 16px;
+                padding: 18px 10px;
+                text-align: center;
+                font-weight: 900;
+                letter-spacing: 0.6px;
+                background: linear-gradient(180deg, #2a2a2a, #121212);
+                color: #f5f5f5;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                box-shadow:
+                    0 14px 28px rgba(0, 0, 0, 0.45),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+                cursor: pointer;
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease,
+                    filter 0.25s ease;
+                user-select: none;
+            }
+            .case:hover {
+                transform: translateY(-2px) scale(1.02);
+                box-shadow: 0 20px 38px rgba(0, 0, 0, 0.55);
+            }
+            .case .lid {
+                position: absolute;
+                left: 6px;
+                right: 6px;
+                top: -8px;
+                height: 16px;
+                border-radius: 10px;
+                background: linear-gradient(180deg, #444, #222);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                transition: transform 0.35s ease;
+            }
+            .case.opened .lid {
+                transform: translateY(-26px) rotate(-4deg);
+            }
+            .case.opened {
+                filter: saturate(0.7) brightness(0.95);
+            }
+            .case-number {
+                font-size: 18px;
+                opacity: 0.9;
+            }
+            .case.revealed {
+                pointer-events: none;
+                opacity: 0.55;
+            }
+
+            .reveal-card {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: radial-gradient(
+                    600px 260px at 50% 0%,
+                    rgba(255, 255, 255, 0.06),
+                    transparent 70%
+                );
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.35s ease;
+            }
+            .case.opened .reveal-card {
+                opacity: 1;
+            }
+            .reveal {
+                padding: 10px 12px;
+                border-radius: 12px;
+                font-weight: 900;
+                letter-spacing: 0.4px;
+                text-align: center;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                background: linear-gradient(180deg, #7c5cff, #5029ff);
+                box-shadow: 0 14px 40px rgba(124, 92, 255, 0.4);
+            }
+            .reveal.good {
+                background: linear-gradient(180deg, #00d68f, #00a373);
+                box-shadow: 0 14px 40px rgba(0, 214, 143, 0.4);
+            }
+            .reveal.high {
+                background: linear-gradient(180deg, #ffd166, #e2a900);
+                color: #222;
+                box-shadow: 0 14px 40px rgba(255, 209, 102, 0.45);
+            }
+
+            /* BANKER MODAL */
+            .modal-wrap {
+                position: fixed;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                background: rgba(10, 12, 25, 0.6);
+                backdrop-filter: blur(6px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+                z-index: 20;
+            }
+            .modal-wrap.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .modal {
+                width: min(560px, 92vw);
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.06),
+                    rgba(255, 255, 255, 0.03)
+                );
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                border-radius: 20px;
+                padding: 18px;
+                box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+            }
+            .modal h3 {
+                margin: 6px 0 6px;
+            }
+            .modal p {
+                color: var(--muted);
+            }
+            .deal-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-top: 12px;
+            }
+            .phone {
+                width: 42px;
+                height: 42px;
+                border-radius: 10px;
+                background: linear-gradient(180deg, #2b3269, #1b2147);
+                display: grid;
+                place-items: center;
+                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+            }
+            .offer {
+                font-size: 22px;
+                font-weight: 900;
+                letter-spacing: 0.5px;
+                color: var(--gold);
+            }
+
+            /* FOOTER */
+            footer {
+                text-align: center;
+                color: var(--muted);
+                padding: 20px;
+                margin-top: auto;
+            }
+
+            /* CONFETTI */
+            canvas#confetti {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 30;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="confetti"></canvas>
+        <header>
+            <div class="title">
+                <div class="logo"></div>
+                <div>
+                    <div style="font-size: 20px">Deal or No Deal</div>
+                    <div class="subtitle">Date Night Edition 💘</div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="newGame" class="ghost">New Game</button>
+                <button id="toggleHints" class="ghost">Hints: On</button>
+            </div>
+        </header>
+
+        <main>
+            <aside class="board">
+                <h2>📋 Date Board (remaining)</h2>
+                <div id="boardList" class="board-list"></div>
+            </aside>
+
+            <section class="stage">
+                <div class="status">
+                    <div>
+                        <strong>Phase:</strong>
+                        <span id="phase">Pick your case</span>
+                    </div>
+                    <div>
+                        <strong>Your Case:</strong> <span id="yourCase">—</span>
+                    </div>
+                    <div>
+                        <strong>Picks left this round:</strong>
+                        <span class="picks" id="picksLeft">—</span>
+                    </div>
+                </div>
+                <div id="grid" class="grid"></div>
+            </section>
+        </main>
+
+        <div class="modal-wrap" id="bankerModal" aria-hidden="true">
+            <div class="modal">
+                <h3>☎️ The Banker is calling…</h3>
+                <p id="bankerText">Crunching the math…</p>
+                <div class="deal-row">
+                    <div class="phone">📞</div>
+                    <div class="offer" id="offerText">—</div>
+                </div>
+                <div
+                    style="
+                        display: flex;
+                        gap: 10px;
+                        margin-top: 16px;
+                        justify-content: flex-end;
+                    "
+                >
+                    <button id="noDealBtn">No Deal</button>
+                    <button class="primary" id="dealBtn">DEAL</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>Made with ❤️ for date night.</footer>
+
+        <script>
+            // ----- DATA -----
+            const DATE_RANKING_LOW_TO_HIGH = [
+                // 1 (lowest)  →  26 (highest)
+                { name: "Boys night out", tier: "good" },
+                { name: "Ice Cream", tier: "good" },
+                { name: "Baking a dessert", tier: "good" },
+                { name: "Game Night", tier: "good" },
+                { name: "Scrapbooking and Crafts night", tier: "good" },
+                { name: "Hiking", tier: "good" },
+                { name: "Farmers Market", tier: "good" },
+                { name: "Applebees", tier: "mid" },
+                { name: "Picnic date", tier: "mid" },
+                { name: "Painting", tier: "mid" },
+                { name: "Drive in movie", tier: "mid" },
+                { name: "Mini golf", tier: "mid" },
+                { name: "Bowling", tier: "mid" },
+                { name: "Zoo", tier: "mid" },
+                { name: "Color me mine", tier: "mid" },
+                { name: "Sunflower fields", tier: "mid" },
+                { name: "Dinner and a movie", tier: "mid" },
+                { name: "Top golf", tier: "mid" },
+                { name: "Couples photoshoot", tier: "mid" },
+                { name: "Random small town trip", tier: "mid" },
+                { name: "Lake day", tier: "high" },
+                { name: "Golf outing", tier: "high" },
+                { name: "Massage", tier: "high" },
+                { name: "Shopping spree", tier: "high" },
+                { name: "Fancy rooftop meal", tier: "high" },
+                { name: "Big trip", tier: "high" },
+            ];
+
+            // Ensure we have exactly 26 unique names
+            if (
+                new Set(DATE_RANKING_LOW_TO_HIGH.map((d) => d.name)).size !== 26
+            ) {
+                console.warn("Expected 26 unique date names.");
+            }
+
+            // ----- UTILITIES -----
+            const $ = (q) => document.querySelector(q);
+            const $$ = (q) => Array.from(document.querySelectorAll(q));
+            const shuffle = (arr) =>
+                arr
+                    .map((v) => [v, Math.random()])
+                    .sort((a, b) => a[1] - b[1])
+                    .map((v) => v[0]);
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+            // Confetti (lightweight, no deps)
+            const confettiCanvas = document.getElementById("confetti");
+            const ctx = confettiCanvas.getContext("2d");
+            const confetti = [];
+            const resizeCanvas = () => {
+                confettiCanvas.width = innerWidth;
+                confettiCanvas.height = innerHeight;
+            };
+            window.addEventListener("resize", resizeCanvas);
+            resizeCanvas();
+            function popConfetti(colors = undefined, count = 120) {
+                const palette = colors || [
+                    "#ffd166",
+                    "#ff2d55",
+                    "#7c5cff",
+                    "#00d68f",
+                    "#ffffff",
+                ];
+                for (let i = 0; i < count; i++) {
+                    confetti.push({
+                        x: Math.random() * confettiCanvas.width,
+                        y: -10,
+                        r: 2 + Math.random() * 4,
+                        c: palette[(Math.random() * palette.length) | 0],
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: 2 + Math.random() * 3,
+                        rot: Math.random() * Math.PI,
+                        vr: (Math.random() - 0.5) * 0.2,
+                    });
+                }
+            }
+            (function animate() {
+                requestAnimationFrame(animate);
+                ctx.clearRect(
+                    0,
+                    0,
+                    confettiCanvas.width,
+                    confettiCanvas.height,
+                );
+                for (const p of confetti) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rot += p.vr;
+                    p.vy *= 0.999;
+                    p.vx *= 0.999;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot);
+                    ctx.fillStyle = p.c;
+                    ctx.fillRect(-p.r, -p.r, p.r * 2, p.r * 2);
+                    ctx.restore();
+                }
+                for (let i = confetti.length - 1; i >= 0; i--) {
+                    if (confetti[i].y > confettiCanvas.height + 10)
+                        confetti.splice(i, 1);
+                }
+            })();
+
+            // ----- GAME STATE -----
+            const rounds = [6, 5, 4, 3, 2, 1, 1, 1, 1]; // classic 26-case pacing
+            let state = {
+                mapping: [], // caseNumber -> date item (object with name, tier, rank)
+                yourCaseNumber: null,
+                opened: new Set(),
+                phase: "pick", // 'pick' | 'open' | 'offer' | 'end'
+                roundIndex: 0,
+                picksLeft: rounds[0],
+                hints: true,
+                dealt: false,
+                finalPrize: null,
+            };
+
+            function newGame() {
+                const ranked = DATE_RANKING_LOW_TO_HIGH.map((d, i) => ({
+                    ...d,
+                    rank: i + 1,
+                })); // 1..26
+                const shuffled = shuffle(ranked);
+                state.mapping = shuffled; // index 0..25 corresponds to case 1..26
+                state.yourCaseNumber = null;
+                state.opened = new Set();
+                state.phase = "pick";
+                state.roundIndex = 0;
+                state.picksLeft = rounds[0];
+                state.hints = true;
+                state.dealt = false;
+                state.finalPrize = null;
+                renderAll();
+            }
+
+            // Remaining unopened date objects (including player's kept case)
+            function remainingDates() {
+                const remaining = [];
+                for (let i = 0; i < 26; i++) {
+                    const caseNum = i + 1;
+                    if (!state.opened.has(caseNum))
+                        remaining.push(state.mapping[i]);
+                }
+                return remaining;
+            }
+
+            function bankerOffer() {
+                // Convert ranks to pseudo-values so higher rank has larger value.
+                // We'll map rank 1..26 to nominal values to compute an offer.
+                // Use an exponential-ish curve to weight top dates more.
+                const rem = remainingDates();
+                const values = rem.map((d) => Math.pow(d.rank / 26, 2) * 100); // 0..100 romance points
+                const expected =
+                    values.reduce((a, b) => a + b, 0) / values.length;
+
+                // Offer factor grows with later rounds
+                const progress = state.roundIndex / (rounds.length - 1);
+                const factor = 0.55 + 0.35 * progress; // 0.55 early → 0.90 late
+
+                const offer = expected * factor;
+
+                // Pick a representative prize label near the offer value to show flavor text
+                const sortedByRank = rem
+                    .slice()
+                    .sort((a, b) => a.rank - b.rank);
+                const approxIndex = Math.min(
+                    sortedByRank.length - 1,
+                    Math.max(
+                        0,
+                        Math.round((offer / 100) * (sortedByRank.length - 1)),
+                    ),
+                );
+                const flavor = sortedByRank[approxIndex]?.name || "a nice date";
+
+                return { points: offer, label: flavor };
+            }
+
+            async function openCase(caseNumber) {
+                if (state.phase === "pick") {
+                    // claim your case
+                    state.yourCaseNumber = caseNumber;
+                    state.phase = "open";
+                    renderAll();
+                    return;
+                }
+
+                if (state.phase !== "open") return;
+                if (state.opened.has(caseNumber)) return;
+                if (caseNumber === state.yourCaseNumber) return;
+
+                state.opened.add(caseNumber);
+                await animateCaseOpen(caseNumber); // ensure reveal is visible before anything else
+
+                state.picksLeft -= 1;
+
+                const justRevealed = state.mapping[caseNumber - 1];
+                const big = justRevealed.rank >= 22; // top 5 considered big
+                popConfetti(
+                    big ? ["#ff2d55", "#ffd166"] : ["#7c5cff", "#00d68f"],
+                    big ? 40 : 20,
+                );
+
+                renderBoard();
+                renderStatus();
+
+                // Count remaining (your case + any unopened others)
+                const remainingCount = 26 - state.opened.size; // includes your case if held
+                const unopenedOthers = state.yourCaseNumber
+                    ? remainingCount - 1
+                    : remainingCount;
+
+                // If only two cases remain, skip banker and offer the switch choice
+                if (state.phase === "open" && unopenedOthers === 1) {
+                    state.phase = "offer";
+                    setTimeout(() => {
+                        showFinalTwoModal();
+                    }, 700); // short pause to enjoy the reveal
+                    return;
+                }
+
+                if (state.picksLeft <= 0) {
+                    // slight delay so the last opened case can be seen before the banker calls
+                    setTimeout(() => {
+                        // If we reached the final-two state during the delay, prefer that flow
+                        const remNow = 26 - state.opened.size;
+                        const unopenedNow = state.yourCaseNumber
+                            ? remNow - 1
+                            : remNow;
+                        if (unopenedNow === 1) {
+                            showFinalTwoModal();
+                        } else {
+                            state.phase = "offer";
+                            showBanker();
+                        }
+                    }, 900);
+                }
+            }
+
+            function acceptDeal() {
+                if (state.phase !== "offer") return;
+                state.dealt = true;
+                const offer = bankerOffer();
+                state.finalPrize = offer.label;
+                state.phase = "end";
+                hideBanker();
+                endGameScreen(
+                    `Deal accepted! Your date: <strong>${offer.label}</strong>.`,
+                );
+                popConfetti(["#ffd166", "#00d68f", "#7c5cff", "#ffffff"], 300);
+            }
+
+            function declineDeal() {
+                if (state.phase !== "offer") return;
+                hideBanker();
+                // advance to next round
+                state.roundIndex = Math.min(
+                    state.roundIndex + 1,
+                    rounds.length - 1,
+                );
+                state.picksLeft = rounds[state.roundIndex];
+                state.phase = "open";
+                renderStatus();
+            }
+
+            function finishNoDeal() {
+                // reveal your case when game ends without deal
+                const prize = state.mapping[state.yourCaseNumber - 1].name;
+                state.finalPrize = prize;
+                state.phase = "end";
+                endGameScreen(
+                    `No Deal! Your case contained: <strong>${prize}</strong>.`,
+                );
+                popConfetti(["#ffd166", "#ff2d55", "#7c5cff", "#00d68f"], 260);
+            }
+
+            // ----- RENDERING -----
+            function findLastOtherCase() {
+                // returns the remaining unopened case number that is NOT your current case
+                for (let i = 1; i <= 26; i++) {
+                    if (!state.opened.has(i) && i !== state.yourCaseNumber)
+                        return i;
+                }
+                return null;
+            }
+
+            function showFinalTwoModal() {
+                const modal = $("#bankerModal");
+                const other = findLastOtherCase();
+                $("#bankerText").innerHTML =
+                    `Two cases remain: <strong>Your Case #${state.yourCaseNumber}</strong> and <strong>Case #${other}</strong>.<br>Do you want to open yours or switch?`;
+                $("#offerText").textContent = "Final Choice";
+                modal.classList.add("show");
+                modal.setAttribute("aria-hidden", "false");
+
+                const dealBtn = $("#dealBtn");
+                const noDealBtn = $("#noDealBtn");
+
+                dealBtn.textContent = "Open My Case";
+                noDealBtn.textContent = "Switch & Open";
+
+                const openMine = () => {
+                    hideBanker();
+                    finishNoDeal();
+                    cleanup();
+                };
+                const switchOpen = () => {
+                    const otherCase = findLastOtherCase();
+                    if (otherCase) state.yourCaseNumber = otherCase;
+                    hideBanker();
+                    finishNoDeal();
+                    cleanup();
+                };
+
+                function cleanup() {
+                    dealBtn.textContent = "DEAL";
+                    noDealBtn.textContent = "No Deal";
+                    dealBtn.removeEventListener("click", openMine);
+                    noDealBtn.removeEventListener("click", switchOpen);
+                }
+
+                dealBtn.addEventListener("click", openMine);
+                noDealBtn.addEventListener("click", switchOpen);
+            }
+
+            function renderAll() {
+                renderBoard();
+                renderGrid();
+                renderStatus();
+            }
+
+            function tierClass(rank) {
+                const d = DATE_RANKING_LOW_TO_HIGH[rank - 1];
+                return d?.tier || "mid";
+            }
+
+            function renderBoard() {
+                const list = $("#boardList");
+                list.innerHTML = "";
+
+                // Always render in the LOW → HIGH fixed order so you can see what's left
+                for (let i = 0; i < DATE_RANKING_LOW_TO_HIGH.length; i++) {
+                    const canonical = DATE_RANKING_LOW_TO_HIGH[i];
+                    // check if eliminated (opened or your case revealed at end)
+                    let revealed = false;
+                    // If any case maps to this canonical name and is opened, mark revealed
+                    for (let c = 0; c < 26; c++) {
+                        const mapped = state.mapping[c];
+                        if (mapped && mapped.name === canonical.name) {
+                            const isOpen = state.opened.has(c + 1);
+                            // also revealed if game ended with your case and the mapped is your case
+                            const revealedByEnd =
+                                state.phase === "end" &&
+                                state.finalPrize &&
+                                state.yourCaseNumber === c + 1 &&
+                                state.dealt === false;
+                            if (isOpen || revealedByEnd) revealed = true;
+                        }
+                    }
+                    const slot = document.createElement("div");
+                    slot.className = `slot ${canonical.tier} ${revealed ? "revealed" : ""}`;
+                    slot.innerHTML = `<div class="name">${canonical.name}</div><div class="rank">#${i + 1}</div>`;
+                    list.appendChild(slot);
+                }
+            }
+
+            function renderGrid() {
+                const grid = $("#grid");
+                grid.innerHTML = "";
+
+                for (let i = 1; i <= 26; i++) {
+                    const caseEl = document.createElement("div");
+                    const mapped = state.mapping[i - 1];
+                    const isOpened = state.opened.has(i);
+                    caseEl.className = `case ${isOpened ? "opened revealed" : ""}`;
+                    caseEl.dataset.num = i;
+                    caseEl.innerHTML = `
+        <div class="lid"></div>
+        <div class="case-number">Case ${i}</div>
+        <div class="reveal-card"><div class="reveal ${mapped.rank >= 22 ? "high" : mapped.rank <= 8 ? "good" : "mid"}">${mapped.name}</div></div>
+      `;
+                    if (
+                        state.phase === "pick" ||
+                        (state.phase === "open" &&
+                            !isOpened &&
+                            i !== state.yourCaseNumber)
+                    ) {
+                        caseEl.addEventListener("click", () => openCase(i));
+                    } else {
+                        caseEl.style.pointerEvents = "none";
+                    }
+                    grid.appendChild(caseEl);
+                }
+            }
+
+            function renderStatus() {
+                $("#phase").textContent =
+                    state.phase === "pick"
+                        ? "Pick your case"
+                        : state.phase === "open"
+                          ? "Open cases"
+                          : state.phase === "offer"
+                            ? "Banker offer"
+                            : "Finished";
+                $("#yourCase").textContent = state.yourCaseNumber
+                    ? `#${state.yourCaseNumber}`
+                    : "—";
+                $("#picksLeft").textContent =
+                    state.phase === "open" ? state.picksLeft : "—";
+
+                const remainingCount = 26 - state.opened.size;
+                const unopenedOthers = state.yourCaseNumber
+                    ? remainingCount - 1
+                    : remainingCount;
+
+                // If all other cases are opened and no deal taken, prompt a final reveal
+                if (state.phase === "open" && unopenedOthers === 0) {
+                    state.phase = "offer";
+                    showFinalRevealModal();
+                }
+            }
+
+            async function animateCaseOpen(caseNumber) {
+                const el = $(`.case[data-num="${caseNumber}"]`);
+                if (!el) return;
+                el.classList.add("opened");
+                // fun little shake
+                el.animate(
+                    [
+                        { transform: "translateY(0px)" },
+                        { transform: "translateY(-3px)" },
+                        { transform: "translateY(0px)" },
+                    ],
+                    { duration: 220, easing: "ease-out" },
+                );
+                await sleep(360);
+                el.classList.add("revealed");
+            }
+
+            function showBanker() {
+                const offer = bankerOffer();
+                const modal = $("#bankerModal");
+                $("#bankerText").innerHTML =
+                    `There are <strong>${remainingDates().length}</strong> dates still in play. The Banker offers you…`;
+                $("#offerText").textContent = offer.label;
+                modal.classList.add("show");
+                modal.setAttribute("aria-hidden", "false");
+            }
+
+            function showFinalRevealModal() {
+                const modal = $("#bankerModal");
+                const yourPrize = state.mapping[state.yourCaseNumber - 1].name;
+                $("#bankerText").innerHTML =
+                    `Only your case remains. Ready to reveal what's inside?`;
+                $("#offerText").textContent = `Open your case`;
+                modal.classList.add("show");
+                modal.setAttribute("aria-hidden", "false");
+
+                // Temporarily repurpose buttons
+                const dealBtn = $("#dealBtn");
+                const noDealBtn = $("#noDealBtn");
+                dealBtn.textContent = "REVEAL IT";
+                noDealBtn.textContent = "Keep thinking…";
+
+                const onReveal = () => {
+                    hideBanker();
+                    finishNoDeal();
+                    cleanup();
+                };
+                const onCancel = () => {
+                    hideBanker();
+                    cleanup();
+                };
+
+                function cleanup() {
+                    // restore
+                    dealBtn.textContent = "DEAL";
+                    noDealBtn.textContent = "No Deal";
+                    dealBtn.removeEventListener("click", onReveal);
+                    noDealBtn.removeEventListener("click", onCancel);
+                }
+
+                dealBtn.addEventListener("click", onReveal);
+                noDealBtn.addEventListener("click", onCancel);
+            }
+
+            function hideBanker() {
+                const modal = $("#bankerModal");
+                modal.classList.remove("show");
+                modal.setAttribute("aria-hidden", "true");
+            }
+
+            function endGameScreen(html) {
+                const grid = $("#grid");
+                grid.innerHTML = `
+      <div style="grid-column:1/-1; display:grid; place-items:center; gap:14px; padding:26px 10px; text-align:center">
+        <div style="font-size:24px; font-weight:900; letter-spacing:0.5px">${html}</div>
+        <div style="color:var(--muted)">Play again and try to beat the Banker!</div>
+        <div style="display:flex; gap:10px; margin-top:8px">
+          <button class="primary" onclick="newGame()">New Game</button>
+        </div>
+      </div>
+    `;
+            }
+
+            // ----- EVENTS -----
+            $("#newGame").addEventListener("click", newGame);
+            $("#toggleHints").addEventListener("click", () => {
+                state.hints = !state.hints; // Reserved for future tooltip hints
+                $("#toggleHints").textContent =
+                    `Hints: ${state.hints ? "On" : "Off"}`;
+            });
+            $("#dealBtn").addEventListener("click", acceptDeal);
+            $("#noDealBtn").addEventListener("click", declineDeal);
+
+            // Start
+            newGame();
+        </script>
+    </body>
+</html>
