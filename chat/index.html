@@ -1,571 +1,408 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Smart Assistant</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>AI Chat • gpt-oss (free)</title>
         <style>
-            /* Custom scrollbar for a cleaner look (optional) */
-            #chat::-webkit-scrollbar {
-                width: 8px;
+            :root {
+                --bg: #0b1020;
+                --panel: #12182b;
+                --accent: #7c8cff;
+                --accent-2: #18d3ff;
+                --text: #e7ecff;
+                --muted: #9aa3c7;
+                --bubble-user: #1c2442;
+                --bubble-bot: #0f2038;
+                --radius: 14px;
+                --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
             }
-            #chat::-webkit-scrollbar-track {
-                background: #2d3748; /* Tailwind gray-800 */
+            * {
+                box-sizing: border-box;
             }
-            #chat::-webkit-scrollbar-thumb {
-                background: #4a5568; /* Tailwind gray-600 */
-                border-radius: 4px;
-            }
-            #chat::-webkit-scrollbar-thumb:hover {
-                background: #718096; /* Tailwind gray-500 */
-            }
-            /* Basic body styling */
             body {
-                font-family:
-                    "Inter", sans-serif; /* Using Inter font, common with Tailwind */
+                margin: 0;
+                background:
+                    radial-gradient(
+                        1200px 800px at 20% -10%,
+                        #1b2a5a44,
+                        transparent
+                    ),
+                    radial-gradient(
+                        900px 700px at 110% 20%,
+                        #0fc0ff22,
+                        transparent
+                    ),
+                    var(--bg);
+                color: var(--text);
+                font:
+                    16px/1.6 system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    Roboto,
+                    Inter,
+                    sans-serif;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
             }
-            /* Animation for mic button when listening */
-            .mic-listening {
-                animation: pulse 1.5s infinite;
+            .app {
+                width: min(980px, 100%);
+                height: 86vh;
+                display: grid;
+                grid-template-rows: auto 1fr auto;
+                background: linear-gradient(180deg, #0e1430aa, #0e1430f0);
+                border: 1px solid #24305b;
+                border-radius: 18px;
+                box-shadow: var(--shadow);
+                overflow: hidden;
             }
-            @keyframes pulse {
-                0% {
-                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); /* Tailwind blue-500 with opacity */
-                }
-                70% {
-                    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-                }
-                100% {
-                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-                }
+            header {
+                padding: 16px 18px;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                border-bottom: 1px solid #22305a;
+                background: linear-gradient(90deg, #0d1331, #0f183b);
+            }
+            .logo {
+                width: 34px;
+                height: 34px;
+                display: grid;
+                place-items: center;
+                border-radius: 10px;
+                background: conic-gradient(
+                    from 160deg,
+                    #7c8cff,
+                    #18d3ff,
+                    #7c8cff
+                );
+                color: #0b1020;
+                font-weight: 800;
+                box-shadow: inset 0 0 20px #ffffffaa;
+            }
+            .title {
+                font-weight: 700;
+                letter-spacing: 0.3px;
+            }
+            .sub {
+                color: var(--muted);
+                font-size: 13px;
+            }
+            .chat {
+                overflow: auto;
+                padding: 20px 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .row {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .row.user {
+                flex-direction: row-reverse;
+            }
+            .avatar {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #7c8cff, #18d3ff);
+                box-shadow: var(--shadow);
+            }
+            .bubble {
+                padding: 12px 14px;
+                border-radius: var(--radius);
+                max-width: 80%;
+                border: 1px solid #26335e;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            .user .bubble {
+                background: var(--bubble-user);
+            }
+            .bot .bubble {
+                background: var(--bubble-bot);
+            }
+            .toolbar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                border-top: 1px solid #22305a;
+                background: #0e1430;
+            }
+            .model {
+                appearance: none;
+                background: #0f1735;
+                color: var(--text);
+                border: 1px solid #2a3766;
+                border-radius: 10px;
+                padding: 8px 10px;
+            }
+            textarea {
+                flex: 1;
+                resize: none;
+                min-height: 52px;
+                max-height: 160px;
+                border-radius: 12px;
+                padding: 12px 14px;
+                background: #0f1735;
+                color: var(--text);
+                border: 1px solid #2a3766;
+                outline: none;
+                box-shadow: inset 0 0 0 1px transparent;
+                transition: box-shadow 0.2s ease;
+            }
+            textarea:focus {
+                box-shadow: inset 0 0 0 1px var(--accent);
+            }
+            button {
+                background: linear-gradient(
+                    135deg,
+                    var(--accent),
+                    var(--accent-2)
+                );
+                color: #0b1020;
+                font-weight: 700;
+                border: none;
+                padding: 10px 16px;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 10px 24px rgba(23, 175, 255, 0.25);
+            }
+            .small {
+                font-size: 12px;
+                color: var(--muted);
+            }
+            .controls {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .status {
+                margin-left: auto;
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .link {
+                color: #9fd8ff;
+                text-decoration: none;
+                border-bottom: 1px dashed #4ba8ff33;
+            }
+            .hidden {
+                display: none;
             }
         </style>
     </head>
-    <body
-        class="bg-gray-900 text-gray-200 flex items-center justify-center h-screen overflow-hidden"
-    >
-        <div
-            id="chat-container"
-            class="flex flex-col h-full max-h-[95vh] w-full max-w-2xl bg-gray-800 shadow-2xl rounded-lg"
-        >
-            <div
-                id="chat-header"
-                class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center text-lg font-semibold p-4 rounded-t-lg flex-shrink-0"
-            >
-                Smart Assistant
-            </div>
-
-            <div id="chat" class="flex-1 p-4 space-y-4 overflow-y-auto">
-                <div
-                    class="bubble bot bg-gray-700 text-gray-200 rounded-lg p-3 max-w-xs md:max-w-md self-start rounded-bl-none shadow"
-                >
-                    Hello! How can I assist you today?
+    <body>
+        <div class="app">
+            <header>
+                <div class="logo">AI</div>
+                <div>
+                    <div class="title">Chatbot</div>
+                    <div class="sub">Ask anything.</div>
                 </div>
-            </div>
+                <div class="status" id="status">ready</div>
+            </header>
 
-            <div
-                id="loading-indicator"
-                class="hidden p-4 text-center text-sm text-gray-400"
-            >
-                <div class="inline-flex items-center">
-                    <svg
-                        class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+            <main class="chat" id="chat"></main>
+
+            <form class="toolbar" id="form">
+                <select class="model" id="model">
+                    <option value="openai/gpt-oss-20b:free" selected>
+                        openai/gpt-oss-20b:free (free)
+                    </option>
+                    <option value="openai/gpt-oss-120b">
+                        openai/gpt-oss-120b
+                    </option>
+                </select>
+                <div class="controls small">
+                    <label
+                        ><input type="checkbox" id="stream" checked />
+                        stream</label
                     >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        ></circle>
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                    </svg>
-                    Thinking...
                 </div>
-            </div>
-
-            <div
-                id="controls"
-                class="flex-shrink-0 p-3 bg-gray-700 border-t border-gray-600 rounded-b-lg flex items-center gap-2"
-            >
-                <button
-                    id="text-btn"
-                    class="mode-btn bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-150 text-sm"
-                >
-                    Text
-                </button>
-                <button
-                    id="speech-btn"
-                    class="mode-btn bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-150 text-sm"
-                >
-                    Speech
-                </button>
-                <input
-                    type="text"
-                    id="user-input"
-                    placeholder="Ask me anything…"
-                    class="flex-1 p-2.5 border border-gray-500 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-600 text-gray-200 placeholder-gray-400 text-sm"
-                />
-                <button
-                    id="send-btn"
-                    title="Send"
-                    class="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        class="w-5 h-5"
-                    >
-                        <path
-                            d="M3.105 3.105a1.5 1.5 0 012.122-.001L19.41 11.191a1.515 1.515 0 010 2.618L5.227 21.999a1.5 1.5 0 01-2.122-2.121l1.328-1.328a.75.75 0 00-.091-1.009L2.12 15.317a1.5 1.5 0 01-.001-2.121l1.328-1.328a.75.75 0 001.009-.091L6.683 9.55a1.5 1.5 0 012.121-.001l1.328 1.328a.75.75 0 001.009.091l2.224 2.224a1.5 1.5 0 01.001 2.121l-1.328 1.328a.75.75 0 00.091 1.009l2.224 2.224a1.5 1.5 0 01-2.121 2.121L3.105 3.105zM15.53 8.47a.75.75 0 00-1.06 0l-2.225 2.224a.75.75 0 00.091 1.009l-1.328 1.328a1.5 1.5 0 01-2.121-.001L6.667 10.8a.75.75 0 00-1.009-.091L3.434 9.382a1.5 1.5 0 01-.001-2.121l2.224-2.225a.75.75 0 00.091-1.009L4.42 2.7a1.5 1.5 0 012.121-.001l11.192 11.191a.75.75 0 001.06-1.06L15.53 8.47z"
-                        />
-                    </svg>
-                </button>
-                <button
-                    id="mic-btn"
-                    title="Speak"
-                    class="hidden p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        class="w-5 h-5"
-                    >
-                        <path d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4z" />
-                        <path
-                            d="M5.5 9.5A.5.5 0 016 9h8a.5.5 0 010 1H6a.5.5 0 01-.5-.5z"
-                        />
-                        <path
-                            d="M3 7.5A2.5 2.5 0 015.5 5H6v2.5a2.5 2.5 0 005 0V5h.5A2.5 2.5 0 0117 7.5v5a2.5 2.5 0 01-2.5 2.5h-9A2.5 2.5 0 013 12.5v-5z"
-                        />
-                    </svg>
-                </button>
-            </div>
+                <textarea id="input" placeholder="Ask me anything…"></textarea>
+                <button type="submit">Send</button>
+            </form>
         </div>
 
         <script>
-            const WOLFRAM_APP_ID = "WA77V4-E8KPTV98GG"; // Your Wolfram Alpha App ID
-            let currentMode = "text"; // "text" or "speech"
-            let isListening = false; // For speech recognition state
+            /** CONFIG **/
+            const PA_BACKEND = "https://ggottli.pythonanywhere.com"; // <- CHANGE THIS
+            const ENDPOINT = `${PA_BACKEND}/app/chat`;
 
-            // DOM Elements
-            const chatEl = document.getElementById("chat");
-            const textBtn = document.getElementById("text-btn");
-            const speechBtn = document.getElementById("speech-btn");
-            const userInput = document.getElementById("user-input");
-            const sendBtn = document.getElementById("send-btn");
-            const micBtn = document.getElementById("mic-btn");
-            const loadingIndicator =
-                document.getElementById("loading-indicator");
+            /** UI helpers **/
+            const el = (id) => document.getElementById(id);
+            const chat = el("chat");
+            const statusEl = el("status");
+            const input = el("input");
+            const modelSel = el("model");
 
-            // --- Speech Recognition Setup ---
-            let recognition;
-            const SpeechRecognition =
-                window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.lang = "en-US";
-                recognition.continuous = false; // Process single utterances
-                recognition.interimResults = false; // Get final results
-
-                recognition.onstart = () => {
-                    isListening = true;
-                    micBtn.classList.add("mic-listening", "bg-red-700"); // Visual feedback
-                    micBtn.classList.remove("bg-red-500");
-                    console.log("Speech recognition started...");
-                };
-
-                recognition.onresult = async (event) => {
-                    const transcript = event.results[0][0].transcript.trim();
-                    console.log("Speech recognized:", transcript);
-                    if (transcript) {
-                        appendMessage("user", transcript);
-                        await processQuery(transcript);
-                    }
-                };
-
-                recognition.onerror = (event) => {
-                    console.error("Speech recognition error:", event.error);
-                    let errorMessage = "Sorry, I couldn't understand that.";
-                    if (event.error === "no-speech") {
-                        errorMessage =
-                            "I didn't hear anything. Please try again.";
-                    } else if (event.error === "audio-capture") {
-                        errorMessage =
-                            "Audio capture failed. Please check your microphone.";
-                    } else if (event.error === "not-allowed") {
-                        errorMessage =
-                            "Microphone access denied. Please enable it in your browser settings.";
-                    }
-                    appendMessage("bot", errorMessage);
-                    if (currentMode === "speech") {
-                        // Only switch if still in speech mode
-                        switchMode("text"); // Revert to text mode on critical errors
-                    }
-                };
-
-                recognition.onend = () => {
-                    isListening = false;
-                    micBtn.classList.remove("mic-listening", "bg-red-700");
-                    micBtn.classList.add("bg-red-500");
-                    console.log("Speech recognition ended.");
-                    // If in speech mode and not intentionally stopped, could auto-restart or prompt
-                };
-            } else {
-                console.warn(
-                    "Speech Recognition API not supported in this browser.",
-                );
-                speechBtn.disabled = true;
-                speechBtn.classList.add("opacity-50", "cursor-not-allowed");
-                speechBtn.title = "Speech input not supported by your browser";
-            }
-
-            // --- Event Listeners ---
-            textBtn.addEventListener("click", () => switchMode("text"));
-            speechBtn.addEventListener("click", () => {
-                if (SpeechRecognition) {
-                    switchMode("speech");
-                } else {
-                    appendMessage(
-                        "bot",
-                        "Speech input is not supported by your browser.",
-                    );
-                }
-            });
-
-            sendBtn.addEventListener("click", handleTextQuery);
-            userInput.addEventListener("keypress", (e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    // Send on Enter, allow Shift+Enter for new line
-                    e.preventDefault(); // Prevent new line in input
-                    handleTextQuery();
-                }
-            });
-
-            micBtn.addEventListener("click", () => {
-                if (!SpeechRecognition) return;
-                if (isListening) {
-                    recognition.stop();
-                } else {
-                    try {
-                        recognition.start();
-                    } catch (error) {
-                        console.error(
-                            "Error starting speech recognition:",
-                            error,
-                        );
-                        appendMessage(
-                            "bot",
-                            "Could not start microphone. Please check permissions.",
-                        );
-                        if (currentMode === "speech") switchMode("text");
-                    }
-                }
-            });
-
-            // --- Core Functions ---
-            function switchMode(mode) {
-                currentMode = mode;
-                userInput.value = ""; // Clear input on mode switch
-
-                if (mode === "text") {
-                    textBtn.classList.replace("bg-gray-600", "bg-blue-500");
-                    textBtn.classList.replace(
-                        "hover:bg-gray-500",
-                        "hover:bg-blue-600",
-                    );
-                    speechBtn.classList.replace("bg-blue-500", "bg-gray-600");
-                    speechBtn.classList.replace(
-                        "hover:bg-blue-600",
-                        "hover:bg-gray-500",
-                    );
-
-                    userInput.style.display = "flex";
-                    sendBtn.style.display = "block";
-                    micBtn.style.display = "none";
-                    userInput.focus();
-                    if (isListening) recognition.stop();
-                } else {
-                    // Speech mode
-                    speechBtn.classList.replace("bg-gray-600", "bg-blue-500");
-                    speechBtn.classList.replace(
-                        "hover:bg-gray-500",
-                        "hover:bg-blue-600",
-                    );
-                    textBtn.classList.replace("bg-blue-500", "bg-gray-600");
-                    textBtn.classList.replace(
-                        "hover:bg-blue-600",
-                        "hover:bg-gray-500",
-                    );
-
-                    userInput.style.display = "none";
-                    sendBtn.style.display = "none";
-                    micBtn.style.display = "block";
-                    if (!isListening && recognition) {
-                        // Start listening if not already
-                        try {
-                            recognition.start();
-                        } catch (error) {
-                            console.error(
-                                "Error auto-starting speech recognition:",
-                                error,
-                            );
-                            appendMessage(
-                                "bot",
-                                "Could not start microphone. Please check permissions and try again.",
-                            );
-                            switchMode("text"); // Fallback to text mode
-                        }
-                    }
-                }
-            }
-
-            async function handleTextQuery() {
-                const query = userInput.value.trim();
-                if (!query) return;
-                appendMessage("user", query);
-                userInput.value = ""; // Clear input after sending
-                await processQuery(query);
-            }
-
-            async function processQuery(query) {
-                showLoading(true);
-                let reply = await getAnswer(query);
-                showLoading(false);
-                appendMessage("bot", reply);
-                if (currentMode === "speech" && window.speechSynthesis) {
-                    speak(reply);
-                }
-            }
-
-            function appendMessage(sender, text) {
+            function addMessage(role, content) {
+                const row = document.createElement("div");
+                row.className = `row ${role}`;
+                const avatar = document.createElement("div");
+                avatar.className = "avatar";
                 const bubble = document.createElement("div");
-                bubble.classList.add(
-                    "bubble",
-                    "p-3",
-                    "rounded-lg",
-                    "max-w-xs",
-                    "md:max-w-md",
-                    "shadow",
-                );
-                bubble.textContent = text;
-
-                if (sender === "user") {
-                    bubble.classList.add(
-                        "bg-blue-500",
-                        "text-white",
-                        "self-end",
-                        "rounded-br-none",
-                        "ml-auto",
-                    );
-                } else {
-                    // bot
-                    bubble.classList.add(
-                        "bg-gray-700",
-                        "text-gray-200",
-                        "self-start",
-                        "rounded-bl-none",
-                    );
-                }
-                chatEl.appendChild(bubble);
-                chatEl.scrollTop = chatEl.scrollHeight; // Scroll to bottom
+                bubble.className = `bubble ${role === "user" ? "user" : "bot"}`;
+                bubble.textContent = content;
+                row.appendChild(avatar);
+                row.appendChild(bubble);
+                chat.appendChild(row);
+                chat.scrollTop = chat.scrollHeight;
+                return bubble; // so we can stream append
             }
 
-            function showLoading(isLoading) {
-                if (isLoading) {
-                    loadingIndicator.classList.remove("hidden");
-                } else {
-                    loadingIndicator.classList.add("hidden");
-                }
+            function setStatus(t) {
+                statusEl.textContent = t;
             }
 
-            function speak(text) {
-                if (!text || !window.speechSynthesis) return;
-                // Cancel any previous speech
-                window.speechSynthesis.cancel();
-
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = "en-US"; // Ensure correct language for synthesis
-                // You can add more utterance configurations here (e.g., voice, rate, pitch)
-                window.speechSynthesis.speak(utterance);
-            }
-
-            // --- API Calls ---
-            async function getAnswer(input) {
-                // Try Wolfram Alpha first
-                let wolframResult = await queryWolfram(input);
-                if (
-                    wolframResult &&
-                    !wolframResult.startsWith("WolframAlpha Error:") &&
-                    wolframResult.toLowerCase() !==
-                        "wolfram alpha did not understand your query"
-                ) {
-                    return wolframResult;
-                }
-
-                // Then try Wikipedia
-                try {
-                    let wikiResult = await queryWiki(input);
-                    if (
-                        wikiResult &&
-                        wikiResult !== "No summary found on Wikipedia."
-                    ) {
-                        return wikiResult;
-                    }
-                } catch (error) {
-                    console.error("Wikipedia query error:", error);
-                    // Don't return error message here, let it fall through or be handled by Wolfram's error
-                }
-
-                // If Wolfram had an error or no specific result, and Wikipedia also failed or had no result
-                if (
-                    wolframResult &&
-                    wolframResult.startsWith("WolframAlpha Error:")
-                ) {
-                    return wolframResult; // Return Wolfram's specific error
-                }
-                if (
-                    wolframResult &&
-                    wolframResult.toLowerCase() ===
-                        "wolfram alpha did not understand your query"
-                ) {
-                    return "I'm having a bit of trouble understanding that. Could you try phrasing it differently?";
-                }
-
-                return "Sorry, I couldn't find a clear answer for that. Please try asking in a different way.";
-            }
-
-            async function queryWolfram(input) {
-                const wolframUrl = `https://api.wolframalpha.com/v2/query?appid=${WOLFRAM_APP_ID}&input=${encodeURIComponent(input)}&output=json&format=plaintext`; // Requesting plaintext
-                // Using a CORS proxy. Replace with your own or a more reliable one if needed.
-                // allorigins.win can be unreliable or slow. Consider alternatives for production.
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(wolframUrl)}`;
-
-                try {
-                    const response = await fetch(proxyUrl, {
-                        signal: AbortSignal.timeout(8000),
-                    }); // 8-second timeout
-                    if (!response.ok) {
-                        console.error(
-                            "Wolfram Proxy Error:",
-                            response.status,
-                            await response.text(),
-                        );
-                        return `WolframAlpha Error: Could not reach the service (proxy status ${response.status}).`;
-                    }
-                    const data = await response.json();
-
-                    if (data.queryresult && data.queryresult.success) {
-                        // Find the "Result" pod or the first pod with useful plaintext
-                        const resultPod = data.queryresult.pods?.find(
-                            (pod) => pod.primary && pod.subpods?.[0]?.plaintext,
-                        );
-                        if (resultPod) {
-                            return resultPod.subpods[0].plaintext.trim();
-                        }
-                        // Fallback: join primary pods if "Result" isn't found or isn't primary
-                        const primaryPods = data.queryresult.pods?.filter(
-                            (pod) => pod.primary && pod.subpods?.[0]?.plaintext,
-                        );
-                        if (primaryPods && primaryPods.length > 0) {
-                            return primaryPods
-                                .map((p) => p.subpods[0].plaintext.trim())
-                                .join("\n\n");
-                        }
-                        // Fallback: join first few pods if no primary ones are useful
-                        const interpretationPod = data.queryresult.pods?.find(
-                            (pod) =>
-                                pod.id === "Input" ||
-                                pod.title === "Input interpretation",
-                        );
-                        const firstMeaningfulPod = data.queryresult.pods?.find(
-                            (pod) =>
-                                pod.id !== "Input" &&
-                                pod.subpods?.[0]?.plaintext &&
-                                pod.subpods[0].plaintext.trim() !== "",
-                        );
-
-                        if (firstMeaningfulPod) {
-                            return firstMeaningfulPod.subpods[0].plaintext.trim();
-                        }
-                        return "Wolfram Alpha processed the query, but I couldn't extract a concise answer.";
-                    } else if (data.queryresult && data.queryresult.error) {
-                        console.warn(
-                            "Wolfram API Error:",
-                            data.queryresult.error,
-                        );
-                        return `WolframAlpha Error: ${data.queryresult.error.msg || "Failed to process query."}`;
-                    } else if (
-                        data.queryresult &&
-                        !data.queryresult.success &&
-                        data.queryresult.didyoumeans
-                    ) {
-                        return `Wolfram Alpha did not understand your query. Did you mean: ${data.queryresult.didyoumeans.val}?`;
-                    } else if (
-                        data.queryresult &&
-                        data.queryresult.numpods === 0
-                    ) {
-                        return "Wolfram Alpha did not find any information for your query.";
-                    }
-                    return "Wolfram Alpha did not understand your query.";
-                } catch (error) {
-                    console.error("Wolfram fetch/processing error:", error);
-                    if (error.name === "AbortError") {
-                        return "WolframAlpha Error: The request timed out.";
-                    }
-                    return "WolframAlpha Error: Could not fetch data. The service might be down or there's a network issue.";
-                }
-            }
-
-            async function queryWiki(input) {
-                const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(input.replace(/\s+/g, "_"))}`; // Replace spaces with underscores for Wikipedia
-                try {
-                    const response = await fetch(url, {
-                        headers: {
-                            "Api-User-Agent":
-                                "SmartAssistant/1.0 (your-email@example.com)",
-                        }, // Good practice for Wikipedia API
-                        signal: AbortSignal.timeout(7000), // 7-second timeout
-                    });
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            return "No summary found on Wikipedia for that topic.";
-                        }
-                        throw new Error(
-                            `Wikipedia API error: ${response.status}`,
-                        );
-                    }
-                    const data = await response.json();
-                    if (data.type === "disambiguation") {
-                        return `That term is ambiguous on Wikipedia. Can you be more specific? (e.g., ${data.title} (topic))`;
-                    }
-                    return data.extract || "No summary found on Wikipedia.";
-                } catch (error) {
-                    console.error("Wikipedia fetch error:", error);
-                    if (error.name === "AbortError") {
-                        return "Wikipedia Error: The request timed out.";
-                    }
-                    return "Wikipedia Error: Could not fetch data from Wikipedia.";
-                }
-            }
-
-            // Initial setup
-            switchMode("text"); // Start in text mode
-            appendMessage(
-                "bot",
-                "Welcome! I can fetch information from WolframAlpha and Wikipedia. How can I help?",
+            /** Persistence (simple) **/
+            const HISTORY_KEY = "oss-chat-history";
+            let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+            history.forEach((m) =>
+                addMessage(m.role === "user" ? "user" : "bot", m.content),
             );
+
+            function pushHistory(role, content) {
+                history.push({ role, content });
+                if (history.length > 100) history = history.slice(-100);
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            }
+
+            /** Networking **/
+            async function send(messages, { stream, model }) {
+                const body = JSON.stringify({ messages, stream, model });
+                const res = await fetch(ENDPOINT, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body,
+                });
+
+                if (!stream) {
+                    const data = await res.json();
+                    const msg =
+                        data?.choices?.[0]?.message?.content ??
+                        (data?.error?.detail || JSON.stringify(data));
+                    return { done: true, text: msg };
+                }
+
+                // Stream: parse SSE "data: {json}"
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let partial = "";
+                let done = false;
+                return {
+                    async read(onChunk) {
+                        while (true) {
+                            const { value, done: d } = await reader.read();
+                            if (d) {
+                                done = true;
+                                break;
+                            }
+                            const chunk = decoder.decode(value, {
+                                stream: true,
+                            });
+                            partial += chunk;
+                            // Split into SSE lines
+                            const lines = partial.split("\n");
+                            partial = lines.pop() || "";
+                            for (const line of lines) {
+                                const trimmed = line.trim();
+                                if (!trimmed.startsWith("data:")) continue;
+                                const payload = trimmed.slice(5).trim();
+                                if (!payload || payload === "[DONE]") continue;
+                                try {
+                                    const json = JSON.parse(payload);
+                                    const delta =
+                                        json?.choices?.[0]?.delta?.content ??
+                                        "";
+                                    if (delta) onChunk(delta);
+                                } catch (e) {
+                                    /* ignore parse blips */
+                                }
+                            }
+                        }
+                        return { done: true };
+                    },
+                };
+            }
+
+            /** Form handling **/
+            document
+                .getElementById("form")
+                .addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const content = input.value.trim();
+                    if (!content) return;
+
+                    const model = modelSel.value;
+                    const stream = el("stream").checked;
+
+                    const userBubble = addMessage("user", content);
+                    pushHistory("user", content);
+
+                    input.value = "";
+                    const botBubble = addMessage("bot", ""); // placeholder to stream into
+                    setStatus("thinking…");
+
+                    const messages = buildChatMessages(content);
+
+                    try {
+                        if (stream) {
+                            const s = await send(messages, {
+                                stream: true,
+                                model,
+                            });
+                            await s.read((delta) => {
+                                botBubble.textContent += delta;
+                            });
+                            pushHistory("assistant", botBubble.textContent);
+                            setStatus("ready");
+                        } else {
+                            const { text } = await send(messages, {
+                                stream: false,
+                                model,
+                            });
+                            botBubble.textContent = text;
+                            pushHistory("assistant", text);
+                            setStatus("ready");
+                        }
+                    } catch (err) {
+                        botBubble.textContent = "Error contacting server.";
+                        setStatus("error");
+                        console.error(err);
+                    }
+                });
+
+            function buildChatMessages(latestUserText) {
+                // Rehydrate last ~10 messages for minimal context
+                const msgs = [];
+                const recent = history.slice(-10);
+                for (const m of recent) {
+                    msgs.push({
+                        role: m.role === "user" ? "user" : "assistant",
+                        content: m.content,
+                    });
+                }
+                msgs.push({ role: "user", content: latestUserText });
+                // You can also prepend a system prompt here if desired
+                return msgs;
+            }
+
+            // UX: Enter to send; Shift+Enter for newline
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    document.querySelector("button[type=submit]").click();
+                }
+            });
         </script>
     </body>
 </html>
