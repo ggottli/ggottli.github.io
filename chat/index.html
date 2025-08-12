@@ -278,55 +278,73 @@
 
             /** Networking **/
             async function send(messages, { stream, model }) {
-                const body = JSON.stringify({ messages, stream, model });
                 const res = await fetch(ENDPOINT, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body,
+                    body: JSON.stringify({ messages, stream, model }),
                 });
+
+                // Handle HTTP errors early
+                if (!res.ok) {
+                    let msg = "Request failed";
+                    try {
+                        const j = await res.json();
+                        msg = j?.error?.detail || j?.error || JSON.stringify(j);
+                    } catch {}
+                    throw new Error(msg);
+                }
+
+                const ct = (
+                    res.headers.get("content-type") || ""
+                ).toLowerCase();
+
+                // Fallback: upstream returned JSON (non-streaming)
+                if (stream && !ct.includes("text/event-stream")) {
+                    const data = await res.json();
+                    const msg =
+                        data?.choices?.[0]?.message?.content ||
+                        data?.error?.message ||
+                        data?.error?.detail ||
+                        JSON.stringify(data);
+                    return { done: true, text: msg };
+                }
 
                 if (!stream) {
                     const data = await res.json();
                     const msg =
-                        data?.choices?.[0]?.message?.content ??
-                        (data?.error?.detail || JSON.stringify(data));
+                        data?.choices?.[0]?.message?.content ||
+                        data?.error?.detail ||
+                        JSON.stringify(data);
                     return { done: true, text: msg };
                 }
 
-                // Stream: parse SSE "data: {json}"
+                // Streaming (SSE) path
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let partial = "";
-                let done = false;
                 return {
                     async read(onChunk) {
                         while (true) {
-                            const { value, done: d } = await reader.read();
-                            if (d) {
-                                done = true;
-                                break;
-                            }
-                            const chunk = decoder.decode(value, {
-                                stream: true,
-                            });
-                            partial += chunk;
-                            // Split into SSE lines
+                            const { value, done } = await reader.read();
+                            if (done) break;
+                            partial += decoder.decode(value, { stream: true });
                             const lines = partial.split("\n");
                             partial = lines.pop() || "";
                             for (const line of lines) {
-                                const trimmed = line.trim();
-                                if (!trimmed.startsWith("data:")) continue;
-                                const payload = trimmed.slice(5).trim();
-                                if (!payload || payload === "[DONE]") continue;
-                                try {
-                                    const json = JSON.parse(payload);
-                                    const delta =
-                                        json?.choices?.[0]?.delta?.content ??
-                                        "";
-                                    if (delta) onChunk(delta);
-                                } catch (e) {
-                                    /* ignore parse blips */
+                                const t = line.trim();
+                                if (t.startsWith("data:")) {
+                                    const payload = t.slice(5).trim();
+                                    if (!payload || payload === "[DONE]")
+                                        continue;
+                                    try {
+                                        const j = JSON.parse(payload);
+                                        const delta =
+                                            j?.choices?.[0]?.delta?.content ??
+                                            "";
+                                        if (delta) onChunk(delta);
+                                    } catch {}
                                 }
+                                // ignore ":" keepalive comments per spec
                             }
                         }
                         return { done: true };
