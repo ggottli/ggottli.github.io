@@ -169,6 +169,11 @@
                     var userInput = document
                         .getElementById("searchInput")
                         .value.toLowerCase();
+
+                    if (userInput.toLowerCase().startsWith("chat ")) {
+                        return;
+                    }
+
                     switch (userInput) {
                         case "home":
                         case "welcome":
@@ -194,6 +199,208 @@
                             );
                     }
                 });
+        </script>
+        <script>
+            /*** CONFIG ***/
+            const USE_PROXY = true;
+            const PA_BACKEND = "https://ggottli.pythonanywhere.com"; // your backend base
+            const PROXY_ENDPOINT = `${PA_BACKEND}/api/chat`; // expects {messages, stream, model}
+            const OPENROUTER_API_KEY = "sk-or-xxxxxxxx"; // ONLY if USE_PROXY=false (testing)
+            const DEFAULT_MODEL = "openai/gpt-oss-20b:free";
+
+            /*** DOM helpers for the terminal ***/
+            const terminal = document.getElementById("terminal");
+            function appendBlock(cls, html) {
+                const div = document.createElement("div");
+                div.className = cls;
+                div.innerHTML = html;
+                terminal.appendChild(div);
+                // auto-scroll
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: "smooth",
+                });
+                return div;
+            }
+            function appendCommand(cmd) {
+                return appendBlock("command", `&gt; ${cmd}`);
+            }
+            function appendOutput(initial = "") {
+                return appendBlock("output", initial);
+            }
+
+            /*** Generic tolerant SSE reader (same idea as above) ***/
+            async function readSSEStream(res, onChunk) {
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let partial = "";
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    partial += decoder.decode(value, { stream: true });
+                    const lines = partial.split("\n");
+                    partial = lines.pop() || "";
+                    for (const raw of lines) {
+                        const line = raw.trim();
+                        if (!line || line.startsWith(":")) continue;
+                        if (!line.startsWith("data:")) continue;
+                        const payload = line.slice(5).trim();
+                        if (!payload || payload === "[DONE]") continue;
+                        try {
+                            const j = JSON.parse(payload);
+                            const delta =
+                                j?.choices?.[0]?.delta?.content ??
+                                j?.choices?.[0]?.message?.content ??
+                                j?.content ??
+                                j?.text ??
+                                j?.response?.delta ??
+                                "";
+                            if (delta) onChunk(delta);
+                        } catch {
+                            /* tolerate non-JSON */
+                        }
+                    }
+                }
+            }
+
+            /*** Backends ***/
+            async function chatViaProxy(
+                prompt,
+                { model = DEFAULT_MODEL, stream = true } = {},
+            ) {
+                const messages = [{ role: "user", content: prompt }];
+                const res = await fetch(PROXY_ENDPOINT, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ messages, model, stream }),
+                });
+
+                if (!res.ok) {
+                    let msg = "Request failed";
+                    try {
+                        msg = (await res.json())?.error?.detail || msg;
+                    } catch {}
+                    throw new Error(msg);
+                }
+
+                const ct = (
+                    res.headers.get("content-type") || ""
+                ).toLowerCase();
+                if (stream && ct.includes("text/event-stream")) {
+                    return { mode: "stream", res };
+                } else {
+                    const data = await res.json();
+                    const text =
+                        data?.choices?.[0]?.message?.content ||
+                        data?.error?.detail ||
+                        JSON.stringify(data);
+                    return { mode: "json", text };
+                }
+            }
+
+            async function chatViaOpenRouter(
+                prompt,
+                { model = DEFAULT_MODEL, stream = true } = {},
+            ) {
+                const body = {
+                    model,
+                    stream,
+                    messages: [{ role: "user", content: prompt }],
+                };
+                const res = await fetch(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                            // optional metadata headers:
+                            "X-Title": "Greg Terminal Chat",
+                        },
+                        body: JSON.stringify(body),
+                    },
+                );
+
+                if (!res.ok) {
+                    let msg = "Request failed";
+                    try {
+                        msg = (await res.json())?.error?.message || msg;
+                    } catch {}
+                    throw new Error(msg);
+                }
+
+                const ct = (
+                    res.headers.get("content-type") || ""
+                ).toLowerCase();
+                if (stream && ct.includes("text/event-stream")) {
+                    return { mode: "stream", res };
+                } else {
+                    const data = await res.json();
+                    const text =
+                        data?.choices?.[0]?.message?.content ||
+                        data?.error?.message ||
+                        JSON.stringify(data);
+                    return { mode: "json", text };
+                }
+            }
+
+            /*** Hidden "chat ..." command hook ***/
+            (function hookTerminalChat() {
+                const form = document.getElementById("searchForm");
+                const input = document.getElementById("searchInput");
+
+                form.addEventListener("submit", async (event) => {
+                    // We keep your existing router; only intercept when it starts with "chat "
+                    const raw = input.value.trim();
+                    if (!raw.toLowerCase().startsWith("chat ")) return; // let your original switch() handle others
+
+                    event.preventDefault();
+
+                    const prompt = raw.slice(5).trim();
+                    if (!prompt) {
+                        alert("Usage: chat <your prompt>");
+                        return;
+                    }
+
+                    // Show user command & streaming output block
+                    appendCommand(`chat ${prompt}`);
+                    const outEl = appendOutput(
+                        `<span class="comment"># contacting model…</span>`,
+                    );
+                    let firstTick = true;
+
+                    try {
+                        const caller = USE_PROXY
+                            ? chatViaProxy
+                            : chatViaOpenRouter;
+                        const result = await caller(prompt, {
+                            model: DEFAULT_MODEL,
+                            stream: true,
+                        });
+
+                        if (result.mode === "stream") {
+                            outEl.innerHTML = ""; // clear the "contacting model..." line
+                            await readSSEStream(result.res, (delta) => {
+                                if (firstTick) {
+                                    firstTick = false;
+                                }
+                                outEl.textContent += delta;
+                                window.scrollTo({
+                                    top: document.body.scrollHeight,
+                                });
+                            });
+                        } else {
+                            outEl.innerHTML = "";
+                            outEl.textContent = result.text;
+                        }
+                    } catch (err) {
+                        outEl.innerHTML = `<span class="comment"># error: ${String(err.message || err)}</span>`;
+                        console.error(err);
+                    } finally {
+                        input.value = "";
+                    }
+                });
+            })();
         </script>
     </body>
 </html>
