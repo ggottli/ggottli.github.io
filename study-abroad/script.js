@@ -252,6 +252,9 @@ Si el usuario pide ayuda, repite más despacio o explica.`,
   chatModal.showModal();
 }
 
+// Point the frontend to your PythonAnywhere server
+// e.g. https://yourname.pythonanywhere.com
+const API_BASE = "https://ggottli.pythonanywhere.com";
 async function sendChat(userText) {
   addMsg("user", userText);
   convo.push({ role: "user", content: userText });
@@ -259,12 +262,12 @@ async function sendChat(userText) {
   const botBubble = addMsg("bot", "…"); // stream into this
 
   try {
-    const res = await fetch("/api/chat", {
+    const res = await fetch(`${API_BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: convo,
-        stream: true, // ask server to stream via SSE
+        stream: true,
         temperature: 0.8,
         max_tokens: 400,
       }),
