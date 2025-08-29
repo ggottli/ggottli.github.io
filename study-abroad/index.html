@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Spanish Immersion Tree</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header class="topbar">
+            <h1>Spanish Immersion</h1>
+            <div class="toolbar">
+                <button id="fitBtn" class="btn">Fit</button>
+                <button id="zoomInBtn" class="btn">+</button>
+                <button id="zoomOutBtn" class="btn">–</button>
+                <button id="resetBtn" class="btn danger">Reset</button>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="mapWrap">
+                <svg id="linkLayer" class="link-layer" aria-hidden="true"></svg>
+                <div
+                    id="nodeLayer"
+                    class="node-layer"
+                    role="region"
+                    aria-label="Scenario Tree"
+                ></div>
+            </section>
+
+            <aside class="details">
+                <section class="card" id="detailsCard">
+                    <h2 id="detailTitle">Pick a scenario</h2>
+                    <p id="detailDesc">Click a hex to see details and start.</p>
+                    <div class="actions">
+                        <button id="startBtn" class="btn primary" disabled>
+                            Start
+                        </button>
+                        <button id="completeBtn" class="btn" disabled>
+                            Mark complete
+                        </button>
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <!-- Conversation modal -->
+        <dialog id="chatModal" class="modal">
+            <form method="dialog" class="modalInner" id="chatForm">
+                <h3 id="chatTitle">Scenario</h3>
+
+                <div
+                    id="chatWindow"
+                    class="chatWindow"
+                    aria-live="polite"
+                ></div>
+
+                <div class="chatControls">
+                    <input
+                        id="chatInput"
+                        class="chatInput"
+                        placeholder="Escribe o habla…"
+                        autocomplete="off"
+                    />
+                    <button id="micBtn" type="button" class="btn mic">
+                        🎤
+                    </button>
+                    <button id="sendBtn" class="btn primary">Enviar</button>
+                </div>
+
+                <small class="muted" id="sttHint"></small>
+
+                <menu class="chatMenu">
+                    <button class="btn" value="close">Close</button>
+                </menu>
+            </form>
+        </dialog>
+
+        <!-- Tiny pixel traveler sprite (SVG) -->
+        <svg
+            id="travelerSprite"
+            width="0"
+            height="0"
+            style="position: absolute; left: -9999px; top: -9999px"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <symbol
+                id="traveler16"
+                viewBox="0 0 32 32"
+                shape-rendering="crispEdges"
+            >
+                <!-- backpack -->
+                <rect x="3" y="11" width="7" height="9" fill="#6b4e2e" />
+                <rect x="4" y="12" width="5" height="7" fill="#8c653b" />
+                <!-- body -->
+                <rect x="10" y="11" width="12" height="12" fill="#d08b3e" />
+                <rect x="11" y="12" width="10" height="10" fill="#eba54c" />
+                <!-- head -->
+                <rect x="13" y="5" width="8" height="8" fill="#ffd7b1" />
+                <rect x="13" y="5" width="8" height="2" fill="#b1782e" />
+                <!-- hat -->
+                <rect x="11" y="4" width="12" height="2" fill="#304b7a" />
+                <rect x="14" y="2" width="6" height="2" fill="#3d64a8" />
+                <!-- legs -->
+                <rect x="12" y="23" width="5" height="7" fill="#2e2e2e" />
+                <rect x="17" y="23" width="5" height="7" fill="#2e2e2e" />
+                <!-- shoes -->
+                <rect x="11" y="29" width="7" height="2" fill="#1b1b1b" />
+                <rect x="17" y="29" width="7" height="2" fill="#1b1b1b" />
+            </symbol>
+        </svg>
+
+        <script src="script.js"></script>
+    </body>
+</html>
