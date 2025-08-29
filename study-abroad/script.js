@@ -1,5 +1,5 @@
 /* ============================
-   Radial Tree + Chat (SSE-ready)
+   Radial Tree + Chat (SSE + Voice Mode)
    ============================ */
 
 /* -------- Demo tree data -------- */
@@ -70,6 +70,9 @@ const fitBtn = document.getElementById("fitBtn");
 const zoomInBtn = document.getElementById("zoomInBtn");
 const zoomOutBtn = document.getElementById("zoomOutBtn");
 const resetBtn = document.getElementById("resetBtn");
+
+/* -------- API base (PythonAnywhere) -------- */
+const API_BASE = "https://ggottli.pythonanywhere.com";
 
 /* -------- State -------- */
 let scale = 1,
@@ -250,11 +253,10 @@ Si el usuario pide ayuda, repite más despacio o explica.`,
     "Escenario: " + detailTitle.textContent + ". ¡Listo cuando tú digas!",
   );
   chatModal.showModal();
+  // reset voice mode state when opening
+  stopVoiceMode();
 }
 
-// Point the frontend to your PythonAnywhere server
-// e.g. https://yourname.pythonanywhere.com
-const API_BASE = "https://ggottli.pythonanywhere.com";
 async function sendChat(userText) {
   addMsg("user", userText);
   convo.push({ role: "user", content: userText });
@@ -267,7 +269,7 @@ async function sendChat(userText) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: convo,
-        stream: true,
+        stream: true, // ask server to stream via SSE
         temperature: 0.8,
         max_tokens: 400,
       }),
@@ -315,7 +317,7 @@ async function sendChat(userText) {
       const finalText = (acc || "").trim();
       botBubble.textContent = finalText || "(sin respuesta)";
       if (finalText) convo.push({ role: "assistant", content: finalText });
-      return;
+      return finalText;
     }
 
     // ---- NON-STREAM PATH ----
@@ -323,9 +325,11 @@ async function sendChat(userText) {
     const text = extractNonStreamAssistant(json) || "(sin respuesta)";
     botBubble.textContent = text;
     convo.push({ role: "assistant", content: text });
+    return text;
   } catch (err) {
     console.error(err);
     botBubble.textContent = "Error de conexión. Intenta de nuevo.";
+    return "";
   }
 }
 
@@ -335,44 +339,139 @@ sendBtn.addEventListener("click", (e) => {
   const v = chatInput.value.trim();
   if (!v) return;
   chatInput.value = "";
-  sendChat(v);
+  sendChat(v).then((reply) => {
+    if (voiceMode && reply) speak(reply).then(() => maybeStartListening());
+  });
 });
 
 /* ============================
-   Speech-to-text (optional)
+   Voice Mode (STT + TTS loop)
    ============================ */
-let recognizing = false,
-  recognizer = null;
+let voiceMode = false;
+
+// --- STT setup (SpeechRecognition) ---
+let recognizer = null,
+  recognizing = false;
 if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognizer = new SR();
-  recognizer.lang = "es-ES";
+  recognizer.lang = "es-ES"; // target accent; you can make this scenario-selectable
   recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
   recognizer.onresult = (e) => {
     const txt = Array.from(e.results)
       .map((r) => r[0].transcript)
-      .join(" ");
-    chatInput.value = txt;
+      .join(" ")
+      .trim();
+    if (!txt) {
+      maybeStartListening();
+      return;
+    }
+    chatInput.value = ""; // keep input clean while in voice mode
+    sendChat(txt).then((reply) => {
+      if (voiceMode && reply) speak(reply).then(() => maybeStartListening());
+    });
+  };
+  recognizer.onerror = () => {
+    recognizing = false;
+    if (voiceMode) maybeStartListening();
   };
   recognizer.onend = () => {
     recognizing = false;
-    micBtn.textContent = "🎤";
+    if (voiceMode) maybeStartListening();
   };
-  sttHint.textContent = "Tip: usa 🎤 para dictar (si tu navegador lo soporta).";
+  sttHint.textContent = "Tip: pulsa 🎤 para hablar y alternar Modo Voz.";
 } else {
   micBtn.disabled = true;
   sttHint.textContent = "Tu navegador no soporta dictado (Web Speech API).";
 }
-micBtn.addEventListener("click", () => {
+
+// --- TTS setup (speechSynthesis) ---
+let ttsReady = false,
+  esVoice = null;
+function pickSpanishVoice() {
+  const synth = window.speechSynthesis;
+  const voices = synth.getVoices();
+  // Prefer es-ES, then any es-*
+  esVoice =
+    voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es-es")) ||
+    voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("es"));
+  ttsReady = !!esVoice;
+}
+if ("speechSynthesis" in window) {
+  pickSpanishVoice();
+  window.speechSynthesis.onvoiceschanged = pickSpanishVoice;
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) return Promise.resolve(); // no TTS
+  // Stop any ongoing speech to support barge-in
+  window.speechSynthesis.cancel();
+
+  return new Promise((resolve) => {
+    const u = new SpeechSynthesisUtterance(text);
+    if (esVoice) u.voice = esVoice;
+    u.lang = (esVoice && esVoice.lang) || "es-ES";
+    u.rate = 1.0; // adjust if you want faster/slower
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    u.onend = resolve;
+    u.onerror = resolve;
+    window.speechSynthesis.speak(u);
+  });
+}
+
+function startListening() {
+  if (!recognizer || recognizing) return;
+  try {
+    recognizer.start();
+    recognizing = true;
+  } catch {
+    /* ignore rapid restarts */
+  }
+}
+function stopListening() {
   if (!recognizer) return;
-  if (recognizing) {
+  try {
     recognizer.stop();
+  } catch {}
+  recognizing = false;
+}
+function maybeStartListening() {
+  // Only auto-start if in voice mode and not currently speaking
+  if (voiceMode && !window.speechSynthesis.speaking && !recognizing) {
+    startListening();
+  }
+}
+
+function startVoiceMode() {
+  if (voiceMode) return;
+  voiceMode = true;
+  micBtn.textContent = "🛑";
+  micBtn.title = "Detener Modo Voz";
+  // If TTS not supported, we still do STT->text responses
+  maybeStartListening();
+}
+function stopVoiceMode() {
+  if (!voiceMode) return;
+  voiceMode = false;
+  micBtn.textContent = "🎤";
+  micBtn.title = "Modo Voz";
+  stopListening();
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+micBtn.addEventListener("click", () => {
+  if (!recognizer && !("speechSynthesis" in window)) {
+    // no voice capabilities at all
     return;
   }
-  recognizing = true;
-  micBtn.textContent = "⏺";
-  recognizer.start();
+  if (voiceMode) stopVoiceMode();
+  else startVoiceMode();
 });
+
+// Close dialog => stop voice mode
+chatModal.addEventListener("close", stopVoiceMode);
 
 /* ============================
    Pan & zoom
