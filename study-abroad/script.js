@@ -213,6 +213,7 @@ function addMsg(role, text) {
 
 function extractNonStreamAssistant(json) {
   try {
+    // Some providers wrap reasoning separately
     return json?.choices?.[0]?.message?.content || "";
   } catch {
     return "";
@@ -222,6 +223,12 @@ function extractNonStreamAssistant(json) {
 function parseSSEData(payload) {
   try {
     const j = JSON.parse(payload);
+
+    // Skip reasoning if present
+    if (j?.choices?.[0]?.delta?.reasoning) {
+      return "";
+    }
+
     const delta = j?.choices?.[0]?.delta?.content;
     if (typeof delta === "string") return delta;
     const full = j?.choices?.[0]?.message?.content;
