@@ -1,0 +1,92 @@
+[
+  {
+    "date": "2025-01-01",
+    "size": {
+      "rows": 5,
+      "cols": 5
+    },
+    "grid": [
+      "APPLE",
+      ".NINE",
+      "PASTA",
+      ".IDLE",
+      "TREES"
+    ],
+    "clues": {
+      "across": [
+        {
+          "num": 1,
+          "row": 0,
+          "col": 0,
+          "answer": "APPLE",
+          "clue": "Keeps the doctor away, they say"
+        },
+        {
+          "num": 3,
+          "row": 1,
+          "col": 1,
+          "answer": "NINE",
+          "clue": "3\u00d73"
+        },
+        {
+          "num": 4,
+          "row": 2,
+          "col": 0,
+          "answer": "PASTA",
+          "clue": "Penne or fusilli"
+        },
+        {
+          "num": 5,
+          "row": 3,
+          "col": 1,
+          "answer": "IDLE",
+          "clue": "Not in use"
+        },
+        {
+          "num": 6,
+          "row": 4,
+          "col": 0,
+          "answer": "TREES",
+          "clue": "Oak and elm"
+        }
+      ],
+      "down": [
+        {
+          "num": 1,
+          "row": 0,
+          "col": 0,
+          "answer": "ANTIP",
+          "clue": "Before noon: Abbr."
+        },
+        {
+          "num": 2,
+          "row": 0,
+          "col": 2,
+          "answer": "PINTS",
+          "clue": "Two cups each"
+        },
+        {
+          "num": 3,
+          "row": 0,
+          "col": 4,
+          "answer": "EASES",
+          "clue": "Relieves"
+        },
+        {
+          "num": 4,
+          "row": 1,
+          "col": 1,
+          "answer": "NADIR",
+          "clue": "Lowest point"
+        },
+        {
+          "num": 5,
+          "row": 1,
+          "col": 3,
+          "answer": "ENLIT",
+          "clue": "Turned on (a lamp)"
+        }
+      ]
+    }
+  }
+]

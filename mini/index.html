@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Daily Mini Crossword</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header class="site-header">
+            <h1>Daily Mini Crossword</h1>
+            <div class="sub">New puzzle every day · 5×5</div>
+        </header>
+
+        <main class="container">
+            <section class="board-panel">
+                <div class="toolbar">
+                    <button id="btnPrev" title="Previous day">◀</button>
+                    <input id="datePicker" type="date" />
+                    <button id="btnNext" title="Next day">▶</button>
+                    <span class="spacer"></span>
+                    <button id="btnCheck" class="secondary">Check</button>
+                    <button id="btnReveal" class="secondary">Reveal</button>
+                    <button id="btnReset" class="secondary">Reset</button>
+                </div>
+
+                <div
+                    id="grid"
+                    class="grid"
+                    aria-label="Crossword grid"
+                    role="grid"
+                ></div>
+
+                <div class="status">
+                    <span id="cursorInfo">1-Across</span>
+                    <span id="timer">00:00</span>
+                </div>
+            </section>
+
+            <section class="clues-panel">
+                <div class="clues">
+                    <h2>Across</h2>
+                    <ol id="cluesAcross" class="clue-list"></ol>
+                </div>
+                <div class="clues">
+                    <h2>Down</h2>
+                    <ol id="cluesDown" class="clue-list"></ol>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <span> Built by Greg Gottlieb. </span>
+            <span>
+                <a href="https://github.com/" target="_blank" rel="noopener"
+                    >Fork this</a
+                >
+            </span>
+        </footer>
+
+        <script src="app.js"></script>
+    </body>
+</html>

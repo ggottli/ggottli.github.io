@@ -1,0 +1,90 @@
+{
+  "date": "2025-08-29",
+  "size": {
+    "rows": 5,
+    "cols": 5
+  },
+  "grid": [
+    "BASIL",
+    ".AREA",
+    "STERN",
+    "INN..",
+    ".YETI"
+  ],
+  "clues": {
+    "across": [
+      {
+        "num": 1,
+        "row": 0,
+        "col": 0,
+        "answer": "BASIL",
+        "clue": "Herb for pesto"
+      },
+      {
+        "num": 3,
+        "row": 1,
+        "col": 1,
+        "answer": "AREA",
+        "clue": "\u03c0r\u00b2, for a circle"
+      },
+      {
+        "num": 4,
+        "row": 2,
+        "col": 0,
+        "answer": "STERN",
+        "clue": "Back of a boat"
+      },
+      {
+        "num": 5,
+        "row": 3,
+        "col": 0,
+        "answer": "INN",
+        "clue": "Cozy lodging"
+      },
+      {
+        "num": 6,
+        "row": 4,
+        "col": 1,
+        "answer": "YETI",
+        "clue": "Snowy cryptid"
+      }
+    ],
+    "down": [
+      {
+        "num": 1,
+        "row": 0,
+        "col": 0,
+        "answer": "BASIN",
+        "clue": "Sink feature"
+      },
+      {
+        "num": 2,
+        "row": 0,
+        "col": 2,
+        "answer": "SERE",
+        "clue": "Very dry"
+      },
+      {
+        "num": 3,
+        "row": 0,
+        "col": 4,
+        "answer": "LENTI",
+        "clue": "___ils (Italian legumes)"
+      },
+      {
+        "num": 4,
+        "row": 1,
+        "col": 1,
+        "answer": "ARISE",
+        "clue": "Get up"
+      },
+      {
+        "num": 5,
+        "row": 1,
+        "col": 3,
+        "answer": "ANTE",
+        "clue": "Poker stake"
+      }
+    ]
+  }
+}
