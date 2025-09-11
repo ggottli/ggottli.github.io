@@ -1,401 +1,1237 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Greg Gottlieb - Portfolio</title>
+        <title>Greg Gottlieb | Portfolio</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        />
+
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ["Inter", "sans-serif"],
+                        },
+                        colors: {
+                            primary: "#1a202c",
+                            secondary: "#2d3748",
+                            accent: "#4fd1c5",
+                            light: "#e2e8f0",
+                        },
+                        animation: {
+                            shimmer: "shimmer 2s linear infinite",
+                        },
+                        keyframes: {
+                            shimmer: {
+                                "0%": { "background-position": "-1000px 0" },
+                                "100%": { "background-position": "1000px 0" },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
         <style>
-            body {
-                background-color: #1e1e1e;
-                color: #ffffff;
-                font-family: "Courier New", monospace;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
+            /* General Body Styles */
+            body::-webkit-scrollbar {
+                width: 8px;
+            }
+            body::-webkit-scrollbar-track {
+                background: #2d3748;
+            }
+            body::-webkit-scrollbar-thumb {
+                background-color: #4fd1c5;
+                border-radius: 20px;
             }
 
-            #terminal {
-                background-color: #2e2e2e;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                width: 80%;
-                max-width: 600px;
+            /* Interactive Particle Background Canvas */
+            #particle-canvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
             }
 
-            .command {
-                color: #00ff00;
+            /* Custom Cursor Follower */
+            .cursor-dot {
+                width: 8px;
+                height: 8px;
+                background-color: #4fd1c5;
+                border-radius: 50%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                z-index: 9999;
+                transition: transform 0.1s ease-out;
+                transform: translate(-50%, -50%);
+            }
+            @media (pointer: coarse) {
+                .cursor-dot {
+                    display: none;
+                }
             }
 
-            .output {
-                color: #ffffff;
+            /* Fade-in animation */
+            .fade-in {
+                opacity: 0;
+                transform: translateY(20px);
+                transition:
+                    opacity 0.6s ease-out,
+                    transform 0.6s ease-out;
+            }
+            .fade-in.visible {
+                opacity: 1;
+                transform: translateY(0);
             }
 
-            .comment {
-                color: #808080;
+            /* 3D tilt effect for project cards */
+            .project-card {
+                transform-style: preserve-3d;
+                transition: transform 0.5s ease-out;
             }
 
-            a.link {
-                color: #00ffff;
-                text-decoration: none;
+            /* Enhanced button styling */
+            .cta-button {
+                background-image: linear-gradient(
+                    to right,
+                    #4fd1c5,
+                    #81e6d9,
+                    #4fd1c5
+                );
+                background-size: 200% auto;
+                transition: background-position 0.5s;
+            }
+            .cta-button:hover {
+                background-position: right center;
             }
 
-            a.link:hover {
-                text-decoration: underline;
-                color: #ffffff;
+            /* Fun skill icon hover effect */
+            .skill-icon:hover {
+                transform: translateY(-5px) scale(1.1);
             }
 
-            /* Search style */
-            #searchInput,
-            #searchForm button {
-                background-color: #333;
-                border: none;
-                color: #00ff00;
-                padding: 5px;
-                font-family: "Courier New", monospace;
-                font-size: 16px;
+            /* My Journey Timeline Styles */
+            /* Journey cards: subtle default fade; active pops in */
+            .journey-step {
+                opacity: 0.35;
+                transform: scale(0.985);
+                transition:
+                    opacity 0.35s ease,
+                    transform 0.35s ease;
+            }
+            .journey-step.active {
+                opacity: 1;
+                transform: scale(1);
             }
 
-            #searchInput {
-                margin-right: 10px;
-                width: calc(100% - 80px);
+            /* Visuals: buttery crossfade with tiny motion + blur */
+            #journey-visuals {
+                position: relative;
+            }
+            #journey-visuals .visual-content {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-position: center;
+                opacity: 0;
+                transform: translateY(12px) scale(0.985);
+                filter: blur(6px);
+                transition:
+                    opacity 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+                    transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+                    filter 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+                will-change: opacity, transform, filter;
+                border-radius: 0.5rem;
+                box-shadow:
+                    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            #journey-visuals .visual-content.active {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
             }
 
-            #searchForm button {
-                padding: 5px 15px;
+            /* When swapping, let the previous one glide away */
+            #journey-visuals .visual-content.leaving {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.985);
+                filter: blur(6px);
+            }
+
+            /* Optional: snap scrolling on the right column for a 'magnetic' feel */
+            @media (min-width: 768px) {
+                #journey-scroll {
+                    max-height: 100vh; /* keep right column scrollable */
+                    overflow-y: auto;
+                    scroll-snap-type: y proximity;
+                    scroll-padding-top: 40vh; /* center snapping */
+                }
+                .journey-step {
+                    scroll-snap-align: center;
+                }
+            }
+
+            /* Interactive Map Styles */
+            #travel-map svg .state {
+                fill: #2d3748;
+                stroke: #1a202c;
+                stroke-width: 1;
+                transition: all 0.3s ease;
                 cursor: pointer;
-                background-color: #4caf50;
-                color: #1e1e1e;
-                text-transform: uppercase;
-                letter-spacing: 1px;
+            }
+            #travel-map svg .state.visited {
+                fill: #38b2ac;
+            }
+            #travel-map svg .state:hover {
+                fill: #4fd1c5;
+                transform: translateY(-2px);
+                stroke: #e2e8f0;
             }
 
-            #searchForm button:hover {
-                background-color: #45a049;
-            }
-
-            #searchInput:focus,
-            #searchForm button:focus {
-                outline: none;
-            }
-
-            @media (max-width: 600px) {
-                #searchInput,
-                #searchForm button {
-                    display: block;
-                    width: 100%;
-                    box-sizing: border-box;
-                }
-
-                #searchForm button {
-                    margin-top: 10px;
-                }
+            /* Modal Styles */
+            #map-modal {
+                transition: opacity 0.3s ease;
             }
         </style>
     </head>
-    <body>
-        <div id="terminal">
-            <div class="command">> welcome_message</div>
-            <div class="output">
-                Hello, I'm Greg Gottlieb, a passionate developer.
-            </div>
+    <body class="bg-primary text-light font-sans leading-relaxed">
+        <!-- Custom cursor and particle background canvas -->
+        <div class="cursor-dot"></div>
+        <canvas id="particle-canvas"></canvas>
 
-            <div class="command">> about</div>
-            <div class="output">
-                Lifelong learner looking for software opportunites in AI
+        <!-- Header & Navigation -->
+        <header
+            class="bg-primary/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50 shadow-md"
+        >
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <a href="#home" class="text-2xl font-bold text-accent"
+                        >GG</a
+                    >
+                    <nav class="hidden md:flex space-x-8">
+                        <a
+                            href="#about"
+                            class="hover:text-accent transition-colors duration-300"
+                            >About</a
+                        >
+                        <a
+                            href="#journey"
+                            class="hover:text-accent transition-colors duration-300"
+                            >My Journey</a
+                        >
+                        <a
+                            href="#experience"
+                            class="hover:text-accent transition-colors duration-300"
+                            >Experience</a
+                        >
+                        <a
+                            href="#projects"
+                            class="hover:text-accent transition-colors duration-300"
+                            >Projects</a
+                        >
+                        <a
+                            href="#interests"
+                            class="hover:text-accent transition-colors duration-300"
+                            >Interests</a
+                        >
+                        <a
+                            href="#contact"
+                            class="hover:text-accent transition-colors duration-300"
+                            >Contact</a
+                        >
+                    </nav>
+                    <button
+                        id="mobile-menu-button"
+                        class="md:hidden focus:outline-none"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h16m-7 6h7"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+                <!-- Mobile Menu -->
+                <div id="mobile-menu" class="hidden md:hidden mt-4">
+                    <a
+                        href="#about"
+                        class="block py-2 text-center hover:bg-secondary rounded-md transition-colors duration-300 mobile-link"
+                        >About</a
+                    >
+                    <a
+                        href="#journey"
+                        class="block py-2 text-center hover:bg-secondary rounded-md transition-colors duration-300 mobile-link"
+                        >My Journey</a
+                    >
+                    <a
+                        href="#experience"
+                        class="block py-2 text-center hover:bg-secondary rounded-md transition-colors duration-300 mobile-link"
+                        >Experience</a
+                    >
+                    <a
+                        href="#projects"
+                        class="block py-2 text-center hover:bg-secondary rounded-md transition-colors duration-300 mobile-link"
+                        >Projects</a
+                    >
+                    <a
+                        href="#interests"
+                        class="block py-2 text-center hover:bg-secondary rounded-md transition-colors duration-300 mobile-link"
+                        >Interests</a
+                    >
+                    <a
+                        href="#contact"
+                        class="block py-2 text-center hover:bg-secondary rounded-md transition-colors duration-300 mobile-link"
+                        >Contact</a
+                    >
+                </div>
             </div>
+        </header>
 
-            <div class="command">> skills</div>
-            <div class="output">
-                Python, Java, C, C++, R, SQL, HTML, CSS, Git
-            </div>
-
-            <div class="command">> projects</div>
-            <div class="output">
-                - Euchre<br />
-                - Games<br />
-                - Marketplace
-            </div>
-
-            <div class="command">> contact</div>
-            <div class="output">
-                Feel free to reach out over
-                <a href="mailto:greggottlieb4@gmail.com" class="link">email</a>
-                or connect on
+        <main class="container mx-auto px-6">
+            <!-- Hero Section -->
+            <section
+                id="home"
+                class="min-h-screen flex flex-col justify-center items-center text-center"
+            >
+                <img
+                    src="portfolio/LinkedIn-profile.jpeg"
+                    alt="Profile Picture"
+                    class="rounded-full w-32 h-32 mb-6 border-4 border-accent shadow-lg"
+                />
+                <h1 class="text-4xl md:text-6xl font-bold mb-2">
+                    Greg Gottlieb
+                </h1>
+                <h2 class="text-2xl md:text-4xl font-light text-accent mb-6">
+                    I <span id="typewriter"></span>
+                </h2>
+                <p class="max-w-2xl text-lg text-gray-400 mb-8">
+                    A passionate developer, student, and lifelong learner
+                    seeking opportunities in AI to pioneer the future of
+                    technology.
+                </p>
                 <a
-                    href="https://www.linkedin.com/in/gregory-gottlieb"
-                    class="link"
-                    >LinkedIn</a
+                    href="#contact"
+                    class="cta-button text-primary font-bold py-3 px-8 rounded-full shadow-lg transform hover:scale-105"
                 >
+                    Get In Touch
+                </a>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">About Me</h2>
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                    <div class="md:w-1/3">
+                        <img
+                            src="portfolio/headshot.jpg"
+                            alt="Greg Gottlieb"
+                            class="rounded-lg shadow-2xl"
+                        />
+                    </div>
+                    <div class="md:w-2/3">
+                        <p class="text-lg mb-4 text-gray-300">
+                            Hello! I'm Greg, a developer with a passion for
+                            innovating technology and using software to solve
+                            problems. My journey in coding started back in 5th
+                            grade when I made my first game and has grown into a
+                            lifelong dream where I hope to pioneer the future
+                            using AI.
+                        </p>
+                        <p class="text-lg mb-4 text-gray-300">
+                            I am currently a student at Purdue University,
+                            pursuing degrees in Computer Science, Data Science,
+                            and Applied Statistics. This interdisciplinary
+                            foundation allows me to approach problems from
+                            multiple angles, combining software engineering
+                            principles with rigorous data analysis.
+                        </p>
+                        <p class="text-lg text-gray-300">
+                            I'm always looking for software development
+                            opportunities where I can make a direct impact and
+                            contribute to meaningful projects. Feel free to
+                            reach out if you'd like to chat about technology,
+                            potential opportunities, or a simple coffee chat!
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Journey Section -->
+            <section id="journey" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">My Journey</h2>
+                <div class="md:flex md:space-x-8">
+                    <!-- Left Side: Sticky Visuals -->
+                    <div
+                        class="md:w-1/2 md:sticky h-screen top-0 flex items-center justify-center mb-12 md:mb-0"
+                    >
+                        <div
+                            id="journey-visuals"
+                            class="relative w-full max-w-md h-96"
+                        >
+                            <!-- Visuals are injected by JS -->
+                        </div>
+                    </div>
+                    <!-- Right Side: Scrolling Text -->
+                    <div class="md:w-1/2">
+                        <div
+                            class="journey-step opacity-30"
+                            data-visual="step1"
+                        >
+                            <div
+                                class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
+                            >
+                                <h3 class="text-2xl font-bold text-accent mb-2">
+                                    The Beginning
+                                </h3>
+                                <p>
+                                    My interest in programming sparked early,
+                                    thanks to my dad. He was a software
+                                    developer and I grew up wanting to be just
+                                    like him. Here is a picture of us for his
+                                    take your son to work day.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="journey-step opacity-30"
+                            data-visual="step2"
+                        >
+                            <div
+                                class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
+                            >
+                                <h3 class="text-2xl font-bold text-accent mb-2">
+                                    First Game in 5th Grade
+                                </h3>
+                                <p>
+                                    My friend Jack and I created our first game
+                                    together. We both took an early interest in
+                                    programming and pretty quickly "Giant
+                                    Hunters" was born.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="journey-step opacity-30"
+                            data-visual="step3"
+                        >
+                            <div
+                                class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
+                            >
+                                <h3 class="text-2xl font-bold text-accent mb-2">
+                                    Heading to Purdue
+                                </h3>
+                                <p>
+                                    The in state rivalry runs strong in my
+                                    family. My decision to attend Purdue
+                                    solidified the even divide of three
+                                    attending IU and three attendingPurdue. Game
+                                    days are rough, but it was here I began to
+                                    build a solid foundation in key concepts
+                                    including algorithms, data structures, and
+                                    software engineering principles.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="journey-step opacity-30"
+                            data-visual="step4"
+                        >
+                            <div
+                                class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
+                            >
+                                <h3 class="text-2xl font-bold text-accent mb-2">
+                                    First Internship
+                                </h3>
+                                <p>
+                                    Growing up, I always said I was going to
+                                    take over my dads' businesses. While this
+                                    never lined up, I had the priviledge of
+                                    working for him one summer and achieving my
+                                    dream of working for the family business.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="journey-step opacity-30"
+                            data-visual="step5"
+                        >
+                            <div
+                                class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
+                            >
+                                <h3 class="text-2xl font-bold text-accent mb-2">
+                                    More Internships
+                                </h3>
+                                <p>
+                                    My internships at companies like Medxcel and
+                                    The Heritage Group were my first taste of
+                                    the professional world. I had the chance to
+                                    work on real-world problems, from data
+                                    analytics to internal software tools,
+                                    learning invaluable lessons about teamwork,
+                                    deadlines, and impact.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="journey-step opacity-30"
+                            data-visual="step6"
+                        >
+                            <div
+                                class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
+                            >
+                                <h3 class="text-2xl font-bold text-accent mb-2">
+                                    The Future with AI
+                                </h3>
+                                <p>
+                                    Today, I'm captivated by the potential of
+                                    Artificial Intelligence. My goal is to be at
+                                    the forefront of this technological
+                                    revolution, building intelligent systems
+                                    that solve complex problems and create a
+                                    better future. The journey is just
+                                    beginning.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Experience & Education Section -->
+            <section id="experience" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">
+                    Experience & Education
+                </h2>
+                <div class="max-w-3xl mx-auto">
+                    <!-- Education -->
+                    <div class="mb-12">
+                        <h3 class="text-2xl font-bold text-accent mb-4">
+                            Education
+                        </h3>
+                        <div class="bg-secondary p-6 rounded-lg shadow-lg">
+                            <h4 class="text-xl font-bold">
+                                Purdue University, Class of 2026
+                            </h4>
+                            <ul
+                                class="list-disc list-inside mt-2 text-gray-300"
+                            >
+                                <li>Bachelor of Science in Computer Science</li>
+                                <li>Bachelor of Science in Data Science</li>
+                                <li>
+                                    Bachelor of Science in Applied Statistics
+                                </li>
+                                <li>Minor in Mathematics</li>
+                                <li>
+                                    Certificate in Entrepreneurship and
+                                    Innovation
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Experience -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-accent mb-4">
+                            Experience
+                        </h3>
+                        <div class="space-y-6">
+                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
+                                <h4 class="text-xl font-bold">
+                                    Campus Strategist for Perplexity
+                                </h4>
+                            </div>
+                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
+                                <h4 class="text-xl font-bold">
+                                    Strategy and Data Analytics Intern at The
+                                    Heritage Group
+                                </h4>
+                            </div>
+                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
+                                <h4 class="text-xl font-bold">
+                                    Safety and Emergency Management Team
+                                    Software Intern at Medxcel
+                                </h4>
+                            </div>
+                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
+                                <h4 class="text-xl font-bold">
+                                    Undergraduate Teaching Assistant at Purdue
+                                </h4>
+                            </div>
+                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
+                                <h4 class="text-xl font-bold">
+                                    Software Engineering Intern at G&W
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="projects" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">
+                    My Projects
+                </h2>
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    style="perspective: 1000px"
+                >
+                    <!-- Project Card 1 -->
+                    <div
+                        class="project-card bg-secondary rounded-lg shadow-lg overflow-hidden"
+                    >
+                        <img
+                            src="portfolio/euchre-announcements.png"
+                            alt="Euchre League Project Screenshot"
+                            class="w-full h-48 object-cover"
+                        />
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-2">
+                                Euchre League Website
+                            </h3>
+                            <p class="text-gray-400 mb-4">
+                                A website with a login system and dashboard to
+                                track player stats for a competitive euchre
+                                league.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >HTML</span
+                                >
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >CSS</span
+                                >
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >JavaScript</span
+                                >
+                            </div>
+                            <div class="flex justify-end gap-4 mt-4">
+                                <a
+                                    href="https://ggottlieb.com/euchre-league/"
+                                    class="text-accent hover:underline"
+                                    >Check it out</a
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Project Card 2 -->
+                    <div
+                        class="project-card bg-secondary rounded-lg shadow-lg overflow-hidden"
+                    >
+                        <img
+                            src="portfolio/customer.png"
+                            alt="Marketplace Project Screenshot"
+                            class="w-full h-48 object-cover"
+                        />
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-2">
+                                Java Marketplace
+                            </h3>
+                            <p class="text-gray-400 mb-4">
+                                A fully functional marketplace to buy and sell
+                                items, featuring GUIs, client-server
+                                connections, and concurrency.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >Java</span
+                                >
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >GUI</span
+                                >
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >Sockets</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Project Card 3 -->
+                    <div
+                        class="project-card bg-secondary rounded-lg shadow-lg overflow-hidden"
+                    >
+                        <img
+                            src="portfolio/giant-hunters.png"
+                            alt="Games Project Screenshot"
+                            class="w-full h-48 object-cover"
+                        />
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-2">
+                                Hobby Game Development
+                            </h3>
+                            <p class="text-gray-400 mb-4">
+                                A collection of small games, including my very
+                                first game from 5th grade, that sparked my
+                                passion for programming.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >JavaScript</span
+                                >
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >HTML5</span
+                                >
+                                <span
+                                    class="bg-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                                    >CSS</span
+                                >
+                            </div>
+                            <div class="flex justify-end gap-4 mt-4">
+                                <a
+                                    href="#"
+                                    class="text-accent hover:underline"
+                                    id="randomGameLink"
+                                >
+                                    Play a random game
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Skills Section -->
+            <section id="skills" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">
+                    Technical Skills
+                </h2>
+
+                <ul
+                    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 max-w-5xl mx-auto"
+                >
+                    <!-- Item -->
+                    <li class="group">
+                        <div
+                            class="aspect-square rounded-2xl bg-secondary/70 border border-white/5 flex flex-col items-center justify-center gap-3 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:border-accent/40"
+                        >
+                            <i
+                                class="devicon-python-plain colored text-5xl"
+                                aria-hidden="true"
+                                title="Python"
+                            ></i>
+                            <span class="text-sm text-gray-300">Python</span>
+                        </div>
+                    </li>
+
+                    <li class="group">
+                        <div
+                            class="aspect-square rounded-2xl bg-secondary/70 border border-white/5 flex flex-col items-center justify-center gap-3 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:border-accent/40"
+                        >
+                            <i
+                                class="devicon-java-plain colored text-5xl"
+                                aria-hidden="true"
+                                title="Java"
+                            ></i>
+                            <span class="text-sm text-gray-300">Java</span>
+                        </div>
+                    </li>
+
+                    <li class="group">
+                        <div
+                            class="aspect-square rounded-2xl bg-secondary/70 border border-white/5 flex flex-col items-center justify-center gap-3 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:border-accent/40"
+                        >
+                            <i
+                                class="devicon-cplusplus-plain colored text-5xl"
+                                aria-hidden="true"
+                                title="C++"
+                            ></i>
+                            <span class="text-sm text-gray-300">C++</span>
+                        </div>
+                    </li>
+
+                    <li class="group">
+                        <div
+                            class="aspect-square rounded-2xl bg-secondary/70 border border-white/5 flex flex-col items-center justify-center gap-3 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:border-accent/40"
+                        >
+                            <i
+                                class="devicon-c-plain colored text-5xl"
+                                aria-hidden="true"
+                                title="C"
+                            ></i>
+                            <span class="text-sm text-gray-300">C</span>
+                        </div>
+                    </li>
+
+                    <li class="group">
+                        <div
+                            class="aspect-square rounded-2xl bg-secondary/70 border border-white/5 flex flex-col items-center justify-center gap-3 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:border-accent/40"
+                        >
+                            <i
+                                class="devicon-mysql-plain colored text-5xl"
+                                aria-hidden="true"
+                                title="SQL"
+                            ></i>
+                            <span class="text-sm text-gray-300">SQL</span>
+                        </div>
+                    </li>
+
+                    <li class="group">
+                        <div
+                            class="aspect-square rounded-2xl bg-secondary/70 border border-white/5 flex flex-col items-center justify-center gap-3 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:border-accent/40"
+                        >
+                            <i
+                                class="devicon-git-plain colored text-5xl"
+                                aria-hidden="true"
+                                title="Git"
+                            ></i>
+                            <span class="text-sm text-gray-300">Git</span>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Interests & Travel Section -->
+            <section id="interests" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">
+                    Beyond the Keyboard
+                </h2>
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <!-- Interests Text -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-accent mb-4">
+                            Interests
+                        </h3>
+                        <p class="text-lg mb-6 text-gray-300">
+                            When I'm not coding, I'm passionate about sports and
+                            travel. I grew up running track, watching basketball
+                            and football, and being outside as much as possible.
+                            These days, you'll most likely find me on the golf
+                            course trying to improve my game.
+                        </p>
+                        <h3 class="text-2xl font-bold text-accent mb-4 mt-8">
+                            Travels
+                        </h3>
+                        <p class="text-lg mb-6 text-gray-300">
+                            I've been fortunate enough to visit 49 of the 50
+                            states! Exploring new places is a huge passion of
+                            mine. Click on a state on the map to see a photo
+                            from my travels there.
+                        </p>
+                    </div>
+                    <!-- Interactive Map -->
+                    <div id="travel-map" class="w-full">
+                        <!-- SVG Map Placeholder -->
+                        <div
+                            class="bg-secondary rounded-lg flex items-center justify-center h-64 md:h-full"
+                        >
+                            <p class="text-gray-400 text-xl">
+                                Interactive Map Coming Soon!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section id="contact" class="py-20 fade-in">
+                <h2 class="text-4xl font-bold text-center mb-12">
+                    Get In Touch
+                </h2>
+                <div class="max-w-3xl mx-auto text-center">
+                    <p class="text-lg text-gray-400 mb-8">
+                        I'm currently seeking new opportunities and would love
+                        to hear from you. Whether you have a question or just
+                        want to connect, feel free to reach out!
+                    </p>
+                    <div class="flex justify-center gap-8 mb-12">
+                        <a
+                            href="mailto:greggottlieb4@gmail.com"
+                            class="cta-button text-primary font-bold py-3 px-8 rounded-full shadow-lg transform hover:scale-105"
+                            >Email Me</a
+                        >
+                        <a
+                            href="portfolio/Gottlieb Resume.pdf"
+                            target="_blank"
+                            class="cta-button text-primary font-bold py-3 px-8 rounded-full shadow-lg transform hover:scale-105"
+                            >View Resume</a
+                        >
+                        <a
+                            href="https://www.linkedin.com/in/gregory-gottlieb"
+                            target="_blank"
+                            class="cta-button text-primary font-bold py-3 px-8 rounded-full shadow-lg transform hover:scale-105"
+                            >LinkedIn</a
+                        >
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-secondary mt-20 py-8">
+            <div class="container mx-auto px-6 text-center text-gray-400">
+                <p>&copy; 2025 Greg Gottlieb. All Rights Reserved.</p>
+                <!-- <p class="text-sm mt-2">Designed & Built with ❤️</p> -->
             </div>
+        </footer>
 
-            <div class="command">> resume</div>
-            <div class="output">
-                Check out my resume:
-                <a
-                    href="portfolio/Gottlieb Resume.pdf"
-                    class="link"
-                    target="_blank"
-                    >Resume</a
+        <!-- Map Modal (structure remains for later) -->
+        <div
+            id="map-modal"
+            class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4"
+        >
+            <div
+                id="modal-content"
+                class="bg-secondary p-6 rounded-lg shadow-2xl max-w-lg w-full relative"
+            >
+                <button
+                    id="modal-close-btn"
+                    class="absolute top-2 right-4 text-light text-3xl font-bold hover:text-accent"
                 >
-            </div>
-
-            <!-- <div class="comment"># Thank you for visiting my portfolio!</div> -->
-
-            <!-- Search bar -->
-            <div class="command">> search</div>
-            <div class="output">
-                <form
-                    id="searchForm"
-                    style="display: flex; align-items: center"
+                    &times;
+                </button>
+                <h3
+                    id="modal-state-name"
+                    class="text-2xl font-bold text-accent mb-4"
                 >
-                    <input
-                        type="text"
-                        id="searchInput"
-                        placeholder="Type 'home', 'about', 'projects', etc."
-                        autofocus
-                    />
-                    <button type="submit">Go</button>
-                </form>
+                    State Name
+                </h3>
+                <img
+                    id="modal-image"
+                    src=""
+                    alt="Travel photo"
+                    class="w-full h-auto rounded-md"
+                />
             </div>
         </div>
+
         <script>
-            /* ========= CONFIG ========= */
-            const USE_PROXY = true; // true = call your PythonAnywhere proxy; false = direct OpenRouter (unsafe for prod)
-            const PA_BACKEND = "https://ggottli.pythonanywhere.com";
-            const PROXY_ENDPOINT = `${PA_BACKEND}/api/chat`; // expects {messages, stream, model}
-            const OPENROUTER_API_KEY = "sk-or-xxx"; // only if USE_PROXY=false (testing)
-            const DEFAULT_MODEL = "openai/gpt-oss-20b:free";
+            document.addEventListener("DOMContentLoaded", function () {
+                // --- Particle Background ---
+                const canvas = document.getElementById("particle-canvas");
+                const ctx = canvas.getContext("2d");
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                let particlesArray;
 
-            /* ========= DOM HELPERS ========= */
-            const terminal = document.getElementById("terminal");
-            function appendBlock(cls, html) {
-                const div = document.createElement("div");
-                div.className = cls;
-                div.innerHTML = html;
-                terminal.appendChild(div);
-                // auto-scroll terminal
-                window.scrollTo({
-                    top: document.body.scrollHeight,
-                    behavior: "smooth",
-                });
-                return div;
-            }
-            function appendCommand(cmdText) {
-                // keep your exact original look with literal ">"
-                return appendBlock("command", `&gt; ${cmdText}`);
-            }
-            function appendOutput(initial = "") {
-                return appendBlock("output", initial);
-            }
-
-            /* ========= STREAM READER (tolerant) ========= */
-            async function readSSEStream(res, onChunk) {
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder();
-                let partial = "";
-                let chunkCount = 0;
-
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-
-                    partial += decoder.decode(value, { stream: true });
-                    const lines = partial.split("\n");
-                    partial = lines.pop() || "";
-
-                    for (const raw of lines) {
-                        const line = raw.trim();
-                        if (!line || line.startsWith(":")) continue; // comments/keepalive
-                        if (!line.startsWith("data:")) continue;
-
-                        const payload = line.slice(5).trim();
-                        if (!payload || payload === "[DONE]") continue;
-
-                        try {
-                            const j = JSON.parse(payload);
-
-                            // Only take assistant delta text
-                            const delta = j?.choices?.[0]?.delta?.content;
-                            if (delta) {
-                                chunkCount++;
-                                onChunk(delta);
-                            }
-                        } catch {
-                            // ignore malformed lines
-                        }
+                class Particle {
+                    constructor(x, y, directionX, directionY, size, color) {
+                        this.x = x;
+                        this.y = y;
+                        this.directionX = directionX;
+                        this.directionY = directionY;
+                        this.size = size;
+                        this.color = color;
+                    }
+                    draw() {
+                        ctx.beginPath();
+                        ctx.arc(
+                            this.x,
+                            this.y,
+                            this.size,
+                            0,
+                            Math.PI * 2,
+                            false,
+                        );
+                        ctx.fillStyle = this.color;
+                        ctx.fill();
+                    }
+                    update() {
+                        if (this.x > canvas.width || this.x < 0)
+                            this.directionX = -this.directionX;
+                        if (this.y > canvas.height || this.y < 0)
+                            this.directionY = -this.directionY;
+                        this.x += this.directionX;
+                        this.y += this.directionY;
+                        this.draw();
                     }
                 }
-                return chunkCount;
-            }
 
-            /* ========= BACKENDS ========= */
-            async function chatViaProxy(
-                prompt,
-                { model = DEFAULT_MODEL, stream = true } = {},
-            ) {
-                const messages = [{ role: "user", content: prompt }];
-                const res = await fetch(PROXY_ENDPOINT, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ messages, model, stream }),
+                function initParticles() {
+                    particlesArray = [];
+                    let numberOfParticles =
+                        (canvas.height * canvas.width) / 9000;
+                    for (let i = 0; i < numberOfParticles; i++) {
+                        let size = Math.random() * 2 + 1;
+                        let x =
+                            Math.random() * (innerWidth - size * 2 - size * 2) +
+                            size * 2;
+                        let y =
+                            Math.random() *
+                                (innerHeight - size * 2 - size * 2) +
+                            size * 2;
+                        let directionX = Math.random() * 0.4 - 0.2;
+                        let directionY = Math.random() * 0.4 - 0.2;
+                        particlesArray.push(
+                            new Particle(
+                                x,
+                                y,
+                                directionX,
+                                directionY,
+                                size,
+                                "rgba(79, 209, 197, 0.5)",
+                            ),
+                        );
+                    }
+                }
+
+                function animateParticles() {
+                    requestAnimationFrame(animateParticles);
+                    ctx.clearRect(0, 0, innerWidth, innerHeight);
+                    for (let i = 0; i < particlesArray.length; i++) {
+                        particlesArray[i].update();
+                    }
+                }
+                initParticles();
+                animateParticles();
+                window.addEventListener("resize", () => {
+                    canvas.width = innerWidth;
+                    canvas.height = innerHeight;
+                    initParticles();
                 });
-                if (!res.ok) {
-                    let msg = "Request failed";
-                    try {
-                        msg = (await res.json())?.error?.detail || msg;
-                    } catch {}
-                    throw new Error(msg);
-                }
-                const ct = (
-                    res.headers.get("content-type") || ""
-                ).toLowerCase();
-                if (stream && ct.includes("text/event-stream")) {
-                    return { mode: "stream", res };
-                } else {
-                    const data = await res.json();
-                    const text =
-                        data?.choices?.[0]?.message?.content ||
-                        data?.error?.detail ||
-                        JSON.stringify(data);
-                    return { mode: "json", text };
-                }
-            }
 
-            async function chatViaOpenRouter(
-                prompt,
-                { model = DEFAULT_MODEL, stream = true } = {},
-            ) {
-                const res = await fetch(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-                            "X-Title": "Greg Terminal Chat",
-                        },
-                        body: JSON.stringify({
-                            model,
-                            stream,
-                            messages: [{ role: "user", content: prompt }],
-                        }),
-                    },
-                );
-                if (!res.ok) {
-                    let msg = "Request failed";
-                    try {
-                        msg = (await res.json())?.error?.message || msg;
-                    } catch {}
-                    throw new Error(msg);
-                }
-                const ct = (
-                    res.headers.get("content-type") || ""
-                ).toLowerCase();
-                if (stream && ct.includes("text/event-stream")) {
-                    return { mode: "stream", res };
-                } else {
-                    const data = await res.json();
-                    const text =
-                        data?.choices?.[0]?.message?.content ||
-                        data?.error?.message ||
-                        JSON.stringify(data);
-                    return { mode: "json", text };
-                }
-            }
-
-            /* ========= CHAT HANDLER ========= */
-            async function handleChatCommand(rawInput) {
-                // support: chat some text, chat "quoted text", chat 'quoted text'
-                const after = rawInput.slice(4).trim(); // remove "chat"
-                let prompt = after;
-                const m = after.match(/^["'](.+?)["']$/);
-                if (m) prompt = m[1];
-
-                appendCommand(`chat ${prompt || ""}`);
-                if (!prompt) {
-                    appendOutput(
-                        '<span class="comment"># usage: chat "your question here"</span>',
+                // --- Typewriter Effect ---
+                const typewriterElement = document.getElementById("typewriter");
+                const words = [
+                    "turn data into decisions.",
+                    "design tools that solve real problems.",
+                    "turn ideas into reality.",
+                    "design software with impact.",
+                    "want to change the world.",
+                    "ask questions.",
+                    "am always learning.",
+                ];
+                let wordIndex = 0,
+                    charIndex = 0,
+                    isDeleting = false;
+                function type() {
+                    const currentWord = words[wordIndex];
+                    const typeSpeed = isDeleting ? 50 : 75;
+                    const pauseTime = 1000; // 1 second pause when full word is typed
+                    typewriterElement.textContent = currentWord.substring(
+                        0,
+                        charIndex,
                     );
-                    return;
+                    if (!isDeleting && charIndex < currentWord.length)
+                        charIndex++;
+                    else if (isDeleting && charIndex > 0) charIndex--;
+                    else {
+                        isDeleting = !isDeleting;
+                        if (!isDeleting)
+                            wordIndex = (wordIndex + 1) % words.length;
+                    }
+                    setTimeout(
+                        type,
+                        !isDeleting && charIndex === currentWord.length
+                            ? pauseTime
+                            : typeSpeed,
+                    );
                 }
+                type();
 
-                const out = appendOutput(
-                    '<span class="comment"># contacting model…</span>',
+                // --- Fade-in on Scroll ---
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting)
+                                entry.target.classList.add("visible");
+                        });
+                    },
+                    { threshold: 0.1 },
                 );
+                document
+                    .querySelectorAll(".fade-in")
+                    .forEach((el) => observer.observe(el));
 
-                try {
-                    const caller = USE_PROXY ? chatViaProxy : chatViaOpenRouter;
-                    const result = await caller(prompt, {
-                        model: DEFAULT_MODEL,
-                        stream: true,
+                // --- Mobile Menu ---
+                const mobileMenuButton =
+                    document.getElementById("mobile-menu-button");
+                const mobileMenu = document.getElementById("mobile-menu");
+                mobileMenuButton.addEventListener("click", () =>
+                    mobileMenu.classList.toggle("hidden"),
+                );
+                document.querySelectorAll(".mobile-link").forEach((link) => {
+                    link.addEventListener("click", () =>
+                        mobileMenu.classList.add("hidden"),
+                    );
+                });
+
+                // --- Custom Cursor ---
+                const cursorDot = document.querySelector(".cursor-dot");
+                window.addEventListener("mousemove", (e) => {
+                    cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+                });
+
+                // --- 3D Project Card Tilt Effect ---
+                const cards = document.querySelectorAll(".project-card");
+                cards.forEach((card) => {
+                    card.addEventListener("mousemove", (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const { width, height } = rect;
+                        const rotateX = ((y - height / 2) / (height / 2)) * -10;
+                        const rotateY = ((x - width / 2) / (width / 2)) * 10;
+                        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+                    });
+                    card.addEventListener("mouseleave", () => {
+                        card.style.transform =
+                            "rotateX(0) rotateY(0) scale3d(1, 1, 1)";
+                    });
+                });
+
+                // --- Journey Timeline ---
+                // --- Journey Timeline (smooth + centered + crossfade) ---
+                const journeySteps = document.querySelectorAll(".journey-step");
+                const visualsContainer =
+                    document.getElementById("journey-visuals");
+                const journeyVisuals = {
+                    step1: `<img src="portfolio/me+dad.jpeg" alt="Me as a child with my dad" class="visual-content" style="object-position: 50% 30%;">`,
+                    step2: `<img src="portfolio/giant-hunters.png" alt="First game concept" class="visual-content">`,
+                    step3: `<img src="portfolio/purdue.jpeg" alt="Me at Purdue University" class="visual-content">`,
+                    step4: `<img src="portfolio/first-internship.jpeg" alt="Me working with my dad" class="visual-content">`,
+                    step5: `<img src="portfolio/more_internships.jpeg" alt="Me at The Heritage Group" class="visual-content">`,
+                    step6: `<img src="portfolio/future.jpeg" alt="Future with AI" class="visual-content">`,
+                };
+
+                // Inject visuals once
+                visualsContainer.innerHTML =
+                    Object.values(journeyVisuals).join("");
+                const visualEls =
+                    visualsContainer.querySelectorAll(".visual-content");
+                const keysInOrder = Object.keys(journeyVisuals);
+
+                let activeStepEl = null;
+                let activeKey = null;
+                let ticking = false;
+
+                function setActiveByProximity() {
+                    const viewportCenter = window.innerHeight / 2;
+                    let best = null,
+                        bestDist = Infinity;
+
+                    journeySteps.forEach((step) => {
+                        const r = step.getBoundingClientRect();
+                        const center = r.top + r.height / 2;
+                        const d = Math.abs(center - viewportCenter);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            best = step;
+                        }
                     });
 
-                    if (result.mode === "stream") {
-                        out.innerHTML = ""; // clear placeholder
-                        await readSSEStream(result.res, (delta) => {
-                            out.textContent += delta;
-                            window.scrollTo({
-                                top: document.body.scrollHeight,
-                                behavior: "instant",
-                            });
-                        });
-                    } else {
-                        out.innerHTML = "";
-                        out.textContent = result.text || "(no content)";
-                    }
-                } catch (err) {
-                    out.innerHTML = `<span class="comment"># error: ${String(
-                        err.message || err,
-                    )}</span>`;
-                    console.error(err);
-                }
-            }
+                    if (!best) return;
 
-            /* ========= SINGLE ROUTER (chat + normal commands) ========= */
-            document
-                .getElementById("searchForm")
-                .addEventListener("submit", function (event) {
-                    event.preventDefault();
-                    const inputEl = document.getElementById("searchInput");
-                    const userInput = inputEl.value.trim();
-                    const lower = userInput.toLowerCase();
+                    const nextKey = best.dataset.visual;
+                    if (nextKey === activeKey) return;
 
-                    // Route chat first so it never hits "Invalid command"
-                    if (lower.startsWith("chat")) {
-                        handleChatCommand(userInput);
-                        inputEl.value = "";
-                        return;
-                    }
+                    // Card emphasis
+                    journeySteps.forEach((s) =>
+                        s.classList.toggle("active", s === best),
+                    );
 
-                    // Normal commands (kept exactly as your original)
-                    switch (lower) {
-                        case "home":
-                        case "welcome":
-                            window.location.href = "portfolio/index.html";
-                            break;
-                        case "about":
-                            window.location.href = "portfolio/about.html";
-                            break;
-                        case "projects":
-                            window.location.href = "portfolio/projects.html";
-                            break;
-                        case "resume":
-                            window.location.href =
-                                "portfolio/Gottlieb Resume.pdf";
-                            break;
-                        case "contact":
-                            window.location.href =
-                                "https://www.linkedin.com/in/gregory-gottlieb";
-                            break;
-                        default:
-                            alert(
-                                'Invalid command. Try "home", "about", "projects", etc.',
+                    // Visual crossfade: mark old as leaving, new as active
+                    if (activeKey) {
+                        const oldIdx = keysInOrder.indexOf(activeKey);
+                        if (oldIdx >= 0) {
+                            const oldEl = visualEls[oldIdx];
+                            oldEl.classList.remove("active");
+                            oldEl.classList.add("leaving");
+                            // Clean up 'leaving' after transition ends
+                            oldEl.addEventListener(
+                                "transitionend",
+                                () => {
+                                    oldEl.classList.remove("leaving");
+                                },
+                                { once: true },
                             );
+                        }
                     }
+
+                    const newIdx = keysInOrder.indexOf(nextKey);
+                    if (newIdx >= 0) {
+                        visualEls.forEach((el, i) =>
+                            el.classList.toggle("active", i === newIdx),
+                        );
+                    }
+
+                    activeKey = nextKey;
+                    activeStepEl = best;
+                }
+
+                function onScroll() {
+                    if (!ticking) {
+                        window.requestAnimationFrame(() => {
+                            setActiveByProximity();
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                }
+
+                // Kickoff
+                setActiveByProximity();
+                ["scroll", "resize"].forEach((evt) =>
+                    window.addEventListener(evt, onScroll, { passive: true }),
+                );
+
+                // If you want initial state guaranteed:
+                if (journeySteps.length)
+                    journeySteps[0].classList.add("active");
+                if (visualEls.length) visualEls[0].classList.add("active");
+
+                // --- Map Modal Logic (for when map is added) ---
+                const modal = document.getElementById("map-modal");
+                const closeModalBtn =
+                    document.getElementById("modal-close-btn");
+                function closeModal() {
+                    modal.classList.add("hidden");
+                }
+                closeModalBtn.addEventListener("click", closeModal);
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) closeModal();
+                });
+            });
+
+            // List of URLs for random game selection
+            const urls = [
+                "https://ggottlieb.com/games/yamslam/",
+                "https://ggottlieb.com/games/blackjack/",
+                "https://ggottlieb.com/games/flappy-bird/",
+                "https://ggottlieb.com/games/gin-rummy/",
+                "https://ggottlieb.com/games/giant-hunters/",
+                "https://ggottlieb.com/games/air-hockey/",
+            ];
+
+            // Add click handler
+            document
+                .getElementById("randomGameLink")
+                .addEventListener("click", function (e) {
+                    e.preventDefault(); // prevent the default '#' navigation
+                    const randomUrl =
+                        urls[Math.floor(Math.random() * urls.length)];
+                    window.location.href = randomUrl; // navigate to chosen url
                 });
         </script>
     </body>
