@@ -181,11 +181,25 @@
                     max-height: 100vh; /* keep right column scrollable */
                     overflow-y: auto;
                     scroll-snap-type: y proximity;
-                    scroll-padding-top: 40vh; /* center snapping */
+                    scroll-padding-top: 50vh; /* center snapping */
                 }
                 .journey-step {
                     scroll-snap-align: center;
                 }
+                .journey-sentinel {
+                    height: 45vh;
+                } /* gives first/last time to breathe */
+            }
+
+            /* Smooth accordion animation */
+            .exp-panel {
+                transition:
+                    height 300ms ease,
+                    opacity 300ms ease;
+                opacity: 0;
+            }
+            .exp-panel[aria-hidden="false"] {
+                opacity: 1;
             }
 
             /* Interactive Map Styles */
@@ -434,6 +448,8 @@
                     </div>
                     <!-- Right Side: Scrolling Text -->
                     <div class="md:w-1/2">
+                        <!-- TOP spacer -->
+                        <div class="journey-sentinel hidden md:block"></div>
                         <div
                             class="journey-step opacity-30"
                             data-visual="step1"
@@ -485,9 +501,9 @@
                                     The in state rivalry runs strong in my
                                     family. My decision to attend Purdue
                                     solidified the even divide of three
-                                    attending IU and three attendingPurdue. Game
-                                    days are rough, but it was here I began to
-                                    build a solid foundation in key concepts
+                                    attending IU and three attending Purdue.
+                                    Game days are rough, but it was here I began
+                                    to build a solid foundation in key concepts
                                     including algorithms, data structures, and
                                     software engineering principles.
                                 </p>
@@ -554,6 +570,8 @@
                                 </p>
                             </div>
                         </div>
+                        <!-- BOTTOM spacer -->
+                        <div class="journey-sentinel hidden md:block"></div>
                     </div>
                 </div>
             </section>
@@ -589,39 +607,561 @@
                             </ul>
                         </div>
                     </div>
-                    <!-- Experience -->
+
+                    <!-- Work Experience -->
                     <div>
                         <h3 class="text-2xl font-bold text-accent mb-4">
-                            Experience
+                            Work Experience
                         </h3>
-                        <div class="space-y-6">
-                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                                <h4 class="text-xl font-bold">
-                                    Campus Strategist for Perplexity
-                                </h4>
-                            </div>
-                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                                <h4 class="text-xl font-bold">
-                                    Strategy and Data Analytics Intern at The
-                                    Heritage Group
-                                </h4>
-                            </div>
-                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                                <h4 class="text-xl font-bold">
-                                    Safety and Emergency Management Team
-                                    Software Intern at Medxcel
-                                </h4>
-                            </div>
-                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                                <h4 class="text-xl font-bold">
-                                    Undergraduate Teaching Assistant at Purdue
-                                </h4>
-                            </div>
-                            <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                                <h4 class="text-xl font-bold">
-                                    Software Engineering Intern at G&W
-                                </h4>
-                            </div>
+
+                        <div id="experience-list" class="space-y-4">
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Campus Strategist for Perplexity
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Planned on-campus activations to
+                                            grow Perplexity usage.
+                                        </li>
+                                        <li>
+                                            Built demos/workshops showing
+                                            research workflows with AI.
+                                        </li>
+                                        <li>
+                                            Collected feedback from peers to
+                                            draw meaningful insights.
+                                        </li>
+                                    </ul>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Community</span
+                                        >
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Product Feedback</span
+                                        >
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Strategy and Data Analytics Intern at
+                                        The Heritage Group
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Leverage AI to support business
+                                            decisions related to strategy,
+                                            mergers, and acquisitions.
+                                        </li>
+                                        <li>
+                                            Research innovative ways to
+                                            integrate AI into the company.
+                                        </li>
+                                        <li>
+                                            Develop AI-powered tools to automate
+                                            routine tasks and improve
+                                            efficiency.
+                                        </li>
+                                        <li>
+                                            Work to successfully and efficiently
+                                            incorporate artificial intelligence
+                                            into business operations.
+                                        </li>
+                                    </ul>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >AI</span
+                                        >
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >LLM</span
+                                        >
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Safety & Emergency Management Team
+                                        Software Intern at Medxcel
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Expedited decision processes across
+                                            multiple departments by creating
+                                            centralized interactive dashboards
+                                            with Power BI.
+                                        </li>
+                                        <li>
+                                            Built internal tools for incident
+                                            tracking and compliance.
+                                        </li>
+                                        <li>
+                                            Improved data accessibility and
+                                            drove cross-department collaboration
+                                            by automating key safety and EM
+                                            processes.
+                                        </li>
+                                    </ul>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Power Apps</span
+                                        >
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Dashboards</span
+                                        >
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Undergraduate Teaching Assistant at
+                                        Purdue
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Oversaw an introductory Python class
+                                            of over 30 students during their lab
+                                            time
+                                        </li>
+                                        <li>
+                                            Instructed students via virtual and
+                                            in person platforms on how to solve
+                                            issues within their current
+                                            assignments.
+                                        </li>
+                                    </ul>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Python</span
+                                        >
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Leadership</span
+                                        >
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Software Engineering Intern at G&amp;W
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Designed a business intelligence
+                                            solution, improving data analysis
+                                            for multiple counties and saving
+                                            $10,000 annually.
+                                        </li>
+                                        <li>
+                                            Developed a secure Java proxy server
+                                            ensuring cybersecurity compliance
+                                            across 50 counties.
+                                        </li>
+                                    </ul>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Java</span
+                                        >
+                                        <span
+                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                            >Software Development</span
+                                        >
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+
+                    <!-- Campus Experience -->
+                    <div class="mt-12 md:mt-16">
+                        <h3 class="text-2xl font-bold text-accent mb-4">
+                            Campus Involvement
+                        </h3>
+                        <div class="exp-list space-y-4">
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Pi Kappa Phi Fraternity
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <img
+                                        src="portfolio/pikapps.jpeg"
+                                        alt="Pi Kappa Phi house"
+                                        loading="lazy"
+                                        class="mt-4 w-full h-48 md:h-56 rounded-lg object-cover shadow-lg"
+                                        style="object-position: 50% 40%"
+                                    />
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Held positions as Philanthropy
+                                            Chairman, Historian, Chaplain, and
+                                            member of the Standards Board.
+                                        </li>
+                                        <li>
+                                            Organized fundraising efforts,
+                                            raising over $100,000 to support
+                                            individuals with disabilities in a
+                                            span of three years.
+                                        </li>
+                                        <li>
+                                            Planned week-long event raising over
+                                            $35,000, doubling previous event
+                                            record and setting an annual
+                                            fundraising record.
+                                        </li>
+                                        <li>
+                                            Arranged two large-scale events
+                                            catering to 300+ people using a
+                                            $13,000 budget.
+                                        </li>
+                                        <li>
+                                            Led fraternity of 150+ members to
+                                            win the prestigious R.B. Stewart
+                                            Award for the best organization on
+                                            campus.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Special Olympics
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <img
+                                        src="portfolio/socap.jpeg"
+                                        alt="Special Olympics Flag Football Championship"
+                                        loading="lazy"
+                                        class="mt-4 w-full h-48 md:h-56 rounded-lg object-cover shadow-lg"
+                                        style="object-position: 50% 40%"
+                                    />
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Served as the Volunteerism Chair and
+                                            general member.
+                                        </li>
+                                        <li>
+                                            Intramural Champion in Unified Flag
+                                            Football. Runner-up in Unified
+                                            Basketball.
+                                        </li>
+                                        <li>
+                                            Increased community involvement by
+                                            organizing and promoting events such
+                                            as the Polar Plunge.
+                                        </li>
+                                        <li>
+                                            Encouraged engagement with Special
+                                            Olympics athletes through unified
+                                            sports, club events, and volunteer
+                                            opportunities.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Purdue Dance Marathon
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <img
+                                        src="portfolio/pudm.jpeg"
+                                        alt="Dance Marathon"
+                                        loading="lazy"
+                                        class="mt-4 w-full h-48 md:h-56 rounded-lg object-cover shadow-lg"
+                                        style="object-position: 50% 40%"
+                                    />
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Formed and directed a team to raise
+                                            over $2,000 for Riley Children’s
+                                            Hospital through coordinated
+                                            fundraising efforts.
+                                        </li>
+                                        <li>
+                                            Coordinated a fundraising booth
+                                            which raised over $500 from students
+                                            and raised awareness for Riley
+                                            Children’s Hospital.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Purdue Run Club
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Put your details here -->
+                                    <img
+                                        src="portfolio/runclub.jpeg"
+                                        alt="Run Club"
+                                        loading="lazy"
+                                        class="mt-4 w-full h-48 md:h-56 rounded-lg object-cover shadow-lg"
+                                        style="object-position: 50% 40%"
+                                    />
+                                    <ul
+                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                    >
+                                        <li>
+                                            Set a Purdue Club record in the
+                                            4x200m relay.
+                                        </li>
+                                        <li>
+                                            Traveled to Illinois and Taylor
+                                            University to compete in Club meets.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
                         </div>
                     </div>
                 </div>
@@ -691,9 +1231,10 @@
                                 War of the Roses
                             </h3>
                             <p class="text-gray-400 mb-4">
-                                A week long philanthropy event I was in charge
-                                of planning that raised over $35,000 and
-                                awareness for people with disabilities.
+                                A week long philanthropy event across Purdue I
+                                was in charge of planning that raised over
+                                $35,000 and awareness for people with
+                                disabilities.
                             </p>
                             <div class="flex flex-wrap gap-2 mb-4">
                                 <span
@@ -1508,6 +2049,64 @@
                 modal.addEventListener("click", (e) => {
                     if (e.target === modal) closeModal();
                 });
+
+                // --- Experience accordion ---
+                (function initExperienceAccordion() {
+                    const items = document.querySelectorAll(
+                        ".exp-list article, #experience-list article",
+                    );
+                    items.forEach((card) => {
+                        const btn = card.querySelector("button[aria-expanded]");
+                        const panel = card.querySelector(".exp-panel");
+
+                        // accessibility defaults
+                        btn.setAttribute("aria-controls", crypto.randomUUID());
+                        panel.id = btn.getAttribute("aria-controls");
+                        panel.setAttribute("aria-hidden", "true");
+
+                        // ensure collapsed visually
+                        panel.style.height = "0px";
+
+                        const setOpen = (open) => {
+                            btn.setAttribute("aria-expanded", String(open));
+                            panel.setAttribute("aria-hidden", String(!open));
+                            if (open) {
+                                // measure auto height
+                                panel.style.height = panel.scrollHeight + "px";
+                            } else {
+                                panel.style.height = panel.scrollHeight + "px"; // set current
+                                // force reflow so transition starts from current height
+                                void panel.offsetHeight;
+                                panel.style.height = "0px";
+                            }
+                            // rotate chevron
+                            const icon = btn.querySelector("svg");
+                            if (icon)
+                                icon.style.transform = open
+                                    ? "rotate(180deg)"
+                                    : "rotate(0deg)";
+                        };
+
+                        btn.addEventListener("click", () => {
+                            const isOpen =
+                                btn.getAttribute("aria-expanded") === "true";
+                            setOpen(!isOpen);
+                        });
+
+                        // Allow closing on Escape when focused inside the panel
+                        panel.addEventListener("keydown", (e) => {
+                            if (e.key === "Escape") setOpen(false);
+                        });
+
+                        // Guard: if content changes size (e.g., images), keep height in sync while open
+                        const ro = new ResizeObserver(() => {
+                            if (btn.getAttribute("aria-expanded") === "true") {
+                                panel.style.height = panel.scrollHeight + "px";
+                            }
+                        });
+                        ro.observe(panel);
+                    });
+                })();
             });
 
             // List of URLs for random game selection
