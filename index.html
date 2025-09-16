@@ -1400,40 +1400,134 @@
                 <h2 class="text-4xl font-bold text-center mb-12">
                     Beyond the Keyboard
                 </h2>
+
+                <!-- ===== Personal Tiles (new) ===== -->
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16"
+                >
+                    <!-- Tile -->
+                    <article
+                        class="bg-secondary rounded-xl shadow-lg border border-white/5 p-4 flex flex-col gap-3"
+                    >
+                        <h4 class="text-lg font-bold">Family</h4>
+                        <p class="text-gray-300">
+                            The people who keep me motivated and are my biggest
+                            supporters.
+                        </p>
+                        <img
+                            src="portfolio/family.jpeg"
+                            alt="Family"
+                            class="w-full h-48 rounded-lg object-cover"
+                        />
+                    </article>
+
+                    <!-- Tile -->
+                    <article
+                        class="bg-secondary rounded-xl shadow-lg border border-white/5 p-4 flex flex-col gap-3"
+                    >
+                        <h4 class="text-lg font-bold">Friends</h4>
+                        <p class="text-gray-300">
+                            Blessed to have so many people to call friends. My
+                            favorite way to spend free time.
+                        </p>
+                        <img
+                            src="portfolio/friends.jpeg"
+                            alt="Friends"
+                            class="w-full h-48 rounded-lg object-cover"
+                        />
+                    </article>
+
+                    <!-- Tile -->
+                    <article
+                        class="bg-secondary rounded-xl shadow-lg border border-white/5 p-4 flex flex-col gap-3"
+                    >
+                        <h4 class="text-lg font-bold">Indiana Sports</h4>
+                        <p class="text-gray-300">
+                            Basketball and football fan who is loyal to the
+                            Colts, Pacers, and Purdue.
+                        </p>
+                        <img
+                            src="portfolio/colts.jpeg"
+                            alt="Indiana sports / Colts"
+                            class="w-full h-48 rounded-lg object-cover"
+                            style="object-position: 50% 30%"
+                        />
+                    </article>
+
+                    <!-- Tile -->
+                    <article
+                        class="bg-secondary rounded-xl shadow-lg border border-white/5 p-4 flex flex-col gap-3"
+                    >
+                        <h4 class="text-lg font-bold">Golf</h4>
+                        <p class="text-gray-300">
+                            Trying to play more and improve, but it is a slow
+                            progression. Enjoying the process though.
+                        </p>
+                        <img
+                            src="portfolio/golf.jpeg"
+                            alt="Golf"
+                            class="w-full h-48 rounded-lg object-cover"
+                        />
+                    </article>
+
+                    <!-- Tile -->
+                    <article
+                        class="bg-secondary rounded-xl shadow-lg border border-white/5 p-4 flex flex-col gap-3"
+                    >
+                        <h4 class="text-lg font-bold">Lake Life</h4>
+                        <p class="text-gray-300">
+                            Love being out on the water however it may be. My
+                            favorite place to catch a sunset.
+                        </p>
+                        <img
+                            src="portfolio/lake.jpeg"
+                            alt="Lake life"
+                            class="w-full h-48 rounded-lg object-cover"
+                        />
+                    </article>
+
+                    <!-- Tile -->
+                    <article
+                        class="bg-secondary rounded-xl shadow-lg border border-white/5 p-4 flex flex-col gap-3"
+                    >
+                        <h4 class="text-lg font-bold">Future Projects</h4>
+                        <p class="text-gray-300">
+                            Looking for ways to blend product, AI, and hobbies.
+                            Always open to ideas!
+                        </p>
+                        <img
+                            src="portfolio/working.jpeg"
+                            alt="Working at desk"
+                            class="w-full h-48 rounded-lg object-cover"
+                        />
+                    </article>
+                </div>
+
+                <!-- ===== Travel ===== -->
                 <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <!-- Interests Text -->
+                    <!-- Left: Travel only -->
                     <div>
                         <h3 class="text-2xl font-bold text-accent mb-4">
-                            Interests
-                        </h3>
-                        <p class="text-lg mb-6 text-gray-300">
-                            When I'm not coding, I'm passionate about sports and
-                            travel. I grew up running track, watching basketball
-                            and football, and being outside as much as possible.
-                            These days, you'll most likely find me on the golf
-                            course trying to improve my game.
-                        </p>
-                        <h3 class="text-2xl font-bold text-accent mb-4 mt-8">
                             Travels
                         </h3>
                         <p class="text-lg mb-6 text-gray-300">
-                            I've been fortunate enough to visit 49 of the 50
-                            states! Exploring new places is a huge passion of
-                            mine. Click on a state on the map to see a photo
-                            from my travels there.
+                            I’ve been fortunate enough to visit 49 of the 50
+                            states. Click a state on the map to see a photo from
+                            my time there.
                         </p>
                     </div>
-                    <!-- Interactive Map -->
+
+                    <!-- Right: interactive map -->
                     <div id="travel-map" class="w-full">
                         <div id="map-wrapper" class="relative">
                             <div
                                 id="map-area"
                                 class="bg-secondary rounded-lg overflow-hidden min-h-64 md:min-h-[420px]"
                             >
-                                <!-- SVG will be injected here -->
+                                <!-- SVG injected by JS -->
                             </div>
 
-                            <!-- Slide-out panel (desktop overlays map; on mobile it sits inside) -->
+                            <!-- Slide-out panel -->
                             <div
                                 id="map-panel"
                                 class="absolute top-4 right-4 w-80 max-w-[90vw] bg-secondary/95 backdrop-blur p-4 rounded-xl shadow-2xl border border-white/5 opacity-0 pointer-events-none translate-x-4 md:translate-x-2"
