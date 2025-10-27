@@ -1,114 +1,104 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>🃏 Gin Rummy 🃏</title>
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <div id="game-container">
-            <header>
-                <h1>🃏 Gin Rummy 🃏</h1>
-                <div class="scores">
-                    <div class="score" id="player-score-display">🏆 You: 0</div>
-                    <div class="score" id="computer-score-display">
-                        🏆 Computer: 0
-                    </div>
-                </div>
-            </header>
-
-            <div id="message-area">
-                <span class="icon">⚠️</span>
-                <span id="game-message">Draw a card to start your turn</span>
-            </div>
-
-            <div id="computer-area">
-                <h3>Computer Hand</h3>
-                <div id="computer-hand" class="hand-area"></div>
-                <div id="computer-info" class="hand-info">Cards: 10</div>
-            </div>
-
-            <div id="playing-field">
-                <div id="stock-pile-area">
-                    <h4>Stock Pile</h4>
-                    <div
-                        id="stock-pile-card"
-                        class="card-placeholder card back"
-                    >
-                        <span>?</span>
-                    </div>
-                    <div id="stock-pile-count">52 cards</div>
-                </div>
-                <div id="discard-pile-area">
-                    <h4>Discard Pile</h4>
-                    <div id="discard-pile-card-container">
-                        <div class="card-placeholder empty">Empty</div>
-                    </div>
-                    <div id="discard-pile-count">0 cards</div>
-                </div>
-            </div>
-
-            <div id="player-area">
-                <h3>Your Hand</h3>
-                <div id="player-hand" class="hand-area"></div>
-                <div id="player-info" class="hand-info">
-                    <div id="player-deadwood">Deadwood: 0 points</div>
-                    <div id="player-melds-info">
-                        Melds: 0 cards | Unmatched: 0 cards
-                    </div>
-                    <div id="player-knock-info" class="knock-status"></div>
-                </div>
-            </div>
-
-            <div id="action-buttons">
-                <button id="new-game-button">🔄 New Game</button>
-                <button id="knock-button" style="display: none">
-                    🔥 Knock!
-                </button>
-            </div>
-
-            <div id="rules-area">
-                <h4>How to Play:</h4>
-                <ul>
-                    <li>
-                        <strong>Draw:</strong> Click stock pile or discard pile
-                        to draw (adds 11th card).
-                    </li>
-                    <li>
-                        <strong>Discard:</strong> Click a card in your hand to
-                        discard (if you have 11 cards).
-                    </li>
-                    <li>
-                        <strong>Sort:</strong> Drag cards in your hand to
-                        rearrange them.
-                    </li>
-                    <li>
-                        <strong>Melds:</strong> 3+ cards of same rank OR 3+
-                        consecutive cards of same suit (Ace is low).
-                    </li>
-                    <li>
-                        <strong>Knock:</strong> With 11 cards, if an optimal
-                        discard results in deadwood ≤ 10 pts, the "Knock" button
-                        appears. Clicking it auto-discards and knocks.
-                    </li>
-                    <li>
-                        <strong>Gin:</strong> If optimal discard results in 0
-                        deadwood, it's "Gin!".
-                    </li>
-                    <li>
-                        <strong>Scoring:</strong> Face cards = 10pts, Aces =
-                        1pt, Numbers = face value.
-                    </li>
-                    <li>
-                        <strong>Bonuses:</strong> Gin = +25 points to knocker |
-                        Undercut (knocker has more deadwood than opponent) = +25
-                        points to opponent.
-                    </li>
-                </ul>
-            </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🃏 Gin Rummy 🃏</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <header>
+        <h1>🃏 Gin Rummy 🃏</h1>
+        <div class="scores">
+          <div class="score" id="player-score-display">🏆 You: 0</div>
+          <div class="score" id="computer-score-display">🏆 Computer: 0</div>
         </div>
+      </header>
 
-        <script src="script.js"></script>
-    </body>
+      <div id="message-area">
+        <span class="icon">⚠️</span>
+        <span id="game-message">Draw a card to start your turn</span>
+      </div>
+
+      <div id="computer-area">
+        <h3>Computer Hand</h3>
+        <div id="computer-hand" class="hand-area"></div>
+        <div id="computer-info" class="hand-info">Cards: 10</div>
+      </div>
+
+      <div id="playing-field">
+        <div id="stock-pile-area">
+          <h4>Stock Pile</h4>
+          <div id="stock-pile-card" class="card-placeholder card back">
+            <span>?</span>
+          </div>
+          <div id="stock-pile-count">52 cards</div>
+        </div>
+        <div id="discard-pile-area">
+          <h4>Discard Pile</h4>
+          <div id="discard-pile-card-container">
+            <div class="card-placeholder empty">Empty</div>
+          </div>
+          <div id="discard-pile-count">0 cards</div>
+        </div>
+      </div>
+
+      <div id="player-area">
+        <h3>Your Hand</h3>
+        <div id="player-hand" class="hand-area"></div>
+        <div id="player-info" class="hand-info">
+          <div id="player-deadwood">Deadwood: 0 points</div>
+          <div id="player-melds-info">Melds: 0 cards | Unmatched: 0 cards</div>
+          <div id="player-knock-info" class="knock-status"></div>
+        </div>
+      </div>
+
+      <div id="action-buttons">
+        <button id="new-game-button">🔄 New Game</button>
+        <button id="pass-button" style="display: none">⏭️ Pass</button>
+        <button id="knock-button" style="display: none">🔥 Knock!</button>
+      </div>
+
+      <div id="rules-area">
+        <h4>How to Play:</h4>
+        <ul>
+          <li>
+            <strong>Draw:</strong> Click stock pile or discard pile to draw
+            (adds 11th card).
+          </li>
+          <li>
+            <strong>Discard:</strong> Click a card in your hand to discard (if
+            you have 11 cards).
+          </li>
+          <li>
+            <strong>Sort:</strong> Drag cards in your hand to rearrange them.
+          </li>
+          <li>
+            <strong>Melds:</strong> 3+ cards of same rank OR 3+ consecutive
+            cards of same suit (Ace is low).
+          </li>
+          <li>
+            <strong>Knock:</strong> With 11 cards, if an optimal discard results
+            in deadwood ≤ 10 pts, the "Knock" button appears. Clicking it
+            auto-discards and knocks.
+          </li>
+          <li>
+            <strong>Gin:</strong> If optimal discard results in 0 deadwood, it's
+            "Gin!".
+          </li>
+          <li>
+            <strong>Scoring:</strong> Face cards = 10pts, Aces = 1pt, Numbers =
+            face value.
+          </li>
+          <li>
+            <strong>Bonuses:</strong> Gin = +25 points to knocker | Undercut
+            (knocker has more deadwood than opponent) = +25 points to opponent.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
 </html>
