@@ -1,362 +1,350 @@
+:root {
+  --card-width: clamp(48px, 9vw, 92px);
+  --card-height: calc(var(--card-width) * 1.45);
+  --card-radius: clamp(6px, 1vw, 10px);
+}
+
 /* General Body and Game Container Styling */
 body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 8px;
-    background: linear-gradient(
-        to bottom right,
-        #166534,
-        #15803d,
-        #10b981
-    ); /* from-green-800 via-green-600 to-emerald-500 */
-    color: #333;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    font-size: 14px; /* Base for sm text */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: clamp(8px, 1.5vw, 18px);
+  background: linear-gradient(to bottom right, #166534, #15803d, #10b981);
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-size: clamp(13px, 1.8vw, 16px);
 }
 
 #game-container {
-    max-width: 1000px; /* max-w-7xl (approx) */
-    width: 100%;
-    background-color: rgba(
-        255,
-        255,
-        255,
-        0.1
-    ); /* Light backdrop for sections if needed */
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  max-width: min(1120px, 100%);
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.12);
+  padding: clamp(12px, 2vw, 20px);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
 
 /* Header and Scores */
 header {
-    text-align: center;
-    margin-bottom: 24px;
+  text-align: center;
+  margin-bottom: 24px;
 }
 
 header h1 {
-    font-size: 2.25rem; /* text-4xl */
-    font-weight: bold;
-    color: white;
-    margin-bottom: 8px;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
 }
 
 .scores {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    color: white;
-    font-size: 1.125rem; /* text-lg */
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 40px);
+  color: white;
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+  flex-wrap: wrap;
 }
 .score .icon {
-    margin-right: 8px;
+  margin-right: 8px;
 }
 
 /* Message Area */
 #message-area {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    padding: 12px;
-    display: inline-flex; /* Simulates inline-flex for centering */
-    align-items: center;
-    gap: 8px;
-    margin: 0 auto 16px auto; /* Centering the block */
-    display: flex; /* Changed to flex for easier centering */
-    justify-content: center;
-    max-width: 450px; /* max-w-sm */
+  background-color: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: clamp(10px, 2vw, 16px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto clamp(14px, 2.5vw, 22px) auto;
+  justify-content: center;
+  max-width: min(520px, 100%);
 }
 #message-area .icon {
-    font-size: 1.25rem; /* w-5 h-5 */
-    color: #2563eb; /* text-blue-600 */
+  font-size: 1.25rem; /* w-5 h-5 */
+  color: #2563eb; /* text-blue-600 */
 }
 #game-message {
-    color: #1f2937; /* text-gray-800 */
-    font-weight: 500; /* font-medium */
-    font-size: 1rem; /* text-base */
+  color: #1f2937; /* text-gray-800 */
+  font-weight: 500; /* font-medium */
+  font-size: 1rem; /* text-base */
 }
 
 /* Hand Areas (Computer & Player) */
 #computer-area,
 #player-area {
-    margin-bottom: 24px;
-    min-height: 160px; /* Approximate height for cards */
+  margin-bottom: clamp(18px, 3vw, 28px);
+  min-height: clamp(140px, 26vw, 200px);
 }
 #computer-area h3,
 #player-area h3,
 #playing-field h4 {
-    color: white;
-    font-size: 1.125rem; /* text-lg */
-    font-weight: 600; /* font-semibold */
-    margin-bottom: 8px;
-    text-align: center;
+  color: white;
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600; /* font-semibold */
+  margin-bottom: 8px;
+  text-align: center;
 }
 .hand-area {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: center;
-    min-height: 100px; /* Min height for cards (md:h-24) */
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(4px, 1vw, 12px);
+  justify-content: center;
+  min-height: clamp(96px, 20vw, 150px);
+  padding: clamp(4px, 1vw, 10px);
+  transition: min-height 0.3s ease;
 }
 .hand-info {
-    text-align: center;
-    margin-top: 8px;
-    color: white;
-    font-size: 0.875rem; /* text-sm */
+  text-align: center;
+  margin-top: 8px;
+  color: white;
+  font-size: 0.875rem; /* text-sm */
 }
 .knock-status {
-    margin-top: 4px;
-    font-weight: bold;
-    min-height: 20px; /* For consistent layout */
+  margin-top: 4px;
+  font-weight: bold;
+  min-height: 20px; /* For consistent layout */
 }
 .knock-status.gin {
-    color: #facc15; /* text-yellow-300 */
+  color: #facc15; /* text-yellow-300 */
 }
 .knock-status.knock {
-    color: #fb923c; /* text-orange-300 */
+  color: #fb923c; /* text-orange-300 */
 }
 
 /* Playing Field (Stock & Discard) */
 #playing-field {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(18px, 4vw, 42px);
+  margin-bottom: clamp(18px, 3vw, 28px);
+  flex-wrap: wrap;
 }
 #stock-pile-area,
 #discard-pile-area {
-    text-align: center;
+  text-align: center;
 }
 #stock-pile-count,
 #discard-pile-count {
-    color: white;
-    font-size: 0.75rem; /* text-xs */
-    margin-top: 4px;
+  color: white;
+  font-size: 0.75rem; /* text-xs */
+  margin-top: 4px;
 }
 
-/* Card Styling */
 .card {
-    width: 64px; /* md:w-16 */
-    height: 96px; /* md:h-24 */
-    border: 2px solid #d1d5db; /* border-gray-300 */
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.875rem; /* sm:text-sm */
-    font-weight: bold;
-    background-color: white;
-    user-select: none; /* Prevent text selection on drag */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px solid rgba(209, 213, 219, 0.9);
+  border-radius: var(--card-radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  font-size: clamp(0.75rem, 1.8vw, 0.95rem);
+  font-weight: 700;
+  background-color: white;
+  user-select: none;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+  position: relative;
 }
 .card:hover:not(.back):not(.empty) {
-    border-color: #9ca3af; /* hover:border-gray-400 */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* hover:shadow-md */
-    transform: translateY(-2px); /* hover:-translate-y-1 */
+  border-color: #9ca3af; /* hover:border-gray-400 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* hover:shadow-md */
+  transform: translateY(-2px); /* hover:-translate-y-1 */
 }
 .card.back {
-    background-color: #2563eb; /* bg-blue-600 */
-    border-color: #1d4ed8; /* border-blue-700 */
-    color: white;
-    font-size: 2rem;
+  background-color: #2563eb; /* bg-blue-600 */
+  border-color: #1d4ed8; /* border-blue-700 */
+  color: white;
+  font-size: 2rem;
 }
 .card.selected {
-    background-color: #fef9c3; /* bg-yellow-200 */
-    border-color: #fcd34d; /* border-yellow-400 */
-    transform: translateY(-8px); /* transform -translate-y-2 */
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15); /* shadow-lg */
+  background-color: #fef9c3;
+  border-color: #fcd34d;
+  transform: translateY(-8px);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
 }
 .card.dragged-over-slot {
-    /* For styling the card in the slot being dragged over */
-    background-color: #dcfce7; /* bg-green-100 or similar for slot highlight */
-    border-color: #4ade80; /* border-green-400 */
-    transform: scale(1.05);
+  /* For styling the card in the slot being dragged over */
+  background-color: #dcfce7; /* bg-green-100 or similar for slot highlight */
+  border-color: #4ade80; /* border-green-400 */
+  transform: scale(1.05);
 }
 .player-card-slot.drag-over-active {
-    /* For the slot div itself */
-    background-color: rgba(74, 222, 128, 0.3); /* bg-green-500 bg-opacity-30 */
-    border-radius: 8px; /* To match card */
-    outline: 2px dashed #4ade80;
+  /* For the slot div itself */
+  background-color: rgba(74, 222, 128, 0.3); /* bg-green-500 bg-opacity-30 */
+  border-radius: 8px; /* To match card */
+  outline: 2px dashed #4ade80;
 }
 
 .card-placeholder.empty {
-    width: 64px;
-    height: 96px;
-    border: 2px dashed #9ca3af; /* border-gray-400 */
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #9ca3af;
-    font-size: 0.875rem;
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px dashed rgba(148, 163, 184, 0.8);
+  border-radius: var(--card-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: clamp(0.7rem, 1.7vw, 0.9rem);
 }
 
 .card .rank {
-    font-size: 0.85rem; /* text-xs */
+  font-size: 0.85rem; /* text-xs */
 }
 .card .suit {
-    font-size: 1.25rem; /* md:text-lg */
+  font-size: 1.25rem; /* md:text-lg */
 }
 .card.red-suit .rank,
 .card.red-suit .suit {
-    color: #dc2626; /* text-red-600 */
+  color: #dc2626; /* text-red-600 */
 }
 .card.black-suit .rank,
 .card.black-suit .suit {
-    color: #000000; /* text-black */
+  color: #000000; /* text-black */
 }
 
 /* Draggable placeholder/ghost image */
 .dragging {
-    opacity: 0.5;
-    border: 2px dashed #0ea5e9; /* Example */
+  opacity: 0.5;
+  border: 2px dashed #0ea5e9; /* Example */
 }
 
 /* Action Buttons */
 #action-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 24px;
-    min-height: 50px; /* To prevent layout shifts */
+  display: flex;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 24px);
+  margin-bottom: clamp(18px, 3vw, 28px);
+  flex-wrap: wrap;
+  min-height: clamp(44px, 5vw, 60px);
 }
 #action-buttons button {
-    color: white;
-    font-weight: bold;
-    padding: 10px 20px; /* py-2 px-4 sm:px-6 */
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    font-size: 1rem; /* text-base */
-    border: none;
+  color: white;
+  font-weight: 700;
+  padding: clamp(8px, 1.6vw, 12px) clamp(14px, 3vw, 24px);
+  border-radius: 999px;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  cursor: pointer;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  border: none;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.18);
 }
-#action-buttons button:hover {
-    transform: scale(1.05);
+#action-buttons button:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 #new-game-button {
-    background-color: #2563eb; /* bg-blue-600 */
+  background-color: #2563eb;
 }
-#new-game-button:hover {
-    background-color: #1d4ed8; /* hover:bg-blue-700 */
+#new-game-button:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+#pass-button {
+  background-color: #0ea5e9;
+}
+#pass-button:hover:not(:disabled) {
+  background-color: #0284c7;
 }
 #knock-button {
-    background-color: #f97316; /* bg-orange-500 */
+  background-color: #f97316;
 }
 #knock-button:hover {
-    background-color: #ea580c; /* hover:bg-orange-600 */
+  background-color: #ea580c;
+}
+#action-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Rules Area */
 #rules-area {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    padding: 16px;
-    font-size: 0.875rem; /* text-sm */
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 0.875rem; /* text-sm */
 }
 #rules-area h4 {
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #1f2937; /* Overriding general h4 color for this section */
-    text-align: left;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #1f2937; /* Overriding general h4 color for this section */
+  text-align: left;
 }
 #rules-area ul {
-    list-style-position: inside;
-    padding-left: 0;
-    margin: 0;
-    space-y: 4px; /* Approximation */
-    color: #374151; /* text-gray-700 */
+  list-style-position: inside;
+  padding-left: 0;
+  margin: 0;
+  space-y: 4px; /* Approximation */
+  color: #374151; /* text-gray-700 */
 }
 #rules-area ul li {
-    margin-bottom: 4px; /* Simulates space-y-1 */
+  margin-bottom: 4px; /* Simulates space-y-1 */
 }
 
-/* Animations (Simple examples) */
-.card-animation-draw {
-    animation: bounceIn 0.7s ease;
-}
-.card-animation-discard {
-    animation: pulse nhẹ 0.7s ease; /* nhẹ means light/gentle in Vietnamese, was probably a typo or placeholder, using 'pulse' */
-}
-.card-animation-computer-draw {
-    animation: pingEffect 1s ease;
-}
-.card-animation-computer-discard {
-    animation: pulse nhẹ 1s ease; /* Assuming similar pulse effect */
+/* Flying card animation overlay */
+.flying-card {
+  position: fixed;
+  pointer-events: none;
+  transition:
+    transform 0.45s ease,
+    opacity 0.45s ease;
+  z-index: 1000;
+  opacity: 1;
+  will-change: transform, opacity;
 }
 
-@keyframes bounceIn {
-    0% {
-        transform: scale(0.5);
-        opacity: 0;
-    }
-    60% {
-        transform: scale(1.1);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-@keyframes pulseEffect {
-    /* 'pulse nhẹ' can be a simple pulse */
-    0% {
-        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
-    } /* yellow-400 approx */
-    70% {
-        box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
-    }
-}
-@keyframes pingEffect {
-    /* Simple opacity flash for ping */
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.3;
-        transform: scale(1.1);
-    }
+.card-hidden {
+  visibility: hidden;
 }
 
 /* Responsive adjustments (basic example) */
-@media (max-width: 600px) {
-    body {
-        font-size: 12px;
-        padding: 4px;
-    }
-    header h1 {
-        font-size: 1.75rem;
-    }
-    .scores {
-        font-size: 1rem;
-        gap: 16px;
-    }
-    .card {
-        width: 52px;
-        height: 78px;
-    }
-    .card .suit {
-        font-size: 1rem;
-    }
-    #action-buttons button {
-        padding: 8px 12px;
-        font-size: 0.875rem;
-    }
-    #playing-field {
-        gap: 16px;
-    }
+@media (max-width: 820px) {
+  body {
+    align-items: stretch;
+  }
+  #game-container {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #playing-field {
+    flex-direction: column;
+    align-items: center;
+  }
+  #stock-pile-area,
+  #discard-pile-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .hand-area {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  #action-buttons {
+    gap: 12px;
+  }
 }
 
 /* Player card slot wrapper for drag and drop */
 .player-card-slot {
-    /* No specific style needed unless for highlighting drop target */
-    padding: 2px; /* To provide some space for drag-over highlight */
+  /* No specific style needed unless for highlighting drop target */
+  padding: 2px; /* To provide some space for drag-over highlight */
 }
