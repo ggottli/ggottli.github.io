@@ -241,18 +241,18 @@ async function handleQuery(q) {
   el("gp-links").innerHTML = "";
 
   const streamEl = document.getElementById("gp-stream");
-  let acc = "";
+  streamEl.textContent = ""; // clear
 
-  const s = await sendToBackend(messages, { stream: true });
-  await s.read((delta) => {
-    acc += delta;
-    // You can throttle this if you like; simplest is update every chunk:
-    streamEl.innerHTML = renderMarkdown(acc);
-  });
-
-  // (Optional) trim trailing artifacts from some models, e.g., "AIRAG"
-  acc = acc.replace(/\bAI\s?RAG\b\s*$/i, "");
-  streamEl.innerHTML = renderMarkdown(acc);
+  try {
+    const messages = buildMessages(q);
+    const s = await sendToBackend(messages, { stream: true });
+    await s.read((delta) => {
+      streamEl.textContent += delta;
+    });
+  } catch (err) {
+    streamEl.textContent = "Error contacting Gregpedia server.";
+    console.error(err);
+  }
 }
 
 async function init() {
