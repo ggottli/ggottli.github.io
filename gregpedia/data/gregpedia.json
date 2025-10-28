@@ -1,0 +1,199 @@
+[
+  {
+    "id": "about",
+    "topic": "About Greg",
+    "aliases": ["bio", "who is greg", "greg gottlieb", "overview"],
+    "summary": "Purdue student (CS + Data Science + Applied Statistics) on the Machine Intelligence track; builds AI tools, systems projects, and polished web apps.",
+    "details": "Greg Gottlieb studies Computer Science (Machine Intelligence track), Data Science, and Applied Statistics at Purdue University, with a Math minor and a Certificate in Entrepreneurship & Innovation. He’s active in AI/ML projects (prediction models, RAG assistants), systems programming (custom shell/HTTP server), and creative web experiences deployed on GitHub Pages. Organizations include Machine Learning @ Purdue, Purdue Run Club, and multiple service groups. :contentReference[oaicite:0]{index=0} :contentReference[oaicite:1]{index=1}",
+    "tags": [
+      "Purdue",
+      "CS",
+      "Data Science",
+      "Applied Statistics",
+      "Entrepreneurship"
+    ]
+  },
+
+  {
+    "id": "education",
+    "topic": "Education",
+    "aliases": ["school", "purdue", "majors", "degrees", "concentration"],
+    "summary": "Purdue University — CS (Machine Intelligence), Data Science, Applied Statistics; Math minor; Entrepreneurship & Innovation Certificate.",
+    "details": "Degrees/Majors: Computer Science (Machine Intelligence concentration), Data Science, Applied Statistics; Math minor; Entrepreneurship & Innovation Certificate. Organizations: Machine Learning @ Purdue, Real Estate Society, Best Buddies, Letters of Love, GreekIV; Dean’s List / Semester Honors. Coursework includes (selection): CS 18000, 18200, 24000, 24200, 25000, 25100, 25200, 34800, 37300, 38100; STAT 35500, 41600, 41700, 51200 (in progress); MA 16100, 16200, 26100, 35100; ENGL 42100; PHIL 20800; EAPS 11100/11200/32700; AMST 22000; NUTR 30300 (in progress). (No grades stored.) :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3}",
+    "tags": ["Purdue", "Machine Intelligence", "Certificate", "Math Minor"]
+  },
+
+  {
+    "id": "courses-in-progress",
+    "topic": "Courses In Progress",
+    "aliases": ["current classes", "this semester", "in progress courses"],
+    "summary": "CS 44000 (Large Scale Data Analytics), CS 47100 (Intro to AI), STAT 51200 (Applied Regression), NUTR 30300 (Essentials of Nutrition).",
+    "details": "Planned/current: CS 44000 Large Scale Data Analytics, CS 47100 Introduction to Artificial Intelligence, STAT 51200 Applied Regression Analysis, NUTR 30300 Essentials of Nutrition. (No grades stored.) :contentReference[oaicite:4]{index=4}",
+    "tags": ["current", "analytics", "ai", "statistics"]
+  },
+
+  {
+    "id": "experience-heritage",
+    "topic": "Work • The Heritage Group",
+    "aliases": ["heritage group", "strategy internship", "ai intern"],
+    "summary": "Strategy & Data Analytics Intern (AI Focus), May 2025–Present.",
+    "details": "Strategy and Data Analytics Intern (AI Focus). Led 10+ AI initiatives across strategy, operations, and investments; built and deployed AI tools for decision support and research acceleration; trained leadership on internal tools and automation; named “Intern of the Summer” among 50+ interns; organized and won a company Euchre league. (May 2025–Present) :contentReference[oaicite:5]{index=5}",
+    "tags": ["AI", "Strategy", "Automation", "Leadership"]
+  },
+  {
+    "id": "experience-muinzer",
+    "topic": "Work • Muinzer",
+    "aliases": ["muinzer", "data analyst intern"],
+    "summary": "Data Analyst Intern, Aug 2024–Dec 2024.",
+    "details": "Analyzed student housing datasets (JS) to uncover pricing trends improving lease strategy across 750+ units; supported investor presentations with market trend reports. (Aug 2024–Dec 2024) :contentReference[oaicite:6]{index=6}",
+    "tags": ["Data", "Real Estate", "Dashboards"]
+  },
+  {
+    "id": "experience-medxcel",
+    "topic": "Work • Medxcel",
+    "aliases": ["medxcel", "safety & emergency management"],
+    "summary": "Safety & Emergency Management Data Intern, May–Aug 2024.",
+    "details": "Built centralized interactive dashboards in Power BI; automated key safety and emergency management processes to improve cross-department collaboration and decision speed. (May–Aug 2024) :contentReference[oaicite:7]{index=7}",
+    "tags": ["Power BI", "Automation", "Dashboards"]
+  },
+  {
+    "id": "experience-uta",
+    "topic": "Work • Purdue (Undergrad TA)",
+    "aliases": ["uta", "teaching assistant", "python lab"],
+    "summary": "Undergraduate Teaching Assistant, Aug–Dec 2023.",
+    "details": "Oversaw an intro Python class (~30 students) during lab; supported students virtually and in person. (Aug–Dec 2023) :contentReference[oaicite:8]{index=8}",
+    "tags": ["Teaching", "Python", "Mentorship"]
+  },
+  {
+    "id": "experience-gw",
+    "topic": "Work • G&W",
+    "aliases": ["g&w", "software engineering intern"],
+    "summary": "Software Engineering Intern, May–Aug 2023.",
+    "details": "Built a BI solution improving data analysis across multiple counties (saving ~$10k annually); developed a secure Java proxy server to meet cybersecurity compliance across 50 counties. (May–Aug 2023) :contentReference[oaicite:9]{index=9}",
+    "tags": ["Java", "BI", "Security"]
+  },
+
+  {
+    "id": "leadership-pikapp",
+    "topic": "Leadership • Pi Kappa Phi",
+    "aliases": [
+      "pi kappa phi",
+      "philanthropy chairman",
+      "historian",
+      "chaplain"
+    ],
+    "summary": "Philanthropy Chairman, Historian, Chaplain, Standards Board (Apr 2023–Apr 2025).",
+    "details": "Organized fundraising surpassing $100,000 across three years; ran a week-long event raising $35,000+ (doubling prior record); managed $13,000 budgets for 300+ person events; helped lead 150+ member chapter to the R.B. Stewart Award. (Apr 2023–Apr 2025) :contentReference[oaicite:10]{index=10}",
+    "tags": ["Leadership", "Fundraising", "Events"]
+  },
+  {
+    "id": "leadership-special-olympics",
+    "topic": "Leadership • Special Olympics",
+    "aliases": ["special olympics", "volunteerism chair"],
+    "summary": "Volunteerism Chair (Jan 2024–Mar 2025).",
+    "details": "Increased community engagement through events like the Polar Plunge and unified sports; promoted club events and volunteer opportunities. (Jan 2024–Mar 2025) :contentReference[oaicite:11]{index=11}",
+    "tags": ["Service", "Community"]
+  },
+  {
+    "id": "leadership-pudm",
+    "topic": "Leadership • Purdue University Dance Marathon",
+    "aliases": ["pudm", "team captain"],
+    "summary": "Team Captain (Feb 2023–Nov 2024).",
+    "details": "Directed a team raising $2,000+ for Riley Children’s Hospital; helped run a booth that raised $500+ and awareness. (Feb 2023–Nov 2024) :contentReference[oaicite:12]{index=12}",
+    "tags": ["Service", "Fundraising"]
+  },
+
+  {
+    "id": "skills",
+    "topic": "Skills",
+    "aliases": ["stack", "tech stack", "languages", "tools"],
+    "summary": "Python, C, Java, JS, C++, R, SQL, HTML/CSS, Bash; Git/GitHub, Pandas, NumPy, Matplotlib, Tableau, Power BI, Power Apps, Excel, Docker, Flask.",
+    "details": "Programming: Python, C, Java, JavaScript, C++, R, SQL, HTML/CSS, Bash. Tools: Git/GitHub, Pandas, NumPy, Matplotlib, Tableau, Microsoft Power BI, Power Apps, Excel, Word, Docker, Flask. :contentReference[oaicite:13]{index=13}",
+    "tags": ["Python", "C", "Java", "ML", "Power BI", "Flask"]
+  },
+
+  {
+    "id": "interests",
+    "topic": "Interests",
+    "aliases": ["hobbies"],
+    "summary": "Travel, Track & Field, Indy Sports, Golf, Basketball, Football, Reading, Euchre.",
+    "details": "Enjoys athletics, reading, and card games; organized a company Euchre league and won the championship. :contentReference[oaicite:14]{index=14}",
+    "tags": ["sports", "reading", "euchre"]
+  },
+
+  {
+    "id": "projects-systems",
+    "topic": "Projects • Systems",
+    "aliases": ["shell", "http server", "tls", "cgi"],
+    "summary": "Custom Unix-style shell (lex/yacc) and a multi-mode HTTP server with TLS, CGI, directory browsing.",
+    "details": "Built a lex/yacc-based shell supporting I/O redirection, pipes, wildcards, and environment variables. Developed a multi-mode HTTP server (TLS, CGI binaries & shared objects, clean directory listings). Emphasis on robust sockets, strict C coding standards, correctness, and test harnesses. (Coursework + personal extensions) :contentReference[oaicite:15]{index=15}",
+    "tags": ["C", "Systems", "Networking", "Security"]
+  },
+
+  {
+    "id": "projects-ml",
+    "topic": "Projects • AI/ML",
+    "aliases": [
+      "machine learning",
+      "nba model",
+      "gin rummy ai",
+      "rag",
+      "data bot"
+    ],
+    "summary": "NBA/NFL prediction models, RL Gin Rummy agent, local RAG ‘Data Bot’.",
+    "details": "Built XGBoost-based NBA/NFL predictors (game/stats), a reinforcement-learning Gin Rummy agent (Stable-Baselines3), and a local RAG assistant (FAISS index of PDFs/notes; optional OpenRouter models). Dashboarding/analysis on top of pipelines. (Personal + coursework alignment) :contentReference[oaicite:16]{index=16}",
+    "tags": ["XGBoost", "Reinforcement Learning", "FAISS"]
+  },
+
+  {
+    "id": "projects-web",
+    "topic": "Projects • Web & Games",
+    "aliases": [
+      "github pages",
+      "games",
+      "yamslam",
+      "onitama",
+      "retro golf",
+      "room picks"
+    ],
+    "summary": "Interactive games/tools on GitHub Pages; event tools for philanthropy.",
+    "details": "Ships polished web experiences — board-game conversions, sports mini-games, and fraternity/charity tools (Room Picks, War of the Roses, galleries, donation links). Strong emphasis on responsive design and playful UI. Public repos include: “ggottli.github.io” (site/games hub), “gerg” (CLI/automation agent), “cs348-project” (DB course project), “pokemon-database” (small app).",
+    "tags": ["JavaScript", "GitHub Pages", "Design"],
+    "links": [
+      {
+        "label": "Website (GitHub Pages)",
+        "href": "https://github.com/ggottli/ggottli.github.io"
+      },
+      {
+        "label": "gerg (CLI agent)",
+        "href": "https://github.com/ggottli/gerg"
+      },
+      {
+        "label": "CS348 project",
+        "href": "https://github.com/ggottli/cs348-project"
+      },
+      {
+        "label": "Pokemon Database",
+        "href": "https://github.com/ggottli/pokemon-database"
+      }
+    ]
+  },
+
+  {
+    "id": "faq-now",
+    "topic": "FAQ • What are you working on now?",
+    "aliases": ["current work", "now", "currently"],
+    "summary": "Gregpedia + AI proxy, ML pipelines, and advanced coursework.",
+    "details": "Currently polishing Gregpedia (local+AI via a PythonAnywhere proxy), iterating on ML prediction pipelines, and taking advanced analytics/AI courses (e.g., CS 440, CS 471, STAT 512). :contentReference[oaicite:17]{index=17}",
+    "tags": ["FAQ", "AI", "Analytics"]
+  },
+
+  {
+    "id": "timeline",
+    "topic": "Timeline (Highlights)",
+    "aliases": ["chronology", "milestones"],
+    "summary": "Key milestones across roles, projects, and events.",
+    "details": "May 2025—present: Strategy & Data Analytics (AI Focus), The Heritage Group. Aug–Dec 2024: Data Analyst Intern, Muinzer. May–Aug 2024: Safety & EM Data Intern, Medxcel. Aug–Dec 2023: UTA (Python), Purdue. May–Aug 2023: SWE Intern, G&W. Apr 2023–Apr 2025: Pi Kappa Phi leadership roles; fundraising records and R.B. Stewart Award. :contentReference[oaicite:18]{index=18}",
+    "tags": ["timeline", "internships", "leadership"]
+  }
+]

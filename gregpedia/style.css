@@ -1,0 +1,214 @@
+/* ============================================================
+   Gregpedia — Unified Theme (v0.1)
+   Designed to match your portfolio’s dark minimalist aesthetic
+   ============================================================ */
+
+:root {
+    --bg: #0b0b0c;
+    --fg: #e9e9e9;
+    --muted: rgba(255, 255, 255, 0.65);
+    --accent: #9ca3af;
+    --border: rgba(255, 255, 255, 0.1);
+    --glow: rgba(255, 255, 255, 0.15);
+    --radius: 40px;
+    --transition: 0.25s ease;
+    --font: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    scroll-behavior: smooth;
+}
+
+/* ===================
+   Page Layout
+   =================== */
+body.gregpedia {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 4rem 1rem;
+    text-align: center;
+}
+
+.gp-wrap {
+    width: 100%;
+    max-width: 900px;
+}
+
+.gp-title {
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+}
+
+.gp-badge {
+    font-size: 1rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.75rem;
+    background: #18181b;
+    margin-left: 0.5rem;
+}
+
+.gp-sublabel {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+/* ===================
+   Search Bar
+   =================== */
+.gp-search {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #121316;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition:
+        border var(--transition),
+        box-shadow var(--transition);
+}
+
+.gp-search:focus-within {
+    border-color: var(--glow);
+    box-shadow: 0 0 12px var(--glow);
+}
+
+.gp-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--fg);
+    font-size: 1.1rem;
+    padding: 1rem 1.25rem;
+}
+
+.gp-search button {
+    background: #2a2c31;
+    color: var(--fg);
+    border: none;
+    outline: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    margin: 0.4rem;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: background var(--transition);
+}
+
+.gp-search button:hover {
+    background: #3a3d42;
+}
+
+/* ===================
+   Result Box
+   =================== */
+.gp-result {
+    margin-top: 3rem;
+    text-align: left;
+    background: #101113;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.75rem 1.5rem;
+    line-height: 1.6;
+    animation: fadeIn 0.35s ease;
+}
+
+.gp-result h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.gp-result .meta {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+}
+
+.gp-tag {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    margin-right: 0.4rem;
+    color: var(--muted);
+}
+
+.gp-links a {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 1rem;
+    transition: color var(--transition);
+}
+
+.gp-links a:hover {
+    color: #fff;
+}
+
+/* ===================
+   Footer
+   =================== */
+.gp-footer {
+    margin-top: 3rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* ===================
+   Animations
+   =================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===================
+   Utility
+   =================== */
+ul {
+    list-style: none;
+    margin-top: 0.5rem;
+    padding-left: 1rem;
+}
+
+button.gp-as-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 1rem;
+    text-align: left;
+    padding: 0.2rem 0;
+    transition: color var(--transition);
+}
+
+button.gp-as-link:hover {
+    color: #fff;
+}

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Gregpedia • v0.1</title>
+        <!-- Reuse your site's existing CSS -->
+        <link rel="stylesheet" href="/style.css" />
+        <style>
+            :root {
+                --gp-maxw: 1100px;
+                --gp-muted: rgba(255, 255, 255, 0.65);
+                --gp-border: rgba(255, 255, 255, 0.12);
+            }
+            body.gregpedia {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--page-bg, #0c0c0d);
+                color: var(--page-fg, #eaeaea);
+                font-family: var(
+                    --font,
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    Roboto,
+                    Helvetica,
+                    Arial,
+                    "Apple Color Emoji",
+                    "Segoe UI Emoji"
+                );
+            }
+            .gp-wrap {
+                width: 100%;
+                max-width: var(--gp-maxw);
+                padding: 6rem 1rem;
+                text-align: center;
+            }
+            .gp-title {
+                font-size: clamp(2.4rem, 6vw, 4.2rem);
+                font-weight: 700;
+                letter-spacing: 0.3px;
+            }
+            .gp-badge {
+                font-size: 0.95rem;
+                background: #1d1f22;
+                border: 1px solid var(--gp-border);
+                padding: 0.22rem 0.55rem;
+                border-radius: 12px;
+                margin-left: 0.6rem;
+                color: var(--gp-muted);
+            }
+            .gp-search {
+                margin: 3rem auto 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                background: #121316;
+                border: 1px solid var(--gp-border);
+                border-radius: 42px;
+                padding: 0.6rem 0.6rem;
+                max-width: var(--gp-maxw);
+            }
+            .gp-search input {
+                flex: 1;
+                background: transparent;
+                border: none;
+                outline: none;
+                padding: 1rem 1.2rem;
+                color: inherit;
+                font-size: 1.15rem;
+            }
+            .gp-search button {
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                border: 1px solid var(--gp-border);
+                background: #2a2c31;
+                color: #d1d1d1;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .gp-sublabel {
+                color: var(--gp-muted);
+                font-size: 0.95rem;
+                margin-bottom: 1.25rem;
+            }
+            .gp-result {
+                margin: 2rem auto 0;
+                text-align: left;
+                background: #111316;
+                border: 1px solid var(--gp-border);
+                border-radius: 16px;
+                padding: 1.25rem;
+                max-width: var(--gp-maxw);
+                line-height: 1.6;
+            }
+            .gp-result h2 {
+                margin: 0.25rem 0 1rem;
+                font-size: 1.35rem;
+            }
+            .gp-result .meta {
+                font-size: 0.9rem;
+                color: var(--gp-muted);
+                margin-bottom: 0.75rem;
+            }
+            .gp-links {
+                display: flex;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+                margin-top: 0.75rem;
+            }
+            .gp-tag {
+                font-size: 0.85rem;
+                padding: 0.2rem 0.5rem;
+                border: 1px solid var(--gp-border);
+                border-radius: 999px;
+                color: var(--gp-muted);
+            }
+            .gp-footer {
+                margin-top: 2.5rem;
+                color: var(--gp-muted);
+                font-size: 0.9rem;
+            }
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                border: 0;
+            }
+        </style>
+    </head>
+    <body class="gregpedia">
+        <main class="gp-wrap">
+            <h1 class="gp-title">
+                Gregpedia <span class="gp-badge">v0.1</span>
+            </h1>
+            <p class="gp-sublabel">What would you like to learn about.</p>
+            <form id="gp-form" class="gp-search" autocomplete="off">
+                <label for="gp-q" class="sr-only">Search Gregpedia</label>
+                <input id="gp-q" name="q" placeholder="Ask anything..." />
+                <button
+                    id="gp-go"
+                    title="Search"
+                    aria-label="Search"
+                    type="submit"
+                >
+                    ↩
+                </button>
+            </form>
+
+            <section id="gp-result" class="gp-result" hidden>
+                <div class="meta" id="gp-meta"></div>
+                <h2 id="gp-heading"></h2>
+                <div id="gp-content"></div>
+                <div class="gp-links" id="gp-links"></div>
+            </section>
+
+            <p class="gp-footer">
+                Note: Information may not be entirely accurate or up-to-date.
+            </p>
+        </main>
+
+        <script>
+            window.__GREGPEDIA_DATA_URL__ = "data/gregpedia.json";
+        </script>
+        <script src="gregpedia.js"></script>
+    </body>
+</html>
