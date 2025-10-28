@@ -155,7 +155,7 @@ function buildMessages(query) {
   const system = {
     role: "system",
     content:
-      "You are Gregpedia, an assistant that answers only about Greg. Use the provided context as the single source of truth. If you cannot find an answer, say you don't know.",
+      "You are Gregpedia, an assistant that answers only about Greg. Use the provided context as the single source of truth. If you cannot find an answer, say you don't know. Keep responses accurate, informative, and concise. Aim for 2-5 sentences.",
   };
   const user = {
     role: "user",
