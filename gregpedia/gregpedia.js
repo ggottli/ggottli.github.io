@@ -62,6 +62,43 @@ function setHidden(id, hidden) {
   el(id).hidden = hidden;
 }
 
+function mdEscape(html) {
+  return html.replace(
+    /[&<>]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
+  );
+}
+
+// very small, “good-enough” markdown renderer (bold, italics, code, headings, line breaks).
+function renderMarkdown(md) {
+  let h = mdEscape(md);
+
+  // headings (##, #)
+  h = h
+    .replace(/^###### (.*)$/gm, "<h6>$1</h6>")
+    .replace(/^##### (.*)$/gm, "<h5>$1</h5>")
+    .replace(/^#### (.*)$/gm, "<h4>$1</h4>")
+    .replace(/^### (.*)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.*)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.*)$/gm, "<h1>$1</h1>");
+
+  // bold/italics/code
+  h = h
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/`([^`]+?)`/g, "<code>$1</code>");
+
+  // simple lists
+  h = h
+    .replace(/^(?:-|\*) (.*)$/gm, "<li>$1</li>")
+    .replace(/(<li>[\s\S]*?<\/li>)/g, "<ul>$1</ul>");
+
+  // line breaks
+  h = h.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
+
+  return `<p>${h}</p>`;
+}
+
 function renderResult(doc, query) {
   el("gp-meta").textContent =
     `Result for “${query}” • from Gregpedia knowledge base`;
@@ -157,7 +194,7 @@ async function sendToBackend(
 
   // Streaming SSE
   const reader = res.body.getReader();
-  const decoder = new TextDecoder();
+  const decoder = new TextDecoder("utf-8");
   let partial = "";
   return {
     async read(onChunk) {
@@ -204,18 +241,18 @@ async function handleQuery(q) {
   el("gp-links").innerHTML = "";
 
   const streamEl = document.getElementById("gp-stream");
-  streamEl.textContent = ""; // clear
+  let acc = "";
 
-  try {
-    const messages = buildMessages(q);
-    const s = await sendToBackend(messages, { stream: true });
-    await s.read((delta) => {
-      streamEl.textContent += delta;
-    });
-  } catch (err) {
-    streamEl.textContent = "Error contacting Gregpedia server.";
-    console.error(err);
-  }
+  const s = await sendToBackend(messages, { stream: true });
+  await s.read((delta) => {
+    acc += delta;
+    // You can throttle this if you like; simplest is update every chunk:
+    streamEl.innerHTML = renderMarkdown(acc);
+  });
+
+  // (Optional) trim trailing artifacts from some models, e.g., "AIRAG"
+  acc = acc.replace(/\bAI\s?RAG\b\s*$/i, "");
+  streamEl.innerHTML = renderMarkdown(acc);
 }
 
 async function init() {
