@@ -1,35 +1,154 @@
+:root {
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #f9f6ee;
+}
+
 body {
   margin: 0;
-  font-family: sans-serif;
-  background: #f0f0f0;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
+  align-items: flex-start;
+  background: radial-gradient(circle at top, #3f2b1d, #1b120c 65%);
+  color: #f5f2ed;
+  padding: 24px 12px 48px;
+  box-sizing: border-box;
 }
 
 #gameContainer {
+  width: min(960px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 16px;
 }
 
-canvas {
-  background: #D2B48C; /* Tan board background */
-  border: 2px solid #333;
-  max-width: 100%;
-}
-
-#controls {
-  margin-top: 10px;
+.appHeader {
   text-align: center;
 }
 
+.appHeader h1 {
+  font-size: clamp(1.8rem, 2.6vw, 2.8rem);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.appHeader p {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: #d6c6b5;
+}
+
+canvas {
+  width: 100%;
+  max-width: 960px;
+  background: linear-gradient(135deg, #d7b48a, #bf9a74);
+  border-radius: 18px;
+  border: 4px solid #4a2c16;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.45);
+}
+
+#controls {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.playerPanel {
+  flex: 1 1 180px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  min-width: 160px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.playerPanel.active {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+  border-color: #f3c982;
+}
+
+.playerPanel .label {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.playerPanel .stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  padding: 4px 0;
+}
+
+.playerPanel .stat span {
+  color: #ccb9a6;
+}
+
+.playerPanel .stat strong {
+  font-size: 1.1rem;
+}
+
+.controlCenter {
+  flex: 1 1 220px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
 button {
-  padding: 10px 20px;
+  padding: 12px 32px;
   font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f5d39b, #e7a55c);
+  color: #3a1f0e;
+  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 24px rgba(0, 0, 0, 0.35);
 }
 
 #gameInfo {
-  margin-top: 5px;
+  min-height: 48px;
+  font-size: 0.95rem;
+  text-align: center;
+  color: #f2e7d7;
+}
+
+@media (max-width: 700px) {
+  #controls {
+    flex-direction: column;
+  }
+
+  .playerPanel,
+  .controlCenter {
+    width: 100%;
+  }
 }

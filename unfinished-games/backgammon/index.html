@@ -9,12 +9,30 @@
   </head>
   <body>
     <div id="gameContainer">
-      <!-- The canvas where the board, checkers, and dice are drawn -->
+      <header class="appHeader">
+        <h1>Backgammon</h1>
+        <p>Race your opponent off the board</p>
+      </header>
+
       <canvas id="boardCanvas"></canvas>
-      <!-- Controls and status display -->
+
       <div id="controls">
-        <button id="rollButton">Roll Dice</button>
-        <div id="gameInfo"></div>
+        <div class="playerPanel" data-player="white">
+          <div class="label">You</div>
+          <div class="stat"><span>On Bar</span><strong id="whiteBar">0</strong></div>
+          <div class="stat"><span>Borne Off</span><strong id="whiteOff">0</strong></div>
+        </div>
+
+        <div class="controlCenter">
+          <button id="rollButton">Roll Dice</button>
+          <div id="gameInfo"></div>
+        </div>
+
+        <div class="playerPanel" data-player="black">
+          <div class="label">CPU</div>
+          <div class="stat"><span>On Bar</span><strong id="blackBar">0</strong></div>
+          <div class="stat"><span>Borne Off</span><strong id="blackOff">0</strong></div>
+        </div>
       </div>
     </div>
     <script src="script.js"></script>

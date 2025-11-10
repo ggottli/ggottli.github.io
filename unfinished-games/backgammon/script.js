@@ -1,138 +1,134 @@
-// ------------------ Global Setup ------------------
+// Core canvas + DOM references
 const canvas = document.getElementById("boardCanvas");
 const ctx = canvas.getContext("2d");
-
-// Resize canvas (max width 800px, and a board aspect ratio of 0.6)
-function resizeCanvas() {
-  canvas.width = Math.min(window.innerWidth * 0.95, 800);
-  canvas.height = canvas.width * 0.6;
-  redraw();
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-// ------------------ Game State ------------------
-/*
-  We represent the board as an array of 24 points (indices 0–23).
-  For indexing:
-    • Point 1 is index 0 and Point 24 is index 23.
-    • White (human) moves from high indices to low (bearing off on the left),
-      and Black (CPU) moves from low to high (bearing off on the right).
-
-  Standard starting positions:
-    • Black: 2 on point 1 (index 0), 5 on point 12 (index 11),
-             3 on point 17 (index 16), 5 on point 19 (index 18)
-    • White: 2 on point 24 (index 23), 5 on point 13 (index 12),
-             3 on point 8 (index 7), 5 on point 6 (index 5)
-*/
-let gameState = {
-  board: [], // will hold 24 objects {color: "white"/"black", count: number}
-  bar: { white: 0, black: 0 },
-  borneOff: { white: 0, black: 0 },
-  currentPlayer: null, // "white" (human) or "black" (CPU)
-  dice: [],            // current dice values
-  movesLeft: [],       // dice values not yet used this turn
-  selectedSource: null, // when a checker is selected (a board index or "bar")
-  validMoves: [],      // legal moves for the selected checker
-  // gamePhase controls overall flow:
-  // "initial" – initial roll to decide who goes first.
-  // "playerRoll" / "playerMove" – human turn.
-  // "cpuRoll" / "cpuMove" – CPU turn.
-  gamePhase: "initial",
-  initialRoll: { white: null, black: null } // for initial one-die roll per side
+const rollButton = document.getElementById("rollButton");
+const statusDiv = document.getElementById("gameInfo");
+const playerPanels = {
+  white: document.querySelector('.playerPanel[data-player="white"]'),
+  black: document.querySelector('.playerPanel[data-player="black"]')
+};
+const statNodes = {
+  whiteBar: document.getElementById("whiteBar"),
+  whiteOff: document.getElementById("whiteOff"),
+  blackBar: document.getElementById("blackBar"),
+  blackOff: document.getElementById("blackOff")
 };
 
-// Initialize board with starting positions
-function initBoard() {
-  gameState.board = [];
-  for (let i = 0; i < 24; i++) {
-    gameState.board.push({ color: null, count: 0 });
-  }
-  // Black starting positions:
-  gameState.board[0] = { color: "black", count: 2 };
-  gameState.board[11] = { color: "black", count: 5 };
-  gameState.board[16] = { color: "black", count: 3 };
-  gameState.board[18] = { color: "black", count: 5 };
-  // White starting positions:
-  gameState.board[23] = { color: "white", count: 2 };
-  gameState.board[12] = { color: "white", count: 5 };
-  gameState.board[7]  = { color: "white", count: 3 };
-  gameState.board[5]  = { color: "white", count: 5 };
+// Game constants and shared helpers
+const TOTAL_CHECKERS = 15;
+const HOME_RANGES = { white: [0, 5], black: [18, 23] };
+const DIRECTIONS = { white: -1, black: 1 };
 
-  gameState.bar.white = 0;
-  gameState.bar.black = 0;
-  gameState.borneOff.white = 0;
-  gameState.borneOff.black = 0;
-  gameState.dice = [];
-  gameState.movesLeft = [];
-  gameState.selectedSource = null;
-  gameState.validMoves = [];
-  gameState.gamePhase = "initial";
-  gameState.initialRoll.white = null;
-  gameState.initialRoll.black = null;
+const gameState = {
+  board: [],
+  bar: { white: 0, black: 0 },
+  borneOff: { white: 0, black: 0 },
+  currentPlayer: null,
+  phase: "initial-roll",
+  diceFaces: [],
+  allowedSequences: [],
+  legalMoves: [],
+  highlightMoves: [],
+  selectedSource: null,
+  movesRemaining: 0,
+  message: "Roll to see who starts.",
+  animating: false
+};
+
+// ---------------------- Initialization ----------------------
+function initGame() {
+  initBoard();
+  resizeCanvas();
+  setMessage("Roll to see who starts.");
+  updateControls();
+  updateHud();
+  redraw();
 }
-initBoard();
 
-// ------------------ Drawing Functions ------------------
+window.addEventListener("resize", () => {
+  resizeCanvas();
+  redraw();
+});
 
-// Draw the board: a tan background with a central bar and 24 triangles.
-// The 24 points are split into two rows:
-//  • Top row: Points 13–24 (indices 12–23)
-//      – Left of bar: Points 24 to 19 (indices 23 to 18)
-//      – Right of bar: Points 18 to 13 (indices 17 to 12)
-//  • Bottom row: Points 1–12 (indices 0–11)
-//      – Left of bar: Points 1–6 (indices 0–5)
-//      – Right of bar: Points 7–12 (indices 6–11)
+rollButton.addEventListener("click", async () => {
+  if (gameState.animating) return;
+  if (gameState.phase === "initial-roll") {
+    await startInitialRoll();
+  } else if (gameState.phase === "player-await-roll") {
+    await startPlayerTurn();
+  } else if (gameState.phase === "game-over") {
+    resetGame();
+  }
+});
+
+canvas.addEventListener("click", handleCanvasClick);
+
+initGame();
+
+// ---------------------- Layout + Drawing ----------------------
+function resizeCanvas() {
+  const width = Math.min(window.innerWidth * 0.95, 960);
+  canvas.width = width;
+  canvas.height = width * 0.6;
+}
+
+function getLayout() {
+  const pointWidth = canvas.width / 14;
+  const triangleHeight = canvas.height / 2;
+  const barX = canvas.width / 2 - pointWidth;
+  return { pointWidth, triangleHeight, barX };
+}
+
+function redraw() {
+  drawBoard();
+  drawHighlights();
+  drawCheckers();
+  drawBarCheckers();
+  drawBearOffCheckers();
+  drawBearOffTargets();
+  drawDice();
+}
+
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // (The canvas background is set in CSS, but we fill it here too.)
-  ctx.fillStyle = "#D2B48C";
+  ctx.fillStyle = "#d7b48a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  const triangleHeight = boardHeight / 2;
-  const barX = boardWidth / 2 - pointWidth;
+  const { pointWidth, triangleHeight, barX } = getLayout();
+  const darkColor = "#6f3b1e";
+  const lightColor = "#c4854a";
 
-  // Draw the central bar.
-  ctx.fillStyle = "#A0522D";
-  ctx.fillRect(barX, 0, pointWidth * 2, boardHeight);
+  // central bar
+  const gradient = ctx.createLinearGradient(barX, 0, barX + pointWidth * 2, 0);
+  gradient.addColorStop(0, "#8c5127");
+  gradient.addColorStop(1, "#a3673a");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(barX, 0, pointWidth * 2, canvas.height);
 
-  // Colors for the points.
-  const darkColor = "#8B4513";
-  const lightColor = "#CD853F";
-
-  // Top row (indices 12–23)
   for (let i = 0; i < 12; i++) {
-    let color = i % 2 === 0 ? darkColor : lightColor;
+    const color = i % 2 === 0 ? darkColor : lightColor;
     let x;
     if (i < 6) {
-      // Left of the bar: i = 0 corresponds to index 23, i = 5 to index 18.
       x = barX - pointWidth * (6 - i);
     } else {
-      // Right of the bar: i = 6 corresponds to index 17, i = 11 to index 12.
       x = barX + pointWidth * 2 + pointWidth * (i - 6);
     }
     drawTriangle(x, 0, pointWidth, triangleHeight, "down", color);
   }
 
-  // Bottom row (indices 0–11)
   for (let i = 0; i < 12; i++) {
-    let color = i % 2 === 0 ? darkColor : lightColor;
+    const color = i % 2 === 0 ? darkColor : lightColor;
     let x;
     if (i < 6) {
       x = barX - pointWidth * (6 - i);
     } else {
       x = barX + pointWidth * 2 + pointWidth * (i - 6);
     }
-    drawTriangle(x, boardHeight - triangleHeight, pointWidth, triangleHeight, "up", color);
+    drawTriangle(x, canvas.height - triangleHeight, pointWidth, triangleHeight, "up", color);
   }
 }
 
-// Helper to draw a triangle (a point) given its position, size, direction, and color.
 function drawTriangle(x, y, width, height, direction, color) {
-  ctx.fillStyle = color;
   ctx.beginPath();
   if (direction === "up") {
     ctx.moveTo(x, y + height);
@@ -144,628 +140,1004 @@ function drawTriangle(x, y, width, height, direction, color) {
     ctx.lineTo(x + width / 2, y + height);
   }
   ctx.closePath();
+  ctx.fillStyle = color;
   ctx.fill();
 }
 
-// Draw the checkers based on the board and bar.
-function drawCheckers() {
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  const triangleHeight = boardHeight / 2;
-  const checkerRadius = pointWidth * 0.4;
-  const offset = 5;
-
-  // Draw checkers on the board.
-  // Bottom row (indices 0–11):
-  for (let i = 0; i < 12; i++) {
-    const point = gameState.board[i];
-    if (point.count <= 0) continue;
-    let x;
-    if (i < 6) {
-      x = (canvas.width / 2 - pointWidth * 6) + i * pointWidth + pointWidth / 2;
-    } else {
-      x = canvas.width / 2 + pointWidth * 2 + (i - 6) * pointWidth + pointWidth / 2;
-    }
-    // Stack checkers from the bottom upward.
-    for (let j = 0; j < point.count; j++) {
-      let y = canvas.height - offset - checkerRadius - j * (checkerRadius * 2.2);
-      if (y < canvas.height / 2 + checkerRadius) y = canvas.height / 2 + checkerRadius;
-      drawChecker(x, y, point.color);
-    }
+function drawHighlights() {
+  if (gameState.selectedSource !== null) {
+    const sourcePos = getHighlightPosition(gameState.selectedSource);
+    if (sourcePos) drawGlow(sourcePos.x, sourcePos.y, "rgba(255, 255, 255, 0.35)");
   }
-
-  // Top row (indices 12–23):
-  for (let i = 12; i < 24; i++) {
-    const point = gameState.board[i];
-    if (point.count <= 0) continue;
-    let x;
-    if (i < 18) {
-      // Right of bar: indices 12–17.
-      x = canvas.width / 2 + pointWidth * 2 + (i - 12) * pointWidth + pointWidth / 2;
-    } else {
-      // Left of bar: indices 18–23 (reverse order).
-      let pos = 23 - i; // index 23 → pos = 0; index 18 → pos = 5.
-      x = canvas.width / 2 - pointWidth * (pos + 1) + pointWidth / 2;
+  gameState.highlightMoves.forEach((move) => {
+    const targetPos = move.bearOff ? getBearOffTarget("white") : getPointEntryPosition(move.to);
+    if (targetPos) {
+      drawGlow(targetPos.x, targetPos.y, "rgba(255, 227, 166, 0.65)");
     }
-    // Stack checkers from the top downward.
-    for (let j = 0; j < point.count; j++) {
-      let y = offset + checkerRadius + j * (checkerRadius * 2.2);
-      if (y > canvas.height / 2 - checkerRadius) y = canvas.height / 2 - checkerRadius;
-      drawChecker(x, y, point.color);
-    }
-  }
-
-  // Draw checkers on the bar.
-  if (gameState.bar.white > 0) {
-    let barX = canvas.width / 2;
-    let barY = canvas.height * 0.75;
-    for (let j = 0; j < gameState.bar.white; j++) {
-      drawChecker(barX, barY + j * (checkerRadius * 2.2), "white");
-    }
-  }
-  if (gameState.bar.black > 0) {
-    let barX = canvas.width / 2 + pointWidth;
-    let barY = canvas.height * 0.25;
-    for (let j = 0; j < gameState.bar.black; j++) {
-      drawChecker(barX, barY - j * (checkerRadius * 2.2), "black");
-    }
-  }
-}
-
-// Helper to draw a single checker.
-function drawChecker(x, y, color) {
-  const boardWidth = canvas.width;
-  const pointWidth = boardWidth / 14;
-  const checkerRadius = pointWidth * 0.4;
-  ctx.beginPath();
-  ctx.arc(x, y, checkerRadius, 0, Math.PI * 2);
-  ctx.fillStyle = color === "white" ? "#FFFFFF" : "#000000";
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#333";
-  ctx.stroke();
-}
-
-// Draw the dice as two centered squares (one above, one below center).
-function drawDice() {
-  if (gameState.dice.length < 2) return;
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  const diceSize = pointWidth;
-  const diceX = (boardWidth - diceSize) / 2;
-  const diceY1 = boardHeight / 2 - diceSize - 5;
-  const diceY2 = boardHeight / 2 + 5;
-
-  ctx.fillStyle = "#FFF";
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 2;
-  ctx.fillRect(diceX, diceY1, diceSize, diceSize);
-  ctx.strokeRect(diceX, diceY1, diceSize, diceSize);
-  ctx.fillRect(diceX, diceY2, diceSize, diceSize);
-  ctx.strokeRect(diceX, diceY2, diceSize, diceSize);
-
-  ctx.fillStyle = "#000";
-  ctx.font = diceSize * 0.6 + "px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(gameState.dice[0], diceX + diceSize / 2, diceY1 + diceSize / 2);
-  ctx.fillText(gameState.dice[1], diceX + diceSize / 2, diceY2 + diceSize / 2);
-}
-
-// Redraw the entire board.
-function redraw() {
-  drawBoard();
-  drawCheckers();
-  drawDice();
-  updateGameInfo();
-}
-
-// ------------------ UI & Animation ------------------
-
-// Update the game information text.
-function updateGameInfo() {
-  const infoDiv = document.getElementById("gameInfo");
-  let phaseText = "";
-  switch (gameState.gamePhase) {
-    case "initial":
-      phaseText = "Initial Roll: Click Roll Dice";
-      break;
-    case "playerRoll":
-      phaseText = "Your Turn: Click Roll Dice";
-      break;
-    case "playerMove":
-      phaseText = "Your Turn: Select a checker and then a destination";
-      break;
-    case "cpuRoll":
-      phaseText = "CPU Turn: Rolling dice...";
-      break;
-    case "cpuMove":
-      phaseText = "CPU is moving...";
-      break;
-  }
-  infoDiv.innerHTML = `<strong>${phaseText}</strong><br>Dice: ${gameState.dice.join(
-    ", "
-  )}<br>Current: ${gameState.currentPlayer || "-"}`;
-}
-
-// Animate dice rolling (updates dice values for a short duration).
-function rollDiceAnimation(numDice, callback) {
-  let duration = 1000; // milliseconds
-  let interval = 100;
-  let elapsed = 0;
-  let anim = setInterval(() => {
-    let temp = [];
-    for (let i = 0; i < numDice; i++) {
-      temp.push(Math.floor(Math.random() * 6) + 1);
-    }
-    gameState.dice = temp;
-    updateGameInfo();
-    redraw();
-    elapsed += interval;
-    if (elapsed >= duration) {
-      clearInterval(anim);
-      let finalRoll = [];
-      for (let i = 0; i < numDice; i++) {
-        finalRoll.push(Math.floor(Math.random() * 6) + 1);
-      }
-      gameState.dice = finalRoll;
-      if (numDice === 2) {
-        if (finalRoll[0] === finalRoll[1]) {
-          gameState.movesLeft = [finalRoll[0], finalRoll[0], finalRoll[0], finalRoll[0]];
-        } else {
-          gameState.movesLeft = [finalRoll[0], finalRoll[1]];
-        }
-      } else {
-        gameState.movesLeft = [finalRoll[0]];
-      }
-      updateGameInfo();
-      redraw();
-      callback(finalRoll);
-    }
-  }, interval);
-}
-
-// ------------------ Checker Move Animation ------------------
-
-// Get the center (x,y) for a given board point index.
-function getPointCenter(index) {
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  let cx, cy;
-  if (index < 12) {
-    // Bottom row.
-    if (index < 6) {
-      cx = (canvas.width / 2 - pointWidth * 6) + index * pointWidth + pointWidth / 2;
-    } else {
-      cx = canvas.width / 2 + pointWidth * 2 + (index - 6) * pointWidth + pointWidth / 2;
-    }
-    cy = canvas.height - (canvas.height - canvas.height / 2) / 2;
-  } else {
-    // Top row.
-    if (index < 18) {
-      cx = canvas.width / 2 + pointWidth * 2 + (index - 12) * pointWidth + pointWidth / 2;
-    } else {
-      let pos = 23 - index;
-      cx = canvas.width / 2 - pointWidth * (pos + 1) + pointWidth / 2;
-    }
-    cy = (canvas.height / 2) / 2;
-  }
-  return { x: cx, y: cy };
-}
-
-// Get the center for a checker on the bar (for a given player).
-function getBarCenter(player) {
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  if (player === "white") {
-    return { x: canvas.width / 2, y: canvas.height * 0.75 };
-  } else {
-    return { x: canvas.width / 2 + pointWidth, y: canvas.height * 0.25 };
-  }
-}
-
-// Animate a checker moving from its source to its destination.
-function animateCheckerMove(move, callback) {
-  let player = gameState.currentPlayer;
-  let startPos, endPos;
-  if (move.from === "bar") {
-    startPos = getBarCenter(player);
-  } else {
-    startPos = getPointCenter(move.from);
-  }
-  if (move.bearOff) {
-    // For bearing off, choose a fixed off-board position.
-    endPos = player === "white" ? { x: 30, y: canvas.height - 30 } : { x: canvas.width - 30, y: 30 };
-  } else {
-    endPos = getPointCenter(move.to);
-  }
-  let duration = 500; // in ms
-  let startTime = null;
-  function animateStep(timestamp) {
-    if (!startTime) startTime = timestamp;
-    let progress = timestamp - startTime;
-    let t = Math.min(progress / duration, 1);
-    let currentX = startPos.x + t * (endPos.x - startPos.x);
-    let currentY = startPos.y + t * (endPos.y - startPos.y);
-    redraw();
-    // Draw the moving checker on top.
-    const boardWidth = canvas.width;
-    const pointWidth = boardWidth / 14;
-    const checkerRadius = pointWidth * 0.4;
-    ctx.beginPath();
-    ctx.arc(currentX, currentY, checkerRadius, 0, Math.PI * 2);
-    ctx.fillStyle = player === "white" ? "#FFFFFF" : "#000000";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#333";
-    ctx.stroke();
-    if (t < 1) {
-      requestAnimationFrame(animateStep);
-    } else {
-      callback();
-    }
-  }
-  requestAnimationFrame(animateStep);
-}
-
-// Perform a move: update game state and animate the checker.
-function performMove(move, callback) {
-  // Remove the used die.
-  let idx = gameState.movesLeft.indexOf(move.die);
-  if (idx >= 0) gameState.movesLeft.splice(idx, 1);
-  // Remove the checker from the source.
-  if (move.from === "bar") {
-    gameState.bar[gameState.currentPlayer]--;
-  } else {
-    gameState.board[move.from].count--;
-    if (gameState.board[move.from].count === 0) {
-      gameState.board[move.from].color = null;
-    }
-  }
-  animateCheckerMove(move, () => {
-    if (move.bearOff) {
-      gameState.borneOff[gameState.currentPlayer]++;
-    } else {
-      let dest = gameState.board[move.to];
-      // If exactly one opposing checker is there, hit it.
-      if (dest.count === 1 && dest.color !== gameState.currentPlayer) {
-        gameState.bar[dest.color]++;
-        gameState.board[move.to] = { color: gameState.currentPlayer, count: 1 };
-      } else {
-        if (dest.count === 0) {
-          gameState.board[move.to] = { color: gameState.currentPlayer, count: 1 };
-        } else {
-          gameState.board[move.to].count++;
-        }
-      }
-    }
-    callback();
   });
 }
 
-// ------------------ Move Generation & Input ------------------
+function drawGlow(x, y, color) {
+  const radius = getCheckerRadius() * 1.2;
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 1.8);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, radius * 2, 0, Math.PI * 2);
+  ctx.fill();
+}
 
-// Get all legal moves for a selected source (a board point or "bar").
-function getValidMoves(source) {
-  let moves = [];
-  if (source === "bar") {
-    gameState.movesLeft.forEach((die) => {
-      // For white, re‑entry is on point 24–die → index = 24 – die;
-      // for black, re‑entry is on point die → index = die – 1.
-      let dest = gameState.currentPlayer === "white" ? 24 - die : die - 1;
-      let point = gameState.board[dest];
-      if (
-        point.count === 0 ||
-        point.color === gameState.currentPlayer ||
-        (point.count === 1 && point.color !== gameState.currentPlayer)
-      ) {
-        moves.push({ from: "bar", to: dest, die: die, bearOff: false });
+function drawCheckers() {
+  const checkerRadius = getCheckerRadius();
+  const offset = 6;
+
+  // bottom row indices 0-11
+  for (let i = 0; i < 12; i++) {
+    const point = gameState.board[i];
+    if (!point.count) continue;
+    const x = getPointEntryPosition(i).x;
+    for (let j = 0; j < point.count; j++) {
+      let y = canvas.height - offset - checkerRadius - j * (checkerRadius * 2 + 4);
+      if (y < canvas.height / 2 + checkerRadius) y = canvas.height / 2 + checkerRadius;
+      drawCheckerPiece(x, y, point.color);
+    }
+  }
+
+  // top row indices 12-23
+  for (let i = 12; i < 24; i++) {
+    const point = gameState.board[i];
+    if (!point.count) continue;
+    const x = getPointEntryPosition(i).x;
+    for (let j = 0; j < point.count; j++) {
+      let y = offset + checkerRadius + j * (checkerRadius * 2 + 4);
+      if (y > canvas.height / 2 - checkerRadius) y = canvas.height / 2 - checkerRadius;
+      drawCheckerPiece(x, y, point.color);
+    }
+  }
+}
+
+function drawCheckerPiece(x, y, color) {
+  const radius = getCheckerRadius();
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = color === "white" ? "#f8f8f6" : "#131313";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(0,0,0,0.6)";
+  ctx.stroke();
+}
+
+function drawBarCheckers() {
+  const checkerRadius = getCheckerRadius();
+  const spacing = checkerRadius * 2.2;
+  const { pointWidth } = getLayout();
+
+  if (gameState.bar.white > 0) {
+    const barX = canvas.width / 2;
+    let barY = canvas.height * 0.7;
+    for (let j = 0; j < gameState.bar.white; j++) {
+      drawCheckerPiece(barX, barY + j * spacing, "white");
+    }
+  }
+
+  if (gameState.bar.black > 0) {
+    const barX = canvas.width / 2 + pointWidth;
+    let barY = canvas.height * 0.3;
+    for (let j = 0; j < gameState.bar.black; j++) {
+      drawCheckerPiece(barX, barY - j * spacing, "black");
+    }
+  }
+}
+
+function drawBearOffCheckers() {
+  const whiteTarget = getBearOffTarget("white");
+  const blackTarget = getBearOffTarget("black");
+  const spacing = getCheckerRadius() * 1.35;
+
+  for (let i = 0; i < gameState.borneOff.white; i++) {
+    const column = Math.floor(i / 5);
+    const row = i % 5;
+    const x = whiteTarget.x + column * spacing * 0.8;
+    const y = whiteTarget.y - row * spacing;
+    drawCheckerPiece(x, y, "white");
+  }
+
+  for (let i = 0; i < gameState.borneOff.black; i++) {
+    const column = Math.floor(i / 5);
+    const row = i % 5;
+    const x = blackTarget.x - column * spacing * 0.8;
+    const y = blackTarget.y + row * spacing;
+    drawCheckerPiece(x, y, "black");
+  }
+}
+
+function drawBearOffTargets() {
+  const white = getBearOffTarget("white");
+  const black = getBearOffTarget("black");
+
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.arc(white.x, white.y, white.radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(black.x, black.y, black.radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawDice() {
+  if (!gameState.diceFaces.length) return;
+  const { pointWidth } = getLayout();
+  const diceSize = pointWidth * 0.9;
+  const padding = pointWidth * 0.25;
+  const totalWidth = diceSize * 2 + padding;
+  const startX = (canvas.width - totalWidth) / 2;
+  const yTop = canvas.height / 2 - diceSize - 12;
+  const yBottom = canvas.height / 2 + 12;
+  const values = [...gameState.diceFaces];
+  if (values.length === 1) values.push(null);
+
+  [values[0], values[1]].forEach((value, idx) => {
+    const x = startX + idx * (diceSize + padding);
+    const y = idx === 0 ? yTop : yBottom;
+    ctx.fillStyle = "#fff";
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    drawRoundedRectPath(x, y, diceSize, diceSize, 10);
+    ctx.fill();
+    ctx.stroke();
+    if (value) {
+      ctx.fillStyle = "#111";
+      ctx.font = `${diceSize * 0.55}px 'Inter', sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(value), x + diceSize / 2, y + diceSize / 2 + 1);
+    }
+  });
+
+  if (gameState.diceFaces.length === 2 && gameState.diceFaces[0] === gameState.diceFaces[1]) {
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.font = `${pointWidth * 0.6}px 'Inter', sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("Double", canvas.width / 2, canvas.height / 2);
+  }
+}
+
+// ---------------------- HUD Helpers ----------------------
+function updateHud() {
+  statNodes.whiteBar.textContent = gameState.bar.white;
+  statNodes.blackBar.textContent = gameState.bar.black;
+  statNodes.whiteOff.textContent = gameState.borneOff.white;
+  statNodes.blackOff.textContent = gameState.borneOff.black;
+
+  Object.entries(playerPanels).forEach(([player, node]) => {
+    node.classList.toggle("active", gameState.currentPlayer === player && gameState.phase !== "initial-roll");
+  });
+
+  const diceText = gameState.diceFaces.length
+    ? `Dice: ${gameState.diceFaces.join(" & ")}${
+        gameState.diceFaces.length === 2 && gameState.diceFaces[0] === gameState.diceFaces[1] ? " (double)" : ""
+      }`
+    : "Dice: -";
+  const turnText = `Turn: ${gameState.currentPlayer ? (gameState.currentPlayer === "white" ? "You" : "CPU") : "-"}`;
+  const movesText = gameState.movesRemaining ? `Moves left: ${gameState.movesRemaining}` : "";
+
+  statusDiv.innerHTML = `<strong>${gameState.message}</strong><br>${diceText}<br>${turnText}${movesText ? "<br>" + movesText : ""}`;
+}
+
+function updateControls() {
+  switch (gameState.phase) {
+    case "initial-roll":
+      rollButton.disabled = gameState.animating;
+      rollButton.textContent = "Roll to Start";
+      break;
+    case "player-await-roll":
+      rollButton.disabled = gameState.animating;
+      rollButton.textContent = "Roll Dice";
+      break;
+    case "player-rolling":
+      rollButton.disabled = true;
+      rollButton.textContent = "Rolling...";
+      break;
+    case "player-move":
+      rollButton.disabled = true;
+      rollButton.textContent = "Select a checker";
+      break;
+    case "player-finished":
+      rollButton.disabled = true;
+      rollButton.textContent = "Waiting...";
+      break;
+    case "cpu-turn":
+    case "cpu-moving":
+    case "cpu-finished":
+      rollButton.disabled = true;
+      rollButton.textContent = "CPU Turn";
+      break;
+    case "game-over":
+      rollButton.disabled = false;
+      rollButton.textContent = "Play Again";
+      break;
+    default:
+      rollButton.disabled = true;
+      rollButton.textContent = "...";
+  }
+}
+
+function setMessage(text) {
+  gameState.message = text;
+  updateHud();
+}
+
+// ---------------------- Game Setup ----------------------
+function initBoard() {
+  gameState.board = Array.from({ length: 24 }, () => ({ color: null, count: 0 }));
+  gameState.board[0] = { color: "black", count: 2 };
+  gameState.board[11] = { color: "black", count: 5 };
+  gameState.board[16] = { color: "black", count: 3 };
+  gameState.board[18] = { color: "black", count: 5 };
+
+  gameState.board[23] = { color: "white", count: 2 };
+  gameState.board[12] = { color: "white", count: 5 };
+  gameState.board[7] = { color: "white", count: 3 };
+  gameState.board[5] = { color: "white", count: 5 };
+
+  gameState.bar = { white: 0, black: 0 };
+  gameState.borneOff = { white: 0, black: 0 };
+  gameState.diceFaces = [];
+  gameState.allowedSequences = [];
+  gameState.legalMoves = [];
+  gameState.highlightMoves = [];
+  gameState.selectedSource = null;
+  gameState.movesRemaining = 0;
+}
+
+function resetGame() {
+  gameState.currentPlayer = null;
+  gameState.phase = "initial-roll";
+  gameState.animating = false;
+  initBoard();
+  setMessage("Roll to see who starts.");
+  updateControls();
+  redraw();
+}
+
+// ---------------------- Dice Rolling ----------------------
+function rollDice(numDice) {
+  return new Promise((resolve) => {
+    const duration = 900;
+    const interval = 90;
+    let elapsed = 0;
+    gameState.animating = true;
+    updateControls();
+    const timer = setInterval(() => {
+      const temp = Array.from({ length: numDice }, () => Math.floor(Math.random() * 6) + 1);
+      gameState.diceFaces = temp;
+      redraw();
+      elapsed += interval;
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        const finalRoll = Array.from({ length: numDice }, () => Math.floor(Math.random() * 6) + 1);
+        gameState.diceFaces = finalRoll;
+        redraw();
+        setTimeout(() => {
+          gameState.animating = false;
+          updateControls();
+          resolve(finalRoll);
+        }, 150);
       }
-    });
+    }, interval);
+  });
+}
+
+function expandDiceForMoves(values) {
+  if (values.length === 2 && values[0] === values[1]) {
+    return [values[0], values[0], values[0], values[0]];
+  }
+  return values.slice();
+}
+
+// ---------------------- Turn Flow ----------------------
+async function startInitialRoll() {
+  updateControls();
+  setMessage("Your opening roll...");
+  const whiteRoll = (await rollDice(1))[0];
+  setMessage(`You rolled ${whiteRoll}. CPU rolling...`);
+  const blackRoll = (await rollDice(1))[0];
+
+  if (whiteRoll === blackRoll) {
+    setMessage(`Tie at ${whiteRoll}. Roll again.`);
+    updateControls();
+    return;
+  }
+
+  const diceFaces = [whiteRoll, blackRoll];
+  gameState.diceFaces = diceFaces;
+  if (whiteRoll > blackRoll) {
+    gameState.currentPlayer = "white";
+    gameState.phase = "player-move";
+    setMessage(`You start! Play ${whiteRoll} and ${blackRoll}.`);
+    const diceMoves = expandDiceForMoves(diceFaces);
+    prepareHumanTurn(diceMoves);
   } else {
-    gameState.movesLeft.forEach((die) => {
-      let dest, bearOff = false;
-      if (gameState.currentPlayer === "white") {
-        dest = source - die;
-        if (dest < 0 && canBearOff("white")) {
-          bearOff = true;
-        }
-      } else {
-        dest = source + die;
-        if (dest > 23 && canBearOff("black")) {
-          bearOff = true;
-        }
+    gameState.currentPlayer = "black";
+    gameState.phase = "cpu-moving";
+    setMessage(`CPU starts with ${blackRoll} and ${whiteRoll}.`);
+    const diceMoves = expandDiceForMoves([blackRoll, whiteRoll]);
+    runCpuTurnWithDice(diceMoves);
+  }
+  updateControls();
+}
+
+async function startPlayerTurn() {
+  gameState.phase = "player-rolling";
+  updateControls();
+  setMessage("Rolling your dice...");
+  const roll = await rollDice(2);
+  setMessage(`You rolled ${roll.join(" & ")}. Select a checker.`);
+  gameState.phase = "player-move";
+  const diceMoves = expandDiceForMoves(roll);
+  prepareHumanTurn(diceMoves);
+}
+
+function prepareHumanTurn(diceMoves) {
+  const sequences = computeLegalMoveSequences("white", diceMoves, cloneCoreState(gameState));
+  if (!sequences.length) {
+    setMessage("No legal moves. Turn passes to CPU.");
+    gameState.diceFaces = diceMoves.length ? [diceMoves[0], diceMoves[1] || diceMoves[0]] : [];
+    gameState.phase = "player-finished";
+    updateControls();
+    setTimeout(() => endTurn(), 900);
+    return;
+  }
+  gameState.allowedSequences = sequences;
+  gameState.selectedSource = null;
+  updateLegalMovesFromSequences();
+  updateControls();
+  redraw();
+}
+
+async function startCpuTurn() {
+  gameState.phase = "cpu-turn";
+  updateControls();
+  setMessage("CPU rolling...");
+  const roll = await rollDice(2);
+  runCpuTurnWithDice(expandDiceForMoves(roll));
+}
+
+function runCpuTurnWithDice(diceMoves) {
+  const sequences = computeLegalMoveSequences("black", diceMoves, cloneCoreState(gameState));
+  if (!sequences.length) {
+    setMessage("CPU has no moves. Your roll!");
+    gameState.phase = "cpu-finished";
+    updateControls();
+    setTimeout(() => endTurn(), 900);
+    return;
+  }
+  gameState.phase = "cpu-moving";
+  updateControls();
+  const chosen = pickCpuSequence(sequences);
+  gameState.movesRemaining = chosen.length;
+  executeCpuSequence(chosen.slice());
+}
+
+function executeCpuSequence(sequence) {
+  if (!sequence.length) {
+    setTimeout(() => endTurn(), 500);
+    return;
+  }
+  const move = sequence.shift();
+  gameState.movesRemaining = sequence.length + 1;
+  setMessage(`CPU moves ${describeMove(move, "black")}`);
+  performMove(move, "black", () => {
+    if (checkVictory("black")) {
+      handleVictory("black");
+      return;
+    }
+    if (!sequence.length) {
+      setTimeout(() => endTurn(), 600);
+    } else {
+      setTimeout(() => executeCpuSequence(sequence), 400);
+    }
+  });
+}
+
+function endTurn() {
+  gameState.allowedSequences = [];
+  gameState.legalMoves = [];
+  gameState.highlightMoves = [];
+  gameState.selectedSource = null;
+  gameState.movesRemaining = 0;
+  gameState.diceFaces = [];
+  redraw();
+  if (gameState.currentPlayer === "white") {
+    gameState.currentPlayer = "black";
+    gameState.phase = "cpu-turn";
+    setMessage("CPU's turn. Rolling...");
+    updateControls();
+    setTimeout(() => startCpuTurn(), 500);
+  } else {
+    gameState.currentPlayer = "white";
+    gameState.phase = "player-await-roll";
+    setMessage("Your turn. Roll the dice.");
+    updateControls();
+  }
+}
+
+function handleVictory(player) {
+  const text = player === "white" ? "You bear off all 15! Victory." : "CPU bears off first. Better luck next time.";
+  setMessage(text);
+  gameState.phase = "game-over";
+  updateControls();
+}
+
+// ---------------------- Player Interaction ----------------------
+function handleCanvasClick(event) {
+  if (gameState.phase !== "player-move" || gameState.animating) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const target = resolveClickTarget(x, y);
+  if (!target) return;
+
+  if (gameState.selectedSource === null) {
+    if (target.type === "bar" && gameState.bar.white > 0 && hasMovesFromSource("bar")) {
+      setSelectedSource("bar");
+      return;
+    }
+    if (target.type === "point") {
+      const point = gameState.board[target.index];
+      if (point && point.color === "white" && point.count > 0 && hasMovesFromSource(target.index)) {
+        setSelectedSource(target.index);
       }
-      if (bearOff) {
-        moves.push({ from: source, to: null, die: die, bearOff: true });
-      } else if (dest >= 0 && dest <= 23) {
-        let destination = gameState.board[dest];
-        if (
-          destination.count === 0 ||
-          destination.color === gameState.currentPlayer ||
-          (destination.count === 1 && destination.color !== gameState.currentPlayer)
-        ) {
-          moves.push({ from: source, to: dest, die: die, bearOff: false });
-        }
-      }
+    }
+  } else {
+    if (target.type === "point" && target.index === gameState.selectedSource) {
+      setSelectedSource(null);
+      return;
+    }
+    if (target.type === "bar" && gameState.selectedSource === "bar") {
+      setSelectedSource(null);
+      return;
+    }
+    const destination = interpretDestination(target);
+    if (!destination) return;
+    const chosenMove = gameState.highlightMoves.find((move) =>
+      destinationsMatch(move, destination)
+    );
+    if (chosenMove) {
+      setSelectedSource(null);
+      performMove(chosenMove, "white", () => {
+        afterHumanMove(chosenMove);
+      });
+    }
+  }
+}
+
+function hasMovesFromSource(source) {
+  return gameState.legalMoves.some((move) => move.from === source);
+}
+
+function interpretDestination(target) {
+  if (target.type === "point") return { type: "point", index: target.index };
+  if (target.type === "bearOff" && target.player === "white") return { type: "bearOff" };
+  return null;
+}
+
+function destinationsMatch(move, destination) {
+  if (destination.type === "bearOff") return move.bearOff;
+  return !move.bearOff && move.to === destination.index;
+}
+
+function setSelectedSource(source) {
+  gameState.selectedSource = source;
+  if (source === null) {
+    gameState.highlightMoves = [];
+  } else {
+    gameState.highlightMoves = gameState.legalMoves.filter((move) => move.from === source);
+  }
+  redraw();
+}
+
+function afterHumanMove(move) {
+  if (checkVictory("white")) {
+    handleVictory("white");
+    return;
+  }
+  consumeMove(move);
+  updateLegalMovesFromSequences();
+  if (!gameState.movesRemaining || !gameState.legalMoves.length) {
+    setMessage("No more legal moves. CPU's turn.");
+    gameState.phase = "player-finished";
+    updateControls();
+    setTimeout(() => endTurn(), 600);
+  } else {
+    setMessage(`Moves remaining: ${gameState.movesRemaining}. Select your next move.`);
+  }
+}
+
+function consumeMove(move) {
+  gameState.allowedSequences = gameState.allowedSequences
+    .filter((sequence) => sequence.length && sameMove(sequence[0], move))
+    .map((sequence) => sequence.slice(1));
+}
+
+function updateLegalMovesFromSequences() {
+  const moves = [];
+  const seen = new Set();
+  let remaining = 0;
+  gameState.allowedSequences.forEach((sequence) => {
+    if (sequence.length > remaining) remaining = sequence.length;
+    if (!sequence.length) return;
+    const move = sequence[0];
+    const key = serializeMove(move);
+    if (!seen.has(key)) {
+      seen.add(key);
+      moves.push(cloneMove(move));
+    }
+  });
+  gameState.legalMoves = moves;
+  gameState.movesRemaining = remaining;
+  gameState.highlightMoves = gameState.selectedSource !== null ? moves.filter((m) => m.from === gameState.selectedSource) : [];
+  updateHud();
+}
+
+// ---------------------- Move + Rule Logic ----------------------
+function getOpponent(player) {
+  return player === "white" ? "black" : "white";
+}
+
+function cloneCoreState(state) {
+  return {
+    board: state.board.map((point) => ({ color: point.color, count: point.count })),
+    bar: { white: state.bar.white, black: state.bar.black },
+    borneOff: { white: state.borneOff.white, black: state.borneOff.black }
+  };
+}
+
+function computeLegalMoveSequences(player, dice, baseState) {
+  if (!dice.length) return [];
+  const permutations = uniquePermutations(dice);
+  let maxUsed = 0;
+  const best = [];
+  const seen = new Set();
+
+  function explore(state, order, idx, sequence) {
+    if (idx >= order.length) {
+      record(sequence);
+      return;
+    }
+    const die = order[idx];
+    const moves = getMovesForDie(state, player, die);
+    if (!moves.length) {
+      explore(state, order, idx + 1, sequence);
+      return;
+    }
+    moves.forEach((move) => {
+      const nextState = cloneCoreState(state);
+      applyMoveToState(nextState, move, player);
+      sequence.push(move);
+      explore(nextState, order, idx + 1, sequence);
+      sequence.pop();
     });
+  }
+
+  function record(sequence) {
+    if (sequence.length === 0) return;
+    if (sequence.length > maxUsed) {
+      maxUsed = sequence.length;
+      best.length = 0;
+      seen.clear();
+    }
+    if (sequence.length === maxUsed) {
+      const snapshot = sequence.map(cloneMove);
+      const key = snapshot.map(serializeMove).join("|");
+      if (!seen.has(key)) {
+        seen.add(key);
+        best.push(snapshot);
+      }
+    }
+  }
+
+  permutations.forEach((order) => {
+    explore(cloneCoreState(baseState), order, 0, []);
+  });
+
+  return best;
+}
+
+function getMovesForDie(state, player, die) {
+  const moves = [];
+  const opponent = getOpponent(player);
+  const direction = DIRECTIONS[player];
+  const board = state.board;
+
+  if (state.bar[player] > 0) {
+    const dest = player === "white" ? 24 - die : die - 1;
+    const point = board[dest];
+    if (isPointOpen(point, player)) {
+      moves.push({ from: "bar", to: dest, die, bearOff: false, hit: point.count === 1 && point.color === opponent });
+    }
+    return moves;
+  }
+
+  for (let i = 0; i < 24; i++) {
+    const point = board[i];
+    if (point.color !== player || point.count === 0) continue;
+    let dest = i + direction * die;
+    if (dest >= 0 && dest <= 23) {
+      const target = board[dest];
+      if (isPointOpen(target, player)) {
+        moves.push({
+          from: i,
+          to: dest,
+          die,
+          bearOff: false,
+          hit: target.count === 1 && target.color === opponent
+        });
+      }
+    } else if (canBearOffFrom(state, player, i, die)) {
+      moves.push({ from: i, to: null, die, bearOff: true, hit: false });
+    }
   }
   return moves;
 }
 
-// Check if a player can bear off (all checkers in the home board).
-function canBearOff(player) {
-  let homeRange = player === "white" ? [0, 5] : [18, 23];
-  let total = 0,
-    inHome = 0;
-  for (let i = 0; i < 24; i++) {
-    if (gameState.board[i].color === player) {
-      total += gameState.board[i].count;
-      if (i >= homeRange[0] && i <= homeRange[1]) {
-        inHome += gameState.board[i].count;
-      }
-    }
-  }
-  if (gameState.bar[player] > 0) return false;
-  return total > 0 && total === inHome;
+function isPointOpen(point, player) {
+  if (!point.count) return true;
+  if (point.color === player) return true;
+  return point.count === 1;
 }
 
-// Map click coordinates to a board point or "bar".
-// (The logic here mirrors the board–drawing layout.)
-function getPointFromCoordinates(x, y) {
-  const boardWidth = canvas.width;
-  const boardHeight = canvas.height;
-  const pointWidth = boardWidth / 14;
-  const triangleHeight = boardHeight / 2;
-  const barX = canvas.width / 2 - pointWidth;
-  // If click is in the bar region and the current player has checkers there, return "bar".
-  if (x >= barX && x <= barX + pointWidth * 2) {
-    if (gameState.bar[gameState.currentPlayer] > 0) return "bar";
-  }
-  if (y < triangleHeight) {
-    // Top row.
-    if (x < barX) {
-      let pos = Math.floor((barX - x) / pointWidth);
-      return 23 - pos; // left of bar: indices 23 downwards.
-    } else if (x > barX + pointWidth * 2) {
-      let pos = Math.floor((x - (barX + pointWidth * 2)) / pointWidth);
-      return 12 + pos; // right of bar: indices 12 upwards.
+function canBearOffFrom(state, player, index, die) {
+  if (!allCheckersInHome(state, player)) return false;
+  const direction = DIRECTIONS[player];
+  const dest = index + direction * die;
+  if (player === "white") {
+    if (dest === -1) return true;
+    if (dest < -1) {
+      return !hasCheckerBeyond(state, player, index);
     }
   } else {
-    // Bottom row.
+    if (dest === 24) return true;
+    if (dest > 24) {
+      return !hasCheckerBeyond(state, player, index);
+    }
+  }
+  return false;
+}
+
+function allCheckersInHome(state, player) {
+  const [start, end] = HOME_RANGES[player];
+  if (state.bar[player] > 0) return false;
+  for (let i = 0; i < 24; i++) {
+    const point = state.board[i];
+    if (point.color === player && point.count > 0) {
+      if (i < start || i > end) return false;
+    }
+  }
+  return true;
+}
+
+function hasCheckerBeyond(state, player, fromIndex) {
+  const [start, end] = HOME_RANGES[player];
+  if (player === "white") {
+    for (let i = fromIndex + 1; i <= end; i++) {
+      if (state.board[i].color === player && state.board[i].count > 0) return true;
+    }
+  } else {
+    for (let i = fromIndex - 1; i >= start; i--) {
+      if (state.board[i].color === player && state.board[i].count > 0) return true;
+    }
+  }
+  return false;
+}
+
+function applyMoveToState(state, move, player) {
+  const opponent = getOpponent(player);
+  if (move.from === "bar") {
+    state.bar[player]--;
+  } else {
+    state.board[move.from].count--;
+    if (state.board[move.from].count === 0) state.board[move.from].color = null;
+  }
+
+  if (move.bearOff) {
+    state.borneOff[player]++;
+    return;
+  }
+
+  const dest = state.board[move.to];
+  if (dest.count === 1 && dest.color === opponent) {
+    state.bar[opponent]++;
+    state.board[move.to] = { color: player, count: 1 };
+  } else if (dest.count === 0) {
+    state.board[move.to] = { color: player, count: 1 };
+  } else {
+    dest.count++;
+    dest.color = player;
+  }
+}
+
+function sameMove(a, b) {
+  return a.from === b.from && a.to === b.to && a.die === b.die && a.bearOff === b.bearOff;
+}
+
+function serializeMove(move) {
+  return `${move.from}-${move.to === null ? "off" : move.to}-${move.die}`;
+}
+
+function cloneMove(move) {
+  return { from: move.from, to: move.to, die: move.die, bearOff: move.bearOff, hit: move.hit };
+}
+
+function uniquePermutations(values) {
+  const counts = {};
+  values.forEach((val) => {
+    counts[val] = (counts[val] || 0) + 1;
+  });
+  const result = [];
+  const buffer = [];
+  const keys = Object.keys(counts).map(Number);
+
+  function backtrack() {
+    if (buffer.length === values.length) {
+      result.push(buffer.slice());
+      return;
+    }
+    for (const key of keys) {
+      if (!counts[key]) continue;
+      counts[key]--;
+      buffer.push(key);
+      backtrack();
+      buffer.pop();
+      counts[key]++;
+    }
+  }
+
+  backtrack();
+  return result;
+}
+
+function pickCpuSequence(sequences) {
+  let bestScore = -Infinity;
+  let choice = sequences[0];
+  sequences.forEach((sequence) => {
+    const score = sequence.reduce((acc, move) => acc + evaluateCpuMove(move), 0) + Math.random();
+    if (score > bestScore) {
+      bestScore = score;
+      choice = sequence;
+    }
+  });
+  return choice.map(cloneMove);
+}
+
+function evaluateCpuMove(move) {
+  let score = move.die;
+  if (move.hit) score += 5;
+  if (move.bearOff) score += 8;
+  if (move.from === "bar") score += 2;
+  if (!move.bearOff && typeof move.to === "number") {
+    score += move.to * 0.2;
+  }
+  return score;
+}
+
+function describeMove(move, player) {
+  if (move.bearOff) return "bearing off";
+  const pointFrom = move.from === "bar" ? "bar" : `point ${move.from + 1}`;
+  const pointTo = move.to !== null ? `point ${move.to + 1}` : "off";
+  let text = `${pointFrom} → ${pointTo}`;
+  if (move.hit) text += " (hit)";
+  return text;
+}
+
+function checkVictory(player) {
+  return gameState.borneOff[player] >= TOTAL_CHECKERS;
+}
+
+// ---------------------- Animation ----------------------
+function performMove(move, player, callback) {
+  const startPos = getMoveStartPosition(move, player);
+  const nextState = cloneCoreState(gameState);
+  applyMoveToState(nextState, move, player);
+  const endPos = getMoveEndPosition(move, player, nextState);
+  gameState.animating = true;
+  updateControls();
+  const duration = 450;
+  let startTime = null;
+
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const progress = Math.min((timestamp - startTime) / duration, 1);
+    const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+    const currentX = startPos.x + (endPos.x - startPos.x) * ease;
+    const currentY = startPos.y + (endPos.y - startPos.y) * ease;
+    redraw();
+    drawCheckerPiece(currentX, currentY, player);
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      gameState.board = nextState.board;
+      gameState.bar = nextState.bar;
+      gameState.borneOff = nextState.borneOff;
+      gameState.animating = false;
+      updateHud();
+      updateControls();
+      redraw();
+      callback();
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function getMoveStartPosition(move, player) {
+  if (move.from === "bar") {
+    const slotIndex = Math.max(gameState.bar[player] - 1, 0);
+    return getBarCheckerPosition(player, slotIndex);
+  }
+  const point = gameState.board[move.from];
+  const slot = Math.max(point.count - 1, 0);
+  return getCheckerSlotPosition(move.from, slot);
+}
+
+function getMoveEndPosition(move, player, nextState) {
+  if (move.bearOff) {
+    const index = nextState.borneOff[player] - 1;
+    return getBearOffStackPosition(player, index);
+  }
+  const point = nextState.board[move.to];
+  const slot = Math.max(point.count - 1, 0);
+  return getCheckerSlotPosition(move.to, slot);
+}
+
+// ---------------------- Geometry Helpers ----------------------
+function getCheckerRadius() {
+  return (canvas.width / 14) * 0.4;
+}
+
+function getPointEntryPosition(index) {
+  const { pointWidth, barX } = getLayout();
+  const leftStart = barX - pointWidth * 6;
+  const rightStart = barX + pointWidth * 2;
+  let x;
+  if (index < 12) {
+    if (index <= 5) {
+      const local = 5 - index; // point 1 is far right
+      x = rightStart + local * pointWidth + pointWidth / 2;
+    } else {
+      const local = 11 - index; // point 12 is far left
+      x = leftStart + local * pointWidth + pointWidth / 2;
+    }
+    return { x, y: canvas.height - 20 };
+  }
+  if (index <= 17) {
+    const local = index - 12; // point 13 starts at far left
+    x = leftStart + local * pointWidth + pointWidth / 2;
+  } else {
+    const local = index - 18; // point 19 starts near bar
+    x = rightStart + local * pointWidth + pointWidth / 2;
+  }
+  return { x, y: 20 };
+}
+
+function getCheckerSlotPosition(index, slot) {
+  const base = getPointEntryPosition(index);
+  const radius = getCheckerRadius();
+  const spacing = radius * 2.1;
+  const isBottom = index < 12;
+  const direction = isBottom ? -1 : 1;
+  let y = isBottom ? canvas.height - radius - 6 : radius + 6;
+  y += direction * slot * spacing;
+  const limit = canvas.height / 2 - radius - 2;
+  if (isBottom && y < canvas.height / 2 + radius) y = canvas.height / 2 + radius;
+  if (!isBottom && y > limit) y = limit;
+  return { x: base.x, y };
+}
+
+function getBarCheckerPosition(player, slot) {
+  const safeSlot = Math.max(slot, 0);
+  const { pointWidth } = getLayout();
+  const radius = getCheckerRadius();
+  const spacing = radius * 2.2;
+  if (player === "white") {
+    const x = canvas.width / 2;
+    const y = canvas.height * 0.65 + safeSlot * spacing;
+    return { x, y };
+  }
+  const x = canvas.width / 2 + pointWidth;
+  const y = canvas.height * 0.35 - safeSlot * spacing;
+  return { x, y };
+}
+
+function getBearOffTarget(player) {
+  const radius = getCheckerRadius() * 1.4;
+  if (player === "white") {
+    return { x: getLayout().pointWidth * 1.4, y: canvas.height - 35, radius };
+  }
+  return { x: canvas.width - getLayout().pointWidth * 1.4, y: 35, radius };
+}
+
+function getBearOffStackPosition(player, index) {
+  const target = getBearOffTarget(player);
+  const spacing = getCheckerRadius() * 1.3;
+  const column = Math.floor(index / 5);
+  const row = index % 5;
+  if (player === "white") {
+    return { x: target.x + column * spacing * 0.8, y: target.y - row * spacing };
+  }
+  return { x: target.x - column * spacing * 0.8, y: target.y + row * spacing };
+}
+
+function drawRoundedRectPath(x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function getHighlightPosition(source) {
+  if (source === "bar") {
+    const pos = getBarCheckerPosition("white", 0);
+    return { x: pos.x, y: canvas.height * 0.72 };
+  }
+  return getPointEntryPosition(source);
+}
+
+function resolveClickTarget(x, y) {
+  const { pointWidth, triangleHeight, barX } = getLayout();
+  const leftStart = barX - pointWidth * 6;
+  const rightStart = barX + pointWidth * 2;
+  const bearOffTarget = getBearOffTarget("white");
+  const dx = x - bearOffTarget.x;
+  const dy = y - bearOffTarget.y;
+  if (gameState.legalMoves.some((move) => move.bearOff) && Math.sqrt(dx * dx + dy * dy) <= bearOffTarget.radius) {
+    return { type: "bearOff", player: "white" };
+  }
+
+  if (x >= barX && x <= barX + pointWidth * 2 && gameState.bar.white > 0) {
+    return { type: "bar" };
+  }
+
+  if (y < triangleHeight) {
     if (x < barX) {
-      let pos = Math.floor((x - (barX - pointWidth * 6)) / pointWidth);
-      return pos; // left of bar: indices 0–5.
+      const local = Math.floor((x - leftStart) / pointWidth);
+      if (local >= 0 && local < 6) {
+        const index = 12 + local;
+        return { type: "point", index };
+      }
     } else if (x > barX + pointWidth * 2) {
-      let pos = Math.floor((x - (barX + pointWidth * 2)) / pointWidth);
-      return 6 + pos; // right of bar: indices 6–11.
+      const local = Math.floor((x - rightStart) / pointWidth);
+      if (local >= 0 && local < 6) {
+        const index = 18 + local;
+        return { type: "point", index };
+      }
+    }
+  } else {
+    if (x < barX) {
+      const local = Math.floor((x - leftStart) / pointWidth);
+      if (local >= 0 && local < 6) {
+        const index = 11 - local;
+        return { type: "point", index };
+      }
+    } else if (x > barX + pointWidth * 2) {
+      const local = Math.floor((x - rightStart) / pointWidth);
+      if (local >= 0 && local < 6) {
+        const index = 5 - local;
+        return { type: "point", index };
+      }
     }
   }
   return null;
 }
-
-// ------------------ Player Input ------------------
-
-// Handle canvas clicks during the human's move phase.
-canvas.addEventListener("click", (e) => {
-  if (gameState.currentPlayer !== "white" || gameState.gamePhase !== "playerMove") return;
-  let rect = canvas.getBoundingClientRect();
-  let x = e.clientX - rect.left;
-  let y = e.clientY - rect.top;
-  let clicked = getPointFromCoordinates(x, y);
-  // If the player has checkers on the bar, they must re‑enter them.
-  if (gameState.bar.white > 0 && clicked !== "bar") {
-    alert("You must re‑enter your checkers from the bar!");
-    return;
-  }
-  if (gameState.selectedSource === null) {
-    // No checker selected yet.
-    if (clicked === "bar") {
-      gameState.selectedSource = "bar";
-      gameState.validMoves = getValidMoves("bar");
-    } else if (typeof clicked === "number") {
-      let point = gameState.board[clicked];
-      if (point && point.count > 0 && point.color === "white") {
-        gameState.selectedSource = clicked;
-        gameState.validMoves = getValidMoves(clicked);
-      }
-    }
-    redraw();
-  } else {
-    // A source has already been selected; try to complete a move.
-    let destination = clicked;
-    // For bearing off, if the player clicks near the bottom-left corner.
-    if (gameState.selectedSource !== "bar" && destination === null && x < 50 && y > canvas.height - 50) {
-      destination = "bearOff";
-    }
-    let chosen = gameState.validMoves.find(
-      (m) => m.to === destination || (m.bearOff && destination === "bearOff")
-    );
-    if (chosen) {
-      performMove(chosen, () => {
-        gameState.selectedSource = null;
-        gameState.validMoves = [];
-        redraw();
-        if (gameState.movesLeft.length === 0) {
-          endTurn();
-        }
-      });
-    } else {
-      // Deselect if an invalid destination was clicked.
-      gameState.selectedSource = null;
-      gameState.validMoves = [];
-      redraw();
-    }
-  }
-});
-
-// ------------------ Turn Management & CPU ------------------
-
-// End the current turn and switch players.
-function endTurn() {
-  if (gameState.currentPlayer === "white") {
-    gameState.currentPlayer = "black";
-    gameState.gamePhase = "cpuRoll";
-    updateGameInfo();
-    setTimeout(cpuTurn, 1000);
-  } else {
-    gameState.currentPlayer = "white";
-    gameState.gamePhase = "playerRoll";
-    gameState.dice = [];
-    gameState.movesLeft = [];
-    updateGameInfo();
-    redraw();
-  }
-}
-
-// CPU turn: roll dice and then make moves.
-function cpuTurn() {
-  if (gameState.currentPlayer !== "black") return;
-  gameState.gamePhase = "cpuRoll";
-  updateGameInfo();
-  rollDiceAnimation(2, () => {
-    gameState.gamePhase = "cpuMove";
-    updateGameInfo();
-    setTimeout(cpuMakeMove, 500);
-  });
-}
-
-// Gather all legal moves for the CPU.
-function getAllLegalMoves(player) {
-  let moves = [];
-  if (gameState.bar[player] > 0) {
-    gameState.movesLeft.forEach((die) => {
-      let dest = player === "black" ? die - 1 : 24 - die;
-      let point = gameState.board[dest];
-      if (
-        point.count === 0 ||
-        point.color === player ||
-        (point.count === 1 && point.color !== player)
-      ) {
-        moves.push({ from: "bar", to: dest, die: die, bearOff: false });
-      }
-    });
-    return moves;
-  }
-  for (let i = 0; i < 24; i++) {
-    let point = gameState.board[i];
-    if (point.color === player && point.count > 0) {
-      gameState.movesLeft.forEach((die) => {
-        let dest, bearOff = false;
-        if (player === "black") {
-          dest = i + die;
-          if (dest > 23 && canBearOff("black")) {
-            bearOff = true;
-          }
-        } else {
-          dest = i - die;
-          if (dest < 0 && canBearOff("white")) {
-            bearOff = true;
-          }
-        }
-        if (bearOff) {
-          moves.push({ from: i, to: null, die: die, bearOff: true });
-        } else if (dest >= 0 && dest <= 23) {
-          let destination = gameState.board[dest];
-          if (
-            destination.count === 0 ||
-            destination.color === player ||
-            (destination.count === 1 && destination.color !== player)
-          ) {
-            moves.push({ from: i, to: dest, die: die, bearOff: false });
-          }
-        }
-      });
-    }
-  }
-  return moves;
-}
-
-// CPU makes one move at a time.
-function cpuMakeMove() {
-  if (gameState.currentPlayer !== "black" || gameState.gamePhase !== "cpuMove") return;
-  let legal = getAllLegalMoves("black");
-  if (legal.length === 0) {
-    gameState.dice = [];
-    gameState.movesLeft = [];
-    endTurn();
-    return;
-  }
-  // For simplicity, pick the first legal move.
-  let move = legal[0];
-  performMove(move, () => {
-    updateGameInfo();
-    setTimeout(() => {
-      if (gameState.movesLeft.length > 0) {
-        cpuMakeMove();
-      } else {
-        endTurn();
-      }
-    }, 600);
-  });
-}
-
-// ------------------ Dice Roll Button Handler ------------------
-document.getElementById("rollButton").addEventListener("click", () => {
-  if (gameState.gamePhase === "initial") {
-    // --- Initial Roll to decide who goes first ---
-    document.getElementById("rollButton").disabled = true;
-    rollDiceAnimation(1, (roll) => {
-      gameState.initialRoll.white = roll[0];
-      updateGameInfo();
-      setTimeout(() => {
-        rollDiceAnimation(1, (cpuRoll) => {
-          gameState.initialRoll.black = cpuRoll[0];
-          if (gameState.initialRoll.white === gameState.initialRoll.black) {
-            alert("Tie! Roll again.");
-            gameState.initialRoll.white = null;
-            gameState.initialRoll.black = null;
-            gameState.dice = [];
-            gameState.gamePhase = "initial";
-            updateGameInfo();
-          } else {
-            if (gameState.initialRoll.white > gameState.initialRoll.black) {
-              gameState.currentPlayer = "white";
-              gameState.dice = [gameState.initialRoll.white, gameState.initialRoll.black];
-              gameState.movesLeft =
-                gameState.initialRoll.white === gameState.initialRoll.black
-                  ? [gameState.initialRoll.white, gameState.initialRoll.white, gameState.initialRoll.white, gameState.initialRoll.white]
-                  : [gameState.initialRoll.white, gameState.initialRoll.black];
-              alert("You win the initial roll! You go first.");
-              gameState.gamePhase = "playerMove";
-            } else {
-              gameState.currentPlayer = "black";
-              gameState.dice = [gameState.initialRoll.white, gameState.initialRoll.black];
-              gameState.movesLeft =
-                gameState.initialRoll.white === gameState.initialRoll.black
-                  ? [gameState.initialRoll.black, gameState.initialRoll.black, gameState.initialRoll.black, gameState.initialRoll.black]
-                  : [gameState.initialRoll.white, gameState.initialRoll.black];
-              alert("CPU wins the initial roll! CPU goes first.");
-              gameState.gamePhase = "cpuMove";
-              setTimeout(cpuTurn, 1000);
-            }
-          }
-          document.getElementById("rollButton").disabled = false;
-          updateGameInfo();
-          redraw();
-        });
-      }, 500);
-    });
-  } else if (gameState.gamePhase === "playerRoll") {
-    // --- Player’s Regular Turn ---
-    document.getElementById("rollButton").disabled = true;
-    rollDiceAnimation(2, () => {
-      gameState.gamePhase = "playerMove";
-      document.getElementById("rollButton").disabled = false;
-      updateGameInfo();
-      redraw();
-    });
-  }
-});
-
-// ------------------ Initial Redraw ------------------
-redraw();
