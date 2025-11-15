@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Grid</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div>
+      <h1>The Grid</h1>
+      <p class="tagline">A daring game of higher, lower, inside, and outside.</p>
+    </div>
+    <button class="primary" id="rules-button" aria-haspopup="dialog" aria-controls="rules-modal">Rules</button>
+  </header>
+
+  <main class="layout">
+    <section class="board" aria-label="Game board">
+      <div id="grid" class="grid" role="grid" aria-describedby="status-message"></div>
+    </section>
+
+    <aside class="panel">
+      <div class="status">
+        <h2>Status</h2>
+        <p id="status-message">Tap or click an empty adjacent cell to place the next card.</p>
+        <div class="counts">
+          <div>
+            <span class="label">Deck Remaining</span>
+            <span id="deck-count" class="value">52</span>
+          </div>
+          <div>
+            <span class="label">Cards on Grid</span>
+            <span id="grid-count" class="value">1</span>
+          </div>
+        </div>
+        <div class="last-card" aria-live="polite">
+          <span class="label">Last Drawn</span>
+          <div id="last-card-display" class="card-display empty">—</div>
+        </div>
+        <div class="neighbors">
+          <span class="label">Neighbors</span>
+          <p id="neighbor-info">None selected</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <h2>Your Guess</h2>
+        <p class="hint" id="guess-hint">Select a valid empty cell to begin.</p>
+        <div class="buttons">
+          <button class="guess" id="guess-higher" data-type="higher">Higher</button>
+          <button class="guess" id="guess-lower" data-type="lower">Lower</button>
+          <button class="guess" id="guess-inside" data-type="inside">Inside</button>
+          <button class="guess" id="guess-outside" data-type="outside">Outside</button>
+        </div>
+        <button class="primary wide" id="new-game">New Game</button>
+      </div>
+    </aside>
+  </main>
+
+  <div id="rules-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-title" tabindex="-1" hidden>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="rules-title">How to Play</h2>
+        <button class="icon" id="close-rules" aria-label="Close rules">×</button>
+      </header>
+      <div class="modal-body">
+        <p><strong>The Grid</strong> challenges you to fill a 5×5 board with cards from a shuffled deck.</p>
+        <ol>
+          <li>The first card is placed in the center. Choose empty cells that touch an existing card.</li>
+          <li>If only one neighbor touches your chosen cell, guess whether the new card will be <em>Higher</em> or <em>Lower</em>.</li>
+          <li>If two or more neighbors touch it, guess whether the new card lies <em>Inside</em> or <em>Outside</em> the neighbor range.</li>
+          <li>Correct guesses place the card. Wrong guesses clear that cell's entire row and column, then the remaining cards collapse toward the top-left.</li>
+          <li>Fill all 25 cells to win. Run out of cards first and you lose.</li>
+        </ol>
+        <p>Ties always count as wrong, so choose wisely!</p>
+      </div>
+      <footer class="modal-footer">
+        <button class="primary" id="close-rules-bottom">Got it!</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="backdrop" class="backdrop" hidden></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
