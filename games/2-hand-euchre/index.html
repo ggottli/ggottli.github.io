@@ -4,1310 +4,1947 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Two-Handed Euchre</title>
-        <script src="https://cdn.tailwindcss.com"></script>
         <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
         <style>
+            :root {
+                --felt-dark: #0a1f12;
+                --felt-main: #1a4d2e;
+                --felt-light: #2d6b44;
+                --gold: #d4af37;
+                --gold-light: #f4d03f;
+                --gold-dark: #b8860b;
+                --card-shadow:
+                    0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+                --card-hover-shadow:
+                    0 12px 28px rgba(212, 175, 55, 0.3),
+                    0 8px 16px rgba(0, 0, 0, 0.4);
+                --panel-bg: rgba(0, 0, 0, 0.75);
+                --panel-border: rgba(212, 175, 55, 0.3);
+            }
+
             * {
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
             }
-            
+
             body {
-                font-family: "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
-                background: #0d2818;
-                background-image: 
-                    radial-gradient(ellipse at center, #1a3d2a 0%, #0d2818 50%, #06140d 100%);
-                color: #f8f9fa;
-                height: 100vh;
-                overflow: auto;
-                display: flex;
-                align-items: flex-start;
-                justify-content: center;
-                position: relative;
-                padding: 1rem 0;
+                font-family: "Source Sans 3", sans-serif;
+                background: var(--felt-dark);
+                color: #f0f0f0;
+                min-height: 100vh;
+                overflow-x: hidden;
             }
-            
-            body::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: 
-                    radial-gradient(circle at 20% 80%, rgba(0,0,0,0.3) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 20%, rgba(0,0,0,0.3) 0%, transparent 50%),
-                    radial-gradient(circle at 40% 40%, rgba(255,255,255,0.02) 0%, transparent 50%);
-                pointer-events: none;
-            }
-            
-            .poker-table {
+
+            /* Felt table background */
+            .table-surface {
                 position: fixed;
                 inset: 0;
-                background: radial-gradient(ellipse at center, #2d5a3d 0%, #1a3d2a 70%, #0d2818 100%);
-                box-shadow: 
-                    inset 0 0 100px rgba(0,0,0,0.5),
-                    0 0 50px rgba(0,0,0,0.8);
+                background:
+                    radial-gradient(
+                        ellipse 120% 100% at 50% 100%,
+                        var(--felt-light) 0%,
+                        transparent 50%
+                    ),
+                    radial-gradient(
+                        ellipse 120% 100% at 50% 0%,
+                        var(--felt-light) 0%,
+                        transparent 50%
+                    ),
+                    radial-gradient(
+                        ellipse at center,
+                        var(--felt-main) 0%,
+                        var(--felt-dark) 100%
+                    );
+                z-index: 0;
+            }
+
+            .table-surface::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+                opacity: 0.03;
+                pointer-events: none;
+            }
+
+            .game-wrapper {
+                position: relative;
                 z-index: 1;
-            }
-            
-            @media (min-width: 768px) {
-                .poker-table {
-                    inset: 5%;
-                    border-radius: 50%;
-                    border: 8px solid #4a2c17;
-                }
-            }
-            
-            .poker-table::before {
-                content: '';
-                position: absolute;
-                inset: 20px;
-                border-radius: 50%;
-                border: 2px solid rgba(255,255,255,0.1);
-            }
-            
-            .game-container {
-                width: 100%;
-                max-width: 1400px;
-                min-height: 100vh;
+                max-width: 1200px;
+                margin: 0 auto;
                 padding: 1rem;
+                min-height: 100vh;
                 display: flex;
                 flex-direction: column;
-                position: relative;
-                z-index: 10;
             }
-            
-            @media (min-width: 768px) {
-                .game-container {
-                    height: 100vh;
-                    max-height: 900px;
-                    justify-content: center;
-                }
-            }
-            
+
+            /* Header */
             .header {
-                background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%);
-                backdrop-filter: blur(10px);
-                border-radius: 12px;
-                padding: 0.75rem 1rem;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-                margin-bottom: 0.75rem;
-                border: 1px solid rgba(255,255,255,0.1);
-            }
-            
-            @media (min-width: 768px) {
-                .header {
-                    padding: 1rem 1.5rem;
-                    margin-bottom: 1rem;
-                }
-            }
-            
-            .card {
-                width: 45px;
-                height: 65px;
-                border-radius: 6px;
-                border: 1px solid #333;
+                background: var(--panel-bg);
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--panel-border);
+                border-radius: 16px;
+                padding: 1rem 1.5rem;
+                margin-bottom: 1rem;
                 display: flex;
-                flex-direction: column;
-                justify-content: center;
+                justify-content: space-between;
                 align-items: center;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .title-section {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            h1 {
+                font-family: "Playfair Display", serif;
+                font-size: 1.5rem;
                 font-weight: 600;
-                position: relative;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                user-select: none;
-                background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-                box-shadow: 
-                    0 2px 4px rgba(0, 0, 0, 0.3),
-                    0 8px 16px rgba(0, 0, 0, 0.2);
+                color: var(--gold);
+                letter-spacing: 0.05em;
             }
-            
-            @media (min-width: 768px) {
-                .card {
-                    width: 55px;
-                    height: 80px;
-                }
+
+            .controls {
+                display: flex;
+                gap: 0.5rem;
             }
-            
-            @media (min-width: 1024px) {
-                .card {
-                    width: 70px;
-                    height: 100px;
-                }
-            }
-            
-            .card.playable {
+
+            .btn {
+                font-family: "Source Sans 3", sans-serif;
+                font-size: 0.875rem;
+                font-weight: 500;
+                padding: 0.5rem 1rem;
+                border: 1px solid var(--gold-dark);
+                border-radius: 8px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(212, 175, 55, 0.2) 0%,
+                    rgba(184, 134, 11, 0.1) 100%
+                );
+                color: var(--gold-light);
                 cursor: pointer;
+                transition: all 0.2s ease;
             }
-            
-            .card.playable:hover {
-                transform: translateY(-12px) scale(1.08);
-                box-shadow: 
-                    0 8px 25px rgba(255, 215, 0, 0.4),
-                    0 12px 20px rgba(0, 0, 0, 0.4);
-                border-color: #ffd700;
+
+            .btn:hover {
+                background: linear-gradient(
+                    135deg,
+                    rgba(212, 175, 55, 0.4) 0%,
+                    rgba(184, 134, 11, 0.2) 100%
+                );
+                transform: translateY(-1px);
             }
-            
-            .card.face-down {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                border-color: #ffd700;
+
+            .btn-primary {
+                background: linear-gradient(
+                    135deg,
+                    var(--gold) 0%,
+                    var(--gold-dark) 100%
+                );
+                color: #000;
+                border: none;
+                font-weight: 600;
             }
-            
-            .card.face-down::after {
-                content: '';
-                position: absolute;
-                inset: 6px;
-                border: 1px solid rgba(255, 215, 0, 0.3);
-                border-radius: 3px;
-                background: repeating-linear-gradient(
-                    45deg,
-                    transparent,
-                    transparent 3px,
-                    rgba(255, 215, 0, 0.1) 3px,
-                    rgba(255, 215, 0, 0.1) 6px
+
+            .btn-primary:hover {
+                background: linear-gradient(
+                    135deg,
+                    var(--gold-light) 0%,
+                    var(--gold) 100%
                 );
             }
-            
-            .card.red {
-                color: #dc3545;
+
+            select {
+                font-family: "Source Sans 3", sans-serif;
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+                border: 1px solid var(--gold-dark);
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.5);
+                color: var(--gold-light);
+                cursor: pointer;
             }
-            
-            .card.black {
-                color: #212529;
+
+            .score-section {
+                display: flex;
+                align-items: center;
+                gap: 2rem;
             }
-            
-            .card-rank {
-                font-size: 1.1rem;
-                line-height: 1;
+
+            .trump-display {
+                text-align: center;
+            }
+
+            .trump-label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: rgba(255, 255, 255, 0.6);
+                margin-bottom: 0.25rem;
+            }
+
+            .trump-suit {
+                font-size: 2rem;
                 font-weight: 700;
-            }
-            
-            .card-suit {
-                font-size: 0.8rem;
-                margin-top: 2px;
+                color: var(--gold);
+                line-height: 1;
             }
 
-            @media (min-width: 768px) {
-                .card-rank {
-                    font-size: 1.4rem;
-                }
-                .card-suit {
-                    font-size: 1rem;
-                }
+            .trump-suit.red {
+                color: #e74c3c;
             }
-            
-            @media (min-width: 1024px) {
-                .card-rank {
-                    font-size: 1.8rem;
-                }
-                .card-suit {
-                    font-size: 1.3rem;
-                }
+            .trump-suit.black {
+                color: #ecf0f1;
             }
 
+            .scores {
+                display: flex;
+                gap: 1.5rem;
+            }
+
+            .score-box {
+                text-align: center;
+                min-width: 60px;
+            }
+
+            .score-box .label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: rgba(255, 255, 255, 0.6);
+                margin-bottom: 0.25rem;
+            }
+
+            .score-box .value {
+                font-family: "Playfair Display", serif;
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: var(--gold);
+            }
+
+            /* Game Area */
             .game-area {
                 flex: 1;
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
-                min-height: 0;
             }
-            
-            @media (min-width: 768px) {
-                .game-area {
-                    gap: 1rem;
-                }
-            }
-            
-            .player-section {
-                background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%);
+
+            .player-zone {
+                background: var(--panel-bg);
                 backdrop-filter: blur(8px);
-                border-radius: 12px;
-                padding: 0.75rem;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-                border: 1px solid rgba(255,215,0,0.2);
+                border: 1px solid var(--panel-border);
+                border-radius: 16px;
+                padding: 1rem;
             }
-            
-            @media (min-width: 768px) {
-                .player-section {
-                    padding: 1rem;
-                }
+
+            .player-zone.active {
+                border-color: var(--gold);
+                box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
             }
-            
-            .player-header {
+
+            .zone-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 0.5rem;
-                padding: 0 0.5rem;
+                margin-bottom: 0.75rem;
             }
-            
-            @media (min-width: 768px) {
-                .player-header {
-                    margin-bottom: 0.75rem;
-                }
-            }
-            
+
             .player-name {
+                font-family: "Playfair Display", serif;
+                font-size: 1.1rem;
                 font-weight: 600;
-                color: #ffd700;
-                font-size: 1rem;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+                color: var(--gold);
             }
-            
-            @media (min-width: 768px) {
-                .player-name {
-                    font-size: 1.1rem;
-                }
-            }
-            
-            .trick-count {
-                background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-                color: #000;
-                padding: 0.2rem 0.6rem;
-                border-radius: 20px;
+
+            .player-name.dealer::after {
+                content: " (Dealer)";
                 font-size: 0.75rem;
+                color: rgba(255, 255, 255, 0.5);
+                font-weight: 400;
+            }
+
+            .player-name.caller::after {
+                content: " ★";
+                color: var(--gold-light);
+            }
+
+            .trick-badge {
+                background: linear-gradient(
+                    135deg,
+                    var(--gold) 0%,
+                    var(--gold-dark) 100%
+                );
+                color: #000;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.875rem;
                 font-weight: 600;
-                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
             }
-            
-            @media (min-width: 768px) {
-                .trick-count {
-                    padding: 0.3rem 0.8rem;
-                    font-size: 0.875rem;
-                }
-            }
-            
-            .cards-container {
+
+            .cards-row {
                 display: flex;
                 justify-content: center;
-                gap: 0.3rem;
+                gap: 0.5rem;
                 flex-wrap: wrap;
+                min-height: 90px;
             }
-            
-            @media (min-width: 768px) {
-                .cards-container {
-                    gap: 0.4rem;
-                }
-            }
-            
-            .table-cards {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 0.3rem;
+
+            .table-slots {
+                display: flex;
+                justify-content: center;
+                gap: 0.5rem;
                 margin-bottom: 0.5rem;
-                justify-items: center;
             }
-            
-            @media (min-width: 768px) {
-                .table-cards {
-                    gap: 0.4rem;
-                    margin-bottom: 0.75rem;
-                }
-            }
-            
-            .table-card-slot {
+
+            .table-slot {
                 position: relative;
-                width: 45px;
-                height: 65px;
-                margin: 0 auto;
+                width: 60px;
+                height: 84px;
             }
-            
+
             @media (min-width: 768px) {
-                .table-card-slot {
-                    width: 55px;
-                    height: 80px;
-                }
-            }
-            
-            @media (min-width: 1024px) {
-                .table-card-slot {
+                .table-slot {
                     width: 70px;
-                    height: 100px;
+                    height: 98px;
                 }
             }
-            
-            .trick-area {
-                background: radial-gradient(ellipse at center, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
-                backdrop-filter: blur(8px);
-                border-radius: 16px;
-                padding: 1rem;
+
+            /* Cards */
+            .card {
+                width: 60px;
+                height: 84px;
+                border-radius: 8px;
+                background: linear-gradient(145deg, #fff 0%, #f5f5f5 100%);
+                border: 2px solid #ddd;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                font-weight: 700;
+                box-shadow: var(--card-shadow);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                user-select: none;
+                position: relative;
+            }
+
+            @media (min-width: 768px) {
+                .card {
+                    width: 70px;
+                    height: 98px;
+                }
+            }
+
+            .card.red {
+                color: #c0392b;
+            }
+            .card.black {
+                color: #2c3e50;
+            }
+
+            .card-rank {
+                font-size: 1.25rem;
+                line-height: 1;
+            }
+
+            .card-suit {
+                font-size: 1rem;
+                margin-top: 2px;
+            }
+
+            @media (min-width: 768px) {
+                .card-rank {
+                    font-size: 1.5rem;
+                }
+                .card-suit {
+                    font-size: 1.2rem;
+                }
+            }
+
+            .card.playable {
+                cursor: pointer;
+                border-color: var(--gold);
+            }
+
+            .card.playable:hover {
+                transform: translateY(-12px) scale(1.05);
+                box-shadow: var(--card-hover-shadow);
+                z-index: 10;
+            }
+
+            .card.face-down {
+                background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+                border-color: var(--gold-dark);
+            }
+
+            .card.face-down::before {
+                content: "";
+                position: absolute;
+                inset: 6px;
+                border: 1px solid rgba(212, 175, 55, 0.3);
+                border-radius: 4px;
+                background: repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 4px,
+                    rgba(212, 175, 55, 0.1) 4px,
+                    rgba(212, 175, 55, 0.1) 8px
+                );
+            }
+
+            .card.stacked {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+
+            .card.stacked.top {
+                top: -3px;
+                left: -3px;
+            }
+
+            /* Trick Area */
+            .trick-zone {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(212, 175, 55, 0.08) 0%,
+                    transparent 70%
+                );
+                border: 2px dashed rgba(212, 175, 55, 0.3);
+                border-radius: 20px;
+                padding: 1.5rem;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 2rem;
-                min-height: 100px;
-                box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
-                border: 2px solid rgba(255,215,0,0.2);
+                gap: 3rem;
+                min-height: 120px;
             }
-            
-            @media (min-width: 768px) {
-                .trick-area {
-                    padding: 1.5rem;
-                    gap: 3rem;
-                    min-height: 120px;
-                }
+
+            .trick-card-wrapper {
+                position: relative;
             }
-            
-            .message-box {
-                position: fixed;
-                top: 50%;
+
+            .trick-card-label {
+                position: absolute;
+                bottom: -20px;
                 left: 50%;
-                transform: translate(-50%, -50%);
-                background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(26,61,42,0.95) 100%);
-                border: 2px solid #ffd700;
+                transform: translateX(-50%);
+                font-size: 0.75rem;
+                color: rgba(255, 255, 255, 0.5);
+                white-space: nowrap;
+            }
+
+            .trick-card {
+                opacity: 0;
+                transform: scale(0.8);
+                transition: all 0.3s ease;
+                visibility: hidden;
+            }
+
+            .trick-card.visible {
+                opacity: 1;
+                transform: scale(1);
+                visibility: visible;
+            }
+
+            .trick-card.winner {
+                box-shadow:
+                    0 0 30px rgba(212, 175, 55, 0.6),
+                    var(--card-shadow);
+            }
+
+            /* Modal */
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 100;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                padding: 2rem 1rem;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            }
+
+            .modal-overlay.visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .modal {
+                background: linear-gradient(
+                    145deg,
+                    rgba(26, 77, 46, 0.98) 0%,
+                    rgba(10, 31, 18, 0.98) 100%
+                );
+                border: 2px solid var(--gold);
+                border-radius: 20px;
                 padding: 2rem;
-                border-radius: 16px;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-                z-index: 50;
+                max-width: 480px;
+                width: 100%;
                 text-align: center;
-                width: 90%;
-                max-width: 450px;
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
             }
-            
-            .trump-btn {
-                padding: 0.75rem 1.5rem;
-                border-radius: 8px;
-                font-weight: 600;
-                transition: all 0.2s ease;
-                border: none;
+
+            .modal-overlay.visible .modal {
+                transform: scale(1);
+            }
+
+            .modal h2 {
+                font-family: "Playfair Display", serif;
+                font-size: 1.75rem;
+                color: var(--gold);
+                margin-bottom: 1rem;
+            }
+
+            .modal-content {
+                color: rgba(255, 255, 255, 0.9);
+                margin-bottom: 1.5rem;
+                line-height: 1.6;
+            }
+
+            .modal-buttons {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+
+            .suit-btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 12px;
+                font-size: 2rem;
+                border: 2px solid transparent;
                 cursor: pointer;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
+                transition: all 0.2s ease;
             }
-            
-            .trump-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+
+            .suit-btn.hearts,
+            .suit-btn.diamonds {
+                background: linear-gradient(145deg, #e74c3c 0%, #c0392b 100%);
+                color: #fff;
             }
-            
-            .trump-btn:active {
+
+            .suit-btn.spades,
+            .suit-btn.clubs {
+                background: linear-gradient(145deg, #34495e 0%, #2c3e50 100%);
+                color: #fff;
+            }
+
+            .suit-btn:hover {
+                transform: scale(1.1);
+                border-color: var(--gold);
+            }
+
+            /* Animations */
+            @keyframes cardEnter {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.5) translateY(-30px) rotate(10deg);
+                }
+                60% {
+                    transform: scale(1.1) translateY(-5px) rotate(-3deg);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1) translateY(0) rotate(0);
+                }
+            }
+
+            @keyframes cardExit {
+                0% {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(0.3)
+                        translateY(var(--exit-direction, -100px));
+                }
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+                }
+                50% {
+                    box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+                }
+            }
+
+            .card-enter {
+                animation: cardEnter 0.4s ease-out forwards;
+            }
+
+            .card-exit {
+                animation: cardExit 0.5s ease-in forwards;
+            }
+
+            .pulse {
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+
+            /* Status Message */
+            .status-bar {
+                text-align: center;
+                padding: 0.5rem;
+                font-size: 0.9rem;
+                color: rgba(255, 255, 255, 0.7);
+                min-height: 2rem;
+            }
+
+            .status-bar .highlight {
+                color: var(--gold);
+                font-weight: 600;
+            }
+
+            /* Hand history panel */
+            .history-toggle {
+                position: fixed;
+                bottom: 1rem;
+                right: 1rem;
+                z-index: 50;
+            }
+
+            .history-panel {
+                position: fixed;
+                bottom: 4rem;
+                right: 1rem;
+                width: 280px;
+                max-height: 300px;
+                background: var(--panel-bg);
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--panel-border);
+                border-radius: 12px;
+                padding: 1rem;
+                overflow-y: auto;
+                z-index: 49;
+                opacity: 0;
+                transform: translateY(10px);
+                pointer-events: none;
+                transition: all 0.3s ease;
+            }
+
+            .history-panel.visible {
+                opacity: 1;
                 transform: translateY(0);
+                pointer-events: auto;
             }
 
-            .trick-card-enter {
-                animation: card-fly-in 0.5s ease-out forwards;
+            .history-panel h3 {
+                font-family: "Playfair Display", serif;
+                color: var(--gold);
+                margin-bottom: 0.75rem;
+                font-size: 1rem;
             }
-            
-            @keyframes card-fly-in {
-                0% {
-                    transform: scale(0.6) translateY(-30px) rotate(5deg);
-                    opacity: 0;
-                }
-                50% {
-                    transform: scale(1.1) translateY(-10px) rotate(-2deg);
-                    opacity: 0.8;
-                }
+
+            .history-item {
+                font-size: 0.8rem;
+                padding: 0.25rem 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                color: rgba(255, 255, 255, 0.7);
+            }
+
+            .history-item:last-child {
+                border-bottom: none;
+            }
+
+            .history-item .winner {
+                color: var(--gold);
+            }
+
+            /* Thinking indicator */
+            .thinking {
+                display: inline-flex;
+                gap: 4px;
+                margin-left: 8px;
+            }
+
+            .thinking span {
+                width: 6px;
+                height: 6px;
+                background: var(--gold);
+                border-radius: 50%;
+                animation: bounce 1.4s infinite ease-in-out both;
+            }
+
+            .thinking span:nth-child(1) {
+                animation-delay: -0.32s;
+            }
+            .thinking span:nth-child(2) {
+                animation-delay: -0.16s;
+            }
+
+            @keyframes bounce {
+                0%,
+                80%,
                 100% {
-                    transform: scale(1) translateY(0) rotate(0deg);
-                    opacity: 1;
+                    transform: scale(0);
+                }
+                40% {
+                    transform: scale(1);
                 }
             }
 
-            .fly-off-player {
-                animation: fly-off-player 0.8s ease-in forwards;
-            }
-            
-            @keyframes fly-off-player {
-                0% {
-                    transform: scale(1) translateY(0) rotate(0deg);
-                    opacity: 1;
-                }
-                50% {
-                    transform: scale(1.2) translateY(80px) rotate(10deg);
-                    opacity: 0.7;
-                }
-                100% {
-                    transform: translateY(200px) scale(0.3) rotate(25deg);
-                    opacity: 0;
-                }
+            /* Rules modal styling */
+            .rules-content {
+                text-align: left;
+                font-size: 0.9rem;
+                max-height: 60vh;
+                overflow-y: auto;
             }
 
-            .fly-off-bot {
-                animation: fly-off-bot 0.8s ease-in forwards;
+            .rules-content h4 {
+                color: var(--gold);
+                margin: 1rem 0 0.5rem;
+                font-size: 1rem;
             }
-            
-            @keyframes fly-off-bot {
-                0% {
-                    transform: scale(1) translateY(0) rotate(0deg);
-                    opacity: 1;
-                }
-                50% {
-                    transform: scale(1.2) translateY(-80px) rotate(-10deg);
-                    opacity: 0.7;
-                }
-                100% {
-                    transform: translateY(-200px) scale(0.3) rotate(-25deg);
-                    opacity: 0;
-                }
+
+            .rules-content h4:first-child {
+                margin-top: 0;
+            }
+
+            .rules-content p,
+            .rules-content ul {
+                margin-bottom: 0.5rem;
+                color: rgba(255, 255, 255, 0.85);
+            }
+
+            .rules-content ul {
+                padding-left: 1.25rem;
+            }
+
+            .rules-content li {
+                margin-bottom: 0.25rem;
             }
         </style>
     </head>
     <body>
-        <div class="poker-table"></div>
-        <div id="game-container" class="game-container">
-            <!-- Header -->
-            <div class="header">
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <div class="flex items-center space-x-2 sm:space-x-4">
-                        <h1 class="text-lg sm:text-xl font-bold text-yellow-400">Two-Handed Euchre</h1>
-                        <button
-                            id="rules-btn"
-                            class="text-xs sm:text-sm bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-2 sm:px-3 rounded-lg transition-colors"
-                        >
-                            Rules
-                        </button>
-                        <select
-                            id="difficulty-select"
-                            class="text-xs sm:text-sm bg-yellow-600 text-white font-medium py-1 px-2 sm:px-3 rounded-lg border border-yellow-500"
-                        >
+        <div class="table-surface"></div>
+
+        <div class="game-wrapper">
+            <header class="header">
+                <div class="title-section">
+                    <h1>Two-Handed Euchre</h1>
+                    <div class="controls">
+                        <button class="btn" id="rules-btn">Rules</button>
+                        <select id="difficulty">
                             <option value="easy">Easy</option>
                             <option value="medium" selected>Medium</option>
                             <option value="hard">Hard</option>
                         </select>
                     </div>
-                    
-                    <div class="flex items-center space-x-3 sm:space-x-6">
-                        <div id="trump-display" class="text-center">
-                            <div class="text-xs sm:text-sm font-medium text-yellow-300">Trump</div>
-                            <div id="trump-suit" class="text-xl sm:text-2xl font-bold text-yellow-400">-</div>
+                </div>
+
+                <div class="score-section">
+                    <div class="trump-display">
+                        <div class="trump-label">Trump</div>
+                        <div class="trump-suit" id="trump-indicator">—</div>
+                    </div>
+                    <div class="scores">
+                        <div class="score-box">
+                            <div class="label">You</div>
+                            <div class="value" id="player-score">0</div>
                         </div>
-                        
-                        <div class="flex space-x-3 sm:space-x-6">
-                            <div class="text-center">
-                                <div class="text-xs sm:text-sm font-medium text-yellow-300">Player</div>
-                                <div id="player-score" class="text-lg sm:text-xl font-bold text-yellow-400">0</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-xs sm:text-sm font-medium text-yellow-300">Bot</div>
-                                <div id="bot-score" class="text-lg sm:text-xl font-bold text-yellow-400">0</div>
-                            </div>
+                        <div class="score-box">
+                            <div class="label">Bot</div>
+                            <div class="value" id="bot-score">0</div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <!-- Game Area -->
-            <div class="game-area">
-                <!-- Bot's Area -->
-                <div class="player-section">
-                    <div class="player-header">
-                        <div class="player-name">Bot</div>
-                        <div class="trick-count"><span id="bot-trick-count">0</span> tricks</div>
+            <main class="game-area">
+                <!-- Bot Zone -->
+                <section class="player-zone" id="bot-zone">
+                    <div class="zone-header">
+                        <div class="player-name" id="bot-name">Opponent</div>
+                        <div class="trick-badge">
+                            <span id="bot-tricks">0</span> tricks
+                        </div>
                     </div>
-                    <div id="bot-table-area" class="table-cards"></div>
-                    <div id="bot-in-hand-area" class="cards-container"></div>
-                </div>
+                    <div class="table-slots" id="bot-table"></div>
+                    <div class="cards-row" id="bot-hand"></div>
+                </section>
 
-                <!-- Trick Area -->
-                <div id="trick-area" class="trick-area">
-                    <div id="bot-trick-card" class="card hidden"></div>
-                    <div id="player-trick-card" class="card hidden"></div>
-                </div>
+                <!-- Status -->
+                <div class="status-bar" id="status"></div>
 
-                <!-- Player's Area -->
-                <div class="player-section">
-                    <div class="player-header">
-                        <div class="player-name">Player</div>
-                        <div class="trick-count"><span id="player-trick-count">0</span> tricks</div>
+                <!-- Trick Zone -->
+                <section class="trick-zone">
+                    <div class="trick-card-wrapper">
+                        <div class="card trick-card" id="bot-played"></div>
+                        <div class="trick-card-label">Opponent</div>
                     </div>
-                    <div id="player-table-area" class="table-cards"></div>
-                    <div id="player-in-hand-area" class="cards-container"></div>
-                </div>
-            </div>
+                    <div class="trick-card-wrapper">
+                        <div class="card trick-card" id="player-played"></div>
+                        <div class="trick-card-label">You</div>
+                    </div>
+                </section>
+
+                <!-- Player Zone -->
+                <section class="player-zone" id="player-zone">
+                    <div class="zone-header">
+                        <div class="player-name" id="player-name">You</div>
+                        <div class="trick-badge">
+                            <span id="player-tricks">0</span> tricks
+                        </div>
+                    </div>
+                    <div class="table-slots" id="player-table"></div>
+                    <div class="cards-row" id="player-hand"></div>
+                </section>
+            </main>
         </div>
 
-        <!-- Message Box / Modal -->
-        <div id="message-box" class="hidden message-box">
-            <h3 id="message-title" class="text-2xl font-bold mb-4"></h3>
-            <div id="message-text" class="mb-6"></div>
-            <div
-                id="message-buttons"
-                class="flex justify-center flex-wrap gap-2"
-            ></div>
+        <!-- History Panel -->
+        <div class="history-panel" id="history-panel">
+            <h3>Trick History</h3>
+            <div id="history-list"></div>
+        </div>
+        <button class="btn history-toggle" id="history-toggle">History</button>
+
+        <!-- Modal -->
+        <div class="modal-overlay" id="modal">
+            <div class="modal">
+                <h2 id="modal-title"></h2>
+                <div class="modal-content" id="modal-content"></div>
+                <div class="modal-buttons" id="modal-buttons"></div>
+            </div>
         </div>
 
         <script>
-            // --- DOM Elements ---
-            const playerScoreEl = document.getElementById("player-score");
-            const botScoreEl = document.getElementById("bot-score");
-            const playerTrickCountEl =
-                document.getElementById("player-trick-count");
-            const botTrickCountEl = document.getElementById("bot-trick-count");
-            const botTableArea = document.getElementById("bot-table-area");
-            const playerTableArea =
-                document.getElementById("player-table-area");
-            const playerInHandArea = document.getElementById(
-                "player-in-hand-area",
-            );
-            const botInHandArea = document.getElementById("bot-in-hand-area");
-            const playerTrickCardEl =
-                document.getElementById("player-trick-card");
-            const botTrickCardEl = document.getElementById("bot-trick-card");
-            const messageBox = document.getElementById("message-box");
-            const messageTitle = document.getElementById("message-title");
-            const messageText = document.getElementById("message-text");
-            const messageButtons = document.getElementById("message-buttons");
-            const trumpSuitEl = document.getElementById("trump-suit");
-            const rulesBtn = document.getElementById("rules-btn");
-            const difficultySelect = document.getElementById("difficulty-select");
+            // ============================================
+            // GAME CONSTANTS
+            // ============================================
+            const SUITS = { S: "♠", H: "♥", D: "♦", C: "♣" };
+            const SUIT_COLORS = { S: "black", H: "red", D: "red", C: "black" };
+            const SAME_COLOR = { S: "C", C: "S", H: "D", D: "H" };
+            const RANKS = ["9", "10", "J", "Q", "K", "A"];
+            const RANK_ORDER = { 9: 0, 10: 1, J: 2, Q: 3, K: 4, A: 5 };
+            const WINNING_SCORE = 31;
 
-            // --- Game State ---
-            let playerScore = 0,
-                botScore = 0,
-                playerTricks = 0,
-                botTricks = 0;
-            let deck = [],
-                playerHand,
-                botHand;
-            let trumpSuit = "",
-                trumpCaller = "",
-                currentTurn = "",
-                trickWinner = "";
-            let leadCard = null,
-                trickCards = [];
-            let isPlayerDealer = false;
-            let handOver = false;
-            let botDifficulty = "medium"; // easy, medium, hard
+            // ============================================
+            // GAME STATE
+            // ============================================
+            const state = {
+                deck: [],
+                playerHand: {
+                    inHand: [],
+                    tableUp: [null, null, null, null],
+                    tableDown: [null, null, null, null],
+                },
+                botHand: {
+                    inHand: [],
+                    tableUp: [null, null, null, null],
+                    tableDown: [null, null, null, null],
+                },
+                trump: null,
+                trumpCaller: null,
+                playerScore: 0,
+                botScore: 0,
+                playerTricks: 0,
+                botTricks: 0,
+                isPlayerDealer: false,
+                currentTurn: null,
+                leadCard: null,
+                playedCards: [],
+                trickHistory: [],
+                gamePhase: "idle", // idle, dealing, trumpSelect, playing, trickEval, handEnd, gameEnd
+                difficulty: "medium",
+                cardsPlayedThisHand: [], // For bot AI memory
+            };
 
-            // --- Card Definitions ---
-            const suits = { S: "♠", H: "♥", D: "♦", C: "♣" };
-            const ranks = ["9", "10", "J", "Q", "K", "A"];
-            const suitColors = { S: "black", H: "red", D: "red", C: "black" };
-            const sameColorSuits = { S: "C", C: "S", H: "D", D: "H" };
+            // ============================================
+            // DOM ELEMENTS
+            // ============================================
+            const els = {
+                playerScore: document.getElementById("player-score"),
+                botScore: document.getElementById("bot-score"),
+                playerTricks: document.getElementById("player-tricks"),
+                botTricks: document.getElementById("bot-tricks"),
+                trumpIndicator: document.getElementById("trump-indicator"),
+                playerTable: document.getElementById("player-table"),
+                botTable: document.getElementById("bot-table"),
+                playerHand: document.getElementById("player-hand"),
+                botHand: document.getElementById("bot-hand"),
+                playerPlayed: document.getElementById("player-played"),
+                botPlayed: document.getElementById("bot-played"),
+                playerZone: document.getElementById("player-zone"),
+                botZone: document.getElementById("bot-zone"),
+                playerName: document.getElementById("player-name"),
+                botName: document.getElementById("bot-name"),
+                status: document.getElementById("status"),
+                modal: document.getElementById("modal"),
+                modalTitle: document.getElementById("modal-title"),
+                modalContent: document.getElementById("modal-content"),
+                modalButtons: document.getElementById("modal-buttons"),
+                historyPanel: document.getElementById("history-panel"),
+                historyList: document.getElementById("history-list"),
+                historyToggle: document.getElementById("history-toggle"),
+                rulesBtn: document.getElementById("rules-btn"),
+                difficulty: document.getElementById("difficulty"),
+            };
 
-            // --- Game Logic ---
+            // ============================================
+            // UTILITY FUNCTIONS
+            // ============================================
+            function delay(ms) {
+                return new Promise((resolve) => setTimeout(resolve, ms));
+            }
 
             function createDeck() {
-                deck = [];
-                for (const s in suits)
-                    for (const r of ranks) deck.push({ rank: r, suit: s });
+                const deck = [];
+                for (const suit in SUITS) {
+                    for (const rank of RANKS) {
+                        deck.push({ rank, suit });
+                    }
+                }
+                return deck;
             }
-            function shuffleDeck() {
+
+            function shuffleDeck(deck) {
                 for (let i = deck.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [deck[i], deck[j]] = [deck[j], deck[i]];
                 }
-            }
-
-            function dealCards() {
-                playerHand = {
-                    inHand: [],
-                    tableFaceUp: [...Array(4)],
-                    tableFaceDown: [],
-                };
-                botHand = {
-                    inHand: [],
-                    tableFaceUp: [...Array(4)],
-                    tableFaceDown: [],
-                };
-                for (let i = 0; i < 4; i++) {
-                    playerHand.tableFaceDown.push(deck.pop());
-                    botHand.tableFaceDown.push(deck.pop());
-                }
-                for (let i = 0; i < 4; i++) {
-                    playerHand.tableFaceUp[i] = deck.pop();
-                    botHand.tableFaceUp[i] = deck.pop();
-                }
-                for (let i = 0; i < 4; i++) {
-                    playerHand.inHand.push(deck.pop());
-                    botHand.inHand.push(deck.pop());
-                }
-            }
-
-            function createCardElement(card, id) {
-                const el = document.createElement("div");
-                if (card) {
-                    el.className = `card ${suitColors[card.suit]}`;
-                    el.innerHTML = `<span class="card-rank">${card.rank}</span><span class="card-suit">${suits[card.suit]}</span>`;
-                    el.dataset.rank = card.rank;
-                    el.dataset.suit = card.suit;
-                    if (id) el.id = id;
-                } else {
-                    el.className = "card face-down";
-                }
-                return el;
-            }
-
-            function renderHands() {
-                playerTableArea.innerHTML = "";
-                botTableArea.innerHTML = "";
-                playerInHandArea.innerHTML = "";
-                botInHandArea.innerHTML = "";
-
-                for (let i = 0; i < 4; i++) {
-                    const pContainer = document.createElement("div");
-                    pContainer.className = "table-card-slot";
-                    if (
-                        playerHand.tableFaceDown[i] ||
-                        playerHand.tableFaceUp[i]
-                    ) {
-                        const fdEl = createCardElement(null);
-                        pContainer.appendChild(fdEl);
-                        if (playerHand.tableFaceUp[i]) {
-                            const fuEl = createCardElement(
-                                playerHand.tableFaceUp[i],
-                                `player-fu-${i}`,
-                            );
-                            fuEl.style.position = "absolute";
-                            fuEl.style.top = "0";
-                            fuEl.style.left = "0";
-                            if (playerHand.tableFaceDown[i]) {
-                                fuEl.style.top = "-2px";
-                                fuEl.style.left = "-2px";
-                            }
-                            pContainer.appendChild(fuEl);
-                        }
-                    }
-                    playerTableArea.appendChild(pContainer);
-
-                    const bContainer = document.createElement("div");
-                    bContainer.className = "table-card-slot";
-                    if (botHand.tableFaceDown[i] || botHand.tableFaceUp[i]) {
-                        const fdEl = createCardElement(null);
-                        bContainer.appendChild(fdEl);
-                        if (botHand.tableFaceUp[i]) {
-                            const fuEl = createCardElement(
-                                botHand.tableFaceUp[i],
-                                `bot-fu-${i}`,
-                            );
-                            fuEl.style.position = "absolute";
-                            fuEl.style.top = "0";
-                            fuEl.style.left = "0";
-                            if (botHand.tableFaceDown[i]) {
-                                fuEl.style.top = "-2px";
-                                fuEl.style.left = "-2px";
-                            }
-                            bContainer.appendChild(fuEl);
-                        }
-                    }
-                    botTableArea.appendChild(bContainer);
-                }
-
-                playerHand.inHand.forEach((card, i) => {
-                    if (card)
-                        playerInHandArea.appendChild(
-                            createCardElement(card, `player-inhand-${i}`),
-                        );
-                });
-
-                const botInHandCount = botHand.inHand.filter((c) => c).length;
-                for (let i = 0; i < botInHandCount; i++) {
-                    botInHandArea.appendChild(createCardElement(null));
-                }
-
-                updatePlayableCards();
-            }
-
-            function showMessage(title, text, buttons) {
-                messageTitle.textContent = title;
-                messageText.innerHTML = text;
-                messageButtons.innerHTML = "";
-                buttons.forEach((btn) => {
-                    const buttonEl = document.createElement("button");
-                    buttonEl.textContent = btn.text;
-                    buttonEl.className = btn.class;
-                    buttonEl.onclick = () => {
-                        messageBox.classList.add("hidden");
-                        btn.callback();
-                    };
-                    messageButtons.appendChild(buttonEl);
-                });
-                messageBox.classList.remove("hidden");
-            }
-
-            function showRules() {
-                const rulesTitle = "Two-Handed Euchre Rules";
-                const rulesText = `
-                <div class="text-left text-xs sm:text-sm space-y-2">
-                    <p><strong>Objective:</strong> Be the first player to score 31 points.</p>
-                    <p><strong>Cards:</strong> Uses a 24-card deck (9, 10, J, Q, K, A of all suits).</p>
-                    <p><strong>The Bowers:</strong> The Jack of the trump suit is the 'Right Bower' (highest trump). The other Jack of the same color is the 'Left Bower' (2nd highest trump) and is considered part of the trump suit.</p>
-                    <p><strong>Dealing:</strong> Each player gets 4 cards face-down, 4 face-up on top, and 4 in their hand.</p>
-                    <p><strong>Trump:</strong> The non-dealer chooses trump or passes. If they pass, the dealer MUST choose trump.</p>
-                    <p><strong>Playing:</strong> You can play any face-up card or any card from your hand. You must follow the lead suit if possible. When a face-up card from the table is played, the card underneath is flipped over.</p>
-                    <p><strong>Scoring:</strong> The player who chose trump must win at least 7 of the 12 tricks. If they succeed, both players get 1 point per trick won. If they fail, their opponent gets 12 points.</p>
-                </div>
-            `;
-                showMessage(rulesTitle, rulesText, [
-                    {
-                        text: "Close",
-                        class: "trump-btn bg-gray-700 hover:bg-gray-600 text-white",
-                        callback: () => {},
-                    },
-                ]);
-            }
-
-            function beginTrumpSelection() {
-                const chooser = isPlayerDealer ? "bot" : "player";
-                if (chooser === "player") promptPlayerToChooseTrump();
-                else setTimeout(botDecidesTrumpOrPass, 800);
-            }
-
-            function promptPlayerToChooseTrump() {
-                const buttons = Object.keys(suits).map((s) => ({
-                    text: suits[s],
-                    class: `trump-btn bg-blue-700 hover:bg-blue-600 text-white`,
-                    callback: () => setTrump(s, "player"),
-                }));
-                buttons.push({
-                    text: "Pass",
-                    class: "trump-btn bg-red-700 hover:bg-red-600 text-white",
-                    callback: () => {
-                        setTimeout(botChoosesTrump, 800);
-                    },
-                });
-                showMessage(
-                    "Choose Trump or Pass",
-                    "You have the first option to select the trump suit.",
-                    buttons,
-                );
-            }
-
-            function promptPlayerToChooseTrumpMandatory() {
-                const buttons = Object.keys(suits).map((s) => ({
-                    text: suits[s],
-                    class: `trump-btn bg-blue-700 hover:bg-blue-600 text-white`,
-                    callback: () => setTrump(s, "player"),
-                }));
-                showMessage(
-                    "You Must Choose Trump",
-                    "The bot passed. You must select the trump suit.",
-                    buttons,
-                );
-            }
-
-            function evaluateHandStrength(suit) {
-                const allCards = [...botHand.inHand, ...botHand.tableFaceUp].filter(c => c);
-                let strength = 0;
-                const leftBowerSuit = sameColorSuits[suit];
-                
-                allCards.forEach(card => {
-                    if (card.suit === suit) {
-                        if (card.rank === 'J') strength += 8; // Right bower
-                        else if (card.rank === 'A') strength += 5;
-                        else if (card.rank === 'K') strength += 3;
-                        else if (card.rank === 'Q') strength += 2;
-                        else strength += 1; // 10, 9
-                    } else if (card.suit === leftBowerSuit && card.rank === 'J') {
-                        strength += 7; // Left bower
-                    } else if (card.rank === 'A') {
-                        strength += 2; // Off-suit aces have some value
-                    }
-                });
-                
-                return strength;
-            }
-
-
-
-            function botDecidesTrumpOrPass() {
-                setTimeout(() => {
-                    const suitStrengths = {};
-                    Object.keys(suits).forEach(suit => {
-                        suitStrengths[suit] = evaluateHandStrength(suit);
-                    });
-                    
-                    const bestSuit = Object.keys(suitStrengths).reduce((a, b) =>
-                        suitStrengths[a] > suitStrengths[b] ? a : b,
-                    );
-                    
-                    let minStrength = isPlayerDealer ? 10 : 12;
-                    if (botDifficulty === "easy") minStrength -= 2;
-                    else if (botDifficulty === "hard") minStrength += 2;
-                    
-                    if (suitStrengths[bestSuit] >= minStrength) {
-                        setTrump(bestSuit, "bot");
-                    } else {
-                        showMessage(
-                            "Bot Passes",
-                            "The bot passes the choice to you.",
-                            [
-                        {
-                            text: "OK",
-                            class: "trump-btn bg-blue-700 hover:bg-blue-600 text-white",
-                            callback: promptPlayerToChooseTrumpMandatory,
-                        },
-                            ],
-                        );
-                    }
-                }, 800);
-            }
-
-            function botChoosesTrump() {
-                setTimeout(() => {
-                    const suitStrengths = {};
-                    Object.keys(suits).forEach(suit => {
-                        suitStrengths[suit] = evaluateHandStrength(suit);
-                    });
-                    
-                    const bestSuit = Object.keys(suitStrengths).reduce((a, b) =>
-                        suitStrengths[a] > suitStrengths[b] ? a : b,
-                    );
-                    setTrump(bestSuit, "bot");
-                }, 600);
-            }
-
-            function setTrump(suit, caller) {
-                trumpSuit = suit;
-                trumpCaller = caller;
-                trumpSuitEl.textContent = suits[trumpSuit];
-                trumpSuitEl.className = `text-2xl sm:text-3xl font-bold ${suitColors[trumpSuit]}`;
-                showMessage(
-                    "Trump Chosen!",
-                    `The trump suit is ${suits[trumpSuit]}. Let the game begin!`,
-                    [
-                        {
-                            text: "Start Playing",
-                            class: "trump-btn bg-green-700 hover:bg-green-600 text-white",
-                            callback: startHandPlay,
-                        },
-                    ],
-                );
-            }
-
-            function startHandPlay() {
-                currentTurn = isPlayerDealer ? "bot" : "player";
-                trickWinner = "";
-                if (currentTurn === "player") updatePlayableCards();
-                else setTimeout(botPlayCard, 800);
-            }
-
-            function nextTurn() {
-                currentTurn = trickWinner;
-                if (currentTurn === "player") updatePlayableCards();
-                else setTimeout(botPlayCard, 800);
+                return deck;
             }
 
             function getEffectiveSuit(card) {
-                if (!card || !trumpSuit) return card ? card.suit : null;
-                const leftBowerSuit = sameColorSuits[trumpSuit];
-                if (card.rank === "J" && card.suit === leftBowerSuit) {
-                    return trumpSuit;
+                if (!card || !state.trump) return card?.suit;
+                // Left bower belongs to trump suit
+                if (
+                    card.rank === "J" &&
+                    card.suit === SAME_COLOR[state.trump]
+                ) {
+                    return state.trump;
                 }
                 return card.suit;
             }
 
-            function getCardValue(card) {
-                if (!card) return 0;
-                const effectiveSuit = getEffectiveSuit(card);
-                const rankValue = ranks.indexOf(card.rank);
+            function getCardPower(card) {
+                if (!card) return -1;
+                const effSuit = getEffectiveSuit(card);
+                const isTrump = effSuit === state.trump;
 
-                if (effectiveSuit === trumpSuit) {
-                    if (card.rank === "J" && card.suit === trumpSuit) return 20;
-                    if (card.rank === "J" && card.suit !== trumpSuit) return 19;
-                    return 10 + rankValue;
+                if (isTrump) {
+                    // Right bower (highest)
+                    if (card.rank === "J" && card.suit === state.trump)
+                        return 106;
+                    // Left bower (second highest)
+                    if (
+                        card.rank === "J" &&
+                        card.suit === SAME_COLOR[state.trump]
+                    )
+                        return 105;
+                    // Other trump cards
+                    return 100 + RANK_ORDER[card.rank];
                 }
-                return rankValue;
+
+                return RANK_ORDER[card.rank];
+            }
+
+            function cardToString(card) {
+                return `${card.rank}${SUITS[card.suit]}`;
+            }
+
+            // ============================================
+            // UI RENDERING
+            // ============================================
+            function createCardElement(card, id = null) {
+                const el = document.createElement("div");
+
+                if (card) {
+                    el.className = `card ${SUIT_COLORS[card.suit]}`;
+                    el.innerHTML = `
+                <span class="card-rank">${card.rank}</span>
+                <span class="card-suit">${SUITS[card.suit]}</span>
+            `;
+                    el.dataset.rank = card.rank;
+                    el.dataset.suit = card.suit;
+                } else {
+                    el.className = "card face-down";
+                }
+
+                if (id) el.id = id;
+                return el;
+            }
+
+            function renderHands() {
+                // Clear containers
+                els.playerTable.innerHTML = "";
+                els.botTable.innerHTML = "";
+                els.playerHand.innerHTML = "";
+                els.botHand.innerHTML = "";
+
+                // Render table cards (4 slots each)
+                for (let i = 0; i < 4; i++) {
+                    // Player table slot
+                    const pSlot = document.createElement("div");
+                    pSlot.className = "table-slot";
+
+                    if (
+                        state.playerHand.tableDown[i] ||
+                        state.playerHand.tableUp[i]
+                    ) {
+                        const downCard = createCardElement(null);
+                        pSlot.appendChild(downCard);
+
+                        if (state.playerHand.tableUp[i]) {
+                            const upCard = createCardElement(
+                                state.playerHand.tableUp[i],
+                                `p-table-${i}`,
+                            );
+                            upCard.classList.add("stacked");
+                            if (state.playerHand.tableDown[i]) {
+                                upCard.classList.add("top");
+                            }
+                            pSlot.appendChild(upCard);
+                        }
+                    }
+                    els.playerTable.appendChild(pSlot);
+
+                    // Bot table slot
+                    const bSlot = document.createElement("div");
+                    bSlot.className = "table-slot";
+
+                    if (
+                        state.botHand.tableDown[i] ||
+                        state.botHand.tableUp[i]
+                    ) {
+                        const downCard = createCardElement(null);
+                        bSlot.appendChild(downCard);
+
+                        if (state.botHand.tableUp[i]) {
+                            const upCard = createCardElement(
+                                state.botHand.tableUp[i],
+                                `b-table-${i}`,
+                            );
+                            upCard.classList.add("stacked");
+                            if (state.botHand.tableDown[i]) {
+                                upCard.classList.add("top");
+                            }
+                            bSlot.appendChild(upCard);
+                        }
+                    }
+                    els.botTable.appendChild(bSlot);
+                }
+
+                // Render hand cards
+                state.playerHand.inHand.forEach((card, i) => {
+                    if (card) {
+                        els.playerHand.appendChild(
+                            createCardElement(card, `p-hand-${i}`),
+                        );
+                    }
+                });
+
+                // Bot hand shows face-down cards
+                const botHandCount = state.botHand.inHand.filter(
+                    (c) => c,
+                ).length;
+                for (let i = 0; i < botHandCount; i++) {
+                    els.botHand.appendChild(createCardElement(null));
+                }
+
+                updatePlayableCards();
+                updateDealerIndicator();
             }
 
             function updatePlayableCards() {
-                document
-                    .querySelectorAll(".card")
-                    .forEach((c) => c.classList.remove("playable"));
-                if (currentTurn !== "player") return;
+                document.querySelectorAll(".card.playable").forEach((c) => {
+                    c.classList.remove("playable");
+                    c.onclick = null;
+                });
 
-                const playableCards = getPlayerPlayableCards();
-                playableCards.forEach((cardInfo) => {
-                    const el = document.getElementById(cardInfo.id);
+                if (
+                    state.currentTurn !== "player" ||
+                    state.gamePhase !== "playing"
+                )
+                    return;
+
+                const playable = getPlayableCards("player");
+                playable.forEach((info) => {
+                    const el = document.getElementById(info.id);
                     if (el) {
                         el.classList.add("playable");
-                        el.onclick = () => playerPlayCard(cardInfo);
+                        el.onclick = () => playerPlaysCard(info);
                     }
                 });
             }
 
-            function getPlayerPlayableCards() {
-                const allPlayerCards = [
-                    ...playerHand.inHand.map((c, i) => ({
+            function updateDealerIndicator() {
+                els.playerName.classList.toggle("dealer", state.isPlayerDealer);
+                els.botName.classList.toggle("dealer", !state.isPlayerDealer);
+
+                els.playerName.classList.toggle(
+                    "caller",
+                    state.trumpCaller === "player",
+                );
+                els.botName.classList.toggle(
+                    "caller",
+                    state.trumpCaller === "bot",
+                );
+            }
+
+            function updateScores() {
+                els.playerScore.textContent = state.playerScore;
+                els.botScore.textContent = state.botScore;
+                els.playerTricks.textContent = state.playerTricks;
+                els.botTricks.textContent = state.botTricks;
+            }
+
+            function updateTrumpDisplay() {
+                if (state.trump) {
+                    els.trumpIndicator.textContent = SUITS[state.trump];
+                    els.trumpIndicator.className = `trump-suit ${SUIT_COLORS[state.trump]}`;
+                } else {
+                    els.trumpIndicator.textContent = "—";
+                    els.trumpIndicator.className = "trump-suit";
+                }
+            }
+
+            function setStatus(text, thinking = false) {
+                els.status.innerHTML =
+                    text +
+                    (thinking
+                        ? '<span class="thinking"><span></span><span></span><span></span></span>'
+                        : "");
+            }
+
+            function updateActiveZone() {
+                els.playerZone.classList.toggle(
+                    "active",
+                    state.currentTurn === "player",
+                );
+                els.botZone.classList.toggle(
+                    "active",
+                    state.currentTurn === "bot",
+                );
+            }
+
+            function addToHistory(trick) {
+                const item = document.createElement("div");
+                item.className = "history-item";
+                const pCard = trick.find((t) => t.player === "player")?.card;
+                const bCard = trick.find((t) => t.player === "bot")?.card;
+                item.innerHTML = `
+            You: ${cardToString(pCard)} vs Bot: ${cardToString(bCard)}
+            → <span class="winner">${trick.winner === "player" ? "You" : "Bot"} wins</span>
+        `;
+                els.historyList.insertBefore(item, els.historyList.firstChild);
+            }
+
+            // ============================================
+            // MODAL SYSTEM
+            // ============================================
+            function showModal(title, content, buttons) {
+                els.modalTitle.textContent = title;
+                els.modalContent.innerHTML = content;
+                els.modalButtons.innerHTML = "";
+
+                buttons.forEach((btn) => {
+                    const el = document.createElement("button");
+                    el.textContent = btn.text;
+                    el.className = btn.class || "btn btn-primary";
+                    if (btn.suit) {
+                        el.className = `suit-btn ${btn.suit}`;
+                        el.innerHTML = btn.text;
+                    }
+                    el.onclick = () => {
+                        hideModal();
+                        btn.action();
+                    };
+                    els.modalButtons.appendChild(el);
+                });
+
+                els.modal.classList.add("visible");
+            }
+
+            function hideModal() {
+                els.modal.classList.remove("visible");
+            }
+
+            function showRules() {
+                showModal(
+                    "Rules of Two-Handed Euchre",
+                    `
+            <div class="rules-content">
+                <h4>Objective</h4>
+                <p>Be the first player to score ${WINNING_SCORE} points.</p>
+
+                <h4>The Deck</h4>
+                <p>24 cards: 9, 10, J, Q, K, A in all four suits.</p>
+
+                <h4>Card Rankings</h4>
+                <p><strong>Trump suit (highest to lowest):</strong></p>
+                <ul>
+                    <li><strong>Right Bower:</strong> Jack of trump suit (highest)</li>
+                    <li><strong>Left Bower:</strong> Jack of same color as trump</li>
+                    <li>A, K, Q, 10, 9 of trump</li>
+                </ul>
+                <p><strong>Non-trump suits:</strong> A, K, Q, J, 10, 9</p>
+
+                <h4>Dealing</h4>
+                <p>Each player receives:</p>
+                <ul>
+                    <li>4 cards face-down on the table</li>
+                    <li>4 cards face-up on top of those</li>
+                    <li>4 cards in their hand</li>
+                </ul>
+
+                <h4>Choosing Trump</h4>
+                <p>Non-dealer chooses trump first or passes. If they pass, the dealer <em>must</em> choose trump.</p>
+
+                <h4>Playing</h4>
+                <ul>
+                    <li>Play any face-up table card or any card from your hand</li>
+                    <li>Must follow the lead suit if possible</li>
+                    <li>When a face-up card is played, the card beneath flips up</li>
+                    <li>Highest card of lead suit wins, unless trumped</li>
+                </ul>
+
+                <h4>Scoring</h4>
+                <p>The trump caller must win at least 7 of 12 tricks:</p>
+                <ul>
+                    <li><strong>Success:</strong> Both players score 1 point per trick won</li>
+                    <li><strong>Failure (Euchred):</strong> Opponent scores 12 points</li>
+                </ul>
+            </div>
+        `,
+                    [
+                        {
+                            text: "Got it!",
+                            class: "btn btn-primary",
+                            action: () => {},
+                        },
+                    ],
+                );
+            }
+
+            // ============================================
+            // CARD LOGIC
+            // ============================================
+            function getPlayableCards(player) {
+                const hand =
+                    player === "player" ? state.playerHand : state.botHand;
+                const prefix = player === "player" ? "p" : "b";
+
+                const allCards = [
+                    ...hand.inHand.map((c, i) => ({
                         card: c,
-                        id: `player-inhand-${i}`,
+                        id: `${prefix}-hand-${i}`,
                         source: "inHand",
                         index: i,
                     })),
-                    ...playerHand.tableFaceUp.map((c, i) => ({
+                    ...hand.tableUp.map((c, i) => ({
                         card: c,
-                        id: `player-fu-${i}`,
-                        source: "tableFaceUp",
+                        id: `${prefix}-table-${i}`,
+                        source: "tableUp",
                         index: i,
                     })),
-                ].filter((item) => item.card);
+                ].filter((info) => info.card);
 
-                if (!leadCard) return allPlayerCards;
+                if (!state.leadCard) return allCards;
 
-                const effectiveLeadSuit = getEffectiveSuit(leadCard);
-                const cardsInLeadSuit = allPlayerCards.filter(
-                    (item) => getEffectiveSuit(item.card) === effectiveLeadSuit,
+                const leadSuit = getEffectiveSuit(state.leadCard);
+                const following = allCards.filter(
+                    (info) => getEffectiveSuit(info.card) === leadSuit,
                 );
 
-                return cardsInLeadSuit.length > 0
-                    ? cardsInLeadSuit
-                    : allPlayerCards;
+                return following.length > 0 ? following : allCards;
             }
 
-            function playerPlayCard(cardInfo) {
-                if (currentTurn !== "player" || handOver) return;
+            function removeCard(player, source, index) {
+                const hand =
+                    player === "player" ? state.playerHand : state.botHand;
+                const card = hand[source][index];
+                hand[source][index] = null;
 
-                let playedCard;
+                // Clean up nulls from inHand array
+                if (source === "inHand") {
+                    hand.inHand = hand.inHand.filter((c) => c !== null);
+                }
 
-                if (cardInfo.source === "inHand") {
-                    playedCard = playerHand.inHand.splice(
-                        cardInfo.index,
-                        1,
-                        null,
-                    )[0];
-                } else {
-                    playedCard = playerHand.tableFaceUp.splice(
-                        cardInfo.index,
-                        1,
-                        null,
-                    )[0];
+                return card;
+            }
+
+            function flipTableCards() {
+                for (let i = 0; i < 4; i++) {
+                    if (
+                        !state.playerHand.tableUp[i] &&
+                        state.playerHand.tableDown[i]
+                    ) {
+                        state.playerHand.tableUp[i] =
+                            state.playerHand.tableDown[i];
+                        state.playerHand.tableDown[i] = null;
+                    }
+                    if (
+                        !state.botHand.tableUp[i] &&
+                        state.botHand.tableDown[i]
+                    ) {
+                        state.botHand.tableUp[i] = state.botHand.tableDown[i];
+                        state.botHand.tableDown[i] = null;
+                    }
+                }
+            }
+
+            // ============================================
+            // BOT AI
+            // ============================================
+            function evaluateHandForTrump(suit) {
+                const hand = state.botHand;
+                const allCards = [...hand.inHand, ...hand.tableUp].filter(
+                    (c) => c,
+                );
+                let strength = 0;
+                const leftBowerSuit = SAME_COLOR[suit];
+
+                allCards.forEach((card) => {
+                    if (card.suit === suit) {
+                        if (card.rank === "J")
+                            strength += 10; // Right bower
+                        else if (card.rank === "A") strength += 6;
+                        else if (card.rank === "K") strength += 4;
+                        else if (card.rank === "Q") strength += 3;
+                        else if (card.rank === "10") strength += 2;
+                        else strength += 1;
+                    } else if (
+                        card.suit === leftBowerSuit &&
+                        card.rank === "J"
+                    ) {
+                        strength += 8; // Left bower
+                    } else if (card.rank === "A") {
+                        strength += 2; // Off-suit aces
+                    }
+                });
+
+                // Count trump cards
+                const trumpCount = allCards.filter(
+                    (c) =>
+                        c.suit === suit ||
+                        (c.suit === leftBowerSuit && c.rank === "J"),
+                ).length;
+
+                // Bonus for having many trump
+                if (trumpCount >= 4) strength += 3;
+                if (trumpCount >= 5) strength += 4;
+
+                return strength;
+            }
+
+            function botChooseTrump(mustChoose) {
+                const evaluations = {};
+                for (const suit in SUITS) {
+                    evaluations[suit] = evaluateHandForTrump(suit);
+                }
+
+                const bestSuit = Object.entries(evaluations).sort(
+                    (a, b) => b[1] - a[1],
+                )[0];
+
+                let threshold = mustChoose ? 0 : 12;
+
+                // Adjust threshold based on difficulty
+                if (state.difficulty === "easy") threshold -= 3;
+                else if (state.difficulty === "hard") threshold += 2;
+
+                // Add some randomness for easy mode
+                if (state.difficulty === "easy" && Math.random() < 0.2) {
+                    threshold -= 5;
+                }
+
+                if (bestSuit[1] >= threshold || mustChoose) {
+                    return bestSuit[0];
+                }
+                return null; // Pass
+            }
+
+            function botSelectCard() {
+                const playable = getPlayableCards("bot");
+                if (playable.length === 0) return null;
+                if (playable.length === 1) return playable[0];
+
+                const isLeading = !state.leadCard;
+                const tricksRemaining =
+                    12 - (state.playerTricks + state.botTricks);
+                const botNeedsToWin =
+                    state.trumpCaller === "bot" ? 7 - state.botTricks : 0;
+                const isWinning = state.botTricks > state.playerTricks;
+
+                // Easy mode: more random, sometimes suboptimal
+                if (state.difficulty === "easy" && Math.random() < 0.25) {
+                    return playable[
+                        Math.floor(Math.random() * playable.length)
+                    ];
+                }
+
+                // Evaluate each card
+                const scored = playable.map((info) => {
+                    let score = getCardPower(info.card);
+                    const effSuit = getEffectiveSuit(info.card);
+                    const isTrump = effSuit === state.trump;
+
+                    if (isLeading) {
+                        // Leading strategy
+                        if (state.difficulty === "hard") {
+                            // Aggressive when behind, conservative when ahead
+                            if (
+                                !isWinning &&
+                                botNeedsToWin > tricksRemaining / 2
+                            ) {
+                                // Need tricks, lead strong
+                                score += isTrump ? 20 : 0;
+                            } else if (isWinning && tricksRemaining <= 4) {
+                                // Ahead late game, play conservatively
+                                score = -score;
+                            }
+                        }
+
+                        // Prefer leading non-trump when possible
+                        if (!isTrump) score += 5;
+
+                        // Prefer leading from table cards to expose new cards
+                        if (info.source === "tableUp") score += 3;
+                    } else {
+                        // Following strategy
+                        const leadPower = getCardPower(state.leadCard);
+                        const canWin =
+                            score > leadPower ||
+                            (isTrump &&
+                                getEffectiveSuit(state.leadCard) !==
+                                    state.trump);
+
+                        if (canWin) {
+                            // Win with minimum necessary power
+                            if (state.difficulty === "hard") {
+                                // Play lowest card that wins
+                                const winners = playable.filter((p) => {
+                                    const pwr = getCardPower(p.card);
+                                    const pTrump =
+                                        getEffectiveSuit(p.card) ===
+                                        state.trump;
+                                    return (
+                                        pwr > leadPower ||
+                                        (pTrump &&
+                                            getEffectiveSuit(state.leadCard) !==
+                                                state.trump)
+                                    );
+                                });
+
+                                if (winners.length > 0) {
+                                    const lowestWinner = winners.sort(
+                                        (a, b) =>
+                                            getCardPower(a.card) -
+                                            getCardPower(b.card),
+                                    )[0];
+
+                                    if (info === lowestWinner) score += 50;
+                                }
+                            } else {
+                                score += 30;
+                            }
+                        } else {
+                            // Can't win - dump lowest card
+                            score = -score;
+                        }
+                    }
+
+                    return { ...info, score };
+                });
+
+                // Sort by score and pick best
+                scored.sort((a, b) => b.score - a.score);
+
+                // Medium difficulty: occasionally pick 2nd best
+                if (
+                    state.difficulty === "medium" &&
+                    scored.length > 1 &&
+                    Math.random() < 0.15
+                ) {
+                    return scored[1];
+                }
+
+                return scored[0];
+            }
+
+            // ============================================
+            // GAME FLOW
+            // ============================================
+            async function startGame() {
+                state.playerScore = 0;
+                state.botScore = 0;
+                state.isPlayerDealer = Math.random() < 0.5;
+                updateScores();
+                await startNewHand();
+            }
+
+            async function startNewHand() {
+                // Reset hand state
+                state.playerTricks = 0;
+                state.botTricks = 0;
+                state.trump = null;
+                state.trumpCaller = null;
+                state.leadCard = null;
+                state.playedCards = [];
+                state.trickHistory = [];
+                state.cardsPlayedThisHand = [];
+                state.isPlayerDealer = !state.isPlayerDealer;
+
+                // Clear UI
+                els.historyList.innerHTML = "";
+                els.playerPlayed.className = "card trick-card";
+                els.playerPlayed.innerHTML = "";
+                els.botPlayed.className = "card trick-card";
+                els.botPlayed.innerHTML = "";
+
+                updateScores();
+                updateTrumpDisplay();
+
+                // Create and shuffle deck
+                state.deck = shuffleDeck(createDeck());
+
+                // Deal cards
+                state.playerHand = {
+                    inHand: [],
+                    tableUp: [null, null, null, null],
+                    tableDown: [null, null, null, null],
+                };
+                state.botHand = {
+                    inHand: [],
+                    tableUp: [null, null, null, null],
+                    tableDown: [null, null, null, null],
+                };
+
+                for (let i = 0; i < 4; i++) {
+                    state.playerHand.tableDown[i] = state.deck.pop();
+                    state.botHand.tableDown[i] = state.deck.pop();
+                }
+                for (let i = 0; i < 4; i++) {
+                    state.playerHand.tableUp[i] = state.deck.pop();
+                    state.botHand.tableUp[i] = state.deck.pop();
+                }
+                for (let i = 0; i < 4; i++) {
+                    state.playerHand.inHand.push(state.deck.pop());
+                    state.botHand.inHand.push(state.deck.pop());
                 }
 
                 renderHands();
+                await delay(300);
 
-                playerTrickCardEl.innerHTML =
-                    createCardElement(playedCard).innerHTML;
-                playerTrickCardEl.className =
-                    createCardElement(playedCard).className;
-                playerTrickCardEl.classList.remove("hidden", "playable");
-                playerTrickCardEl.classList.add("trick-card-enter");
+                // Trump selection
+                await trumpSelection();
+            }
 
-                trickCards.push({ player: "player", card: playedCard });
+            async function trumpSelection() {
+                state.gamePhase = "trumpSelect";
+                const chooserFirst = state.isPlayerDealer ? "bot" : "player";
 
-                if (!leadCard) {
-                    leadCard = playedCard;
-                    currentTurn = "bot";
-                    updatePlayableCards();
-                    setTimeout(botPlayCard, 800);
+                if (chooserFirst === "player") {
+                    // Player chooses first
+                    showModal(
+                        "Choose Trump",
+                        "<p>You have first choice. Select a trump suit or pass to the dealer.</p>",
+                        [
+                            {
+                                text: "♥",
+                                suit: "hearts",
+                                action: () => setTrump("H", "player"),
+                            },
+                            {
+                                text: "♦",
+                                suit: "diamonds",
+                                action: () => setTrump("D", "player"),
+                            },
+                            {
+                                text: "♣",
+                                suit: "clubs",
+                                action: () => setTrump("C", "player"),
+                            },
+                            {
+                                text: "♠",
+                                suit: "spades",
+                                action: () => setTrump("S", "player"),
+                            },
+                            {
+                                text: "Pass",
+                                class: "btn",
+                                action: () => botMustChooseTrump(),
+                            },
+                        ],
+                    );
                 } else {
-                    currentTurn = "";
-                    updatePlayableCards();
-                    setTimeout(evaluateTrick, 1000);
+                    // Bot chooses first
+                    setStatus("Opponent is deciding on trump", true);
+                    await delay(1200);
+
+                    const choice = botChooseTrump(false);
+                    if (choice) {
+                        setTrump(choice, "bot");
+                        showModal(
+                            "Trump Called",
+                            `<p>Opponent calls <span style="font-size:2rem">${SUITS[choice]}</span> as trump!</p>`,
+                            [
+                                {
+                                    text: "Continue",
+                                    class: "btn btn-primary",
+                                    action: startPlaying,
+                                },
+                            ],
+                        );
+                    } else {
+                        setStatus("");
+                        showModal(
+                            "Opponent Passes",
+                            "<p>The opponent passed. You must choose trump.</p>",
+                            [
+                                {
+                                    text: "♥",
+                                    suit: "hearts",
+                                    action: () => setTrump("H", "player"),
+                                },
+                                {
+                                    text: "♦",
+                                    suit: "diamonds",
+                                    action: () => setTrump("D", "player"),
+                                },
+                                {
+                                    text: "♣",
+                                    suit: "clubs",
+                                    action: () => setTrump("C", "player"),
+                                },
+                                {
+                                    text: "♠",
+                                    suit: "spades",
+                                    action: () => setTrump("S", "player"),
+                                },
+                            ],
+                        );
+                    }
                 }
             }
 
-            function getStrategicCardChoice(allBotCards, isLeading) {
-                const effectiveLeadSuit = leadCard ? getEffectiveSuit(leadCard) : null;
-                const cardsInLeadSuit = effectiveLeadSuit ? 
-                    allBotCards.filter(item => getEffectiveSuit(item.card) === effectiveLeadSuit) : [];
-                const trumpCards = allBotCards.filter(item => getEffectiveSuit(item.card) === trumpSuit);
-                
-                // Adjust strategy based on difficulty
-                if (botDifficulty === "easy") {
-                    // Easy mode: more random, less optimal
-                    if (Math.random() < 0.3) {
-                        return allBotCards[Math.floor(Math.random() * allBotCards.length)];
-                    }
-                } else if (botDifficulty === "hard") {
-                    // Hard mode: perfect information about remaining cards
-                    // Count cards that have been played
-                    const playedCards = trickCards.map(tc => tc.card);
-                    const remainingCards = deck.filter(c => !playedCards.some(pc => pc.rank === c.rank && pc.suit === c.suit));
+            async function botMustChooseTrump() {
+                setStatus("Opponent must choose trump", true);
+                await delay(1000);
+
+                const choice = botChooseTrump(true);
+                setTrump(choice, "bot");
+
+                showModal(
+                    "Trump Called",
+                    `<p>Opponent calls <span style="font-size:2rem">${SUITS[choice]}</span> as trump!</p>`,
+                    [
+                        {
+                            text: "Continue",
+                            class: "btn btn-primary",
+                            action: startPlaying,
+                        },
+                    ],
+                );
+            }
+
+            function setTrump(suit, caller) {
+                state.trump = suit;
+                state.trumpCaller = caller;
+                updateTrumpDisplay();
+                updateDealerIndicator();
+
+                if (caller === "player") {
+                    showModal(
+                        "Trump Set",
+                        `<p>You called <span style="font-size:2rem">${SUITS[suit]}</span> as trump!</p>`,
+                        [
+                            {
+                                text: "Start Playing",
+                                class: "btn btn-primary",
+                                action: startPlaying,
+                            },
+                        ],
+                    );
                 }
-                
-                if (isLeading) {
-                    // Leading strategy: consider game state
-                    const tricksRemaining = 12 - (playerTricks + botTricks);
-                    const isWinning = botTricks > playerTricks;
-                    
-                    if (botDifficulty === "easy") {
-                        // Simple strategy for easy mode
-                        return allBotCards.sort((a, b) => getCardValue(b.card) - getCardValue(a.card))[0];
-                    }
-                    
-                    if (isWinning && tricksRemaining <= 4) {
-                        // Play conservatively when ahead
-                        return allBotCards.sort((a, b) => getCardValue(a.card) - getCardValue(b.card))[0];
-                    } else if (!isWinning && tricksRemaining <= 4) {
-                        // Play aggressively when behind
-                        return allBotCards.sort((a, b) => getCardValue(b.card) - getCardValue(a.card))[0];
-                    } else {
-                        // Mid-game: lead with strong but not best cards
-                        const nonTrumpCards = allBotCards.filter(item => getEffectiveSuit(item.card) !== trumpSuit);
-                        if (nonTrumpCards.length > 0) {
-                            return nonTrumpCards.sort((a, b) => getCardValue(b.card) - getCardValue(a.card))[0];
-                        }
-                        return allBotCards.sort((a, b) => getCardValue(b.card) - getCardValue(a.card))[0];
-                    }
+            }
+
+            function startPlaying() {
+                state.gamePhase = "playing";
+                // Non-dealer leads first
+                state.currentTurn = state.isPlayerDealer ? "bot" : "player";
+
+                updateActiveZone();
+                renderHands();
+
+                if (state.currentTurn === "player") {
+                    setStatus("Your turn to lead");
                 } else {
-                    // Following strategy
-                    if (cardsInLeadSuit.length > 0) {
-                        // Must follow suit
-                        const leadCardValue = getCardValue(leadCard);
-                        const higherCards = cardsInLeadSuit.filter(item => getCardValue(item.card) > leadCardValue);
-                        
-                        if (higherCards.length > 0) {
-                            // Play lowest card that can win
-                            return higherCards.sort((a, b) => getCardValue(a.card) - getCardValue(b.card))[0];
-                        } else {
-                            // Can't win, play lowest
-                            return cardsInLeadSuit.sort((a, b) => getCardValue(a.card) - getCardValue(b.card))[0];
-                        }
-                    } else {
-                        // Can't follow suit
-                        if (trumpCards.length > 0) {
-                            // Have trump - consider if worth using
-                            const opponentMayHaveTrump = playerTricks < 7;
-                            if (opponentMayHaveTrump || getCardValue(leadCard) >= 15) {
-                                // Play lowest trump
-                                return trumpCards.sort((a, b) => getCardValue(a.card) - getCardValue(b.card))[0];
-                            }
-                        }
-                        // Dump lowest card
-                        return allBotCards.sort((a, b) => getCardValue(a.card) - getCardValue(b.card))[0];
-                    }
+                    botTurn();
                 }
             }
 
-            function botPlayCard() {
-                if (currentTurn !== "bot" || handOver) return;
+            async function playerPlaysCard(cardInfo) {
+                if (
+                    state.currentTurn !== "player" ||
+                    state.gamePhase !== "playing"
+                )
+                    return;
 
-                setTimeout(() => {
-                    const allBotCards = getBotPlayableCards();
-                    const cardToPlayInfo = getStrategicCardChoice(allBotCards, !leadCard);
+                const card = removeCard(
+                    "player",
+                    cardInfo.source,
+                    cardInfo.index,
+                );
+                state.playedCards.push({ player: "player", card });
+                state.cardsPlayedThisHand.push(card);
 
-                    let playedCard;
-                    if (cardToPlayInfo.source === "inHand") {
-                        playedCard = botHand.inHand.splice(
-                            cardToPlayInfo.index,
-                            1,
-                            null,
-                        )[0];
-                    } else {
-                        playedCard = botHand.tableFaceUp.splice(
-                            cardToPlayInfo.index,
-                            1,
-                            null,
-                        )[0];
-                    }
+                if (!state.leadCard) state.leadCard = card;
 
-                    botTrickCardEl.innerHTML =
-                        createCardElement(playedCard).innerHTML;
-                    botTrickCardEl.className = `card ${suitColors[playedCard.suit]}`;
-                    botTrickCardEl.classList.remove("hidden");
-                    botTrickCardEl.classList.add("trick-card-enter");
+                // Show played card
+                els.playerPlayed.innerHTML = createCardElement(card).innerHTML;
+                els.playerPlayed.className = `card trick-card visible card-enter ${SUIT_COLORS[card.suit]}`;
 
-                    trickCards.push({ player: "bot", card: playedCard });
+                renderHands();
 
-                    if (!leadCard) {
-                        leadCard = playedCard;
-                        currentTurn = "player";
-                        renderHands();
-                    } else {
-                        currentTurn = "";
-                        renderHands();
-                        setTimeout(evaluateTrick, 600);
-                    }
-                }, 600);
+                if (state.playedCards.length === 2) {
+                    await delay(400);
+                    evaluateTrick();
+                } else {
+                    state.currentTurn = "bot";
+                    updateActiveZone();
+                    await delay(300);
+                    botTurn();
+                }
             }
 
-            function getBotPlayableCards() {
-                return [
-                    ...botHand.inHand.map((c, i) => ({
-                        card: c,
-                        source: "inHand",
-                        index: i,
-                    })),
-                    ...botHand.tableFaceUp.map((c, i) => ({
-                        card: c,
-                        id: `bot-fu-${i}`,
-                        source: "tableFaceUp",
-                        index: i,
-                    })),
-                ].filter((item) => item.card);
-            }
+            async function botTurn() {
+                setStatus("Opponent is thinking", true);
+                await delay(800 + Math.random() * 600);
 
-            function evaluateTrick() {
-                if (trickCards.length < 2) return;
-
-                const leadInfo = trickCards.find(
-                    (info) => info.card === leadCard,
-                );
-                const followInfo = trickCards.find(
-                    (info) => info.card !== leadCard,
-                );
-
-                if (!leadInfo || !followInfo) {
-                    clearTrick();
+                const cardInfo = botSelectCard();
+                if (!cardInfo) {
+                    console.error("Bot has no playable cards!");
                     return;
                 }
 
-                const leadCardData = leadInfo.card;
-                const followCardData = followInfo.card;
-                const effectiveLeadSuit = getEffectiveSuit(leadCardData);
-                const effectiveFollowSuit = getEffectiveSuit(followCardData);
-                let winnerInfo;
+                const card = removeCard("bot", cardInfo.source, cardInfo.index);
+                state.playedCards.push({ player: "bot", card });
+                state.cardsPlayedThisHand.push(card);
 
-                if (effectiveFollowSuit === trumpSuit) {
-                    winnerInfo =
-                        effectiveLeadSuit === trumpSuit &&
-                        getCardValue(leadCardData) >
-                            getCardValue(followCardData)
-                            ? leadInfo
-                            : followInfo;
-                } else if (effectiveLeadSuit === trumpSuit) {
-                    winnerInfo = leadInfo;
-                } else if (effectiveFollowSuit === effectiveLeadSuit) {
-                    winnerInfo =
-                        getCardValue(followCardData) >
-                        getCardValue(leadCardData)
-                            ? followInfo
-                            : leadInfo;
-                } else {
-                    winnerInfo = leadInfo;
-                }
+                if (!state.leadCard) state.leadCard = card;
 
-                trickWinner = winnerInfo.player;
+                // Show played card
+                els.botPlayed.innerHTML = createCardElement(card).innerHTML;
+                els.botPlayed.className = `card trick-card visible card-enter ${SUIT_COLORS[card.suit]}`;
 
-                if (trickWinner === "player") playerTricks++;
-                else botTricks++;
-
-                playerTrickCountEl.textContent = playerTricks;
-                botTrickCountEl.textContent = botTricks;
-
-                const animationClass =
-                    trickWinner === "player" ? "fly-off-player" : "fly-off-bot";
-                playerTrickCardEl.classList.add(animationClass);
-                botTrickCardEl.classList.add(animationClass);
-
-                setTimeout(clearTrick, 800);
-            }
-
-            function clearTrick() {
-                playerTrickCardEl.classList.add("hidden");
-                botTrickCardEl.classList.add("hidden");
-                playerTrickCardEl.className = "card hidden";
-                botTrickCardEl.className = "card hidden";
-                leadCard = null;
-                trickCards = [];
-
-                flipExposedCards();
-            }
-
-            function flipExposedCards() {
-                let cardsFlipped = false;
-                for (let i = 0; i < 4; i++) {
-                    if (
-                        playerHand.tableFaceUp[i] === null &&
-                        playerHand.tableFaceDown[i] !== null
-                    ) {
-                        playerHand.tableFaceUp[i] = playerHand.tableFaceDown[i];
-                        playerHand.tableFaceDown[i] = null;
-                        cardsFlipped = true;
-                    }
-                    if (
-                        botHand.tableFaceUp[i] === null &&
-                        botHand.tableFaceDown[i] !== null
-                    ) {
-                        botHand.tableFaceUp[i] = botHand.tableFaceDown[i];
-                        botHand.tableFaceDown[i] = null;
-                        cardsFlipped = true;
-                    }
-                }
                 renderHands();
 
-                if (playerTricks + botTricks === 12) {
-                    setTimeout(endHand, 500);
+                if (state.playedCards.length === 2) {
+                    await delay(500);
+                    evaluateTrick();
                 } else {
-                    setTimeout(nextTurn, 150);
+                    state.currentTurn = "player";
+                    updateActiveZone();
+                    setStatus("Your turn");
+                    renderHands();
                 }
             }
 
-            function endHand() {
-                handOver = true;
-                let winnerText = "";
+            async function evaluateTrick() {
+                state.gamePhase = "trickEval";
 
-                if (trumpCaller === "player") {
-                    if (playerTricks >= 7) {
-                        playerScore += playerTricks;
-                        botScore += botTricks;
-                        winnerText = `You made trump! You get ${playerTricks} points.`;
-                    } else {
-                        botScore += 12;
-                        winnerText = `You failed to make trump! Bot gets 12 points.`;
-                    }
+                const card1 = state.playedCards[0];
+                const card2 = state.playedCards[1];
+
+                const power1 = getCardPower(card1.card);
+                const power2 = getCardPower(card2.card);
+
+                // Determine winner
+                let winner;
+                const eff1 = getEffectiveSuit(card1.card);
+                const eff2 = getEffectiveSuit(card2.card);
+                const leadSuit = getEffectiveSuit(state.leadCard);
+
+                if (eff2 === state.trump && eff1 !== state.trump) {
+                    winner = card2.player;
+                } else if (eff1 === state.trump && eff2 !== state.trump) {
+                    winner = card1.player;
+                } else if (eff2 === leadSuit && eff1 !== leadSuit) {
+                    winner = card1.player; // Card1 led, card2 didn't follow suit and didn't trump
+                } else if (eff1 === leadSuit && eff2 !== leadSuit) {
+                    winner = card1.player;
                 } else {
-                    if (botTricks >= 7) {
-                        botScore += botTricks;
-                        playerScore += playerTricks;
-                        winnerText = `Bot made trump! Bot gets ${botTricks} points.`;
-                    } else {
-                        playerScore += 12;
-                        winnerText = `Bot failed to make trump! You get 12 points.`;
-                    }
+                    winner = power2 > power1 ? card2.player : card1.player;
                 }
-                playerScoreEl.textContent = playerScore;
-                botScoreEl.textContent = botScore;
 
-                if (playerScore >= 31 || botScore >= 31) {
-                    const finalWinner =
-                        playerScore >= botScore ? "Player" : "Bot";
-                showMessage(
-                    "Hand Over",
-                    winnerText,
-                    [
-                        {
-                            text: "Next Hand",
-                            class: "trump-btn bg-blue-700 hover:bg-blue-600 text-white",
-                            callback: startNewHand,
-                        },
-                    ],
+                // Update trick count
+                if (winner === "player") state.playerTricks++;
+                else state.botTricks++;
+
+                updateScores();
+
+                // Highlight winner
+                const winnerEl =
+                    winner === "player" ? els.playerPlayed : els.botPlayed;
+                winnerEl.classList.add("winner");
+
+                setStatus(
+                    `<span class="highlight">${winner === "player" ? "You" : "Opponent"}</span> won the trick!`,
                 );
-                } else {
-                    showMessage("Hand Over", winnerText, [
-                        {
-                            text: "Next Hand",
-                            class: "trump-btn bg-cyan-600",
-                            callback: startNewHand,
-                        },
-                    ]);
-                }
-            }
 
-            function startNewHand() {
-                handOver = false;
-                playerTricks = 0;
-                botTricks = 0;
-                playerTrickCountEl.textContent = "0";
-                botTrickCountEl.textContent = "0";
-                trumpSuitEl.textContent = "-";
-                trumpSuitEl.className = "text-2xl sm:text-3xl font-bold";
-                isPlayerDealer = !isPlayerDealer;
-                createDeck();
-                shuffleDeck();
-                dealCards();
+                // Record history
+                const trick = [...state.playedCards];
+                trick.winner = winner;
+                state.trickHistory.push(trick);
+                addToHistory(trick);
+
+                await delay(1200);
+
+                // Clear trick - add exit animation
+                els.playerPlayed.classList.add("card-exit");
+                els.botPlayed.classList.add("card-exit");
+
+                await delay(400);
+
+                // Fully reset the trick card elements
+                els.playerPlayed.className = "card trick-card";
+                els.playerPlayed.innerHTML = "";
+                els.botPlayed.className = "card trick-card";
+                els.botPlayed.innerHTML = "";
+
+                state.leadCard = null;
+                state.playedCards = [];
+
+                // Flip exposed cards
+                flipTableCards();
                 renderHands();
-                beginTrumpSelection();
+
+                // Check if hand is over
+                if (state.playerTricks + state.botTricks === 12) {
+                    await endHand();
+                } else {
+                    state.gamePhase = "playing";
+                    state.currentTurn = winner;
+                    updateActiveZone();
+
+                    if (winner === "player") {
+                        setStatus("Your lead");
+                        renderHands();
+                    } else {
+                        botTurn();
+                    }
+                }
             }
 
-            function resetGame() {
-                playerScore = 0;
-                botScore = 0;
-                playerScoreEl.textContent = "0";
-                botScoreEl.textContent = "0";
-                isPlayerDealer = false;
-                startNewHand();
+            async function endHand() {
+                state.gamePhase = "handEnd";
+
+                let message = "";
+                const callerWon =
+                    (state.trumpCaller === "player" &&
+                        state.playerTricks >= 7) ||
+                    (state.trumpCaller === "bot" && state.botTricks >= 7);
+
+                if (state.trumpCaller === "player") {
+                    if (state.playerTricks >= 7) {
+                        state.playerScore += state.playerTricks;
+                        state.botScore += state.botTricks;
+                        message = `<p>You made your contract!</p>
+                    <p>You: +${state.playerTricks} points | Opponent: +${state.botTricks} points</p>`;
+                    } else {
+                        state.botScore += 12;
+                        message = `<p>You were <strong>euchred!</strong></p>
+                    <p>Opponent gets <strong>12 points</strong>.</p>`;
+                    }
+                } else {
+                    if (state.botTricks >= 7) {
+                        state.botScore += state.botTricks;
+                        state.playerScore += state.playerTricks;
+                        message = `<p>Opponent made their contract.</p>
+                    <p>You: +${state.playerTricks} points | Opponent: +${state.botTricks} points</p>`;
+                    } else {
+                        state.playerScore += 12;
+                        message = `<p>You <strong>euchred</strong> the opponent!</p>
+                    <p>You get <strong>12 points</strong>!</p>`;
+                    }
+                }
+
+                updateScores();
+
+                // Check for game end
+                if (
+                    state.playerScore >= WINNING_SCORE ||
+                    state.botScore >= WINNING_SCORE
+                ) {
+                    const gameWinner =
+                        state.playerScore >= state.botScore
+                            ? "You"
+                            : "Opponent";
+                    showModal(
+                        "Game Over!",
+                        `<p><strong>${gameWinner}</strong> won the game!</p>
+                <p>Final Score: You ${state.playerScore} - ${state.botScore} Opponent</p>`,
+                        [
+                            {
+                                text: "Play Again",
+                                class: "btn btn-primary",
+                                action: startGame,
+                            },
+                        ],
+                    );
+                } else {
+                    showModal(
+                        "Hand Complete",
+                        message +
+                            `<p style="margin-top:1rem">Score: You ${state.playerScore} - ${state.botScore} Opponent</p>`,
+                        [
+                            {
+                                text: "Next Hand",
+                                class: "btn btn-primary",
+                                action: startNewHand,
+                            },
+                        ],
+                    );
+                }
             }
 
-            window.onload = () => {
-                showMessage(
-                    "Welcome to Euchre!",
-                    "A two-handed variation. Get ready to play.",
-                    [
-                        {
-                            text: "Start Game",
-                            class: "trump-btn bg-green-700 hover:bg-green-600 text-white",
-                            callback: resetGame,
-                        },
-                    ],
-                );
-                rulesBtn.addEventListener("click", showRules);
-                difficultySelect.addEventListener("change", (e) => {
-                    botDifficulty = e.target.value;
-                });
-            };
+            // ============================================
+            // EVENT LISTENERS
+            // ============================================
+            els.rulesBtn.addEventListener("click", showRules);
+
+            els.difficulty.addEventListener("change", (e) => {
+                state.difficulty = e.target.value;
+            });
+
+            els.historyToggle.addEventListener("click", () => {
+                els.historyPanel.classList.toggle("visible");
+            });
+
+            // ============================================
+            // INITIALIZATION
+            // ============================================
+            showModal(
+                "Two-Handed Euchre",
+                `<p>A classic card game of strategy and trumps.</p>
+        <p>First to ${WINNING_SCORE} points wins!</p>`,
+                [
+                    {
+                        text: "Start Game",
+                        class: "btn btn-primary",
+                        action: startGame,
+                    },
+                ],
+            );
         </script>
     </body>
 </html>
