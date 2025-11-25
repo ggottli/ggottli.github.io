@@ -1,0 +1,2090 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Gottlieb Family Hub</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Source+Sans+3:ital,wght@0,300..900;1,300..900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-decoration">
+                    <div class="house-icon">
+                        <svg
+                            viewBox="0 0 100 100"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M50 10L10 45V90H40V65H60V90H90V45L50 10Z"
+                                fill="var(--terracotta)"
+                                stroke="var(--deep-brown)"
+                                stroke-width="3"
+                            />
+                            <rect
+                                x="42"
+                                y="50"
+                                width="16"
+                                height="15"
+                                rx="2"
+                                fill="var(--warm-cream)"
+                                stroke="var(--deep-brown)"
+                                stroke-width="2"
+                            />
+                            <circle
+                                cx="50"
+                                cy="25"
+                                r="8"
+                                fill="var(--golden-yellow)"
+                                stroke="var(--deep-brown)"
+                                stroke-width="2"
+                            />
+                            <path
+                                d="M15 45L50 15L85 45"
+                                stroke="var(--deep-brown)"
+                                stroke-width="4"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="login-title">
+                    Gottlieb<br /><span>Family Hub</span>
+                </h1>
+                <p class="login-subtitle">Where our family stays connected</p>
+
+                <form id="login-form" class="login-form">
+                    <div class="input-group">
+                        <label for="family-member">Who's there?</label>
+                        <select id="family-member" required>
+                            <option value="">Select your name...</option>
+                            <option value="mom">Mom</option>
+                            <option value="dad">Dad</option>
+                            <option value="sarah">Sarah</option>
+                            <option value="michael">Michael</option>
+                            <option value="emma">Emma</option>
+                            <option value="guest">Guest</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Your PIN</label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your PIN"
+                            required
+                        />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-login">
+                        <span>Come on in</span>
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="login-footer">
+                    <p>Forgot your PIN? Contact support.</p>
+                </div>
+            </div>
+            <div class="login-pattern"></div>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-app" class="screen">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <div class="logo-small">
+                        <svg
+                            viewBox="0 0 40 40"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M20 4L4 18V36H16V26H24V36H36V18L20 4Z"
+                                fill="var(--terracotta)"
+                            />
+                            <path
+                                d="M6 18L20 6L34 18"
+                                stroke="var(--deep-brown)"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </div>
+                    <h1>Gottlieb Hub</h1>
+                </div>
+                <div class="header-right">
+                    <div class="current-user" id="current-user">
+                        <span class="user-avatar">M</span>
+                        <span class="user-name">Mom</span>
+                    </div>
+                    <button class="btn-icon" id="logout-btn" title="Log out">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path
+                                d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Navigation -->
+            <nav class="main-nav">
+                <button class="nav-item active" data-section="dashboard">
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-section="calendar">
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span>Calendar</span>
+                </button>
+                <button class="nav-item" data-section="todos">
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M9 11l3 3L22 4" />
+                        <path
+                            d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+                        />
+                    </svg>
+                    <span>To-Do</span>
+                </button>
+                <button class="nav-item" data-section="shopping">
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle cx="9" cy="21" r="1" />
+                        <circle cx="20" cy="21" r="1" />
+                        <path
+                            d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"
+                        />
+                    </svg>
+                    <span>Shopping</span>
+                </button>
+                <button class="nav-item" data-section="announcements">
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 01-3.46 0" />
+                    </svg>
+                    <span>Announce</span>
+                </button>
+                <button class="nav-item" data-section="meals">
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M18 8h1a4 4 0 010 8h-1" />
+                        <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" />
+                        <line x1="6" y1="1" x2="6" y2="4" />
+                        <line x1="10" y1="1" x2="10" y2="4" />
+                        <line x1="14" y1="1" x2="14" y2="4" />
+                    </svg>
+                    <span>Meals</span>
+                </button>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="content-section active">
+                    <div class="section-header">
+                        <h2>
+                            Welcome back, <span id="dashboard-name">Mom</span>!
+                        </h2>
+                        <p class="date-display" id="today-date"></p>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <!-- Upcoming Events Widget -->
+                        <div class="widget widget-events">
+                            <div class="widget-header">
+                                <h3>📅 Coming Up</h3>
+                                <button class="btn-link" data-goto="calendar">
+                                    View all
+                                </button>
+                            </div>
+                            <div class="widget-content">
+                                <div class="event-preview">
+                                    <div class="event-date-badge">
+                                        <span class="month">NOV</span>
+                                        <span class="day">28</span>
+                                    </div>
+                                    <div class="event-info">
+                                        <h4>Thanksgiving Dinner</h4>
+                                        <p>4:00 PM at Grandma's house</p>
+                                        <div class="rsvp-status">
+                                            <span class="rsvp-yes"
+                                                >4 going</span
+                                            >
+                                            <span class="rsvp-pending"
+                                                >1 pending</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="event-preview">
+                                    <div class="event-date-badge">
+                                        <span class="month">DEC</span>
+                                        <span class="day">3</span>
+                                    </div>
+                                    <div class="event-info">
+                                        <h4>Emma's Soccer Game</h4>
+                                        <p>10:00 AM at Riverside Field</p>
+                                        <div class="rsvp-status">
+                                            <span class="rsvp-yes"
+                                                >3 going</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="event-preview">
+                                    <div class="event-date-badge">
+                                        <span class="month">DEC</span>
+                                        <span class="day">15</span>
+                                    </div>
+                                    <div class="event-info">
+                                        <h4>Holiday Movie Night</h4>
+                                        <p>7:00 PM at home</p>
+                                        <div class="rsvp-status">
+                                            <span class="rsvp-pending"
+                                                >5 pending</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Tasks Widget -->
+                        <div class="widget widget-tasks">
+                            <div class="widget-header">
+                                <h3>✓ Your Tasks</h3>
+                                <button class="btn-link" data-goto="todos">
+                                    View all
+                                </button>
+                            </div>
+                            <div class="widget-content">
+                                <ul class="task-preview-list">
+                                    <li class="task-item">
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" />
+                                            <span class="checkmark"></span>
+                                        </label>
+                                        <span class="task-text"
+                                            >Pick up dry cleaning</span
+                                        >
+                                        <span class="task-due urgent"
+                                            >Today</span
+                                        >
+                                    </li>
+                                    <li class="task-item">
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" />
+                                            <span class="checkmark"></span>
+                                        </label>
+                                        <span class="task-text"
+                                            >Schedule dentist appointment</span
+                                        >
+                                        <span class="task-due">Tomorrow</span>
+                                    </li>
+                                    <li class="task-item">
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" checked />
+                                            <span class="checkmark"></span>
+                                        </label>
+                                        <span class="task-text completed"
+                                            >Order birthday cake</span
+                                        >
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Announcements Widget -->
+                        <div class="widget widget-announcements">
+                            <div class="widget-header">
+                                <h3>📢 Family Bulletin</h3>
+                                <button
+                                    class="btn-link"
+                                    data-goto="announcements"
+                                >
+                                    View all
+                                </button>
+                            </div>
+                            <div class="widget-content">
+                                <div class="announcement-card pinned">
+                                    <div class="announcement-meta">
+                                        <span class="announcement-author"
+                                            >Mom</span
+                                        >
+                                        <span class="announcement-time"
+                                            >2 hours ago</span
+                                        >
+                                        <span class="pin-badge">📌 Pinned</span>
+                                    </div>
+                                    <p>
+                                        Reminder: Please put your dishes in the
+                                        dishwasher, not the sink! Love you all
+                                        💕
+                                    </p>
+                                </div>
+                                <div class="announcement-card">
+                                    <div class="announcement-meta">
+                                        <span class="announcement-author"
+                                            >Dad</span
+                                        >
+                                        <span class="announcement-time"
+                                            >Yesterday</span
+                                        >
+                                    </div>
+                                    <p>
+                                        The garage door opener is fixed! No more
+                                        manual lifting 🎉
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shopping Summary Widget -->
+                        <div class="widget widget-shopping">
+                            <div class="widget-header">
+                                <h3>🛒 Shopping Lists</h3>
+                                <button class="btn-link" data-goto="shopping">
+                                    View all
+                                </button>
+                            </div>
+                            <div class="widget-content">
+                                <div class="shopping-summary">
+                                    <div class="list-preview">
+                                        <span class="list-name">Groceries</span>
+                                        <span class="list-count">12 items</span>
+                                    </div>
+                                    <div class="list-preview">
+                                        <span class="list-name"
+                                            >Costco Run</span
+                                        >
+                                        <span class="list-count">5 items</span>
+                                    </div>
+                                    <div class="list-preview">
+                                        <span class="list-name"
+                                            >Thanksgiving Supplies</span
+                                        >
+                                        <span class="list-count">8 items</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Meal Plan Widget -->
+                        <div class="widget widget-meals">
+                            <div class="widget-header">
+                                <h3>🍽️ This Week's Meals</h3>
+                                <button class="btn-link" data-goto="meals">
+                                    View all
+                                </button>
+                            </div>
+                            <div class="widget-content">
+                                <div class="meal-preview-grid">
+                                    <div class="meal-day">
+                                        <span class="day-name">Today</span>
+                                        <span class="meal-name"
+                                            >Taco Tuesday!</span
+                                        >
+                                    </div>
+                                    <div class="meal-day">
+                                        <span class="day-name">Wed</span>
+                                        <span class="meal-name"
+                                            >Pasta Night</span
+                                        >
+                                    </div>
+                                    <div class="meal-day">
+                                        <span class="day-name">Thu</span>
+                                        <span class="meal-name"
+                                            >Thanksgiving 🦃</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Family Whereabouts Widget -->
+                        <div class="widget widget-whereabouts">
+                            <div class="widget-header">
+                                <h3>👨‍👩‍👧‍👦 Family Status</h3>
+                            </div>
+                            <div class="widget-content">
+                                <div class="family-status-grid">
+                                    <div class="member-status">
+                                        <span
+                                            class="member-avatar"
+                                            style="
+                                                background: var(--terracotta);
+                                            "
+                                            >M</span
+                                        >
+                                        <span class="member-name">Mom</span>
+                                        <span class="status-badge home"
+                                            >🏠 Home</span
+                                        >
+                                    </div>
+                                    <div class="member-status">
+                                        <span
+                                            class="member-avatar"
+                                            style="
+                                                background: var(--sage-green);
+                                            "
+                                            >D</span
+                                        >
+                                        <span class="member-name">Dad</span>
+                                        <span class="status-badge work"
+                                            >💼 Work</span
+                                        >
+                                    </div>
+                                    <div class="member-status">
+                                        <span
+                                            class="member-avatar"
+                                            style="
+                                                background: var(--dusty-blue);
+                                            "
+                                            >S</span
+                                        >
+                                        <span class="member-name">Sarah</span>
+                                        <span class="status-badge school"
+                                            >📚 School</span
+                                        >
+                                    </div>
+                                    <div class="member-status">
+                                        <span
+                                            class="member-avatar"
+                                            style="
+                                                background: var(
+                                                    --golden-yellow
+                                                );
+                                            "
+                                            >M</span
+                                        >
+                                        <span class="member-name">Michael</span>
+                                        <span class="status-badge away"
+                                            >🚗 Out</span
+                                        >
+                                    </div>
+                                    <div class="member-status">
+                                        <span
+                                            class="member-avatar"
+                                            style="background: var(--soft-pink)"
+                                            >E</span
+                                        >
+                                        <span class="member-name">Emma</span>
+                                        <span class="status-badge school"
+                                            >📚 School</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Calendar Section -->
+                <section id="calendar" class="content-section">
+                    <div class="section-header">
+                        <h2>Family Calendar</h2>
+                        <button class="btn btn-primary" id="add-event-btn">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            New Event
+                        </button>
+                    </div>
+
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button class="btn-icon" id="prev-month">
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path d="M15 18l-6-6 6-6" />
+                                </svg>
+                            </button>
+                            <h3 id="calendar-month-year">November 2024</h3>
+                            <button class="btn-icon" id="next-month">
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path d="M9 18l6-6-6-6" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="calendar-grid">
+                            <div class="calendar-weekdays">
+                                <span>Sun</span>
+                                <span>Mon</span>
+                                <span>Tue</span>
+                                <span>Wed</span>
+                                <span>Thu</span>
+                                <span>Fri</span>
+                                <span>Sat</span>
+                            </div>
+                            <div class="calendar-days" id="calendar-days">
+                                <!-- Days will be generated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="events-sidebar">
+                        <h3 id="selected-date-title">Events for Today</h3>
+                        <div class="events-list" id="events-list">
+                            <!-- Events will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- To-Do Section -->
+                <section id="todos" class="content-section">
+                    <div class="section-header">
+                        <h2>Family To-Do Lists</h2>
+                        <button class="btn btn-primary" id="add-todo-btn">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Add Task
+                        </button>
+                    </div>
+
+                    <div class="todo-filters">
+                        <button class="filter-btn active" data-filter="all">
+                            All
+                        </button>
+                        <button class="filter-btn" data-filter="mine">
+                            My Tasks
+                        </button>
+                        <button class="filter-btn" data-filter="shared">
+                            Shared
+                        </button>
+                        <button class="filter-btn" data-filter="completed">
+                            Completed
+                        </button>
+                    </div>
+
+                    <div class="todo-lists-container">
+                        <div class="todo-list-card">
+                            <div class="todo-list-header">
+                                <h3>🏠 Household</h3>
+                                <span class="todo-count">4 tasks</span>
+                            </div>
+                            <ul class="todo-list">
+                                <li class="todo-item" data-priority="high">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Fix leaky faucet in bathroom</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to">Dad</span>
+                                            <span class="due-date urgent"
+                                                >Due today</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Clean out garage</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Everyone</span
+                                            >
+                                            <span class="due-date"
+                                                >Due Saturday</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Replace air filters</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to">Dad</span>
+                                            <span class="due-date"
+                                                >Due next week</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item completed">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Mow the lawn</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Michael</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="todo-list-card">
+                            <div class="todo-list-header">
+                                <h3>📚 School & Activities</h3>
+                                <span class="todo-count">3 tasks</span>
+                            </div>
+                            <ul class="todo-list">
+                                <li class="todo-item" data-priority="high">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Sign permission slip for field
+                                            trip</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Mom/Dad</span
+                                            >
+                                            <span class="due-date urgent"
+                                                >Due tomorrow</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Buy supplies for science
+                                            project</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Sarah</span
+                                            >
+                                            <span class="due-date"
+                                                >Due Friday</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Soccer practice pickup - 5pm</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to">Mom</span>
+                                            <span class="due-date"
+                                                >Wednesday</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="todo-list-card">
+                            <div class="todo-list-header">
+                                <h3>🎉 Thanksgiving Prep</h3>
+                                <span class="todo-count">5 tasks</span>
+                            </div>
+                            <ul class="todo-list">
+                                <li class="todo-item completed">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Order turkey</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to">Mom</span>
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Pick up turkey from butcher</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to">Dad</span>
+                                            <span class="due-date"
+                                                >Wednesday</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Set up extra table and chairs</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Michael</span
+                                            >
+                                            <span class="due-date"
+                                                >Thursday AM</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Make pumpkin pie</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Sarah</span
+                                            >
+                                            <span class="due-date"
+                                                >Wednesday</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                                <li class="todo-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <div class="todo-content">
+                                        <span class="todo-text"
+                                            >Create table centerpiece</span
+                                        >
+                                        <div class="todo-meta">
+                                            <span class="assigned-to"
+                                                >Emma</span
+                                            >
+                                            <span class="due-date"
+                                                >Thursday AM</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon todo-actions">
+                                        ⋮
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Shopping Section -->
+                <section id="shopping" class="content-section">
+                    <div class="section-header">
+                        <h2>Shopping Lists</h2>
+                        <button class="btn btn-primary" id="add-list-btn">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            New List
+                        </button>
+                    </div>
+
+                    <div class="shopping-lists-grid">
+                        <div class="shopping-list-card">
+                            <div class="shopping-list-header">
+                                <div class="list-title-section">
+                                    <span class="list-emoji">🥑</span>
+                                    <h3>Weekly Groceries</h3>
+                                </div>
+                                <div class="list-actions">
+                                    <button class="btn-icon" title="Share">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <path
+                                                d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
+                                            />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        class="btn-icon"
+                                        title="More options"
+                                    >
+                                        ⋮
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="shopping-progress">
+                                <div class="progress-bar">
+                                    <div
+                                        class="progress-fill"
+                                        style="width: 33%"
+                                    ></div>
+                                </div>
+                                <span class="progress-text">4 of 12 items</span>
+                            </div>
+                            <ul class="shopping-items">
+                                <li class="shopping-item checked">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Milk (2 gallons)</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item checked">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Eggs (2 dozen)</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item checked">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Bread</span>
+                                    <span class="item-added-by">Dad</span>
+                                </li>
+                                <li class="shopping-item checked">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Bananas</span>
+                                    <span class="item-added-by">Emma</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Chicken breast (3 lbs)</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Pasta</span>
+                                    <span class="item-added-by">Sarah</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Marinara sauce</span
+                                    >
+                                    <span class="item-added-by">Sarah</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Avocados (4)</span>
+                                    <span class="item-added-by">Michael</span>
+                                </li>
+                            </ul>
+                            <div class="add-item-form">
+                                <input
+                                    type="text"
+                                    placeholder="Add an item..."
+                                    class="add-item-input"
+                                />
+                                <button class="btn btn-small">Add</button>
+                            </div>
+                        </div>
+
+                        <div class="shopping-list-card">
+                            <div class="shopping-list-header">
+                                <div class="list-title-section">
+                                    <span class="list-emoji">🏪</span>
+                                    <h3>Costco Run</h3>
+                                </div>
+                                <div class="list-actions">
+                                    <button class="btn-icon" title="Share">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <path
+                                                d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
+                                            />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        class="btn-icon"
+                                        title="More options"
+                                    >
+                                        ⋮
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="shopping-progress">
+                                <div class="progress-bar">
+                                    <div
+                                        class="progress-fill"
+                                        style="width: 0%"
+                                    ></div>
+                                </div>
+                                <span class="progress-text">0 of 5 items</span>
+                            </div>
+                            <ul class="shopping-items">
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Paper towels (bulk)</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Laundry detergent</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Dog food (big bag)</span
+                                    >
+                                    <span class="item-added-by">Emma</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Toilet paper</span>
+                                    <span class="item-added-by">Dad</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Trash bags</span>
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                            </ul>
+                            <div class="add-item-form">
+                                <input
+                                    type="text"
+                                    placeholder="Add an item..."
+                                    class="add-item-input"
+                                />
+                                <button class="btn btn-small">Add</button>
+                            </div>
+                        </div>
+
+                        <div class="shopping-list-card featured">
+                            <div class="shopping-list-header">
+                                <div class="list-title-section">
+                                    <span class="list-emoji">🦃</span>
+                                    <h3>Thanksgiving Supplies</h3>
+                                </div>
+                                <div class="list-actions">
+                                    <button class="btn-icon" title="Share">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <path
+                                                d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
+                                            />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        class="btn-icon"
+                                        title="More options"
+                                    >
+                                        ⋮
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="shopping-progress">
+                                <div class="progress-bar">
+                                    <div
+                                        class="progress-fill"
+                                        style="width: 25%"
+                                    ></div>
+                                </div>
+                                <span class="progress-text">2 of 8 items</span>
+                            </div>
+                            <ul class="shopping-items">
+                                <li class="shopping-item checked">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Turkey (ordered from butcher)</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item checked">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" checked />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Cranberry sauce</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Pumpkin puree (3 cans)</span
+                                    >
+                                    <span class="item-added-by">Sarah</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Heavy cream</span>
+                                    <span class="item-added-by">Sarah</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Green beans (fresh)</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >French fried onions</span
+                                    >
+                                    <span class="item-added-by">Mom</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name"
+                                        >Sweet potatoes (5 lbs)</span
+                                    >
+                                    <span class="item-added-by">Dad</span>
+                                </li>
+                                <li class="shopping-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <span class="item-name">Marshmallows</span>
+                                    <span class="item-added-by">Emma</span>
+                                </li>
+                            </ul>
+                            <div class="add-item-form">
+                                <input
+                                    type="text"
+                                    placeholder="Add an item..."
+                                    class="add-item-input"
+                                />
+                                <button class="btn btn-small">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Announcements Section -->
+                <section id="announcements" class="content-section">
+                    <div class="section-header">
+                        <h2>Family Announcements</h2>
+                        <button
+                            class="btn btn-primary"
+                            id="new-announcement-btn"
+                        >
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Post Announcement
+                        </button>
+                    </div>
+
+                    <div class="announcements-feed">
+                        <article class="announcement-full pinned">
+                            <div class="announcement-header">
+                                <div class="author-info">
+                                    <span
+                                        class="author-avatar"
+                                        style="background: var(--terracotta)"
+                                        >M</span
+                                    >
+                                    <div class="author-details">
+                                        <span class="author-name">Mom</span>
+                                        <span class="post-time"
+                                            >2 hours ago</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="announcement-badges">
+                                    <span class="badge pinned">📌 Pinned</span>
+                                    <button class="btn-icon">⋮</button>
+                                </div>
+                            </div>
+                            <div class="announcement-body">
+                                <h3>Kitchen Rules Reminder 🍽️</h3>
+                                <p>
+                                    Hey everyone! Quick reminder about keeping
+                                    our kitchen clean:
+                                </p>
+                                <ul>
+                                    <li>
+                                        Please put your dishes in the
+                                        dishwasher, not the sink
+                                    </li>
+                                    <li>
+                                        Wipe down counters after making food
+                                    </li>
+                                    <li>
+                                        If you finish something, add it to the
+                                        shopping list!
+                                    </li>
+                                </ul>
+                                <p>Love you all! 💕</p>
+                            </div>
+                            <div class="announcement-reactions">
+                                <button class="reaction-btn active">
+                                    ❤️ 4
+                                </button>
+                                <button class="reaction-btn">👍 2</button>
+                                <button class="reaction-btn">😂</button>
+                            </div>
+                            <div class="announcement-comments">
+                                <div class="comment">
+                                    <span
+                                        class="comment-avatar"
+                                        style="background: var(--golden-yellow)"
+                                        >M</span
+                                    >
+                                    <div class="comment-content">
+                                        <span class="comment-author"
+                                            >Michael</span
+                                        >
+                                        <p>Sorry Mom! I'll be better 😅</p>
+                                    </div>
+                                </div>
+                                <div class="add-comment">
+                                    <input
+                                        type="text"
+                                        placeholder="Add a comment..."
+                                    />
+                                    <button class="btn btn-small">Post</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="announcement-full">
+                            <div class="announcement-header">
+                                <div class="author-info">
+                                    <span
+                                        class="author-avatar"
+                                        style="background: var(--sage-green)"
+                                        >D</span
+                                    >
+                                    <div class="author-details">
+                                        <span class="author-name">Dad</span>
+                                        <span class="post-time"
+                                            >Yesterday at 6:30 PM</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="announcement-badges">
+                                    <button class="btn-icon">⋮</button>
+                                </div>
+                            </div>
+                            <div class="announcement-body">
+                                <h3>Garage Door Fixed! 🔧</h3>
+                                <p>
+                                    Good news everyone - the garage door opener
+                                    is finally working again! No more manual
+                                    lifting. The repair guy said we should get
+                                    the springs checked every couple of years.
+                                </p>
+                            </div>
+                            <div class="announcement-reactions">
+                                <button class="reaction-btn active">
+                                    🎉 5
+                                </button>
+                                <button class="reaction-btn">👍 3</button>
+                            </div>
+                        </article>
+
+                        <article class="announcement-full">
+                            <div class="announcement-header">
+                                <div class="author-info">
+                                    <span
+                                        class="author-avatar"
+                                        style="background: var(--soft-pink)"
+                                        >E</span
+                                    >
+                                    <div class="author-details">
+                                        <span class="author-name">Emma</span>
+                                        <span class="post-time"
+                                            >2 days ago</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="announcement-badges">
+                                    <button class="btn-icon">⋮</button>
+                                </div>
+                            </div>
+                            <div class="announcement-body">
+                                <h3>Soccer Game This Saturday! ⚽</h3>
+                                <p>
+                                    My team made it to the playoffs! Our game is
+                                    Saturday at 10am at Riverside Field. It
+                                    would mean so much if everyone could come
+                                    watch! 🙏
+                                </p>
+                            </div>
+                            <div class="announcement-reactions">
+                                <button class="reaction-btn active">
+                                    ❤️ 5
+                                </button>
+                                <button class="reaction-btn active">
+                                    💪 4
+                                </button>
+                            </div>
+                            <div class="announcement-comments">
+                                <div class="comment">
+                                    <span
+                                        class="comment-avatar"
+                                        style="background: var(--terracotta)"
+                                        >M</span
+                                    >
+                                    <div class="comment-content">
+                                        <span class="comment-author">Mom</span>
+                                        <p>
+                                            We'll all be there cheering you on!
+                                            So proud of you! 🎉
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="comment">
+                                    <span
+                                        class="comment-avatar"
+                                        style="background: var(--dusty-blue)"
+                                        >S</span
+                                    >
+                                    <div class="comment-content">
+                                        <span class="comment-author"
+                                            >Sarah</span
+                                        >
+                                        <p>Go Em!! 🏆</p>
+                                    </div>
+                                </div>
+                                <div class="add-comment">
+                                    <input
+                                        type="text"
+                                        placeholder="Add a comment..."
+                                    />
+                                    <button class="btn btn-small">Post</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="announcement-full">
+                            <div class="announcement-header">
+                                <div class="author-info">
+                                    <span
+                                        class="author-avatar"
+                                        style="background: var(--dusty-blue)"
+                                        >S</span
+                                    >
+                                    <div class="author-details">
+                                        <span class="author-name">Sarah</span>
+                                        <span class="post-time"
+                                            >3 days ago</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="announcement-badges">
+                                    <button class="btn-icon">⋮</button>
+                                </div>
+                            </div>
+                            <div class="announcement-body">
+                                <h3>Volunteering to Make Pumpkin Pie! 🥧</h3>
+                                <p>
+                                    I want to try making the pumpkin pie for
+                                    Thanksgiving this year! Found Grandma's
+                                    recipe in the box. Mom, can you help me get
+                                    the ingredients?
+                                </p>
+                            </div>
+                            <div class="announcement-reactions">
+                                <button class="reaction-btn active">
+                                    ❤️ 5
+                                </button>
+                                <button class="reaction-btn">😋 3</button>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Meals Section -->
+                <section id="meals" class="content-section">
+                    <div class="section-header">
+                        <h2>Meal Planner</h2>
+                        <div class="header-actions">
+                            <button
+                                class="btn btn-secondary"
+                                id="recipe-book-btn"
+                            >
+                                <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+                                    <path
+                                        d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"
+                                    />
+                                </svg>
+                                Recipe Book
+                            </button>
+                            <button class="btn btn-primary" id="add-meal-btn">
+                                <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                                Plan Meal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="meal-week-nav">
+                        <button class="btn-icon" id="prev-week">
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M15 18l-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <h3 id="meal-week-title">This Week: Nov 25 - Dec 1</h3>
+                        <button class="btn-icon" id="next-week">
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="meal-planner-grid">
+                        <div class="meal-day-card">
+                            <div class="meal-day-header">
+                                <span class="day-label">Monday</span>
+                                <span class="day-date">Nov 25</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Breakfast</span>
+                                <span class="meal-content">Cereal & Fruit</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content">Leftovers</span>
+                            </div>
+                            <div class="meal-slot filled">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content"
+                                    >Chicken Stir-fry</span
+                                >
+                                <span class="meal-chef">Chef: Mom</span>
+                            </div>
+                        </div>
+
+                        <div class="meal-day-card today">
+                            <div class="meal-day-header">
+                                <span class="day-label">Tuesday</span>
+                                <span class="day-date">Nov 26</span>
+                                <span class="today-badge">Today</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Breakfast</span>
+                                <span class="meal-content">Pancakes</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content">School/Work</span>
+                            </div>
+                            <div class="meal-slot filled highlight">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content"
+                                    >🌮 Taco Tuesday!</span
+                                >
+                                <span class="meal-chef">Chef: Dad</span>
+                            </div>
+                        </div>
+
+                        <div class="meal-day-card">
+                            <div class="meal-day-header">
+                                <span class="day-label">Wednesday</span>
+                                <span class="day-date">Nov 27</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Breakfast</span>
+                                <span class="meal-content empty">+ Add</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content">School/Work</span>
+                            </div>
+                            <div class="meal-slot filled">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content">Pasta Night</span>
+                                <span class="meal-chef">Chef: Sarah</span>
+                            </div>
+                        </div>
+
+                        <div class="meal-day-card special">
+                            <div class="meal-day-header">
+                                <span class="day-label">Thursday</span>
+                                <span class="day-date">Nov 28</span>
+                                <span class="special-badge"
+                                    >🦃 Thanksgiving</span
+                                >
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Breakfast</span>
+                                <span class="meal-content"
+                                    >Light breakfast</span
+                                >
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content"
+                                    >Skip - big dinner!</span
+                                >
+                            </div>
+                            <div class="meal-slot filled highlight">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content"
+                                    >Thanksgiving Feast!</span
+                                >
+                                <span class="meal-chef">@ Grandma's - 4PM</span>
+                            </div>
+                        </div>
+
+                        <div class="meal-day-card">
+                            <div class="meal-day-header">
+                                <span class="day-label">Friday</span>
+                                <span class="day-date">Nov 29</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Breakfast</span>
+                                <span class="meal-content empty">+ Add</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content"
+                                    >Thanksgiving leftovers</span
+                                >
+                            </div>
+                            <div class="meal-slot filled">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content"
+                                    >Turkey sandwiches</span
+                                >
+                                <span class="meal-chef">Chef: Everyone</span>
+                            </div>
+                        </div>
+
+                        <div class="meal-day-card">
+                            <div class="meal-day-header">
+                                <span class="day-label">Saturday</span>
+                                <span class="day-date">Nov 30</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Breakfast</span>
+                                <span class="meal-content">Waffles</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content"
+                                    >After soccer game</span
+                                >
+                            </div>
+                            <div class="meal-slot filled">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content">Pizza Night 🍕</span>
+                                <span class="meal-chef"
+                                    >Order from Mario's</span
+                                >
+                            </div>
+                        </div>
+
+                        <div class="meal-day-card">
+                            <div class="meal-day-header">
+                                <span class="day-label">Sunday</span>
+                                <span class="day-date">Dec 1</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍳 Brunch</span>
+                                <span class="meal-content">Family Brunch</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🥗 Lunch</span>
+                                <span class="meal-content">-</span>
+                            </div>
+                            <div class="meal-slot">
+                                <span class="meal-type">🍽️ Dinner</span>
+                                <span class="meal-content empty">+ Add</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="meal-suggestions">
+                        <h3>💡 Meal Ideas</h3>
+                        <div class="suggestion-chips">
+                            <button class="chip">Quick & Easy</button>
+                            <button class="chip">Healthy</button>
+                            <button class="chip">Kid-Friendly</button>
+                            <button class="chip">Slow Cooker</button>
+                            <button class="chip">Vegetarian</button>
+                            <button class="chip">Grandma's Recipes</button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Event Modal -->
+        <div id="event-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Event</h3>
+                    <button class="btn-icon modal-close">&times;</button>
+                </div>
+                <form id="event-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="event-title">Event Title</label>
+                        <input
+                            type="text"
+                            id="event-title"
+                            placeholder="What's happening?"
+                            required
+                        />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="event-date">Date</label>
+                            <input type="date" id="event-date" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="event-time">Time</label>
+                            <input type="time" id="event-time" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-location">Location</label>
+                        <input
+                            type="text"
+                            id="event-location"
+                            placeholder="Where?"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">Description</label>
+                        <textarea
+                            id="event-description"
+                            rows="3"
+                            placeholder="Any details?"
+                        ></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Invite Family Members</label>
+                        <div class="invite-checkboxes">
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="invite"
+                                    value="mom"
+                                    checked
+                                />
+                                Mom
+                            </label>
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="invite"
+                                    value="dad"
+                                    checked
+                                />
+                                Dad
+                            </label>
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="invite"
+                                    value="sarah"
+                                    checked
+                                />
+                                Sarah
+                            </label>
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="invite"
+                                    value="michael"
+                                    checked
+                                />
+                                Michael
+                            </label>
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="invite"
+                                    value="emma"
+                                    checked
+                                />
+                                Emma
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Event Color</label>
+                        <div class="color-picker">
+                            <button
+                                type="button"
+                                class="color-option active"
+                                data-color="terracotta"
+                                style="background: var(--terracotta)"
+                            ></button>
+                            <button
+                                type="button"
+                                class="color-option"
+                                data-color="sage"
+                                style="background: var(--sage-green)"
+                            ></button>
+                            <button
+                                type="button"
+                                class="color-option"
+                                data-color="blue"
+                                style="background: var(--dusty-blue)"
+                            ></button>
+                            <button
+                                type="button"
+                                class="color-option"
+                                data-color="yellow"
+                                style="background: var(--golden-yellow)"
+                            ></button>
+                            <button
+                                type="button"
+                                class="color-option"
+                                data-color="pink"
+                                style="background: var(--soft-pink)"
+                            ></button>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            type="button"
+                            class="btn btn-secondary modal-cancel"
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Create Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Todo Modal -->
+        <div id="todo-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New Task</h3>
+                    <button class="btn-icon modal-close">&times;</button>
+                </div>
+                <form id="todo-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="todo-title">Task</label>
+                        <input
+                            type="text"
+                            id="todo-title"
+                            placeholder="What needs to be done?"
+                            required
+                        />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="todo-assignee">Assign to</label>
+                            <select id="todo-assignee">
+                                <option value="everyone">Everyone</option>
+                                <option value="mom">Mom</option>
+                                <option value="dad">Dad</option>
+                                <option value="sarah">Sarah</option>
+                                <option value="michael">Michael</option>
+                                <option value="emma">Emma</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="todo-due">Due Date</label>
+                            <input type="date" id="todo-due" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="todo-list-select">Add to List</label>
+                        <select id="todo-list-select">
+                            <option value="household">🏠 Household</option>
+                            <option value="school">
+                                📚 School & Activities
+                            </option>
+                            <option value="thanksgiving">
+                                🎉 Thanksgiving Prep
+                            </option>
+                            <option value="new">+ Create New List</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <div class="priority-options">
+                            <label class="radio-label">
+                                <input
+                                    type="radio"
+                                    name="priority"
+                                    value="low"
+                                />
+                                Low
+                            </label>
+                            <label class="radio-label">
+                                <input
+                                    type="radio"
+                                    name="priority"
+                                    value="medium"
+                                    checked
+                                />
+                                Medium
+                            </label>
+                            <label class="radio-label">
+                                <input
+                                    type="radio"
+                                    name="priority"
+                                    value="high"
+                                />
+                                High
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            type="button"
+                            class="btn btn-secondary modal-cancel"
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Add Task
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Announcement Modal -->
+        <div id="announcement-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Post Announcement</h3>
+                    <button class="btn-icon modal-close">&times;</button>
+                </div>
+                <form id="announcement-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="announcement-title">Title (optional)</label>
+                        <input
+                            type="text"
+                            id="announcement-title"
+                            placeholder="Give it a title..."
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="announcement-content">Message</label>
+                        <textarea
+                            id="announcement-content"
+                            rows="5"
+                            placeholder="What do you want to share with the family?"
+                            required
+                        ></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="pin-announcement" /> 📌
+                            Pin this announcement
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button
+                            type="button"
+                            class="btn btn-secondary modal-cancel"
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Supabase Client Library -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <!-- Database Configuration -->
+        <script src="supabase.js"></script>
+        <!-- Main Application -->
+        <script src="app.js"></script>
+    </body>
+</html>
