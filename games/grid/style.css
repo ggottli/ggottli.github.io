@@ -301,6 +301,14 @@ button:active:not(:disabled) {
   z-index: 100;
 }
 
+.modal[hidden] {
+  display: none !important;
+}
+
+.backdrop[hidden] {
+  display: none !important;
+}
+
 .modal-content {
   background: var(--panel);
   border-radius: 20px;
@@ -338,6 +346,42 @@ button:active:not(:disabled) {
 
 .modal-body ol {
   padding-left: 1.2rem;
+}
+
+.modal-body ul {
+  padding-left: 1.2rem;
+  margin: 1rem 0;
+}
+
+.modal-body li {
+  margin: 0.5rem 0;
+}
+
+.modal-body details {
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+}
+
+.modal-body summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent-light);
+  padding: 0.25rem 0;
+}
+
+.modal-body summary:hover {
+  color: var(--accent);
+}
+
+kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-family: monospace;
+  font-size: 0.85em;
+  color: var(--text);
 }
 
 .icon {

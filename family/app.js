@@ -28,6 +28,9 @@ async function initializeApp() {
         // Load family members first
         await loadFamilyMembers();
         
+        // Check for saved login session
+        await checkSavedLogin();
+        
         // Set up UI interactions
         setupLoginForm();
         setupNavigation();
@@ -117,6 +120,13 @@ function setupLoginForm() {
 }
 
 async function loginSuccess() {
+    // Save login session in cookies if "Remember me" is checked
+    const rememberMe = document.getElementById('remember-me').checked;
+    if (rememberMe) {
+        setCookie('familyHub_memberId', currentUser.id, 30);
+        setCookie('familyHub_pin', document.getElementById('password').value, 30);
+    }
+    
     // Update UI with user info
     document.getElementById('current-user').innerHTML = `
         <span class="user-avatar" style="background: ${currentUser.color}">${currentUser.avatar_letter}</span>
@@ -159,11 +169,17 @@ document.getElementById('logout-btn')?.addEventListener('click', () => {
     subscriptions.forEach(sub => db.unsubscribe(sub));
     subscriptions = [];
     
+    // Clear saved login session
+    deleteCookie('familyHub_memberId');
+    deleteCookie('familyHub_pin');
+    
     currentUser = null;
     document.getElementById('main-app').classList.remove('active');
     document.getElementById('login-screen').classList.add('active');
     document.getElementById('password').value = '';
     document.getElementById('family-member').value = '';
+    
+    showToast('Logged out successfully', 'info');
 });
 
 // ===== Realtime Subscriptions =====
@@ -239,6 +255,7 @@ async function loadDashboardEvents() {
             const date = new Date(event.event_date + 'T00:00:00');
             const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
             const day = date.getDate();
+            const formattedDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             
             return `
                 <div class="event-preview">
@@ -248,11 +265,20 @@ async function loadDashboardEvents() {
                     </div>
                     <div class="event-info">
                         <h4>${event.title}</h4>
-                        <p>${event.event_time ? formatTime(event.event_time) : ''} ${event.location ? 'at ' + event.location : ''}</p>
+                        <p class="event-date-time">${formattedDate}${event.event_time ? ' at ' + formatTime(event.event_time) : ''}${event.location ? ' • ' + event.location : ''}</p>
                         <div class="rsvp-status">
                             ${goingCount > 0 ? `<span class="rsvp-yes">${goingCount} going</span>` : ''}
                             ${pendingCount > 0 ? `<span class="rsvp-pending">${pendingCount} pending</span>` : ''}
                         </div>
+                        ${rsvps.length > 0 ? `
+                            <div class="rsvp-details">
+                                ${rsvps.map(rsvp => {
+                                    const statusIcon = rsvp.status === 'going' ? '✓' : rsvp.status === 'maybe' : '?' : '✕';
+                                    const statusClass = rsvp.status === 'going' ? 'going' : rsvp.status === 'maybe' ? 'maybe' : 'declined';
+                                    return `<span class="rsvp-member ${statusClass}">${rsvp.member?.display_name || 'Someone'} ${statusIcon}</span>`;
+                                }).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -798,6 +824,21 @@ async function renderEventsForDate(date) {
                         ✕ Can't
                     </button>
                 </div>
+                ${rsvps.length > 0 ? `
+                    <div class="rsvp-details-calendar">
+                        <h5>RSVPs:</h5>
+                        <div class="rsvp-list">
+                            ${rsvps.map(rsvp => {
+                                const statusIcon = rsvp.status === 'going' ? '✓' : rsvp.status === 'maybe' ? '?' : '✕';
+                                const statusClass = rsvp.status === 'going' ? 'going' : rsvp.status === 'maybe' ? 'maybe' : 'declined';
+                                return `<div class="rsvp-item ${statusClass}">
+                                    <span class="rsvp-name">${rsvp.member?.display_name || 'Someone'}</span>
+                                    <span class="rsvp-status-icon">${statusIcon}</span>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         `;
     }));
@@ -1238,6 +1279,59 @@ async function updateMyStatus(memberId) {
             showToast('Failed to update status', 'error');
         }
     }
+}
+
+// ===== Cookie Management =====
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function deleteCookie(name) {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax`;
+}
+
+// ===== Saved Login Session =====
+async function checkSavedLogin() {
+    const savedMemberId = getCookie('familyHub_memberId');
+    const savedPin = getCookie('familyHub_pin');
+    
+    if (savedMemberId && savedPin) {
+        try {
+            const member = await db.verifyPin(savedMemberId, savedPin);
+            if (member) {
+                // Pre-fill the login form
+                document.getElementById('family-member').value = member.name;
+                document.getElementById('password').value = savedPin;
+                document.getElementById('remember-me').checked = true;
+                
+                currentUser = member;
+                await loginSuccess();
+                return true;
+            } else {
+                // Invalid saved credentials, clear them
+                deleteCookie('familyHub_memberId');
+                deleteCookie('familyHub_pin');
+            }
+        } catch (error) {
+            console.error('Error checking saved login:', error);
+            deleteCookie('familyHub_memberId');
+            deleteCookie('familyHub_pin');
+        }
+    }
+    return false;
 }
 
 // ===== Utility Functions =====

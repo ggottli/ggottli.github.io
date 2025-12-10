@@ -55,9 +55,16 @@ let highlightTarget = null;
 function createDeck() {
   const newDeck = [];
   for (const suit of SUITS) {
+    if (!suit) continue;
     for (const rank of RANKS) {
-      newDeck.push({ rank, suit, value: RANK_VALUES[rank] });
+      const value = RANK_VALUES[rank];
+      if (value === undefined) continue;
+      newDeck.push({ rank, suit, value });
     }
+  }
+  if (newDeck.length !== 52) {
+    console.error("Deck creation failed - incorrect number of cards:", newDeck.length);
+    throw new Error("Failed to create valid deck");
   }
   return newDeck;
 }
@@ -205,30 +212,50 @@ function renderGrid() {
 }
 
 function startNewGame() {
-  deck = createDeck();
-  shuffleDeck(deck);
-  grid = emptyGrid();
-  selectedCell = null;
-  lastDrawnCard = null;
-  messageQueue = [];
-  isResolving = false;
-  highlightTarget = null;
+  try {
+    // Reset game state
+    deck = createDeck();
+    shuffleDeck(deck);
+    grid = emptyGrid();
+    selectedCell = null;
+    lastDrawnCard = null;
+    messageQueue = [];
+    isResolving = false;
+    highlightTarget = null;
 
-  // Place the first card in the center
-  const firstCard = deck.pop();
-  if (!firstCard) {
-    queueMessage("Deck creation failed. Try refreshing the page.");
-    return;
+    // Validate deck before starting
+    if (deck.length !== 52) {
+      throw new Error("Invalid deck size");
+    }
+
+    // Place the first card in the center
+    const firstCard = deck.pop();
+    if (!firstCard) {
+      throw new Error("Failed to draw first card");
+    }
+
+    firstCard.justPlaced = true;
+    grid[CENTER][CENTER] = firstCard;
+    lastDrawnCard = firstCard;
+
+    queueMessage("Game started! Choose an empty cell adjacent to a card.");
+    clearSelection();
+    updateCounts();
+    updateLastCardDisplay();
+    renderGrid();
+  } catch (error) {
+    console.error("Failed to start new game:", error);
+    queueMessage("Failed to start game. Please refresh the page.");
+
+    // Reset to safe state
+    deck = [];
+    grid = emptyGrid();
+    selectedCell = null;
+    lastDrawnCard = null;
+    updateCounts();
+    updateLastCardDisplay();
+    renderGrid();
   }
-  firstCard.justPlaced = true;
-  grid[CENTER][CENTER] = firstCard;
-  lastDrawnCard = firstCard;
-
-  queueMessage("Game started! Choose an empty cell adjacent to a card.");
-  clearSelection();
-  updateCounts();
-  updateLastCardDisplay();
-  renderGrid();
 }
 
 function isValidCell(row, col) {
@@ -321,9 +348,10 @@ function makeGuess(type) {
       guessCorrect = drawnCard.value < neighbor.value;
       explanation = `${drawnCard.rank} vs ${neighbor.rank}`;
     }
+    // Exact match always counts as incorrect per game rules
     if (drawnCard.value === neighbor.value) {
       guessCorrect = false;
-      explanation = `${drawnCard.rank} matches ${neighbor.rank}`;
+      explanation = `${drawnCard.rank} matches ${neighbor.rank} (ties are incorrect)`;
     }
   } else {
     const values = neighbors.map((n) => n.value);
@@ -336,9 +364,10 @@ function makeGuess(type) {
       guessCorrect = drawnCard.value < low || drawnCard.value > high;
       explanation = `${drawnCard.rank} outside ${formatValue(low)}-${formatValue(high)}`;
     }
+    // Exact match with boundary always counts as incorrect per game rules
     if (drawnCard.value === low || drawnCard.value === high) {
       guessCorrect = false;
-      explanation = `${drawnCard.rank} equals the boundary`;
+      explanation = `${drawnCard.rank} equals the boundary (ties are incorrect)`;
     }
   }
 
@@ -407,16 +436,39 @@ function collapseGrid() {
   }
 }
 
+function hasAnyValidMoves() {
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      if (isValidCell(row, col)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function checkForEndConditions() {
   const filled = cardsOnGrid();
-  if (filled === GRID_SIZE * GRID_SIZE) {
-    queueMessage("You filled the grid! You win!");
+  const totalCards = GRID_SIZE * GRID_SIZE;
+
+  // Win condition: grid is completely filled
+  if (filled === totalCards) {
+    queueMessage("Congratulations! You filled the entire grid! You win!");
     endGame(true);
     return;
   }
 
+  // Loss condition: deck is empty and grid is not filled
   if (deck.length === 0) {
-    queueMessage("No cards remain in the deck. Game over.");
+    queueMessage(`No cards remain in the deck. Game over. You placed ${filled}/${totalCards} cards.`);
+    endGame(false);
+    return;
+  }
+
+  // Additional check: no valid moves available
+  const hasValidMove = hasAnyValidMoves();
+  if (!hasValidMove && filled < totalCards) {
+    queueMessage(`No valid moves available. Game over. You placed ${filled}/${totalCards} cards.`);
     endGame(false);
   }
 }
@@ -446,26 +498,108 @@ function attachEventListeners() {
 
   rulesButton.addEventListener("click", openRules);
   closeRulesButtons.forEach((btn) => btn.addEventListener("click", closeRules));
-  backdrop.addEventListener("click", closeRules);
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !rulesModal.hidden) {
-      closeRules();
+
+    // Keyboard navigation for the game grid
+    if (isResolving || rulesModal.hidden === false) return;
+
+    // Number keys for guess buttons (1-4)
+    const keyMap = {
+      '1': 'higher',
+      '2': 'lower',
+      '3': 'inside',
+      '4': 'outside'
+    };
+
+    if (keyMap[event.key] && selectedCell) {
+      const button = guessButtons[keyMap[event.key]];
+      if (button && !button.disabled) {
+        button.classList.add("active");
+        makeGuess(keyMap[event.key]);
+      }
+      return;
+    }
+
+    // Arrow keys for grid navigation
+    if (selectedCell && (event.key.includes('Arrow') || event.key === ' ')) {
+      event.preventDefault();
+
+      let { row, col } = selectedCell;
+      const direction = event.key.replace('Arrow', '').toLowerCase();
+
+      switch (direction) {
+        case 'up':
+          row = Math.max(0, row - 1);
+          break;
+        case 'down':
+          row = Math.min(GRID_SIZE - 1, row + 1);
+          break;
+        case 'left':
+          col = Math.max(0, col - 1);
+          break;
+        case 'right':
+          col = Math.min(GRID_SIZE - 1, col + 1);
+          break;
+        case ' ':
+          // Space on selected cell triggers confirmation or selection
+          if (selectedCell && isValidCell(selectedCell.row, selectedCell.col)) {
+            // Focus on first available guess button
+            const activeButtons = Object.values(guessButtons).filter(btn => !btn.disabled);
+            if (activeButtons.length > 0) {
+              activeButtons[0].focus();
+            }
+          }
+          return;
+      }
+
+      if (row !== selectedCell.row || col !== selectedCell.col) {
+        if (isValidCell(row, col)) {
+          handleCellClick(row, col);
+        }
+      }
+    }
+
+    // N key for new game
+    if (event.key === 'n' || event.key === 'N') {
+      startNewGame();
+      return;
+    }
+
+    // R key for rules
+    if (event.key === 'r' || event.key === 'R') {
+      if (rulesModal.hidden) {
+        openRules();
+      }
+      return;
     }
   });
 }
 
 function openRules() {
-  rulesModal.hidden = false;
-  backdrop.hidden = false;
+  rulesModal.removeAttribute('hidden');
+  backdrop.removeAttribute('hidden');
   rulesModal.focus();
 }
 
 function closeRules() {
-  rulesModal.hidden = true;
-  backdrop.hidden = true;
+  rulesModal.setAttribute('hidden', '');
+  backdrop.setAttribute('hidden', '');
 }
 
 // --- Initial setup --------------------------------------------------------
-attachEventListeners();
-startNewGame();
+function initializeGame() {
+  // Force modal to be hidden on page load
+  rulesModal.setAttribute('hidden', '');
+  backdrop.setAttribute('hidden', '');
+
+  attachEventListeners();
+  startNewGame();
+}
+
+// Wait for DOM to be fully loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeGame);
+} else {
+  initializeGame();
+}
