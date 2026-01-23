@@ -1,0 +1,1242 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Onitama</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Zen+Kaku+Gothic+New:wght@300;500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --ink: #1a1613;
+                --paper: #f5f0e8;
+                --paper-dark: #e8e0d4;
+                --red: #c73e3a;
+                --red-light: #e8d4d3;
+                --blue: #2d5a7b;
+                --blue-light: #d4dfe8;
+                --gold: #b8956e;
+                --gold-light: #f0e6d8;
+                --shadow: rgba(26, 22, 19, 0.15);
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Zen Kaku Gothic New", sans-serif;
+                background: var(--paper);
+                background-image:
+                    radial-gradient(
+                        ellipse at 20% 30%,
+                        rgba(200, 180, 160, 0.3) 0%,
+                        transparent 50%
+                    ),
+                    radial-gradient(
+                        ellipse at 80% 70%,
+                        rgba(180, 160, 140, 0.2) 0%,
+                        transparent 50%
+                    );
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px;
+                color: var(--ink);
+            }
+
+            h1 {
+                font-family: "Noto Serif JP", serif;
+                font-size: 2.5rem;
+                font-weight: 400;
+                letter-spacing: 0.3em;
+                margin-bottom: 0.5rem;
+                text-transform: uppercase;
+            }
+
+            .subtitle {
+                font-size: 0.75rem;
+                letter-spacing: 0.4em;
+                text-transform: uppercase;
+                color: var(--gold);
+                margin-bottom: 1.5rem;
+            }
+
+            .game-container {
+                display: flex;
+                gap: 40px;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .board-section {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .player-cards {
+                display: flex;
+                gap: 12px;
+                margin: 15px 0;
+            }
+
+            .player-label {
+                font-size: 0.7rem;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                margin-bottom: 8px;
+                opacity: 0.7;
+            }
+
+            .player-label.active {
+                opacity: 1;
+                color: var(--red);
+            }
+
+            .player-label.active.blue {
+                color: var(--blue);
+            }
+
+            .card {
+                width: 100px;
+                height: 130px;
+                background: var(--paper);
+                border: 1px solid var(--ink);
+                border-radius: 4px;
+                padding: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 2px 2px 8px var(--shadow);
+                position: relative;
+            }
+
+            .card:hover {
+                transform: translateY(-4px);
+                box-shadow: 4px 4px 12px var(--shadow);
+            }
+
+            .card.selected {
+                border-color: var(--gold);
+                border-width: 2px;
+                box-shadow:
+                    0 0 0 3px var(--gold-light),
+                    4px 4px 12px var(--shadow);
+            }
+
+            .card.opponent {
+                cursor: default;
+                opacity: 0.8;
+            }
+
+            .card.opponent:hover {
+                transform: none;
+            }
+
+            .card.waiting {
+                opacity: 0.5;
+                border-style: dashed;
+            }
+
+            .card-name {
+                font-family: "Noto Serif JP", serif;
+                font-size: 0.7rem;
+                text-align: center;
+                margin-bottom: 6px;
+                letter-spacing: 0.1em;
+            }
+
+            .card-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 2px;
+                margin-top: auto;
+            }
+
+            .card-cell {
+                width: 14px;
+                height: 14px;
+                background: var(--paper-dark);
+                border-radius: 2px;
+            }
+
+            .card-cell.move {
+                background: var(--ink);
+                opacity: 0.6;
+            }
+
+            .card-cell.center {
+                background: var(--gold);
+            }
+
+            .card-stamp {
+                position: absolute;
+                bottom: 4px;
+                right: 4px;
+                font-size: 0.5rem;
+                color: var(--gold);
+                opacity: 0.6;
+            }
+
+            .board {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+                padding: 20px;
+                background: linear-gradient(
+                    135deg,
+                    var(--paper-dark) 0%,
+                    var(--paper) 100%
+                );
+                border: 2px solid var(--ink);
+                border-radius: 4px;
+                box-shadow:
+                    8px 8px 24px var(--shadow),
+                    inset 0 0 60px rgba(0, 0, 0, 0.03);
+            }
+
+            .cell {
+                width: 60px;
+                height: 60px;
+                background: var(--paper);
+                border: 1px solid rgba(26, 22, 19, 0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                position: relative;
+            }
+
+            .cell.temple {
+                background: linear-gradient(
+                    135deg,
+                    var(--paper) 0%,
+                    var(--gold-light) 100%
+                );
+            }
+
+            .cell.temple.red {
+                background: linear-gradient(
+                    135deg,
+                    var(--paper) 0%,
+                    var(--red-light) 100%
+                );
+            }
+
+            .cell.temple.blue {
+                background: linear-gradient(
+                    135deg,
+                    var(--paper) 0%,
+                    var(--blue-light) 100%
+                );
+            }
+
+            .cell.valid-move {
+                background: var(--gold-light);
+                cursor: pointer;
+            }
+
+            .cell.valid-move::after {
+                content: "";
+                width: 16px;
+                height: 16px;
+                background: var(--gold);
+                border-radius: 50%;
+                opacity: 0.5;
+            }
+
+            .cell.valid-capture {
+                background: var(--red-light);
+            }
+
+            .cell.valid-capture::after {
+                display: none;
+            }
+
+            .piece {
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                position: relative;
+                z-index: 1;
+            }
+
+            .piece.red {
+                background: linear-gradient(
+                    145deg,
+                    var(--red) 0%,
+                    #a33230 100%
+                );
+                color: white;
+                box-shadow: 0 4px 8px rgba(199, 62, 58, 0.4);
+            }
+
+            .piece.blue {
+                background: linear-gradient(
+                    145deg,
+                    var(--blue) 0%,
+                    #1e3f54 100%
+                );
+                color: white;
+                box-shadow: 0 4px 8px rgba(45, 90, 123, 0.4);
+            }
+
+            .piece.master::before {
+                content: "王";
+                font-family: "Noto Serif JP", serif;
+                font-size: 1.1rem;
+            }
+
+            .piece.student::before {
+                content: "士";
+                font-family: "Noto Serif JP", serif;
+                font-size: 1rem;
+                opacity: 0.9;
+            }
+
+            .piece.selected {
+                transform: scale(1.1);
+                box-shadow:
+                    0 0 0 3px var(--gold),
+                    0 6px 12px rgba(0, 0, 0, 0.3);
+            }
+
+            .side-panel {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .waiting-card-section {
+                text-align: center;
+            }
+
+            .waiting-label {
+                font-size: 0.6rem;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                margin-bottom: 8px;
+                opacity: 0.5;
+            }
+
+            .status {
+                font-size: 0.85rem;
+                padding: 12px 24px;
+                background: var(--ink);
+                color: var(--paper);
+                border-radius: 4px;
+                text-align: center;
+                min-width: 200px;
+                letter-spacing: 0.1em;
+            }
+
+            .status.win {
+                background: var(--gold);
+                color: var(--ink);
+            }
+
+            .btn {
+                padding: 10px 24px;
+                font-family: "Zen Kaku Gothic New", sans-serif;
+                font-size: 0.75rem;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                background: var(--paper);
+                color: var(--ink);
+                border: 1px solid var(--ink);
+                cursor: pointer;
+                transition: all 0.2s ease;
+                border-radius: 2px;
+            }
+
+            .btn:hover {
+                background: var(--ink);
+                color: var(--paper);
+            }
+
+            .rules-toggle {
+                font-size: 0.7rem;
+                cursor: pointer;
+                opacity: 0.6;
+                text-decoration: underline;
+                margin-top: 20px;
+            }
+
+            .rules-toggle:hover {
+                opacity: 1;
+            }
+
+            .rules {
+                max-width: 500px;
+                font-size: 0.8rem;
+                line-height: 1.8;
+                margin-top: 10px;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.5);
+                border-radius: 4px;
+                display: none;
+            }
+
+            .rules.show {
+                display: block;
+            }
+
+            .rules h3 {
+                font-family: "Noto Serif JP", serif;
+                font-weight: 400;
+                margin-bottom: 10px;
+            }
+
+            .thinking {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .thinking-dot {
+                width: 6px;
+                height: 6px;
+                background: var(--paper);
+                border-radius: 50%;
+                animation: pulse 1s infinite;
+            }
+
+            .thinking-dot:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .thinking-dot:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 0.3;
+                    transform: scale(0.8);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            .move-indicator {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                font-size: 0.5rem;
+                color: var(--gold);
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+
+            .card:hover .move-indicator,
+            .card.selected .move-indicator {
+                opacity: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>鬼多摩</h1>
+        <div class="subtitle">Onitama — Way of the Master</div>
+
+        <div class="game-container">
+            <div class="board-section">
+                <div class="player-label blue" id="blue-label">
+                    Opponent (Blue)
+                </div>
+                <div class="player-cards" id="blue-cards"></div>
+
+                <div class="board" id="board"></div>
+
+                <div class="player-cards" id="red-cards"></div>
+                <div class="player-label" id="red-label">You (Red)</div>
+            </div>
+
+            <div class="side-panel">
+                <div class="waiting-card-section">
+                    <div class="waiting-label">Next Card</div>
+                    <div id="waiting-card"></div>
+                </div>
+
+                <div class="status" id="status">
+                    Your turn — Select a card and piece
+                </div>
+
+                <button class="btn" onclick="resetGame()">New Game</button>
+            </div>
+        </div>
+
+        <div class="rules-toggle" onclick="toggleRules()">How to Play</div>
+        <div class="rules" id="rules">
+            <h3>Rules of Onitama</h3>
+            <p>
+                <strong>Goal:</strong> Capture your opponent's Master (王) or
+                move your Master to their Temple (the marked square on their
+                side).
+            </p>
+            <p>
+                <strong>Movement:</strong> Select one of your two cards, then
+                click one of your pieces to see valid moves. The card shows
+                possible moves relative to the selected piece (center dot = your
+                piece position). Up on the card = forward toward your opponent.
+            </p>
+            <p>
+                <strong>Card Exchange:</strong> After moving, your used card
+                swaps with the waiting card. This means your opponent will get
+                that card next!
+            </p>
+            <p>
+                <strong>Pieces:</strong> 王 (Wang) = Master, 士 (Shi) = Student.
+                All pieces move the same way based on the selected card.
+            </p>
+        </div>
+
+        <script>
+            // === CARD DEFINITIONS ===
+            // Moves are defined as [dx, dy] where:
+            //   dx: positive = right, negative = left
+            //   dy: positive = forward (toward opponent), negative = backward
+            // This is from the perspective of the player using the card.
+            // When displayed, "forward" (positive dy) should be UP on the card grid for red player.
+            const CARDS = {
+                tiger: {
+                    name: "Tiger",
+                    moves: [
+                        [0, 2],
+                        [0, -1],
+                    ],
+                    stamp: "虎",
+                },
+                dragon: {
+                    name: "Dragon",
+                    moves: [
+                        [-2, 1],
+                        [2, 1],
+                        [-1, -1],
+                        [1, -1],
+                    ],
+                    stamp: "龍",
+                },
+                frog: {
+                    name: "Frog",
+                    moves: [
+                        [-2, 0],
+                        [-1, 1],
+                        [1, -1],
+                    ],
+                    stamp: "蛙",
+                },
+                rabbit: {
+                    name: "Rabbit",
+                    moves: [
+                        [2, 0],
+                        [1, 1],
+                        [-1, -1],
+                    ],
+                    stamp: "兎",
+                },
+                crab: {
+                    name: "Crab",
+                    moves: [
+                        [0, 1],
+                        [-2, 0],
+                        [2, 0],
+                    ],
+                    stamp: "蟹",
+                },
+                elephant: {
+                    name: "Elephant",
+                    moves: [
+                        [-1, 1],
+                        [1, 1],
+                        [-1, 0],
+                        [1, 0],
+                    ],
+                    stamp: "象",
+                },
+                goose: {
+                    name: "Goose",
+                    moves: [
+                        [-1, 1],
+                        [-1, 0],
+                        [1, 0],
+                        [1, -1],
+                    ],
+                    stamp: "鵞",
+                },
+                rooster: {
+                    name: "Rooster",
+                    moves: [
+                        [1, 1],
+                        [1, 0],
+                        [-1, 0],
+                        [-1, -1],
+                    ],
+                    stamp: "鶏",
+                },
+                monkey: {
+                    name: "Monkey",
+                    moves: [
+                        [-1, 1],
+                        [1, 1],
+                        [-1, -1],
+                        [1, -1],
+                    ],
+                    stamp: "猿",
+                },
+                mantis: {
+                    name: "Mantis",
+                    moves: [
+                        [-1, 1],
+                        [1, 1],
+                        [0, -1],
+                    ],
+                    stamp: "蟷",
+                },
+                horse: {
+                    name: "Horse",
+                    moves: [
+                        [0, 1],
+                        [-1, 0],
+                        [0, -1],
+                    ],
+                    stamp: "馬",
+                },
+                ox: {
+                    name: "Ox",
+                    moves: [
+                        [0, 1],
+                        [1, 0],
+                        [0, -1],
+                    ],
+                    stamp: "牛",
+                },
+                crane: {
+                    name: "Crane",
+                    moves: [
+                        [0, 1],
+                        [-1, -1],
+                        [1, -1],
+                    ],
+                    stamp: "鶴",
+                },
+                boar: {
+                    name: "Boar",
+                    moves: [
+                        [0, 1],
+                        [-1, 0],
+                        [1, 0],
+                    ],
+                    stamp: "猪",
+                },
+                eel: {
+                    name: "Eel",
+                    moves: [
+                        [-1, 1],
+                        [1, 0],
+                        [-1, -1],
+                    ],
+                    stamp: "鰻",
+                },
+                cobra: {
+                    name: "Cobra",
+                    moves: [
+                        [1, 1],
+                        [-1, 0],
+                        [1, -1],
+                    ],
+                    stamp: "蛇",
+                },
+            };
+
+            // === GAME STATE ===
+            let gameState = {
+                board: [],
+                redCards: [],
+                blueCards: [],
+                waitingCard: null,
+                currentPlayer: "red",
+                selectedCard: null,
+                selectedPiece: null,
+                validMoves: [],
+                gameOver: false,
+                winner: null,
+            };
+
+            // === INITIALIZATION ===
+            function initGame() {
+                // Initialize board
+                gameState.board = Array(5)
+                    .fill(null)
+                    .map(() => Array(5).fill(null));
+
+                // Place pieces - Red at bottom (row 4), Blue at top (row 0)
+                gameState.board[4][0] = { type: "student", color: "red" };
+                gameState.board[4][1] = { type: "student", color: "red" };
+                gameState.board[4][2] = { type: "master", color: "red" };
+                gameState.board[4][3] = { type: "student", color: "red" };
+                gameState.board[4][4] = { type: "student", color: "red" };
+
+                gameState.board[0][0] = { type: "student", color: "blue" };
+                gameState.board[0][1] = { type: "student", color: "blue" };
+                gameState.board[0][2] = { type: "master", color: "blue" };
+                gameState.board[0][3] = { type: "student", color: "blue" };
+                gameState.board[0][4] = { type: "student", color: "blue" };
+
+                // Deal cards
+                const cardKeys = Object.keys(CARDS);
+                const shuffled = cardKeys.sort(() => Math.random() - 0.5);
+                gameState.redCards = [shuffled[0], shuffled[1]];
+                gameState.blueCards = [shuffled[2], shuffled[3]];
+                gameState.waitingCard = shuffled[4];
+
+                // Determine starting player based on waiting card color (simplified: random)
+                gameState.currentPlayer = "red";
+                gameState.selectedCard = null;
+                gameState.selectedPiece = null;
+                gameState.validMoves = [];
+                gameState.gameOver = false;
+                gameState.winner = null;
+
+                render();
+            }
+
+            // === RENDERING ===
+            function render() {
+                renderBoard();
+                renderCards();
+                renderStatus();
+            }
+
+            function renderBoard() {
+                const boardEl = document.getElementById("board");
+                boardEl.innerHTML = "";
+
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const cell = document.createElement("div");
+                        cell.className = "cell";
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+
+                        // Mark temples
+                        if (row === 0 && col === 2)
+                            cell.classList.add("temple", "blue");
+                        if (row === 4 && col === 2)
+                            cell.classList.add("temple", "red");
+
+                        // Check for valid moves
+                        const isValidMove = gameState.validMoves.some(
+                            (m) => m.row === row && m.col === col,
+                        );
+                        const piece = gameState.board[row][col];
+
+                        if (isValidMove) {
+                            if (piece) {
+                                cell.classList.add("valid-capture");
+                            } else {
+                                cell.classList.add("valid-move");
+                            }
+                            cell.onclick = () => makeMove(row, col);
+                        }
+
+                        // Render piece
+                        if (piece) {
+                            const pieceEl = document.createElement("div");
+                            pieceEl.className = `piece ${piece.color} ${piece.type}`;
+
+                            if (
+                                gameState.selectedPiece &&
+                                gameState.selectedPiece.row === row &&
+                                gameState.selectedPiece.col === col
+                            ) {
+                                pieceEl.classList.add("selected");
+                            }
+
+                            if (
+                                !gameState.gameOver &&
+                                gameState.currentPlayer === "red" &&
+                                piece.color === "red" &&
+                                gameState.selectedCard
+                            ) {
+                                pieceEl.onclick = (e) => {
+                                    e.stopPropagation();
+                                    selectPiece(row, col);
+                                };
+                            }
+
+                            cell.appendChild(pieceEl);
+                        }
+
+                        boardEl.appendChild(cell);
+                    }
+                }
+            }
+
+            function renderCards() {
+                // Red cards (player) - shown from red's perspective (forward = up on screen)
+                const redCardsEl = document.getElementById("red-cards");
+                redCardsEl.innerHTML = "";
+                gameState.redCards.forEach((cardKey) => {
+                    const cardEl = createCardElement(cardKey, "red");
+                    redCardsEl.appendChild(cardEl);
+                });
+
+                // Blue cards (opponent) - shown from blue's perspective (forward = down on screen, so we flip)
+                const blueCardsEl = document.getElementById("blue-cards");
+                blueCardsEl.innerHTML = "";
+                gameState.blueCards.forEach((cardKey) => {
+                    const cardEl = createCardElement(cardKey, "blue");
+                    blueCardsEl.appendChild(cardEl);
+                });
+
+                // Waiting card - show from red's perspective (since red is the human player)
+                const waitingEl = document.getElementById("waiting-card");
+                waitingEl.innerHTML = "";
+                const waitingCardEl = createCardElement(
+                    gameState.waitingCard,
+                    "waiting",
+                );
+                waitingEl.appendChild(waitingCardEl);
+
+                // Update labels
+                document.getElementById("red-label").className =
+                    "player-label" +
+                    (gameState.currentPlayer === "red" ? " active" : "");
+                document.getElementById("blue-label").className =
+                    "player-label blue" +
+                    (gameState.currentPlayer === "blue" ? " active" : "");
+            }
+
+            function createCardElement(cardKey, owner) {
+                const card = CARDS[cardKey];
+                const cardEl = document.createElement("div");
+                cardEl.className = "card";
+
+                if (owner === "waiting") {
+                    cardEl.classList.add("waiting");
+                } else if (owner === "blue") {
+                    cardEl.classList.add("opponent");
+                } else if (
+                    owner === "red" &&
+                    !gameState.gameOver &&
+                    gameState.currentPlayer === "red"
+                ) {
+                    if (gameState.selectedCard === cardKey) {
+                        cardEl.classList.add("selected");
+                    }
+                    cardEl.onclick = () => selectCard(cardKey);
+                }
+
+                const nameEl = document.createElement("div");
+                nameEl.className = "card-name";
+                nameEl.textContent = card.name;
+                cardEl.appendChild(nameEl);
+
+                const gridEl = document.createElement("div");
+                gridEl.className = "card-grid";
+
+                // For display purposes:
+                // - Red cards and waiting card: show as-is (forward = up = negative y in grid)
+                // - Blue cards: rotate 180° so their "forward" points toward their side (down on screen)
+                //
+                // Card grid goes from y=-2 (top) to y=+2 (bottom), x=-2 (left) to x=+2 (right)
+                // Card moves are defined as [dx, dy] where dy positive = forward
+                // For red: forward = up on screen = negative grid y
+                // For blue: forward = down on screen = positive grid y (so we flip both x and y)
+
+                for (let gridY = -2; gridY <= 2; gridY++) {
+                    for (let gridX = -2; gridX <= 2; gridX++) {
+                        const cellEl = document.createElement("div");
+                        cellEl.className = "card-cell";
+
+                        if (gridX === 0 && gridY === 0) {
+                            cellEl.classList.add("center");
+                        } else {
+                            // Check if this grid position corresponds to a move
+                            // Grid position (gridX, gridY) where gridY negative = top of card
+                            // Move [dx, dy] where dy positive = forward
+                            // For red: forward (dy+) should appear at top (gridY-), so: gridY = -dy, gridX = dx
+                            // For blue: we flip 180°, so: gridY = dy, gridX = -dx
+
+                            let isMove = false;
+                            if (owner === "blue") {
+                                // Blue's cards are shown rotated 180° (from their perspective looking at red)
+                                // A move [dx, dy] for blue means: gridX = -dx, gridY = dy
+                                isMove = card.moves.some(
+                                    ([dx, dy]) => gridX === -dx && gridY === dy,
+                                );
+                            } else {
+                                // Red and waiting cards: forward (dy+) = up (gridY-)
+                                // A move [dx, dy] means: gridX = dx, gridY = -dy
+                                isMove = card.moves.some(
+                                    ([dx, dy]) => gridX === dx && gridY === -dy,
+                                );
+                            }
+
+                            if (isMove) {
+                                cellEl.classList.add("move");
+                            }
+                        }
+
+                        gridEl.appendChild(cellEl);
+                    }
+                }
+
+                cardEl.appendChild(gridEl);
+
+                const stampEl = document.createElement("div");
+                stampEl.className = "card-stamp";
+                stampEl.textContent = card.stamp;
+                cardEl.appendChild(stampEl);
+
+                return cardEl;
+            }
+
+            function renderStatus() {
+                const statusEl = document.getElementById("status");
+
+                if (gameState.gameOver) {
+                    statusEl.className = "status win";
+                    if (gameState.winner === "red") {
+                        statusEl.textContent = "🎉 Victory! You win!";
+                    } else {
+                        statusEl.textContent = "Defeat — Blue wins";
+                    }
+                } else if (gameState.currentPlayer === "blue") {
+                    statusEl.className = "status";
+                    statusEl.innerHTML =
+                        '<div class="thinking">Opponent thinking<div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div></div>';
+                } else if (!gameState.selectedCard) {
+                    statusEl.className = "status";
+                    statusEl.textContent = "Your turn — Select a card";
+                } else if (!gameState.selectedPiece) {
+                    statusEl.className = "status";
+                    statusEl.textContent = "Now select a piece to move";
+                } else {
+                    statusEl.className = "status";
+                    statusEl.textContent = "Click a highlighted square to move";
+                }
+            }
+
+            // === GAME LOGIC ===
+            function selectCard(cardKey) {
+                if (gameState.gameOver || gameState.currentPlayer !== "red")
+                    return;
+
+                gameState.selectedCard = cardKey;
+                gameState.selectedPiece = null;
+                gameState.validMoves = [];
+                render();
+            }
+
+            function selectPiece(row, col) {
+                if (
+                    gameState.gameOver ||
+                    gameState.currentPlayer !== "red" ||
+                    !gameState.selectedCard
+                )
+                    return;
+
+                const piece = gameState.board[row][col];
+                if (!piece || piece.color !== "red") return;
+
+                gameState.selectedPiece = { row, col };
+                gameState.validMoves = getValidMoves(
+                    row,
+                    col,
+                    gameState.selectedCard,
+                    "red",
+                );
+                render();
+            }
+
+            function getValidMoves(row, col, cardKey, color) {
+                const card = CARDS[cardKey];
+                const moves = [];
+
+                // Card moves are [dx, dy] where:
+                //   dx positive = right from player's perspective
+                //   dy positive = forward (toward opponent)
+                //
+                // Board coordinates:
+                //   row 0 = top (blue's home), row 4 = bottom (red's home)
+                //   col 0 = left, col 4 = right
+                //
+                // For red: forward (dy+) = toward row 0 = row decreases = rowDelta = -dy
+                //          right (dx+) = toward col 4 = col increases = colDelta = +dx
+                // For blue: forward (dy+) = toward row 4 = row increases = rowDelta = +dy
+                //           right (dx+) = toward col 0 (their right) = col decreases = colDelta = -dx
+
+                for (const [dx, dy] of card.moves) {
+                    let newRow, newCol;
+
+                    if (color === "red") {
+                        newRow = row - dy; // forward = up = row decreases
+                        newCol = col + dx; // right = col increases
+                    } else {
+                        newRow = row + dy; // forward = down = row increases
+                        newCol = col - dx; // right (from blue's view) = col decreases
+                    }
+
+                    if (
+                        newRow >= 0 &&
+                        newRow < 5 &&
+                        newCol >= 0 &&
+                        newCol < 5
+                    ) {
+                        const target = gameState.board[newRow][newCol];
+                        if (!target || target.color !== color) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+                }
+
+                return moves;
+            }
+
+            function makeMove(toRow, toCol) {
+                if (gameState.gameOver) return;
+
+                const { row: fromRow, col: fromCol } = gameState.selectedPiece;
+                const piece = gameState.board[fromRow][fromCol];
+                const captured = gameState.board[toRow][toCol];
+
+                // Make the move
+                gameState.board[toRow][toCol] = piece;
+                gameState.board[fromRow][fromCol] = null;
+
+                // Swap cards
+                const usedCard = gameState.selectedCard;
+                const cardIndex = gameState.redCards.indexOf(usedCard);
+                gameState.redCards[cardIndex] = gameState.waitingCard;
+                gameState.waitingCard = usedCard;
+
+                // Check win conditions
+                if (checkWin("red", captured, toRow, toCol)) {
+                    gameState.gameOver = true;
+                    gameState.winner = "red";
+                } else {
+                    gameState.currentPlayer = "blue";
+                }
+
+                gameState.selectedCard = null;
+                gameState.selectedPiece = null;
+                gameState.validMoves = [];
+
+                render();
+
+                // AI turn
+                if (!gameState.gameOver && gameState.currentPlayer === "blue") {
+                    setTimeout(aiMove, 800);
+                }
+            }
+
+            function checkWin(color, captured, toRow, toCol) {
+                // Capture master
+                if (captured && captured.type === "master") {
+                    return true;
+                }
+
+                // Move master to opponent's temple
+                const piece = gameState.board[toRow][toCol];
+                if (piece.type === "master") {
+                    if (color === "red" && toRow === 0 && toCol === 2)
+                        return true;
+                    if (color === "blue" && toRow === 4 && toCol === 2)
+                        return true;
+                }
+
+                return false;
+            }
+
+            // === AI ===
+            function aiMove() {
+                if (gameState.gameOver) return;
+
+                const moves = getAllMoves("blue");
+
+                // Score each move
+                let bestMove = null;
+                let bestScore = -Infinity;
+
+                for (const move of moves) {
+                    const score = evaluateMove(move);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = move;
+                    }
+                }
+
+                if (bestMove) {
+                    executeAiMove(bestMove);
+                }
+            }
+
+            function getAllMoves(color) {
+                const moves = [];
+                const cards =
+                    color === "blue" ? gameState.blueCards : gameState.redCards;
+
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const piece = gameState.board[row][col];
+                        if (piece && piece.color === color) {
+                            for (const cardKey of cards) {
+                                const validMoves = getValidMoves(
+                                    row,
+                                    col,
+                                    cardKey,
+                                    color,
+                                );
+                                for (const {
+                                    row: toRow,
+                                    col: toCol,
+                                } of validMoves) {
+                                    moves.push({
+                                        fromRow: row,
+                                        fromCol: col,
+                                        toRow,
+                                        toCol,
+                                        cardKey,
+                                        piece,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return moves;
+            }
+
+            function evaluateMove(move) {
+                let score = Math.random() * 0.5; // Small random factor for variety
+
+                const { fromRow, fromCol, toRow, toCol, piece } = move;
+                const target = gameState.board[toRow][toCol];
+
+                // Win by capture master
+                if (target && target.type === "master") {
+                    return 10000;
+                }
+
+                // Win by temple
+                if (piece.type === "master" && toRow === 4 && toCol === 2) {
+                    return 10000;
+                }
+
+                // Capture any piece
+                if (target) {
+                    score += 100;
+                }
+
+                // Move master toward temple
+                if (piece.type === "master") {
+                    score +=
+                        (4 - Math.abs(toRow - 4) - Math.abs(toCol - 2)) * 5;
+                }
+
+                // Protect master - don't leave it exposed
+                if (piece.type === "master") {
+                    // Check if new position is threatened
+                    const threats = countThreats(toRow, toCol, "red");
+                    score -= threats * 50;
+                }
+
+                // Control center
+                const centerDist = Math.abs(toRow - 2) + Math.abs(toCol - 2);
+                score += (4 - centerDist) * 2;
+
+                // Advance pieces (blue wants to move toward higher row numbers)
+                score += (toRow - fromRow) * 3;
+
+                return score;
+            }
+
+            function countThreats(row, col, byColor) {
+                let threats = 0;
+                const cards =
+                    byColor === "red"
+                        ? gameState.redCards
+                        : gameState.blueCards;
+
+                for (let r = 0; r < 5; r++) {
+                    for (let c = 0; c < 5; c++) {
+                        const piece = gameState.board[r][c];
+                        if (piece && piece.color === byColor) {
+                            for (const cardKey of cards) {
+                                const moves = getValidMoves(
+                                    r,
+                                    c,
+                                    cardKey,
+                                    byColor,
+                                );
+                                if (
+                                    moves.some(
+                                        (m) => m.row === row && m.col === col,
+                                    )
+                                ) {
+                                    threats++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return threats;
+            }
+
+            function executeAiMove(move) {
+                const { fromRow, fromCol, toRow, toCol, cardKey } = move;
+                const piece = gameState.board[fromRow][fromCol];
+                const captured = gameState.board[toRow][toCol];
+
+                // Make the move
+                gameState.board[toRow][toCol] = piece;
+                gameState.board[fromRow][fromCol] = null;
+
+                // Swap cards
+                const cardIndex = gameState.blueCards.indexOf(cardKey);
+                gameState.blueCards[cardIndex] = gameState.waitingCard;
+                gameState.waitingCard = cardKey;
+
+                // Check win
+                if (checkWin("blue", captured, toRow, toCol)) {
+                    gameState.gameOver = true;
+                    gameState.winner = "blue";
+                } else {
+                    gameState.currentPlayer = "red";
+                }
+
+                render();
+            }
+
+            function resetGame() {
+                initGame();
+            }
+
+            function toggleRules() {
+                document.getElementById("rules").classList.toggle("show");
+            }
+
+            // Start game
+            initGame();
+        </script>
+    </body>
+</html>
