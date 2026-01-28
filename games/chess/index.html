@@ -1,0 +1,2683 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chess</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Raleway", sans-serif;
+                background: #000;
+                color: #e0e0e0;
+                overflow: hidden;
+                height: 100vh;
+            }
+
+            #game-container {
+                display: flex;
+                height: 100vh;
+                background: #000;
+            }
+
+            #canvas-container {
+                flex: 1;
+                position: relative;
+            }
+
+            #game-canvas {
+                display: block;
+            }
+
+            #sidebar {
+                width: 300px;
+                background: rgba(8, 8, 8, 0.95);
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+                display: flex;
+                flex-direction: column;
+                backdrop-filter: blur(20px);
+            }
+
+            .sidebar-header {
+                padding: 28px 20px;
+                text-align: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            .sidebar-header h1 {
+                font-family: "Cinzel", serif;
+                font-size: 1.6rem;
+                font-weight: 600;
+                letter-spacing: 8px;
+                color: #fff;
+                text-transform: uppercase;
+            }
+
+            .status-bar {
+                padding: 18px 20px;
+                background: rgba(255, 255, 255, 0.02);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            .turn-indicator {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .turn-color {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                border: 2px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .turn-color.white {
+                background: radial-gradient(circle at 30% 30%, #fff, #ccc);
+            }
+
+            .turn-color.black {
+                background: radial-gradient(circle at 30% 30%, #333, #111);
+            }
+
+            .game-status {
+                margin-top: 8px;
+                font-size: 0.85rem;
+                color: #888;
+                font-weight: 500;
+            }
+
+            .game-status.check {
+                color: #c9a227;
+                animation: pulse 0.5s ease-in-out infinite alternate;
+            }
+
+            .game-status.checkmate {
+                color: #c9a227;
+                font-size: 0.95rem;
+                font-weight: 600;
+            }
+
+            @keyframes pulse {
+                from {
+                    opacity: 0.7;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .controls-section {
+                padding: 18px 20px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            .section-title {
+                font-family: "Cinzel", serif;
+                font-size: 0.7rem;
+                letter-spacing: 3px;
+                color: #666;
+                margin-bottom: 14px;
+                text-transform: uppercase;
+            }
+
+            .button-row {
+                display: flex;
+                gap: 8px;
+            }
+
+            .btn {
+                flex: 1;
+                padding: 10px 12px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.03);
+                color: #aaa;
+                font-family: "Raleway", sans-serif;
+                font-size: 0.75rem;
+                font-weight: 500;
+                border-radius: 3px;
+                cursor: pointer;
+                transition: all 0.25s ease;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .btn:hover {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 255, 255, 0.2);
+                color: #fff;
+            }
+
+            .btn:active {
+                transform: scale(0.98);
+            }
+
+            .btn.primary {
+                background: rgba(255, 255, 255, 0.06);
+                border-color: rgba(255, 255, 255, 0.15);
+                color: #ccc;
+            }
+
+            .move-history {
+                flex: 1;
+                padding: 18px 20px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .history-list {
+                flex: 1;
+                overflow-y: auto;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 4px;
+                padding: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+            }
+
+            .history-list::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .history-list::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.02);
+                border-radius: 2px;
+            }
+
+            .history-list::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 2px;
+            }
+
+            .move-row {
+                display: flex;
+                padding: 6px 8px;
+                border-radius: 3px;
+                font-size: 0.85rem;
+                transition: background 0.2s;
+            }
+
+            .move-row:hover {
+                background: rgba(255, 255, 255, 0.04);
+            }
+
+            .move-number {
+                width: 32px;
+                color: #555;
+                font-weight: 600;
+            }
+
+            .move-white,
+            .move-black {
+                flex: 1;
+                font-family: "Raleway", sans-serif;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            .move-white {
+                color: #ccc;
+            }
+
+            .move-black {
+                color: #888;
+            }
+
+            .captured-pieces {
+                padding: 18px 20px;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            .captured-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                min-height: 26px;
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 3px;
+                margin-top: 8px;
+            }
+
+            .captured-piece {
+                font-size: 1.1rem;
+                opacity: 0.7;
+            }
+
+            #overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.92);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                backdrop-filter: blur(8px);
+            }
+
+            #overlay.hidden {
+                display: none;
+            }
+
+            .modal {
+                background: rgba(12, 12, 12, 0.98);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 45px;
+                text-align: center;
+                max-width: 380px;
+            }
+
+            .modal h2 {
+                font-family: "Cinzel", serif;
+                font-size: 2rem;
+                margin-bottom: 12px;
+                color: #fff;
+                letter-spacing: 6px;
+                font-weight: 600;
+            }
+
+            .modal p {
+                color: #777;
+                margin-bottom: 30px;
+                line-height: 1.7;
+                font-size: 0.9rem;
+            }
+
+            .modal .btn {
+                min-width: 140px;
+                padding: 12px 28px;
+            }
+
+            .difficulty-select {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                margin-bottom: 25px;
+            }
+
+            .diff-btn {
+                padding: 10px 20px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.02);
+                color: #888;
+                font-family: "Raleway", sans-serif;
+                font-size: 0.8rem;
+                font-weight: 500;
+                border-radius: 3px;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .diff-btn:hover,
+            .diff-btn.active {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 255, 255, 0.2);
+                color: #fff;
+            }
+
+            .camera-hint {
+                position: absolute;
+                bottom: 20px;
+                left: 20px;
+                background: rgba(0, 0, 0, 0.7);
+                padding: 12px 18px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                color: #666;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                pointer-events: none;
+            }
+
+            .camera-hint span {
+                color: #999;
+                font-weight: 500;
+            }
+
+            .thinking-indicator {
+                display: none;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 15px;
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 3px;
+                margin-top: 10px;
+            }
+
+            .thinking-indicator.active {
+                display: flex;
+            }
+
+            .thinking-dots {
+                display: flex;
+                gap: 4px;
+            }
+
+            .thinking-dots span {
+                width: 6px;
+                height: 6px;
+                background: #666;
+                border-radius: 50%;
+                animation: bounce 1.4s ease-in-out infinite;
+            }
+
+            .thinking-dots span:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .thinking-dots span:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+            @keyframes bounce {
+                0%,
+                80%,
+                100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-6px);
+                }
+            }
+
+            .promotion-modal {
+                display: none;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(12, 12, 12, 0.98);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 24px;
+                z-index: 1001;
+            }
+
+            .promotion-modal.active {
+                display: block;
+            }
+
+            .promotion-title {
+                font-family: "Cinzel", serif;
+                font-size: 0.9rem;
+                margin-bottom: 18px;
+                text-align: center;
+                color: #999;
+                letter-spacing: 2px;
+            }
+
+            .promotion-pieces {
+                display: flex;
+                gap: 10px;
+            }
+
+            .promotion-piece {
+                width: 50px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2rem;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .promotion-piece:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: scale(1.05);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="game-container">
+            <div id="canvas-container">
+                <canvas id="game-canvas"></canvas>
+                <div class="camera-hint">
+                    <span>Drag</span> to rotate • <span>Scroll</span> to zoom •
+                    <span>Right-click drag</span> to pan
+                </div>
+            </div>
+            <div id="sidebar">
+                <div class="sidebar-header">
+                    <h1>Chess</h1>
+                </div>
+                <div class="status-bar">
+                    <div class="turn-indicator">
+                        <div class="turn-color white" id="turn-color"></div>
+                        <span id="turn-text">White's Turn</span>
+                    </div>
+                    <div class="game-status" id="game-status"></div>
+                    <div class="thinking-indicator" id="thinking">
+                        <div class="thinking-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span>AI is thinking...</span>
+                    </div>
+                </div>
+                <div class="controls-section">
+                    <div class="section-title">Controls</div>
+                    <div class="button-row">
+                        <button class="btn primary" id="new-game-btn">
+                            New Game
+                        </button>
+                        <button class="btn" id="undo-btn">Undo</button>
+                    </div>
+                    <div class="button-row" style="margin-top: 8px">
+                        <button class="btn" id="flip-btn">Flip Board</button>
+                        <button class="btn" id="reset-camera-btn">
+                            Reset View
+                        </button>
+                    </div>
+                </div>
+                <div class="move-history">
+                    <div class="section-title">Move History</div>
+                    <div class="history-list" id="history-list"></div>
+                </div>
+                <div class="captured-pieces">
+                    <div class="section-title">Captured Pieces</div>
+                    <div class="captured-row" id="captured-white"></div>
+                    <div class="captured-row" id="captured-black"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="overlay">
+            <div class="modal">
+                <h2>Chess</h2>
+                <p>
+                    A classic game of strategy rendered in 3D. Challenge the AI
+                    opponent.
+                </p>
+                <div class="section-title" style="margin-bottom: 10px">
+                    Select Difficulty
+                </div>
+                <div class="difficulty-select">
+                    <button class="diff-btn" data-depth="1">Easy</button>
+                    <button class="diff-btn active" data-depth="3">
+                        Medium
+                    </button>
+                    <button class="diff-btn" data-depth="4">Hard</button>
+                </div>
+                <button class="btn primary" id="start-btn">Start Game</button>
+            </div>
+        </div>
+
+        <div class="promotion-modal" id="promotion-modal">
+            <div class="promotion-title">Choose Promotion</div>
+            <div class="promotion-pieces" id="promotion-pieces"></div>
+        </div>
+
+        <script>
+            // ==================== CHESS ENGINE ====================
+            const PIECE_VALUES = {
+                p: 100,
+                n: 320,
+                b: 330,
+                r: 500,
+                q: 900,
+                k: 20000,
+            };
+            const PIECE_SYMBOLS = {
+                wp: "♙",
+                wn: "♘",
+                wb: "♗",
+                wr: "♖",
+                wq: "♕",
+                wk: "♔",
+                bp: "♟",
+                bn: "♞",
+                bb: "♝",
+                br: "♜",
+                bq: "♛",
+                bk: "♚",
+            };
+
+            // Piece-square tables for positional evaluation
+            const PST = {
+                p: [
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [50, 50, 50, 50, 50, 50, 50, 50],
+                    [10, 10, 20, 30, 30, 20, 10, 10],
+                    [5, 5, 10, 25, 25, 10, 5, 5],
+                    [0, 0, 0, 20, 20, 0, 0, 0],
+                    [5, -5, -10, 0, 0, -10, -5, 5],
+                    [5, 10, 10, -20, -20, 10, 10, 5],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                n: [
+                    [-50, -40, -30, -30, -30, -30, -40, -50],
+                    [-40, -20, 0, 0, 0, 0, -20, -40],
+                    [-30, 0, 10, 15, 15, 10, 0, -30],
+                    [-30, 5, 15, 20, 20, 15, 5, -30],
+                    [-30, 0, 15, 20, 20, 15, 0, -30],
+                    [-30, 5, 10, 15, 15, 10, 5, -30],
+                    [-40, -20, 0, 5, 5, 0, -20, -40],
+                    [-50, -40, -30, -30, -30, -30, -40, -50],
+                ],
+                b: [
+                    [-20, -10, -10, -10, -10, -10, -10, -20],
+                    [-10, 0, 0, 0, 0, 0, 0, -10],
+                    [-10, 0, 5, 10, 10, 5, 0, -10],
+                    [-10, 5, 5, 10, 10, 5, 5, -10],
+                    [-10, 0, 10, 10, 10, 10, 0, -10],
+                    [-10, 10, 10, 10, 10, 10, 10, -10],
+                    [-10, 5, 0, 0, 0, 0, 5, -10],
+                    [-20, -10, -10, -10, -10, -10, -10, -20],
+                ],
+                r: [
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [5, 10, 10, 10, 10, 10, 10, 5],
+                    [-5, 0, 0, 0, 0, 0, 0, -5],
+                    [-5, 0, 0, 0, 0, 0, 0, -5],
+                    [-5, 0, 0, 0, 0, 0, 0, -5],
+                    [-5, 0, 0, 0, 0, 0, 0, -5],
+                    [-5, 0, 0, 0, 0, 0, 0, -5],
+                    [0, 0, 0, 5, 5, 0, 0, 0],
+                ],
+                q: [
+                    [-20, -10, -10, -5, -5, -10, -10, -20],
+                    [-10, 0, 0, 0, 0, 0, 0, -10],
+                    [-10, 0, 5, 5, 5, 5, 0, -10],
+                    [-5, 0, 5, 5, 5, 5, 0, -5],
+                    [0, 0, 5, 5, 5, 5, 0, -5],
+                    [-10, 5, 5, 5, 5, 5, 0, -10],
+                    [-10, 0, 5, 0, 0, 0, 0, -10],
+                    [-20, -10, -10, -5, -5, -10, -10, -20],
+                ],
+                k: [
+                    [-30, -40, -40, -50, -50, -40, -40, -30],
+                    [-30, -40, -40, -50, -50, -40, -40, -30],
+                    [-30, -40, -40, -50, -50, -40, -40, -30],
+                    [-30, -40, -40, -50, -50, -40, -40, -30],
+                    [-20, -30, -30, -40, -40, -30, -30, -20],
+                    [-10, -20, -20, -20, -20, -20, -20, -10],
+                    [20, 20, 0, 0, 0, 0, 20, 20],
+                    [20, 30, 10, 0, 0, 10, 30, 20],
+                ],
+            };
+
+            class ChessGame {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.board = this.createInitialBoard();
+                    this.turn = "w";
+                    this.castling = { wk: true, wq: true, bk: true, bq: true };
+                    this.enPassant = null;
+                    this.halfMoves = 0;
+                    this.fullMoves = 1;
+                    this.history = [];
+                    this.capturedPieces = { w: [], b: [] };
+                }
+
+                createInitialBoard() {
+                    return [
+                        ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"],
+                        ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+                        [null, null, null, null, null, null, null, null],
+                        [null, null, null, null, null, null, null, null],
+                        [null, null, null, null, null, null, null, null],
+                        [null, null, null, null, null, null, null, null],
+                        ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
+                        ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"],
+                    ];
+                }
+
+                getPiece(row, col) {
+                    if (row < 0 || row > 7 || col < 0 || col > 7) return null;
+                    return this.board[row][col];
+                }
+
+                getColor(piece) {
+                    return piece ? piece[0] : null;
+                }
+
+                getType(piece) {
+                    return piece ? piece[1] : null;
+                }
+
+                isValidSquare(row, col) {
+                    return row >= 0 && row <= 7 && col >= 0 && col <= 7;
+                }
+
+                getLegalMoves(row, col) {
+                    const piece = this.getPiece(row, col);
+                    if (!piece || this.getColor(piece) !== this.turn) return [];
+
+                    const moves = this.getPseudoLegalMoves(row, col);
+                    return moves.filter(
+                        (move) =>
+                            !this.wouldBeInCheck(row, col, move.row, move.col),
+                    );
+                }
+
+                getPseudoLegalMoves(row, col) {
+                    const piece = this.getPiece(row, col);
+                    if (!piece) return [];
+
+                    const type = this.getType(piece);
+                    const color = this.getColor(piece);
+                    const moves = [];
+
+                    switch (type) {
+                        case "p":
+                            this.getPawnMoves(row, col, color, moves);
+                            break;
+                        case "n":
+                            this.getKnightMoves(row, col, color, moves);
+                            break;
+                        case "b":
+                            this.getSlidingMoves(row, col, color, moves, [
+                                [-1, -1],
+                                [-1, 1],
+                                [1, -1],
+                                [1, 1],
+                            ]);
+                            break;
+                        case "r":
+                            this.getSlidingMoves(row, col, color, moves, [
+                                [-1, 0],
+                                [1, 0],
+                                [0, -1],
+                                [0, 1],
+                            ]);
+                            break;
+                        case "q":
+                            this.getSlidingMoves(row, col, color, moves, [
+                                [-1, -1],
+                                [-1, 1],
+                                [1, -1],
+                                [1, 1],
+                                [-1, 0],
+                                [1, 0],
+                                [0, -1],
+                                [0, 1],
+                            ]);
+                            break;
+                        case "k":
+                            this.getKingMoves(row, col, color, moves);
+                            break;
+                    }
+
+                    return moves;
+                }
+
+                getPawnMoves(row, col, color, moves) {
+                    const dir = color === "w" ? -1 : 1;
+                    const startRow = color === "w" ? 6 : 1;
+                    const promoRow = color === "w" ? 0 : 7;
+
+                    // Forward move
+                    if (
+                        this.isValidSquare(row + dir, col) &&
+                        !this.getPiece(row + dir, col)
+                    ) {
+                        if (row + dir === promoRow) {
+                            ["q", "r", "b", "n"].forEach((p) =>
+                                moves.push({
+                                    row: row + dir,
+                                    col,
+                                    promotion: p,
+                                }),
+                            );
+                        } else {
+                            moves.push({ row: row + dir, col });
+                        }
+
+                        // Double move
+                        if (
+                            row === startRow &&
+                            !this.getPiece(row + 2 * dir, col)
+                        ) {
+                            moves.push({ row: row + 2 * dir, col });
+                        }
+                    }
+
+                    // Captures
+                    for (const dc of [-1, 1]) {
+                        const newCol = col + dc;
+                        if (!this.isValidSquare(row + dir, newCol)) continue;
+
+                        const target = this.getPiece(row + dir, newCol);
+                        const isEnPassant =
+                            this.enPassant &&
+                            this.enPassant.row === row + dir &&
+                            this.enPassant.col === newCol;
+
+                        if (
+                            (target && this.getColor(target) !== color) ||
+                            isEnPassant
+                        ) {
+                            if (row + dir === promoRow) {
+                                ["q", "r", "b", "n"].forEach((p) =>
+                                    moves.push({
+                                        row: row + dir,
+                                        col: newCol,
+                                        promotion: p,
+                                    }),
+                                );
+                            } else {
+                                moves.push({
+                                    row: row + dir,
+                                    col: newCol,
+                                    enPassant: isEnPassant,
+                                });
+                            }
+                        }
+                    }
+                }
+
+                getKnightMoves(row, col, color, moves) {
+                    const offsets = [
+                        [-2, -1],
+                        [-2, 1],
+                        [-1, -2],
+                        [-1, 2],
+                        [1, -2],
+                        [1, 2],
+                        [2, -1],
+                        [2, 1],
+                    ];
+                    for (const [dr, dc] of offsets) {
+                        const newRow = row + dr,
+                            newCol = col + dc;
+                        if (!this.isValidSquare(newRow, newCol)) continue;
+                        const target = this.getPiece(newRow, newCol);
+                        if (!target || this.getColor(target) !== color) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+                }
+
+                getSlidingMoves(row, col, color, moves, directions) {
+                    for (const [dr, dc] of directions) {
+                        let newRow = row + dr,
+                            newCol = col + dc;
+                        while (this.isValidSquare(newRow, newCol)) {
+                            const target = this.getPiece(newRow, newCol);
+                            if (!target) {
+                                moves.push({ row: newRow, col: newCol });
+                            } else {
+                                if (this.getColor(target) !== color) {
+                                    moves.push({ row: newRow, col: newCol });
+                                }
+                                break;
+                            }
+                            newRow += dr;
+                            newCol += dc;
+                        }
+                    }
+                }
+
+                getKingMoves(row, col, color, moves) {
+                    const offsets = [
+                        [-1, -1],
+                        [-1, 0],
+                        [-1, 1],
+                        [0, -1],
+                        [0, 1],
+                        [1, -1],
+                        [1, 0],
+                        [1, 1],
+                    ];
+                    for (const [dr, dc] of offsets) {
+                        const newRow = row + dr,
+                            newCol = col + dc;
+                        if (!this.isValidSquare(newRow, newCol)) continue;
+                        const target = this.getPiece(newRow, newCol);
+                        if (!target || this.getColor(target) !== color) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+
+                    // Castling
+                    if (!this.isInCheck(color)) {
+                        const homeRow = color === "w" ? 7 : 0;
+                        if (row === homeRow && col === 4) {
+                            // Kingside
+                            if (
+                                this.castling[color + "k"] &&
+                                !this.getPiece(homeRow, 5) &&
+                                !this.getPiece(homeRow, 6) &&
+                                this.getPiece(homeRow, 7) === color + "r" &&
+                                !this.isSquareAttacked(
+                                    homeRow,
+                                    5,
+                                    color === "w" ? "b" : "w",
+                                ) &&
+                                !this.isSquareAttacked(
+                                    homeRow,
+                                    6,
+                                    color === "w" ? "b" : "w",
+                                )
+                            ) {
+                                moves.push({
+                                    row: homeRow,
+                                    col: 6,
+                                    castle: "k",
+                                });
+                            }
+                            // Queenside
+                            if (
+                                this.castling[color + "q"] &&
+                                !this.getPiece(homeRow, 1) &&
+                                !this.getPiece(homeRow, 2) &&
+                                !this.getPiece(homeRow, 3) &&
+                                this.getPiece(homeRow, 0) === color + "r" &&
+                                !this.isSquareAttacked(
+                                    homeRow,
+                                    2,
+                                    color === "w" ? "b" : "w",
+                                ) &&
+                                !this.isSquareAttacked(
+                                    homeRow,
+                                    3,
+                                    color === "w" ? "b" : "w",
+                                )
+                            ) {
+                                moves.push({
+                                    row: homeRow,
+                                    col: 2,
+                                    castle: "q",
+                                });
+                            }
+                        }
+                    }
+                }
+
+                findKing(color) {
+                    for (let r = 0; r < 8; r++) {
+                        for (let c = 0; c < 8; c++) {
+                            if (this.board[r][c] === color + "k")
+                                return { row: r, col: c };
+                        }
+                    }
+                    return null;
+                }
+
+                isSquareAttacked(row, col, byColor) {
+                    // Check knight attacks
+                    const knightOffsets = [
+                        [-2, -1],
+                        [-2, 1],
+                        [-1, -2],
+                        [-1, 2],
+                        [1, -2],
+                        [1, 2],
+                        [2, -1],
+                        [2, 1],
+                    ];
+                    for (const [dr, dc] of knightOffsets) {
+                        const p = this.getPiece(row + dr, col + dc);
+                        if (p === byColor + "n") return true;
+                    }
+
+                    // Check sliding attacks (bishop, rook, queen)
+                    const diagonals = [
+                        [-1, -1],
+                        [-1, 1],
+                        [1, -1],
+                        [1, 1],
+                    ];
+                    const straights = [
+                        [-1, 0],
+                        [1, 0],
+                        [0, -1],
+                        [0, 1],
+                    ];
+
+                    for (const [dr, dc] of diagonals) {
+                        let r = row + dr,
+                            c = col + dc;
+                        while (this.isValidSquare(r, c)) {
+                            const p = this.getPiece(r, c);
+                            if (p) {
+                                if (
+                                    this.getColor(p) === byColor &&
+                                    (this.getType(p) === "b" ||
+                                        this.getType(p) === "q")
+                                )
+                                    return true;
+                                break;
+                            }
+                            r += dr;
+                            c += dc;
+                        }
+                    }
+
+                    for (const [dr, dc] of straights) {
+                        let r = row + dr,
+                            c = col + dc;
+                        while (this.isValidSquare(r, c)) {
+                            const p = this.getPiece(r, c);
+                            if (p) {
+                                if (
+                                    this.getColor(p) === byColor &&
+                                    (this.getType(p) === "r" ||
+                                        this.getType(p) === "q")
+                                )
+                                    return true;
+                                break;
+                            }
+                            r += dr;
+                            c += dc;
+                        }
+                    }
+
+                    // Check king attacks
+                    for (const [dr, dc] of [...diagonals, ...straights]) {
+                        const p = this.getPiece(row + dr, col + dc);
+                        if (p === byColor + "k") return true;
+                    }
+
+                    // Check pawn attacks
+                    const pawnDir = byColor === "w" ? 1 : -1;
+                    if (this.getPiece(row + pawnDir, col - 1) === byColor + "p")
+                        return true;
+                    if (this.getPiece(row + pawnDir, col + 1) === byColor + "p")
+                        return true;
+
+                    return false;
+                }
+
+                isInCheck(color) {
+                    const king = this.findKing(color);
+                    if (!king) return false;
+                    return this.isSquareAttacked(
+                        king.row,
+                        king.col,
+                        color === "w" ? "b" : "w",
+                    );
+                }
+
+                wouldBeInCheck(fromRow, fromCol, toRow, toCol) {
+                    const piece = this.board[fromRow][fromCol];
+                    const captured = this.board[toRow][toCol];
+                    const color = this.getColor(piece);
+
+                    // Make move temporarily
+                    this.board[toRow][toCol] = piece;
+                    this.board[fromRow][fromCol] = null;
+
+                    // Handle en passant capture
+                    let epCaptured = null;
+                    if (
+                        this.getType(piece) === "p" &&
+                        this.enPassant &&
+                        toRow === this.enPassant.row &&
+                        toCol === this.enPassant.col
+                    ) {
+                        const epRow = color === "w" ? toRow + 1 : toRow - 1;
+                        epCaptured = this.board[epRow][toCol];
+                        this.board[epRow][toCol] = null;
+                    }
+
+                    const inCheck = this.isInCheck(color);
+
+                    // Undo
+                    this.board[fromRow][fromCol] = piece;
+                    this.board[toRow][toCol] = captured;
+                    if (epCaptured !== null) {
+                        const epRow = color === "w" ? toRow + 1 : toRow - 1;
+                        this.board[epRow][toCol] = epCaptured;
+                    }
+
+                    return inCheck;
+                }
+
+                makeMove(fromRow, fromCol, toRow, toCol, promotion = null) {
+                    const piece = this.board[fromRow][fromCol];
+                    const captured = this.board[toRow][toCol];
+                    const color = this.getColor(piece);
+                    const type = this.getType(piece);
+
+                    const moveRecord = {
+                        from: { row: fromRow, col: fromCol },
+                        to: { row: toRow, col: toCol },
+                        piece,
+                        captured,
+                        castling: { ...this.castling },
+                        enPassant: this.enPassant
+                            ? { ...this.enPassant }
+                            : null,
+                        halfMoves: this.halfMoves,
+                        promotion,
+                        epCapture: null,
+                        castle: null,
+                    };
+
+                    // Handle capture
+                    if (captured) {
+                        this.capturedPieces[color].push(captured);
+                    }
+
+                    // Handle en passant capture
+                    if (
+                        type === "p" &&
+                        this.enPassant &&
+                        toRow === this.enPassant.row &&
+                        toCol === this.enPassant.col
+                    ) {
+                        const epRow = color === "w" ? toRow + 1 : toRow - 1;
+                        moveRecord.epCapture = this.board[epRow][toCol];
+                        this.capturedPieces[color].push(
+                            this.board[epRow][toCol],
+                        );
+                        this.board[epRow][toCol] = null;
+                    }
+
+                    // Make the move
+                    this.board[toRow][toCol] = promotion
+                        ? color + promotion
+                        : piece;
+                    this.board[fromRow][fromCol] = null;
+
+                    // Handle castling
+                    if (type === "k" && Math.abs(toCol - fromCol) === 2) {
+                        const rookFromCol = toCol > fromCol ? 7 : 0;
+                        const rookToCol = toCol > fromCol ? 5 : 3;
+                        this.board[toRow][rookToCol] =
+                            this.board[toRow][rookFromCol];
+                        this.board[toRow][rookFromCol] = null;
+                        moveRecord.castle = toCol > fromCol ? "k" : "q";
+                    }
+
+                    // Update en passant square
+                    if (type === "p" && Math.abs(toRow - fromRow) === 2) {
+                        this.enPassant = {
+                            row: (fromRow + toRow) / 2,
+                            col: fromCol,
+                        };
+                    } else {
+                        this.enPassant = null;
+                    }
+
+                    // Update castling rights
+                    if (type === "k") {
+                        this.castling[color + "k"] = false;
+                        this.castling[color + "q"] = false;
+                    }
+                    if (type === "r") {
+                        if (fromRow === 7 && fromCol === 0)
+                            this.castling.wq = false;
+                        if (fromRow === 7 && fromCol === 7)
+                            this.castling.wk = false;
+                        if (fromRow === 0 && fromCol === 0)
+                            this.castling.bq = false;
+                        if (fromRow === 0 && fromCol === 7)
+                            this.castling.bk = false;
+                    }
+
+                    // Update counters
+                    if (type === "p" || captured) {
+                        this.halfMoves = 0;
+                    } else {
+                        this.halfMoves++;
+                    }
+
+                    if (color === "b") this.fullMoves++;
+
+                    // Switch turn
+                    this.turn = this.turn === "w" ? "b" : "w";
+
+                    this.history.push(moveRecord);
+                    return moveRecord;
+                }
+
+                undoMove() {
+                    if (this.history.length === 0) return null;
+
+                    const move = this.history.pop();
+                    const color = this.getColor(move.piece);
+
+                    // Restore piece
+                    this.board[move.from.row][move.from.col] = move.piece;
+                    this.board[move.to.row][move.to.col] = move.captured;
+
+                    // Restore en passant capture
+                    if (move.epCapture) {
+                        const epRow =
+                            color === "w" ? move.to.row + 1 : move.to.row - 1;
+                        this.board[epRow][move.to.col] = move.epCapture;
+                        this.capturedPieces[color].pop();
+                    }
+
+                    // Restore regular capture
+                    if (move.captured) {
+                        this.capturedPieces[color].pop();
+                    }
+
+                    // Restore castling rook
+                    if (move.castle) {
+                        const rookToCol = move.castle === "k" ? 5 : 3;
+                        const rookFromCol = move.castle === "k" ? 7 : 0;
+                        this.board[move.to.row][rookFromCol] =
+                            this.board[move.to.row][rookToCol];
+                        this.board[move.to.row][rookToCol] = null;
+                    }
+
+                    // Restore state
+                    this.castling = move.castling;
+                    this.enPassant = move.enPassant;
+                    this.halfMoves = move.halfMoves;
+                    if (color === "b") this.fullMoves--;
+                    this.turn = color;
+
+                    return move;
+                }
+
+                getAllLegalMoves() {
+                    const moves = [];
+                    for (let r = 0; r < 8; r++) {
+                        for (let c = 0; c < 8; c++) {
+                            const piece = this.board[r][c];
+                            if (piece && this.getColor(piece) === this.turn) {
+                                const pieceMoves = this.getLegalMoves(r, c);
+                                for (const move of pieceMoves) {
+                                    moves.push({
+                                        from: { row: r, col: c },
+                                        to: move,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    return moves;
+                }
+
+                isCheckmate() {
+                    return (
+                        this.isInCheck(this.turn) &&
+                        this.getAllLegalMoves().length === 0
+                    );
+                }
+
+                isStalemate() {
+                    return (
+                        !this.isInCheck(this.turn) &&
+                        this.getAllLegalMoves().length === 0
+                    );
+                }
+
+                evaluate() {
+                    let score = 0;
+
+                    for (let r = 0; r < 8; r++) {
+                        for (let c = 0; c < 8; c++) {
+                            const piece = this.board[r][c];
+                            if (!piece) continue;
+
+                            const color = this.getColor(piece);
+                            const type = this.getType(piece);
+                            const mult = color === "w" ? 1 : -1;
+
+                            // Material
+                            score += mult * PIECE_VALUES[type];
+
+                            // Position
+                            const pstRow = color === "w" ? r : 7 - r;
+                            score += mult * PST[type][pstRow][c];
+                        }
+                    }
+
+                    // Mobility bonus
+                    const currentMoves = this.getAllLegalMoves().length;
+                    this.turn = this.turn === "w" ? "b" : "w";
+                    const oppMoves = this.getAllLegalMoves().length;
+                    this.turn = this.turn === "w" ? "b" : "w";
+
+                    const mobilityMult = this.turn === "w" ? 1 : -1;
+                    score += mobilityMult * (currentMoves - oppMoves) * 5;
+
+                    return score;
+                }
+
+                getMoveNotation(move) {
+                    const piece = move.piece;
+                    const type = this.getType(piece);
+                    const files = "abcdefgh";
+                    const fromFile = files[move.from.col];
+                    const fromRank = 8 - move.from.row;
+                    const toFile = files[move.to.col];
+                    const toRank = 8 - move.to.row;
+
+                    if (move.castle === "k") return "O-O";
+                    if (move.castle === "q") return "O-O-O";
+
+                    let notation = "";
+                    if (type !== "p") {
+                        notation = type.toUpperCase();
+                    }
+
+                    if (move.captured || move.epCapture) {
+                        if (type === "p") notation = fromFile;
+                        notation += "x";
+                    }
+
+                    notation += toFile + toRank;
+
+                    if (move.promotion) {
+                        notation += "=" + move.promotion.toUpperCase();
+                    }
+
+                    return notation;
+                }
+            }
+
+            // ==================== AI ENGINE ====================
+            class ChessAI {
+                constructor(game, depth = 3) {
+                    this.game = game;
+                    this.depth = depth;
+                    this.nodesEvaluated = 0;
+                }
+
+                getBestMove() {
+                    this.nodesEvaluated = 0;
+                    const isMaximizing = this.game.turn === "w";
+                    let bestMove = null;
+                    let bestScore = isMaximizing ? -Infinity : Infinity;
+
+                    const moves = this.game.getAllLegalMoves();
+
+                    // Order moves for better alpha-beta pruning
+                    moves.sort((a, b) => {
+                        const scoreA = this.getMoveScore(a);
+                        const scoreB = this.getMoveScore(b);
+                        return isMaximizing ? scoreB - scoreA : scoreA - scoreB;
+                    });
+
+                    for (const move of moves) {
+                        this.game.makeMove(
+                            move.from.row,
+                            move.from.col,
+                            move.to.row,
+                            move.to.col,
+                            move.to.promotion,
+                        );
+                        const score = this.minimax(
+                            this.depth - 1,
+                            -Infinity,
+                            Infinity,
+                            !isMaximizing,
+                        );
+                        this.game.undoMove();
+
+                        if (isMaximizing) {
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestMove = move;
+                            }
+                        } else {
+                            if (score < bestScore) {
+                                bestScore = score;
+                                bestMove = move;
+                            }
+                        }
+                    }
+
+                    return bestMove;
+                }
+
+                getMoveScore(move) {
+                    let score = 0;
+                    const target = this.game.board[move.to.row][move.to.col];
+                    if (target) {
+                        score += PIECE_VALUES[this.game.getType(target)] * 10;
+                    }
+                    if (move.to.promotion) {
+                        score += PIECE_VALUES[move.to.promotion] * 10;
+                    }
+                    return score;
+                }
+
+                minimax(depth, alpha, beta, isMaximizing) {
+                    this.nodesEvaluated++;
+
+                    if (depth === 0) {
+                        return this.game.evaluate();
+                    }
+
+                    const moves = this.game.getAllLegalMoves();
+
+                    if (moves.length === 0) {
+                        if (this.game.isInCheck(this.game.turn)) {
+                            return isMaximizing
+                                ? -100000 + (this.depth - depth)
+                                : 100000 - (this.depth - depth);
+                        }
+                        return 0; // Stalemate
+                    }
+
+                    // Move ordering
+                    moves.sort((a, b) => {
+                        const scoreA = this.getMoveScore(a);
+                        const scoreB = this.getMoveScore(b);
+                        return isMaximizing ? scoreB - scoreA : scoreA - scoreB;
+                    });
+
+                    if (isMaximizing) {
+                        let maxEval = -Infinity;
+                        for (const move of moves) {
+                            this.game.makeMove(
+                                move.from.row,
+                                move.from.col,
+                                move.to.row,
+                                move.to.col,
+                                move.to.promotion,
+                            );
+                            const eval_ = this.minimax(
+                                depth - 1,
+                                alpha,
+                                beta,
+                                false,
+                            );
+                            this.game.undoMove();
+                            maxEval = Math.max(maxEval, eval_);
+                            alpha = Math.max(alpha, eval_);
+                            if (beta <= alpha) break;
+                        }
+                        return maxEval;
+                    } else {
+                        let minEval = Infinity;
+                        for (const move of moves) {
+                            this.game.makeMove(
+                                move.from.row,
+                                move.from.col,
+                                move.to.row,
+                                move.to.col,
+                                move.to.promotion,
+                            );
+                            const eval_ = this.minimax(
+                                depth - 1,
+                                alpha,
+                                beta,
+                                true,
+                            );
+                            this.game.undoMove();
+                            minEval = Math.min(minEval, eval_);
+                            beta = Math.min(beta, eval_);
+                            if (beta <= alpha) break;
+                        }
+                        return minEval;
+                    }
+                }
+            }
+
+            // ==================== 3D RENDERER ====================
+            class SpaceChessRenderer {
+                constructor(canvas) {
+                    this.canvas = canvas;
+                    this.scene = new THREE.Scene();
+                    this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+                    this.renderer = new THREE.WebGLRenderer({
+                        canvas,
+                        antialias: true,
+                        alpha: true,
+                    });
+
+                    this.boardGroup = new THREE.Group();
+                    this.piecesGroup = new THREE.Group();
+                    this.highlightGroup = new THREE.Group();
+
+                    this.squareMeshes = [];
+                    this.pieceMeshes = {};
+                    this.selectedSquare = null;
+                    this.validMoves = [];
+
+                    this.isFlipped = false;
+                    this.isDragging = false;
+                    this.isRightDragging = false;
+                    this.previousMousePosition = { x: 0, y: 0 };
+
+                    // Camera state
+                    this.cameraDistance = 14;
+                    this.cameraAngleX = Math.PI / 4;
+                    this.cameraAngleY = Math.PI / 5;
+
+                    // Target values for smooth interpolation
+                    this.targetDistance = 14;
+                    this.targetAngleX = Math.PI / 4;
+                    this.targetAngleY = Math.PI / 5;
+                    this.targetPanX = 0;
+                    this.targetPanY = 0;
+                    this.panX = 0;
+                    this.panY = 0;
+
+                    // Smoothing factor (0-1, lower = smoother)
+                    this.smoothing = 0.08;
+
+                    this.init();
+                }
+
+                init() {
+                    this.resize();
+                    window.addEventListener("resize", () => this.resize());
+
+                    // Scene setup
+                    this.scene.add(this.boardGroup);
+                    this.scene.add(this.piecesGroup);
+                    this.scene.add(this.highlightGroup);
+
+                    // Lighting - elegant and subtle
+                    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+                    this.scene.add(ambientLight);
+
+                    const mainLight = new THREE.DirectionalLight(0xffffff, 0.9);
+                    mainLight.position.set(5, 12, 5);
+                    mainLight.castShadow = true;
+                    this.scene.add(mainLight);
+
+                    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+                    fillLight.position.set(-5, 8, -5);
+                    this.scene.add(fillLight);
+
+                    const rimLight = new THREE.PointLight(0xffffff, 0.4, 30);
+                    rimLight.position.set(0, 10, -10);
+                    this.scene.add(rimLight);
+
+                    // Create starfield
+                    this.createStarfield();
+
+                    // Create board
+                    this.createBoard();
+
+                    // Setup camera controls
+                    this.setupControls();
+
+                    this.updateCamera();
+                }
+
+                resize() {
+                    const container = this.canvas.parentElement;
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    this.renderer.setSize(width, height);
+                    this.renderer.setPixelRatio(
+                        Math.min(window.devicePixelRatio, 2),
+                    );
+                    this.camera.aspect = width / height;
+                    this.camera.updateProjectionMatrix();
+                }
+
+                createStarfield() {
+                    const starsGeometry = new THREE.BufferGeometry();
+                    const starCount = 3000;
+                    const positions = new Float32Array(starCount * 3);
+                    const colors = new Float32Array(starCount * 3);
+                    const sizes = new Float32Array(starCount);
+
+                    for (let i = 0; i < starCount; i++) {
+                        const i3 = i * 3;
+                        const radius = 60 + Math.random() * 140;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.acos(2 * Math.random() - 1);
+
+                        positions[i3] =
+                            radius * Math.sin(phi) * Math.cos(theta);
+                        positions[i3 + 1] =
+                            radius * Math.sin(phi) * Math.sin(theta);
+                        positions[i3 + 2] = radius * Math.cos(phi);
+
+                        // Subtle color variations - mostly white with slight tints
+                        const brightness = 0.5 + Math.random() * 0.5;
+                        colors[i3] = brightness;
+                        colors[i3 + 1] = brightness;
+                        colors[i3 + 2] = brightness;
+
+                        sizes[i] = Math.random() * 0.5 + 0.1;
+                    }
+
+                    starsGeometry.setAttribute(
+                        "position",
+                        new THREE.BufferAttribute(positions, 3),
+                    );
+                    starsGeometry.setAttribute(
+                        "color",
+                        new THREE.BufferAttribute(colors, 3),
+                    );
+
+                    const starsMaterial = new THREE.PointsMaterial({
+                        size: 0.25,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.7,
+                        sizeAttenuation: true,
+                    });
+
+                    const stars = new THREE.Points(
+                        starsGeometry,
+                        starsMaterial,
+                    );
+                    this.scene.add(stars);
+                    this.stars = stars;
+                }
+
+                createBoard() {
+                    const boardSize = 8;
+                    const squareSize = 1;
+                    const offset = ((boardSize - 1) * squareSize) / 2;
+
+                    // Board base - sleek black
+                    const baseGeometry = new THREE.BoxGeometry(
+                        boardSize + 0.6,
+                        0.35,
+                        boardSize + 0.6,
+                    );
+                    const baseMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x0a0a0a,
+                        metalness: 0.9,
+                        roughness: 0.4,
+                    });
+                    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                    base.position.y = -0.22;
+                    this.boardGroup.add(base);
+
+                    // Subtle edge highlight
+                    const edgeGeometry = new THREE.BoxGeometry(
+                        boardSize + 0.65,
+                        0.02,
+                        boardSize + 0.65,
+                    );
+                    const edgeMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x333333,
+                        transparent: true,
+                        opacity: 0.6,
+                    });
+                    const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+                    edge.position.y = -0.03;
+                    this.boardGroup.add(edge);
+
+                    // Squares - dark theme
+                    for (let row = 0; row < boardSize; row++) {
+                        this.squareMeshes[row] = [];
+                        for (let col = 0; col < boardSize; col++) {
+                            const isLight = (row + col) % 2 === 0;
+                            const geometry = new THREE.BoxGeometry(
+                                squareSize * 0.98,
+                                0.08,
+                                squareSize * 0.98,
+                            );
+                            const material = new THREE.MeshStandardMaterial({
+                                color: isLight ? 0x2a2a2a : 0x111111,
+                                metalness: 0.3,
+                                roughness: 0.8,
+                                transparent: true,
+                                opacity: 0.95,
+                            });
+                            const square = new THREE.Mesh(geometry, material);
+                            square.position.set(
+                                col * squareSize - offset,
+                                0,
+                                row * squareSize - offset,
+                            );
+                            square.userData = { row, col };
+                            this.boardGroup.add(square);
+                            this.squareMeshes[row][col] = square;
+                        }
+                    }
+                }
+
+                createPieceMesh(piece) {
+                    const color = piece[0];
+                    const type = piece[1];
+
+                    // Elegant piece colors
+                    const pieceColor = color === "w" ? 0xf5f5f5 : 0x1a1a1a;
+                    const emissiveColor = color === "w" ? 0x222222 : 0x000000;
+                    const metalness = color === "w" ? 0.1 : 0.4;
+
+                    const material = new THREE.MeshStandardMaterial({
+                        color: pieceColor,
+                        metalness: metalness,
+                        roughness: 0.3,
+                        emissive: emissiveColor,
+                        emissiveIntensity: 0.05,
+                    });
+
+                    // Accent material for details
+                    const accentMaterial = new THREE.MeshStandardMaterial({
+                        color: color === "w" ? 0xdddddd : 0x2a2a2a,
+                        metalness: 0.5,
+                        roughness: 0.2,
+                    });
+
+                    const group = new THREE.Group();
+
+                    switch (type) {
+                        case "p": // Pawn - elegant tapered design
+                            const pawnBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.28,
+                                    0.32,
+                                    0.12,
+                                    24,
+                                ),
+                                material,
+                            );
+                            pawnBase.position.y = 0.11;
+                            group.add(pawnBase);
+
+                            const pawnStem = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.12,
+                                    0.22,
+                                    0.35,
+                                    24,
+                                ),
+                                material,
+                            );
+                            pawnStem.position.y = 0.35;
+                            group.add(pawnStem);
+
+                            const pawnNeck = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.14,
+                                    0.12,
+                                    0.12,
+                                    24,
+                                ),
+                                material,
+                            );
+                            pawnNeck.position.y = 0.58;
+                            group.add(pawnNeck);
+
+                            const pawnHead = new THREE.Mesh(
+                                new THREE.SphereGeometry(0.18, 24, 24),
+                                material,
+                            );
+                            pawnHead.position.y = 0.76;
+                            group.add(pawnHead);
+                            break;
+
+                        case "r": // Rook - fortress design
+                            const rookBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.32,
+                                    0.36,
+                                    0.15,
+                                    24,
+                                ),
+                                material,
+                            );
+                            rookBase.position.y = 0.12;
+                            group.add(rookBase);
+
+                            const rookBody = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.26, 0.3, 0.55, 24),
+                                material,
+                            );
+                            rookBody.position.y = 0.47;
+                            group.add(rookBody);
+
+                            const rookTop = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.3, 0.26, 0.12, 24),
+                                material,
+                            );
+                            rookTop.position.y = 0.8;
+                            group.add(rookTop);
+
+                            // Battlements
+                            for (let i = 0; i < 4; i++) {
+                                const battlement = new THREE.Mesh(
+                                    new THREE.BoxGeometry(0.12, 0.15, 0.12),
+                                    material,
+                                );
+                                const angle = (i / 4) * Math.PI * 2;
+                                battlement.position.set(
+                                    Math.cos(angle) * 0.18,
+                                    0.93,
+                                    Math.sin(angle) * 0.18,
+                                );
+                                group.add(battlement);
+                            }
+                            break;
+
+                        case "n": // Knight - horse head design
+                            const knightBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.3, 0.34, 0.14, 24),
+                                material,
+                            );
+                            knightBase.position.y = 0.12;
+                            group.add(knightBase);
+
+                            const knightBody = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.18, 0.26, 0.3, 24),
+                                material,
+                            );
+                            knightBody.position.y = 0.34;
+                            group.add(knightBody);
+
+                            // Horse head shape
+                            const headMain = new THREE.Mesh(
+                                new THREE.BoxGeometry(0.22, 0.45, 0.3),
+                                material,
+                            );
+                            headMain.position.set(0, 0.65, 0.05);
+                            headMain.rotation.x = -0.25;
+                            group.add(headMain);
+
+                            const snout = new THREE.Mesh(
+                                new THREE.BoxGeometry(0.16, 0.22, 0.25),
+                                material,
+                            );
+                            snout.position.set(0, 0.75, 0.22);
+                            snout.rotation.x = 0.3;
+                            group.add(snout);
+
+                            // Ears
+                            const ear1 = new THREE.Mesh(
+                                new THREE.ConeGeometry(0.06, 0.14, 8),
+                                material,
+                            );
+                            ear1.position.set(-0.08, 0.95, -0.02);
+                            ear1.rotation.z = 0.2;
+                            group.add(ear1);
+
+                            const ear2 = new THREE.Mesh(
+                                new THREE.ConeGeometry(0.06, 0.14, 8),
+                                material,
+                            );
+                            ear2.position.set(0.08, 0.95, -0.02);
+                            ear2.rotation.z = -0.2;
+                            group.add(ear2);
+                            break;
+
+                        case "b": // Bishop - mitre design
+                            const bishopBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.3, 0.34, 0.14, 24),
+                                material,
+                            );
+                            bishopBase.position.y = 0.12;
+                            group.add(bishopBase);
+
+                            const bishopStem = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.14,
+                                    0.24,
+                                    0.45,
+                                    24,
+                                ),
+                                material,
+                            );
+                            bishopStem.position.y = 0.42;
+                            group.add(bishopStem);
+
+                            const bishopMitre = new THREE.Mesh(
+                                new THREE.SphereGeometry(0.22, 24, 24),
+                                material,
+                            );
+                            bishopMitre.scale.y = 1.4;
+                            bishopMitre.position.y = 0.82;
+                            group.add(bishopMitre);
+
+                            // Mitre slit
+                            const slit = new THREE.Mesh(
+                                new THREE.BoxGeometry(0.03, 0.18, 0.25),
+                                new THREE.MeshBasicMaterial({
+                                    color: 0x000000,
+                                }),
+                            );
+                            slit.position.y = 0.88;
+                            slit.position.z = 0.01;
+                            group.add(slit);
+
+                            const bishopTop = new THREE.Mesh(
+                                new THREE.SphereGeometry(0.06, 16, 16),
+                                material,
+                            );
+                            bishopTop.position.y = 1.12;
+                            group.add(bishopTop);
+                            break;
+
+                        case "q": // Queen - crown design
+                            const queenBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.32,
+                                    0.38,
+                                    0.16,
+                                    24,
+                                ),
+                                material,
+                            );
+                            queenBase.position.y = 0.13;
+                            group.add(queenBase);
+
+                            const queenStem = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.16,
+                                    0.28,
+                                    0.55,
+                                    24,
+                                ),
+                                material,
+                            );
+                            queenStem.position.y = 0.48;
+                            group.add(queenStem);
+
+                            const queenCollar = new THREE.Mesh(
+                                new THREE.TorusGeometry(0.18, 0.06, 12, 24),
+                                material,
+                            );
+                            queenCollar.rotation.x = Math.PI / 2;
+                            queenCollar.position.y = 0.8;
+                            group.add(queenCollar);
+
+                            // Crown with points
+                            const crownBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.2, 0.18, 0.18, 24),
+                                material,
+                            );
+                            crownBase.position.y = 0.95;
+                            group.add(crownBase);
+
+                            for (let i = 0; i < 8; i++) {
+                                const point = new THREE.Mesh(
+                                    new THREE.SphereGeometry(0.05, 12, 12),
+                                    material,
+                                );
+                                const angle = (i / 8) * Math.PI * 2;
+                                point.position.set(
+                                    Math.cos(angle) * 0.16,
+                                    1.08,
+                                    Math.sin(angle) * 0.16,
+                                );
+                                group.add(point);
+                            }
+
+                            const queenOrb = new THREE.Mesh(
+                                new THREE.SphereGeometry(0.1, 16, 16),
+                                material,
+                            );
+                            queenOrb.position.y = 1.18;
+                            group.add(queenOrb);
+                            break;
+
+                        case "k": // King - crown with cross
+                            const kingBase = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.32,
+                                    0.38,
+                                    0.16,
+                                    24,
+                                ),
+                                material,
+                            );
+                            kingBase.position.y = 0.13;
+                            group.add(kingBase);
+
+                            const kingStem = new THREE.Mesh(
+                                new THREE.CylinderGeometry(
+                                    0.18,
+                                    0.28,
+                                    0.55,
+                                    24,
+                                ),
+                                material,
+                            );
+                            kingStem.position.y = 0.48;
+                            group.add(kingStem);
+
+                            const kingCollar = new THREE.Mesh(
+                                new THREE.TorusGeometry(0.2, 0.06, 12, 24),
+                                material,
+                            );
+                            kingCollar.rotation.x = Math.PI / 2;
+                            kingCollar.position.y = 0.8;
+                            group.add(kingCollar);
+
+                            const kingCrown = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.22, 0.2, 0.2, 24),
+                                material,
+                            );
+                            kingCrown.position.y = 0.96;
+                            group.add(kingCrown);
+
+                            // Cross
+                            const crossV = new THREE.Mesh(
+                                new THREE.BoxGeometry(0.06, 0.3, 0.06),
+                                material,
+                            );
+                            crossV.position.y = 1.22;
+                            group.add(crossV);
+
+                            const crossH = new THREE.Mesh(
+                                new THREE.BoxGeometry(0.2, 0.06, 0.06),
+                                material,
+                            );
+                            crossH.position.y = 1.28;
+                            group.add(crossH);
+                            break;
+                    }
+
+                    // Subtle base glow for visibility
+                    const glowGeometry = new THREE.RingGeometry(0.32, 0.38, 32);
+                    const glowMaterial = new THREE.MeshBasicMaterial({
+                        color: color === "w" ? 0x444444 : 0x222222,
+                        transparent: true,
+                        opacity: 0.25,
+                        side: THREE.DoubleSide,
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    glow.rotation.x = -Math.PI / 2;
+                    glow.position.y = 0.06;
+                    group.add(glow);
+
+                    return group;
+                }
+
+                updatePieces(board) {
+                    // Clear existing pieces
+                    while (this.piecesGroup.children.length > 0) {
+                        this.piecesGroup.remove(this.piecesGroup.children[0]);
+                    }
+                    this.pieceMeshes = {};
+
+                    const offset = 3.5;
+
+                    for (let row = 0; row < 8; row++) {
+                        for (let col = 0; col < 8; col++) {
+                            const piece = board[row][col];
+                            if (piece) {
+                                const mesh = this.createPieceMesh(piece);
+                                const displayRow = this.isFlipped
+                                    ? 7 - row
+                                    : row;
+                                const displayCol = this.isFlipped
+                                    ? 7 - col
+                                    : col;
+                                mesh.position.set(
+                                    displayCol - offset,
+                                    0.05,
+                                    displayRow - offset,
+                                );
+                                mesh.userData = { row, col };
+                                this.piecesGroup.add(mesh);
+                                this.pieceMeshes[`${row}-${col}`] = mesh;
+                            }
+                        }
+                    }
+                }
+
+                highlightSquare(row, col, type) {
+                    const displayRow = this.isFlipped ? 7 - row : row;
+                    const displayCol = this.isFlipped ? 7 - col : col;
+                    const offset = 3.5;
+
+                    let color, opacity, yPos;
+                    switch (type) {
+                        case "selected":
+                            color = 0x4a9eff;
+                            opacity = 0.5;
+                            yPos = 0.06;
+                            break;
+                        case "move":
+                            color = 0x4a9eff;
+                            opacity = 0.3;
+                            yPos = 0.06;
+                            break;
+                        case "capture":
+                            color = 0xe74c3c;
+                            opacity = 0.45;
+                            yPos = 0.06;
+                            break;
+                        case "lastMove":
+                            color = 0xc9a227;
+                            opacity = 0.25;
+                            yPos = 0.055;
+                            break;
+                        case "check":
+                            color = 0xe74c3c;
+                            opacity = 0.6;
+                            yPos = 0.07;
+                            break;
+                    }
+
+                    const geometry = new THREE.RingGeometry(0.38, 0.46, 32);
+                    const material = new THREE.MeshBasicMaterial({
+                        color,
+                        transparent: true,
+                        opacity,
+                        side: THREE.DoubleSide,
+                    });
+                    const highlight = new THREE.Mesh(geometry, material);
+                    highlight.rotation.x = -Math.PI / 2;
+                    highlight.position.set(
+                        displayCol - offset,
+                        yPos,
+                        displayRow - offset,
+                    );
+                    this.highlightGroup.add(highlight);
+
+                    if (type === "move" || type === "capture") {
+                        const dotGeometry = new THREE.CircleGeometry(
+                            type === "capture" ? 0.14 : 0.1,
+                            16,
+                        );
+                        const dotMaterial = new THREE.MeshBasicMaterial({
+                            color,
+                            transparent: true,
+                            opacity: opacity + 0.15,
+                        });
+                        const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+                        dot.rotation.x = -Math.PI / 2;
+                        dot.position.set(
+                            displayCol - offset,
+                            yPos + 0.01,
+                            displayRow - offset,
+                        );
+                        this.highlightGroup.add(dot);
+                    }
+                }
+
+                clearHighlights() {
+                    while (this.highlightGroup.children.length > 0) {
+                        this.highlightGroup.remove(
+                            this.highlightGroup.children[0],
+                        );
+                    }
+                }
+
+                showSelection(row, col, validMoves, board) {
+                    this.clearHighlights();
+                    this.highlightSquare(row, col, "selected");
+
+                    for (const move of validMoves) {
+                        const target = board[move.row][move.col];
+                        this.highlightSquare(
+                            move.row,
+                            move.col,
+                            target ? "capture" : "move",
+                        );
+                    }
+                }
+
+                showLastMove(from, to) {
+                    this.highlightSquare(from.row, from.col, "lastMove");
+                    this.highlightSquare(to.row, to.col, "lastMove");
+                }
+
+                showCheck(kingRow, kingCol) {
+                    this.highlightSquare(kingRow, kingCol, "check");
+                }
+
+                setupControls() {
+                    // Track if we've moved enough to count as a drag
+                    let dragDistance = 0;
+                    let mouseDownPos = { x: 0, y: 0 };
+
+                    this.canvas.addEventListener("mousedown", (e) => {
+                        if (e.button === 0) {
+                            this.isDragging = true;
+                        } else if (e.button === 2) {
+                            this.isRightDragging = true;
+                        }
+                        this.previousMousePosition = {
+                            x: e.clientX,
+                            y: e.clientY,
+                        };
+                        mouseDownPos = { x: e.clientX, y: e.clientY };
+                        dragDistance = 0;
+                    });
+
+                    this.canvas.addEventListener("mouseup", (e) => {
+                        if (e.button === 0) this.isDragging = false;
+                        if (e.button === 2) this.isRightDragging = false;
+                    });
+
+                    this.canvas.addEventListener("mouseleave", () => {
+                        this.isDragging = false;
+                        this.isRightDragging = false;
+                    });
+
+                    this.canvas.addEventListener("mousemove", (e) => {
+                        const deltaX = e.clientX - this.previousMousePosition.x;
+                        const deltaY = e.clientY - this.previousMousePosition.y;
+
+                        dragDistance += Math.abs(deltaX) + Math.abs(deltaY);
+
+                        if (this.isDragging) {
+                            // Intuitive rotation: drag right = rotate right, drag up = look up
+                            this.targetAngleX -= deltaX * 0.008;
+                            this.targetAngleY = Math.max(
+                                0.1,
+                                Math.min(
+                                    Math.PI / 2.2,
+                                    this.targetAngleY - deltaY * 0.008,
+                                ),
+                            );
+                        }
+
+                        if (this.isRightDragging) {
+                            // Pan with right mouse
+                            this.targetPanX -= deltaX * 0.02;
+                            this.targetPanY += deltaY * 0.02;
+                        }
+
+                        this.previousMousePosition = {
+                            x: e.clientX,
+                            y: e.clientY,
+                        };
+                    });
+
+                    this.canvas.addEventListener(
+                        "wheel",
+                        (e) => {
+                            e.preventDefault();
+                            this.targetDistance = Math.max(
+                                6,
+                                Math.min(
+                                    28,
+                                    this.targetDistance + e.deltaY * 0.015,
+                                ),
+                            );
+                        },
+                        { passive: false },
+                    );
+
+                    this.canvas.addEventListener("contextmenu", (e) =>
+                        e.preventDefault(),
+                    );
+                }
+
+                updateCamera() {
+                    // Smooth interpolation
+                    this.cameraAngleX +=
+                        (this.targetAngleX - this.cameraAngleX) *
+                        this.smoothing;
+                    this.cameraAngleY +=
+                        (this.targetAngleY - this.cameraAngleY) *
+                        this.smoothing;
+                    this.cameraDistance +=
+                        (this.targetDistance - this.cameraDistance) *
+                        this.smoothing;
+                    this.panX += (this.targetPanX - this.panX) * this.smoothing;
+                    this.panY += (this.targetPanY - this.panY) * this.smoothing;
+
+                    const x =
+                        this.cameraDistance *
+                        Math.sin(this.cameraAngleY) *
+                        Math.sin(this.cameraAngleX);
+                    const y = this.cameraDistance * Math.cos(this.cameraAngleY);
+                    const z =
+                        this.cameraDistance *
+                        Math.sin(this.cameraAngleY) *
+                        Math.cos(this.cameraAngleX);
+
+                    this.camera.position.set(x + this.panX, y + this.panY, z);
+                    this.camera.lookAt(this.panX, this.panY, 0);
+                }
+
+                resetCamera() {
+                    this.targetDistance = 14;
+                    this.targetAngleX = Math.PI / 4;
+                    this.targetAngleY = Math.PI / 5;
+                    this.targetPanX = 0;
+                    this.targetPanY = 0;
+                }
+
+                flipBoard() {
+                    this.isFlipped = !this.isFlipped;
+                }
+
+                getSquareFromMouse(event) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mouse = new THREE.Vector2(
+                        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                        -((event.clientY - rect.top) / rect.height) * 2 + 1,
+                    );
+
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, this.camera);
+
+                    const intersects = raycaster.intersectObjects(
+                        this.boardGroup.children,
+                        true,
+                    );
+                    for (const intersect of intersects) {
+                        if (intersect.object.userData.row !== undefined) {
+                            let { row, col } = intersect.object.userData;
+                            if (this.isFlipped) {
+                                row = 7 - row;
+                                col = 7 - col;
+                            }
+                            return { row, col };
+                        }
+                    }
+                    return null;
+                }
+
+                animate() {
+                    requestAnimationFrame(() => this.animate());
+                    this.updateCamera();
+                    this.stars.rotation.y += 0.00005;
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+
+            // ==================== GAME CONTROLLER ====================
+            class GameController {
+                constructor() {
+                    this.game = new ChessGame();
+                    this.renderer = new SpaceChessRenderer(
+                        document.getElementById("game-canvas"),
+                    );
+                    this.ai = new ChessAI(this.game, 3);
+                    this.aiDepth = 3;
+
+                    this.selectedSquare = null;
+                    this.validMoves = [];
+                    this.isPlayerTurn = true;
+                    this.gameOver = false;
+                    this.pendingPromotion = null;
+
+                    this.setupEventListeners();
+                    this.renderer.animate();
+                }
+
+                setupEventListeners() {
+                    // Board click
+                    this.renderer.canvas.addEventListener("click", (e) =>
+                        this.handleBoardClick(e),
+                    );
+
+                    // Buttons
+                    document
+                        .getElementById("new-game-btn")
+                        .addEventListener("click", () => this.showStartModal());
+                    document
+                        .getElementById("undo-btn")
+                        .addEventListener("click", () => this.undoMove());
+                    document
+                        .getElementById("flip-btn")
+                        .addEventListener("click", () => this.flipBoard());
+                    document
+                        .getElementById("reset-camera-btn")
+                        .addEventListener("click", () =>
+                            this.renderer.resetCamera(),
+                        );
+                    document
+                        .getElementById("start-btn")
+                        .addEventListener("click", () => this.startGame());
+
+                    // Difficulty selection
+                    document.querySelectorAll(".diff-btn").forEach((btn) => {
+                        btn.addEventListener("click", (e) => {
+                            document
+                                .querySelectorAll(".diff-btn")
+                                .forEach((b) => b.classList.remove("active"));
+                            e.target.classList.add("active");
+                            this.aiDepth = parseInt(e.target.dataset.depth);
+                        });
+                    });
+
+                    // Promotion modal
+                    document
+                        .getElementById("promotion-pieces")
+                        .addEventListener("click", (e) => {
+                            if (
+                                e.target.classList.contains("promotion-piece")
+                            ) {
+                                this.completePromotion(e.target.dataset.piece);
+                            }
+                        });
+                }
+
+                handleBoardClick(event) {
+                    if (!this.isPlayerTurn || this.gameOver) return;
+
+                    const square = this.renderer.getSquareFromMouse(event);
+                    if (!square) return;
+
+                    const { row, col } = square;
+                    const piece = this.game.getPiece(row, col);
+
+                    // If clicking on a valid move
+                    if (this.selectedSquare) {
+                        const move = this.validMoves.find(
+                            (m) => m.row === row && m.col === col,
+                        );
+                        if (move) {
+                            // Check for promotion
+                            const selectedPiece = this.game.getPiece(
+                                this.selectedSquare.row,
+                                this.selectedSquare.col,
+                            );
+                            if (
+                                this.game.getType(selectedPiece) === "p" &&
+                                (row === 0 || row === 7)
+                            ) {
+                                this.pendingPromotion = {
+                                    from: this.selectedSquare,
+                                    to: { row, col },
+                                };
+                                this.showPromotionModal(
+                                    this.game.getColor(selectedPiece),
+                                );
+                                return;
+                            }
+
+                            this.makePlayerMove(
+                                this.selectedSquare.row,
+                                this.selectedSquare.col,
+                                row,
+                                col,
+                            );
+                            return;
+                        }
+                    }
+
+                    // Select a piece
+                    if (piece && this.game.getColor(piece) === "w") {
+                        this.selectedSquare = { row, col };
+                        this.validMoves = this.game.getLegalMoves(row, col);
+                        this.renderer.showSelection(
+                            row,
+                            col,
+                            this.validMoves,
+                            this.game.board,
+                        );
+                    } else {
+                        this.selectedSquare = null;
+                        this.validMoves = [];
+                        this.updateHighlights();
+                    }
+                }
+
+                showPromotionModal(color) {
+                    const modal = document.getElementById("promotion-modal");
+                    const piecesDiv =
+                        document.getElementById("promotion-pieces");
+                    piecesDiv.innerHTML = "";
+
+                    const pieces = ["q", "r", "b", "n"];
+                    pieces.forEach((p) => {
+                        const btn = document.createElement("div");
+                        btn.className = "promotion-piece";
+                        btn.dataset.piece = p;
+                        btn.textContent = PIECE_SYMBOLS[color + p];
+                        piecesDiv.appendChild(btn);
+                    });
+
+                    modal.classList.add("active");
+                }
+
+                completePromotion(piece) {
+                    document
+                        .getElementById("promotion-modal")
+                        .classList.remove("active");
+
+                    if (this.pendingPromotion) {
+                        const { from, to } = this.pendingPromotion;
+                        this.makePlayerMove(
+                            from.row,
+                            from.col,
+                            to.row,
+                            to.col,
+                            piece,
+                        );
+                        this.pendingPromotion = null;
+                    }
+                }
+
+                makePlayerMove(
+                    fromRow,
+                    fromCol,
+                    toRow,
+                    toCol,
+                    promotion = null,
+                ) {
+                    const move = this.game.makeMove(
+                        fromRow,
+                        fromCol,
+                        toRow,
+                        toCol,
+                        promotion,
+                    );
+                    this.selectedSquare = null;
+                    this.validMoves = [];
+
+                    this.updateDisplay();
+                    this.addMoveToHistory(move);
+
+                    if (this.checkGameEnd()) return;
+
+                    // AI turn
+                    this.isPlayerTurn = false;
+                    document.getElementById("thinking").classList.add("active");
+
+                    setTimeout(() => this.makeAIMove(), 100);
+                }
+
+                makeAIMove() {
+                    this.ai.depth = this.aiDepth;
+                    const move = this.ai.getBestMove();
+
+                    if (move) {
+                        const moveRecord = this.game.makeMove(
+                            move.from.row,
+                            move.from.col,
+                            move.to.row,
+                            move.to.col,
+                            move.to.promotion,
+                        );
+                        this.addMoveToHistory(moveRecord);
+                    }
+
+                    document
+                        .getElementById("thinking")
+                        .classList.remove("active");
+                    this.isPlayerTurn = true;
+                    this.updateDisplay();
+                    this.checkGameEnd();
+                }
+
+                updateDisplay() {
+                    this.renderer.updatePieces(this.game.board);
+                    this.updateHighlights();
+                    this.updateStatus();
+                    this.updateCapturedPieces();
+                }
+
+                updateHighlights() {
+                    this.renderer.clearHighlights();
+
+                    // Show last move
+                    if (this.game.history.length > 0) {
+                        const lastMove =
+                            this.game.history[this.game.history.length - 1];
+                        this.renderer.showLastMove(lastMove.from, lastMove.to);
+                    }
+
+                    // Show check
+                    if (this.game.isInCheck(this.game.turn)) {
+                        const king = this.game.findKing(this.game.turn);
+                        if (king) {
+                            this.renderer.showCheck(king.row, king.col);
+                        }
+                    }
+                }
+
+                updateStatus() {
+                    const turnColor = document.getElementById("turn-color");
+                    const turnText = document.getElementById("turn-text");
+                    const gameStatus = document.getElementById("game-status");
+
+                    turnColor.className =
+                        "turn-color " +
+                        (this.game.turn === "w" ? "white" : "black");
+                    turnText.textContent =
+                        this.game.turn === "w"
+                            ? "White's Turn"
+                            : "Black's Turn";
+
+                    if (this.game.isCheckmate()) {
+                        const winner =
+                            this.game.turn === "w" ? "Black" : "White";
+                        gameStatus.textContent = `Checkmate! ${winner} wins!`;
+                        gameStatus.className = "game-status checkmate";
+                    } else if (this.game.isStalemate()) {
+                        gameStatus.textContent = "Stalemate! Draw!";
+                        gameStatus.className = "game-status";
+                    } else if (this.game.isInCheck(this.game.turn)) {
+                        gameStatus.textContent = "Check!";
+                        gameStatus.className = "game-status check";
+                    } else {
+                        gameStatus.textContent = "";
+                        gameStatus.className = "game-status";
+                    }
+                }
+
+                updateCapturedPieces() {
+                    const whiteCaptured =
+                        document.getElementById("captured-white");
+                    const blackCaptured =
+                        document.getElementById("captured-black");
+
+                    whiteCaptured.innerHTML = this.game.capturedPieces.w
+                        .map(
+                            (p) =>
+                                `<span class="captured-piece">${PIECE_SYMBOLS[p]}</span>`,
+                        )
+                        .join("");
+
+                    blackCaptured.innerHTML = this.game.capturedPieces.b
+                        .map(
+                            (p) =>
+                                `<span class="captured-piece">${PIECE_SYMBOLS[p]}</span>`,
+                        )
+                        .join("");
+                }
+
+                addMoveToHistory(move) {
+                    const historyList = document.getElementById("history-list");
+                    const notation = this.game.getMoveNotation(move);
+                    const color = this.game.getColor(move.piece);
+                    const moveNum = Math.ceil(this.game.history.length / 2);
+
+                    if (color === "w") {
+                        const row = document.createElement("div");
+                        row.className = "move-row";
+                        row.innerHTML = `
+                        <span class="move-number">${moveNum}.</span>
+                        <span class="move-white">${notation}</span>
+                        <span class="move-black"></span>
+                    `;
+                        historyList.appendChild(row);
+                    } else {
+                        const lastRow = historyList.lastElementChild;
+                        if (lastRow) {
+                            lastRow.querySelector(".move-black").textContent =
+                                notation;
+                        }
+                    }
+
+                    historyList.scrollTop = historyList.scrollHeight;
+                }
+
+                checkGameEnd() {
+                    if (this.game.isCheckmate() || this.game.isStalemate()) {
+                        this.gameOver = true;
+                        return true;
+                    }
+                    return false;
+                }
+
+                undoMove() {
+                    if (this.game.history.length < 2) return;
+
+                    // Undo AI move
+                    this.game.undoMove();
+                    // Undo player move
+                    this.game.undoMove();
+
+                    this.selectedSquare = null;
+                    this.validMoves = [];
+                    this.gameOver = false;
+                    this.isPlayerTurn = true;
+
+                    // Rebuild history display
+                    this.rebuildHistoryDisplay();
+                    this.updateDisplay();
+                }
+
+                rebuildHistoryDisplay() {
+                    const historyList = document.getElementById("history-list");
+                    historyList.innerHTML = "";
+
+                    const history = [...this.game.history];
+                    for (let i = 0; i < history.length; i++) {
+                        const move = history[i];
+                        const notation = this.game.getMoveNotation(move);
+                        const color = this.game.getColor(move.piece);
+                        const moveNum = Math.floor(i / 2) + 1;
+
+                        if (color === "w") {
+                            const row = document.createElement("div");
+                            row.className = "move-row";
+                            row.innerHTML = `
+                            <span class="move-number">${moveNum}.</span>
+                            <span class="move-white">${notation}</span>
+                            <span class="move-black"></span>
+                        `;
+                            historyList.appendChild(row);
+                        } else {
+                            const lastRow = historyList.lastElementChild;
+                            if (lastRow) {
+                                lastRow.querySelector(
+                                    ".move-black",
+                                ).textContent = notation;
+                            }
+                        }
+                    }
+                }
+
+                flipBoard() {
+                    this.renderer.flipBoard();
+                    this.updateDisplay();
+                }
+
+                showStartModal() {
+                    document
+                        .getElementById("overlay")
+                        .classList.remove("hidden");
+                }
+
+                startGame() {
+                    document.getElementById("overlay").classList.add("hidden");
+                    this.game.reset();
+                    this.ai = new ChessAI(this.game, this.aiDepth);
+                    this.selectedSquare = null;
+                    this.validMoves = [];
+                    this.gameOver = false;
+                    this.isPlayerTurn = true;
+
+                    document.getElementById("history-list").innerHTML = "";
+                    this.updateDisplay();
+                }
+            }
+
+            // Start the game
+            const controller = new GameController();
+        </script>
+    </body>
+</html>
