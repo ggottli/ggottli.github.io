@@ -1,0 +1,2031 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Date or No Date</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Big+Shoulders+Display:wght@500;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            /* ===========================================================================
+   TOKENS
+   ========================================================================== */
+            :root {
+                --bg-deep: #0a0d14;
+                --bg-mid: #131720;
+                --bg-light: #1c212d;
+                --bg-panel: #0f131c;
+
+                --brass-bright: #e8c97f;
+                --brass: #c9a267;
+                --brass-mid: #a8852f;
+                --brass-dark: #8b6a2f;
+                --brass-shadow: #5a4720;
+
+                --cream: #f4ecd4;
+                --cream-mid: #d4c9a8;
+                --cream-dark: #968b6a;
+
+                --burgundy: #8c1f1f;
+                --burgundy-bright: #b53636;
+                --burgundy-deep: #5c0f0f;
+
+                --text-main: #e8dfc8;
+                --text-mid: #968b6a;
+                --text-faint: #4a4537;
+
+                --rule: #2a2f3d;
+                --rule-soft: #1f2530;
+
+                --serif: "DM Serif Display", Georgia, serif;
+                --display: "Big Shoulders Display", "Impact", sans-serif;
+                --sans: "DM Sans", system-ui, sans-serif;
+                --mono: "DM Mono", ui-monospace, monospace;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            html,
+            body {
+                min-height: 100vh;
+                background: var(--bg-deep);
+                color: var(--text-main);
+                font-family: var(--sans);
+                font-size: 15px;
+                line-height: 1.5;
+                -webkit-font-smoothing: antialiased;
+                text-rendering: optimizeLegibility;
+            }
+
+            body {
+                background:
+                    radial-gradient(
+                        ellipse 1400px 600px at 50% -100px,
+                        rgba(201, 162, 103, 0.1),
+                        transparent 70%
+                    ),
+                    radial-gradient(
+                        ellipse 900px 500px at 10% 110%,
+                        rgba(140, 31, 31, 0.07),
+                        transparent 70%
+                    ),
+                    radial-gradient(
+                        ellipse 700px 400px at 100% 50%,
+                        rgba(184, 138, 61, 0.04),
+                        transparent 70%
+                    ),
+                    var(--bg-deep);
+                position: relative;
+                overflow-x: hidden;
+            }
+
+            /* subtle film grain so the theater backdrop has texture */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                opacity: 0.35;
+                z-index: 0;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.82  0 0 0 0 0.5  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+                mix-blend-mode: screen;
+            }
+
+            button {
+                font-family: inherit;
+                cursor: pointer;
+                border: none;
+                background: none;
+                color: inherit;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            /* ===========================================================================
+   HEADER
+   ========================================================================== */
+            header {
+                position: relative;
+                z-index: 5;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 22px clamp(16px, 4vw, 42px) 18px;
+                border-bottom: 1px solid var(--rule);
+            }
+
+            .brand {
+                display: flex;
+                align-items: baseline;
+                gap: 14px;
+            }
+            .brand .mark {
+                font-family: var(--display);
+                font-weight: 900;
+                font-size: 24px;
+                letter-spacing: 0.16em;
+                color: var(--brass-bright);
+                line-height: 1;
+            }
+            .brand .mark em {
+                font-family: var(--serif);
+                font-style: italic;
+                font-weight: 400;
+                color: var(--cream);
+                letter-spacing: 0;
+            }
+            .brand .tag {
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--text-mid);
+            }
+
+            .header-actions {
+                display: flex;
+                gap: 10px;
+            }
+            .btn {
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                padding: 10px 16px;
+                border: 1px solid var(--brass-shadow);
+                color: var(--brass);
+                background: rgba(201, 162, 103, 0.04);
+                transition: all 180ms ease;
+                border-radius: 1px;
+            }
+            .btn:hover {
+                border-color: var(--brass);
+                color: var(--brass-bright);
+                background: rgba(201, 162, 103, 0.1);
+            }
+            .btn.primary {
+                background: linear-gradient(
+                    180deg,
+                    var(--brass-bright),
+                    var(--brass-mid)
+                );
+                color: #2a1810;
+                border-color: var(--brass-dark);
+                font-weight: 700;
+            }
+            .btn.primary:hover {
+                background: linear-gradient(180deg, #f4da90, var(--brass));
+                filter: brightness(1.05);
+            }
+            .btn.danger {
+                background: linear-gradient(
+                    180deg,
+                    var(--burgundy-bright),
+                    var(--burgundy)
+                );
+                color: var(--cream);
+                border-color: var(--burgundy-deep);
+                font-weight: 700;
+            }
+            .btn.danger:hover {
+                filter: brightness(1.08);
+            }
+
+            /* mobile header — keep things from cramming */
+            @media (max-width: 600px) {
+                header {
+                    padding: 14px 16px 12px;
+                    gap: 10px;
+                }
+                .brand {
+                    flex-wrap: wrap;
+                    gap: 4px 12px;
+                }
+                .brand .mark {
+                    font-size: 18px;
+                    letter-spacing: 0.12em;
+                }
+                .brand .tag {
+                    font-size: 9.5px;
+                    letter-spacing: 0.18em;
+                    flex-basis: 100%;
+                }
+                .header-actions .btn {
+                    padding: 8px 12px;
+                    font-size: 9.5px;
+                }
+            }
+
+            /* ===========================================================================
+   LAYOUT
+   ========================================================================== */
+            main.game {
+                position: relative;
+                z-index: 1;
+                display: grid;
+                grid-template-columns: 220px 1fr 220px;
+                gap: 22px;
+                max-width: 1300px;
+                margin: 0 auto;
+                padding: 28px clamp(16px, 3vw, 36px) 60px;
+            }
+
+            @media (max-width: 1100px) {
+                main.game {
+                    grid-template-columns: 1fr 1fr;
+                    grid-template-areas:
+                        "stage stage"
+                        "left  right";
+                    gap: 16px;
+                }
+                .stage {
+                    grid-area: stage;
+                }
+                .board-left {
+                    grid-area: left;
+                }
+                .board-right {
+                    grid-area: right;
+                }
+            }
+            @media (max-width: 360px) {
+                /* very small phones only: stack boards single-column for breathing room */
+                main.game {
+                    grid-template-columns: 1fr;
+                    grid-template-areas:
+                        "stage"
+                        "left"
+                        "right";
+                }
+            }
+
+            /* tighten value rows when boards are side-by-side on a phone */
+            @media (max-width: 600px) {
+                .board {
+                    padding: 12px 8px;
+                }
+                .value-row {
+                    grid-template-columns: 52px 1fr;
+                    gap: 6px;
+                    padding: 4px 2px;
+                }
+                .value-row .val {
+                    font-size: 13px;
+                }
+                .value-row .name {
+                    font-size: 11.5px;
+                    line-height: 1.15;
+                }
+                .board-label {
+                    font-size: 8.5px;
+                    padding-bottom: 8px;
+                }
+            }
+
+            /* ===========================================================================
+   VALUE BOARDS
+   ========================================================================== */
+            .board {
+                background: var(--bg-panel);
+                border: 1px solid var(--rule);
+                padding: 14px 12px;
+                align-self: start;
+                position: relative;
+            }
+            .board::before {
+                /* subtle inner glow */
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: linear-gradient(
+                    180deg,
+                    rgba(201, 162, 103, 0.04),
+                    transparent 50%
+                );
+            }
+            .board-label {
+                font-family: var(--mono);
+                font-size: 9.5px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--text-mid);
+                padding: 0 4px 10px;
+                border-bottom: 1px solid var(--rule-soft);
+                margin-bottom: 8px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .board-label .side {
+                color: var(--brass-mid);
+            }
+
+            .board-mobile-row {
+                display: contents;
+            }
+
+            .value-rows {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+            }
+            .value-row {
+                display: grid;
+                grid-template-columns: 60px 1fr;
+                gap: 8px;
+                align-items: center;
+                padding: 5px 4px;
+                border-radius: 2px;
+                position: relative;
+                transition: opacity 320ms ease;
+            }
+            .value-row .val {
+                font-family: var(--display);
+                font-weight: 800;
+                font-size: 15px;
+                letter-spacing: 0.04em;
+                color: var(--brass-bright);
+                text-align: right;
+                line-height: 1;
+            }
+            .value-row .name {
+                font-family: var(--serif);
+                font-size: 12.5px;
+                font-style: italic;
+                color: var(--cream-mid);
+                line-height: 1.2;
+                letter-spacing: -0.005em;
+            }
+
+            /* tier intensity */
+            .value-row.tier-low .val {
+                color: var(--cream-dark);
+            }
+            .value-row.tier-mid .val {
+                color: var(--brass);
+            }
+            .value-row.tier-high .val {
+                color: var(--brass-bright);
+            }
+            .value-row.tier-top .val {
+                color: #ffe08a;
+                text-shadow: 0 0 12px rgba(255, 224, 138, 0.4);
+            }
+
+            .value-row.eliminated {
+                opacity: 0.2;
+            }
+            .value-row.eliminated .val,
+            .value-row.eliminated .name {
+                text-decoration: line-through;
+                text-decoration-color: rgba(150, 139, 106, 0.6);
+            }
+            .value-row.eliminated .val {
+                text-shadow: none !important;
+            }
+
+            /* ===========================================================================
+   STAGE
+   ========================================================================== */
+            .stage {
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+
+            /* status strip */
+            .status {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 1px;
+                background: var(--rule);
+                border: 1px solid var(--rule);
+            }
+            .status .cell {
+                background: var(--bg-panel);
+                padding: 12px 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .status .cell .k {
+                font-family: var(--mono);
+                font-size: 9.5px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--text-mid);
+            }
+            .status .cell .v {
+                font-family: var(--serif);
+                font-size: 18px;
+                line-height: 1;
+                color: var(--cream);
+            }
+            .status .cell .v.italic {
+                font-style: italic;
+                color: var(--brass-bright);
+            }
+            .status .cell .v.muted {
+                color: var(--text-mid);
+                font-style: italic;
+            }
+
+            /* prompt strip — tells her what to do next */
+            .prompt {
+                text-align: center;
+                padding: 14px 14px;
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(140, 31, 31, 0.1),
+                        rgba(140, 31, 31, 0.04)
+                    ),
+                    var(--bg-panel);
+                border: 1px solid var(--rule);
+                position: relative;
+            }
+            .prompt::before {
+                content: "";
+                position: absolute;
+                left: 50%;
+                bottom: -1px;
+                width: 80px;
+                height: 1px;
+                background: var(--burgundy-bright);
+                transform: translateX(-50%);
+            }
+            .prompt .kicker {
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.28em;
+                text-transform: uppercase;
+                color: var(--burgundy-bright);
+                margin-bottom: 6px;
+            }
+            .prompt .line {
+                font-family: var(--serif);
+                font-size: 22px;
+                color: var(--cream);
+                line-height: 1.2;
+            }
+            .prompt .line em {
+                font-style: italic;
+                color: var(--brass-bright);
+            }
+
+            /* ===========================================================================
+   BRIEFCASE GRID
+   ========================================================================== */
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 12px;
+                padding: 4px 0;
+            }
+            @media (max-width: 1100px) {
+                .grid {
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 10px;
+                }
+            }
+            @media (max-width: 720px) {
+                .grid {
+                    grid-template-columns: repeat(5, 1fr);
+                    gap: 8px;
+                }
+            }
+            @media (max-width: 480px) {
+                .grid {
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 7px;
+                }
+            }
+
+            /* a briefcase */
+            .case {
+                position: relative;
+                aspect-ratio: 5 / 6;
+                border-radius: 6px 6px 7px 7px;
+                background: linear-gradient(
+                    170deg,
+                    #f0d58a 0%,
+                    var(--brass) 28%,
+                    var(--brass-mid) 65%,
+                    var(--brass) 95%,
+                    #8e7028 100%
+                );
+                border: 1px solid var(--brass-shadow);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    transform 180ms cubic-bezier(0.3, 0.7, 0.4, 1),
+                    box-shadow 220ms ease,
+                    filter 240ms ease;
+                user-select: none;
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 235, 180, 0.65),
+                    inset 0 -2px 0 rgba(50, 30, 10, 0.45),
+                    inset 0 0 0 1px rgba(255, 220, 150, 0.18),
+                    0 5px 14px rgba(0, 0, 0, 0.5),
+                    0 1px 0 rgba(255, 220, 150, 0.05);
+                overflow: hidden;
+            }
+            /* handle on top */
+            .case::before {
+                content: "";
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 38%;
+                height: 8px;
+                background: linear-gradient(
+                    180deg,
+                    var(--brass),
+                    var(--brass-mid)
+                );
+                border: 1px solid var(--brass-shadow);
+                border-bottom: none;
+                border-radius: 5px 5px 0 0;
+                box-shadow: inset 0 1px 0 rgba(255, 230, 170, 0.5);
+            }
+            /* lid seam */
+            .case::after {
+                content: "";
+                position: absolute;
+                top: 28%;
+                left: 5%;
+                right: 5%;
+                height: 1px;
+                background: rgba(50, 30, 10, 0.45);
+                box-shadow: 0 1px 0 rgba(255, 230, 170, 0.18);
+            }
+
+            .case-number {
+                font-family: var(--serif);
+                font-style: italic;
+                font-size: 28px;
+                color: rgba(40, 25, 5, 0.78);
+                text-shadow:
+                    0 1px 0 rgba(255, 230, 170, 0.45),
+                    0 -1px 0 rgba(50, 30, 10, 0.2);
+                margin-top: 12%;
+                letter-spacing: -0.02em;
+                position: relative;
+                z-index: 1;
+                transition: opacity 220ms ease;
+            }
+            @media (max-width: 720px) {
+                .case-number {
+                    font-size: 22px;
+                }
+            }
+            @media (max-width: 480px) {
+                .case-number {
+                    font-size: 19px;
+                }
+            }
+
+            .case:hover:not(.opened):not(.disabled) {
+                transform: translateY(-3px);
+                filter: brightness(1.06);
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 235, 180, 0.8),
+                    inset 0 -2px 0 rgba(50, 30, 10, 0.45),
+                    0 12px 24px rgba(201, 162, 103, 0.3),
+                    0 4px 12px rgba(0, 0, 0, 0.55);
+            }
+
+            .case.disabled {
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+            /* her chosen case */
+            .case.mine {
+                outline: 2px solid var(--brass-bright);
+                outline-offset: 3px;
+                animation: minePulse 2.2s ease-in-out infinite;
+                z-index: 2;
+            }
+            .case.mine::after {
+                /* badge ribbon */
+            }
+            .mine-badge {
+                position: absolute;
+                top: 6px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: var(--mono);
+                font-size: 7.5px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: rgba(40, 25, 5, 0.7);
+                background: rgba(255, 230, 170, 0.55);
+                padding: 2px 6px;
+                border-radius: 1px;
+                z-index: 2;
+                white-space: nowrap;
+            }
+            @keyframes minePulse {
+                0%,
+                100% {
+                    outline-color: var(--brass-bright);
+                    box-shadow:
+                        inset 0 1px 0 rgba(255, 235, 180, 0.7),
+                        inset 0 -2px 0 rgba(50, 30, 10, 0.45),
+                        0 0 0 4px rgba(232, 201, 127, 0),
+                        0 5px 14px rgba(0, 0, 0, 0.5);
+                }
+                50% {
+                    outline-color: #ffe08a;
+                    box-shadow:
+                        inset 0 1px 0 rgba(255, 235, 180, 0.85),
+                        inset 0 -2px 0 rgba(50, 30, 10, 0.45),
+                        0 0 0 4px rgba(232, 201, 127, 0.18),
+                        0 8px 22px rgba(232, 201, 127, 0.35);
+                }
+            }
+
+            /* opened case */
+            .case.opened {
+                filter: saturate(0.25) brightness(0.55);
+                pointer-events: none;
+                cursor: default;
+            }
+            .case.opened .case-number {
+                opacity: 0.25;
+            }
+
+            .reveal-card {
+                position: absolute;
+                inset: 14% 8% 14% 8%;
+                background: linear-gradient(180deg, #f8f1d9, var(--cream));
+                border: 1px solid var(--brass-dark);
+                border-radius: 3px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 4px 5px;
+                text-align: center;
+                opacity: 0;
+                transform: scale(0.4) rotate(-6deg);
+                transition:
+                    opacity 380ms ease,
+                    transform 380ms cubic-bezier(0.2, 1.5, 0.4, 1);
+                box-shadow:
+                    0 4px 12px rgba(0, 0, 0, 0.5),
+                    inset 0 0 0 1px rgba(255, 255, 240, 0.4);
+                z-index: 2;
+            }
+            .case.opened .reveal-card {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            .reveal-card .rc-name {
+                font-family: var(--serif);
+                font-style: italic;
+                font-size: 11px;
+                color: #2a1810;
+                line-height: 1.1;
+                letter-spacing: -0.005em;
+            }
+            .reveal-card .rc-val {
+                font-family: var(--display);
+                font-weight: 800;
+                font-size: 12px;
+                letter-spacing: 0.04em;
+                color: var(--brass-mid);
+                margin-top: 3px;
+                line-height: 1;
+            }
+            .reveal-card.tier-top {
+                border-color: var(--burgundy-bright);
+                background: linear-gradient(180deg, #fff6dc, #f8e4b5);
+            }
+            .reveal-card.tier-top .rc-val {
+                color: var(--burgundy);
+            }
+            .reveal-card.tier-high .rc-val {
+                color: var(--brass-dark);
+            }
+
+            @media (max-width: 720px) {
+                .reveal-card .rc-name {
+                    font-size: 9.5px;
+                }
+                .reveal-card .rc-val {
+                    font-size: 10.5px;
+                }
+            }
+            @media (max-width: 480px) {
+                .reveal-card .rc-name {
+                    font-size: 8.5px;
+                }
+                .reveal-card .rc-val {
+                    font-size: 9.5px;
+                }
+            }
+
+            /* ===========================================================================
+   MODAL — THE BANKER
+   ========================================================================== */
+            .modal-wrap {
+                position: fixed;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                background: rgba(8, 10, 16, 0.78);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 280ms ease;
+                z-index: 30;
+            }
+            .modal-wrap.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .modal {
+                width: min(540px, 100%);
+                background: linear-gradient(
+                    180deg,
+                    var(--bg-light),
+                    var(--bg-mid)
+                );
+                border: 1px solid var(--brass-shadow);
+                padding: 0;
+                position: relative;
+                box-shadow:
+                    0 30px 80px rgba(0, 0, 0, 0.6),
+                    inset 0 1px 0 rgba(232, 201, 127, 0.18);
+                transform: translateY(20px) scale(0.96);
+                transition: transform 380ms cubic-bezier(0.2, 1.5, 0.4, 1);
+            }
+            .modal-wrap.show .modal {
+                transform: translateY(0) scale(1);
+            }
+            /* top theater rule */
+            .modal::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    var(--brass-bright) 30%,
+                    var(--brass-bright) 70%,
+                    transparent
+                );
+            }
+
+            .modal-inner {
+                padding: 30px 30px 26px;
+            }
+
+            .modal-eyebrow {
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: var(--burgundy-bright);
+                margin-bottom: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+            }
+            .modal-eyebrow::before,
+            .modal-eyebrow::after {
+                content: "";
+                flex: 1;
+                height: 1px;
+                background: var(--rule);
+                max-width: 60px;
+            }
+
+            .banker-icon {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 18px;
+            }
+            .banker-icon svg {
+                width: 40px;
+                height: 40px;
+                color: var(--brass-bright);
+                filter: drop-shadow(0 0 12px rgba(232, 201, 127, 0.4));
+                animation: ring 1.4s ease-in-out infinite;
+            }
+            @keyframes ring {
+                0%,
+                100% {
+                    transform: rotate(0deg);
+                }
+                10%,
+                30% {
+                    transform: rotate(-10deg);
+                }
+                20%,
+                40% {
+                    transform: rotate(10deg);
+                }
+                50% {
+                    transform: rotate(0deg);
+                }
+            }
+
+            .modal-title {
+                text-align: center;
+                font-family: var(--serif);
+                font-size: 26px;
+                color: var(--cream);
+                line-height: 1.2;
+                margin-bottom: 10px;
+            }
+            .modal-title em {
+                font-style: italic;
+                color: var(--brass-bright);
+            }
+            .modal-sub {
+                text-align: center;
+                color: var(--text-mid);
+                font-size: 14px;
+                margin-bottom: 22px;
+                line-height: 1.55;
+            }
+
+            /* the actual offer */
+            .offer-card {
+                background:
+                    radial-gradient(
+                        ellipse 300px 80px at 50% 0%,
+                        rgba(232, 201, 127, 0.16),
+                        transparent 70%
+                    ),
+                    linear-gradient(
+                        180deg,
+                        rgba(232, 201, 127, 0.05),
+                        rgba(232, 201, 127, 0.02)
+                    );
+                border: 1px solid var(--brass-shadow);
+                padding: 22px 20px;
+                text-align: center;
+                margin-bottom: 22px;
+                position: relative;
+            }
+            .offer-card .offer-label {
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.28em;
+                text-transform: uppercase;
+                color: var(--text-mid);
+                margin-bottom: 10px;
+            }
+            .offer-card .offer-name {
+                font-family: var(--serif);
+                font-style: italic;
+                font-size: 32px;
+                color: var(--brass-bright);
+                line-height: 1.15;
+                margin-bottom: 10px;
+                letter-spacing: -0.01em;
+            }
+            .offer-card .offer-value {
+                font-family: var(--display);
+                font-weight: 800;
+                font-size: 22px;
+                letter-spacing: 0.06em;
+                color: var(--cream);
+            }
+            .offer-card .offer-value::before {
+                content: "≈ ";
+                color: var(--text-mid);
+                font-weight: 500;
+            }
+
+            .modal-buttons {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .modal-buttons .btn {
+                padding: 14px 18px;
+                font-size: 11px;
+            }
+
+            /* ===========================================================================
+   END / RESULT MODAL
+   ========================================================================== */
+            .result-card {
+                text-align: center;
+                padding: 8px 0 4px;
+            }
+            .result-stamp {
+                display: inline-block;
+                padding: 8px 22px;
+                border: 2px solid var(--brass-bright);
+                color: var(--brass-bright);
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.32em;
+                text-transform: uppercase;
+                transform: rotate(-3deg);
+                margin-bottom: 24px;
+                animation: stampIn 700ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+            }
+            .result-stamp.no-deal {
+                color: var(--burgundy-bright);
+                border-color: var(--burgundy-bright);
+            }
+            @keyframes stampIn {
+                0% {
+                    opacity: 0;
+                    transform: rotate(-20deg) scale(2.5);
+                }
+                60% {
+                    opacity: 1;
+                    transform: rotate(-3deg) scale(0.92);
+                }
+                100% {
+                    opacity: 1;
+                    transform: rotate(-3deg) scale(1);
+                }
+            }
+
+            .result-prize {
+                font-family: var(--serif);
+                font-size: clamp(28px, 5vw, 40px);
+                color: var(--cream);
+                line-height: 1.15;
+                margin-bottom: 12px;
+            }
+            .result-prize em {
+                font-style: italic;
+                color: var(--brass-bright);
+            }
+            .result-meta {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--text-mid);
+                margin-bottom: 28px;
+            }
+            .result-note {
+                font-size: 15px;
+                color: var(--cream-mid);
+                line-height: 1.65;
+                max-width: 380px;
+                margin: 0 auto 22px;
+                font-style: italic;
+            }
+
+            /* ===========================================================================
+   WELCOME OVERLAY
+   ========================================================================== */
+            .welcome {
+                position: fixed;
+                inset: 0;
+                background:
+                    radial-gradient(
+                        ellipse 800px 500px at 50% 30%,
+                        rgba(140, 31, 31, 0.12),
+                        transparent 70%
+                    ),
+                    var(--bg-deep);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 30px;
+                z-index: 40;
+            }
+            .welcome::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                opacity: 0.35;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.82  0 0 0 0 0.5  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+                mix-blend-mode: screen;
+            }
+            .welcome.hidden {
+                display: none;
+            }
+            .welcome-inner {
+                position: relative;
+                max-width: 540px;
+                text-align: center;
+            }
+            .welcome-eyebrow {
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: var(--text-mid);
+                margin-bottom: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+            }
+            .welcome-eyebrow::before,
+            .welcome-eyebrow::after {
+                content: "";
+                flex: 1;
+                max-width: 60px;
+                height: 1px;
+                background: var(--rule);
+            }
+            .welcome-title {
+                font-family: var(--display);
+                font-weight: 900;
+                font-size: clamp(54px, 11vw, 96px);
+                letter-spacing: 0.04em;
+                color: var(--brass-bright);
+                line-height: 0.92;
+                margin-bottom: 14px;
+            }
+            .welcome-title em {
+                font-family: var(--serif);
+                font-style: italic;
+                font-weight: 400;
+                color: var(--cream);
+                letter-spacing: -0.02em;
+                display: inline-block;
+            }
+            .welcome-tag {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.28em;
+                text-transform: uppercase;
+                color: var(--burgundy-bright);
+                margin-bottom: 32px;
+            }
+            .welcome-body {
+                text-align: left;
+                color: var(--cream-mid);
+                line-height: 1.65;
+                font-size: 15.5px;
+                margin-bottom: 30px;
+            }
+            .welcome-body p {
+                margin-bottom: 14px;
+            }
+            .welcome-body p:last-child {
+                margin-bottom: 0;
+            }
+            .welcome-body strong {
+                color: var(--brass-bright);
+                font-weight: 700;
+            }
+            .welcome-actions {
+                display: flex;
+                justify-content: center;
+            }
+            .welcome-actions .btn {
+                padding: 14px 28px;
+                font-size: 11px;
+            }
+
+            /* ===========================================================================
+   FOOTER
+   ========================================================================== */
+            footer.foot {
+                text-align: center;
+                padding: 30px 20px 40px;
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--text-faint);
+                border-top: 1px solid var(--rule);
+                margin-top: 20px;
+            }
+            footer.foot .heart {
+                color: var(--burgundy-bright);
+                margin: 0 6px;
+            }
+
+            /* ===========================================================================
+   CONFETTI
+   ========================================================================== */
+            canvas#confetti {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 50;
+            }
+
+            /* ===========================================================================
+   ERROR BOX (for bad config)
+   ========================================================================== */
+            .config-error {
+                max-width: 600px;
+                margin: 80px auto;
+                padding: 28px;
+                background: var(--bg-panel);
+                border: 1px solid var(--burgundy);
+                border-left-width: 4px;
+                text-align: left;
+            }
+            .config-error h3 {
+                font-family: var(--serif);
+                color: var(--burgundy-bright);
+                font-size: 24px;
+                margin-bottom: 10px;
+            }
+            .config-error p {
+                color: var(--cream-mid);
+                margin-bottom: 10px;
+            }
+            .config-error code {
+                font-family: var(--mono);
+                background: rgba(0, 0, 0, 0.3);
+                padding: 1px 6px;
+                color: var(--brass-bright);
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="confetti"></canvas>
+
+        <!-- WELCOME ============================================================== -->
+        <div class="welcome" id="welcome">
+            <div class="welcome-inner">
+                <div class="welcome-eyebrow">Pick for our next date</div>
+                <h1 class="welcome-title">Date <em>or</em><br />No Date</h1>
+                <div class="welcome-tag">— Choose a case wisely —</div>
+                <div class="welcome-body">
+                    <p>
+                        26 briefcases. Each one holds a different date. The
+                        cheap ones are at the bottom of the board; the good ones
+                        are at the top.
+                    </p>
+                    <p>
+                        You pick <strong>one case to keep</strong>. Then you
+                        open the others, one at a time, eliminating dates from
+                        the running. After each round the Banker calls with an
+                        offer: a specific date he'll guarantee you, right now,
+                        no risk.
+                    </p>
+                    <p>
+                        Take the deal, or hold out for what's in your case. You
+                        get whatever you walk away with — so play hard.
+                    </p>
+                </div>
+                <div class="welcome-actions">
+                    <button class="btn primary" id="welcomeStart">
+                        Begin Game →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HEADER =============================================================== -->
+        <header>
+            <div class="brand">
+                <div class="mark">DATE <em>or</em> NO DATE</div>
+                <div class="tag">Round <span id="roundNum">—</span></div>
+            </div>
+            <div class="header-actions">
+                <button class="btn" id="newGameBtn">New Game</button>
+            </div>
+        </header>
+
+        <!-- MAIN ================================================================= -->
+        <main class="game">
+            <!-- LEFT BOARD (low values 1-13) -->
+            <aside class="board board-left">
+                <div class="board-label">
+                    <span>Values</span><span class="side">Lower Half</span>
+                </div>
+                <div class="value-rows" id="boardLeft"></div>
+            </aside>
+
+            <!-- STAGE -->
+            <section class="stage">
+                <div class="status">
+                    <div class="cell">
+                        <div class="k">Phase</div>
+                        <div class="v italic" id="phase">Pick your case</div>
+                    </div>
+                    <div class="cell">
+                        <div class="k">Your Case</div>
+                        <div class="v muted" id="yourCase">—</div>
+                    </div>
+                    <div class="cell">
+                        <div class="k">Picks This Round</div>
+                        <div class="v" id="picksLeft">—</div>
+                    </div>
+                </div>
+
+                <div class="prompt">
+                    <div class="kicker" id="promptKicker">First Choice</div>
+                    <div class="line" id="promptLine">
+                        Pick a case to <em>keep</em>.
+                    </div>
+                </div>
+
+                <div class="grid" id="grid"></div>
+            </section>
+
+            <!-- RIGHT BOARD (high values 14-26) -->
+            <aside class="board board-right">
+                <div class="board-label">
+                    <span class="side">Upper Half</span><span>Values</span>
+                </div>
+                <div class="value-rows" id="boardRight"></div>
+            </aside>
+        </main>
+
+        <footer class="foot">
+            Made for you <span class="heart">♥</span> By Greg
+        </footer>
+
+        <!-- BANKER MODAL ========================================================= -->
+        <div class="modal-wrap" id="bankerModal" aria-hidden="true">
+            <div class="modal">
+                <div class="modal-inner">
+                    <div class="modal-eyebrow">Incoming Call</div>
+                    <div class="banker-icon">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"
+                            />
+                        </svg>
+                    </div>
+                    <h2 class="modal-title">
+                        The <em>Banker</em> is on the line.
+                    </h2>
+                    <p class="modal-sub" id="bankerLead"></p>
+
+                    <div class="offer-card">
+                        <div class="offer-label">His Offer</div>
+                        <div class="offer-name" id="offerName">—</div>
+                        <div class="offer-value" id="offerValue">—</div>
+                    </div>
+
+                    <div class="modal-buttons">
+                        <button class="btn" id="noDealBtn">No Deal</button>
+                        <button class="btn danger" id="dealBtn">Deal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINAL TWO MODAL ====================================================== -->
+        <div class="modal-wrap" id="finalTwoModal" aria-hidden="true">
+            <div class="modal">
+                <div class="modal-inner">
+                    <div class="modal-eyebrow">The Final Choice</div>
+                    <h2 class="modal-title">
+                        Two cases left. <em>Yours,</em> or the other?
+                    </h2>
+                    <p class="modal-sub" id="finalTwoLead"></p>
+
+                    <div class="offer-card">
+                        <div class="offer-label">Stay or Switch</div>
+                        <div class="offer-name" id="finalTwoText">—</div>
+                    </div>
+
+                    <div class="modal-buttons">
+                        <button class="btn" id="switchBtn">
+                            Switch & Open
+                        </button>
+                        <button class="btn primary" id="keepBtn">
+                            Keep Mine
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULT MODAL ========================================================= -->
+        <div class="modal-wrap" id="resultModal" aria-hidden="true">
+            <div class="modal">
+                <div class="modal-inner result-card">
+                    <div class="result-stamp" id="resultStamp">Deal</div>
+                    <div class="result-prize" id="resultPrize">—</div>
+                    <div class="result-meta" id="resultMeta">—</div>
+                    <p class="result-note" id="resultNote">—</p>
+                    <div
+                        class="modal-buttons"
+                        style="grid-template-columns: 1fr"
+                    >
+                        <button class="btn primary" id="playAgainBtn">
+                            Play Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            /* ===========================================================================
+   ████ EDIT YOUR DATES HERE ████
+   26 entries, ordered LOWEST value (top) to HIGHEST value (bottom).
+   The dollar ladder ($0.01 → $1M) below maps to these in order.
+   ========================================================================= */
+            const DATES = [
+                "Take a walk", //  1  — lowest value  ($0.01)
+                "Ice Cream", //  2
+                "Baking a dessert", //  3
+                "Applebee's", //  4
+                "Game Night", //  5
+                "Scrapbooking & Crafts night", //  6
+                "Farmers Market", //  7
+                "Picnic date", //  8
+                "DIY Spa Night", //  9
+                "Painting", // 10
+                "Zoo", // 11
+                "Mini golf", // 12
+                "Bowling", // 13
+                "Urban Apples", // 14
+                "Westfield Collective", // 15
+                "Lake Day", // 16
+                "Top Golf", // 17
+                "Golf Outing", // 18
+                "Broad Ripple", // 19
+                "Couples photoshoot", // 20
+                "Turkey Run", // 21
+                "Random small-town trip", // 22
+                "Massage", // 23
+                "Sporting event", // 24
+                "Fancy rooftop meal", // 25
+                "Shopping spree", // 26 — highest value ($1,000,000)
+            ];
+
+            /* ===========================================================================
+            ████ SECRET BANKER OFFER LIST ████
+            The banker ONLY uses these for offers.
+
+            You can:
+            - add more ideas
+            - remove ideas
+            - reorder them
+            - make them more romantic/funny/random
+
+            The banker will still calculate the offer value normally,
+            then choose the closest VALUE from this hidden list.
+            =========================================================================== */
+            const BANKER_OFFERS = [
+                { name: "Go for a run", value: 100 },
+                { name: "Play basketball", value: 250 },
+                { name: "Pickleball", value: 500 },
+                { name: "Coffee date", value: 750 },
+                { name: "Cook dinner together", value: 1000 },
+                { name: "Write a book together", value: 1500 },
+                { name: "Arcade", value: 2500 },
+                { name: "Thrifting", value: 4000 },
+                { name: "10 minute massage from me", value: 6000 },
+                { name: "Karaoke Night", value: 8500 },
+
+                { name: "Barnes & Nobles", value: 10000 },
+                { name: "Clay Terrace", value: 12000 },
+                { name: "Mall", value: 16000 },
+                { name: "Drive in Movie", value: 22000 },
+                { name: "Hiking", value: 30000 },
+                { name: "Hammock in Park", value: 32500 },
+                { name: "Sunflower Fields", value: 35000 },
+                { name: "15 minute massage from me", value: 40000 },
+                { name: "Shop for matching pjs", value: 50000 },
+                { name: "Alphabet Dating", value: 60000 },
+
+                { name: "Axe Throwing", value: 70000 },
+                { name: "Escape Room", value: 85000 },
+                { name: "Color Me Mine", value: 105000 },
+                { name: "30 minute massage from me", value: 130000 },
+                { name: "$25 shopping spree", value: 160000 },
+                { name: "Indians Game", value: 195000 },
+                { name: "Boom Game", value: 235000 },
+                { name: "45 minute massage from me", value: 280000 },
+                { name: "New Restaurant", value: 330000 },
+                { name: "E-newton Bracelet", value: 390000 },
+
+                { name: "$50 shopping spree", value: 430000 },
+                { name: "Fancy dinner", value: 490000 },
+                { name: "New matching set", value: 540000 },
+                { name: "New dress", value: 590000 },
+                { name: "$75 shopping spree", value: 620000 },
+                { name: "1933 Lounge", value: 715000 },
+                { name: "Pacers Game", value: 805000 },
+                { name: "Go to a concert", value: 890000 },
+                { name: "Colts Game", value: 960000 },
+                { name: "Weekend getaway", value: 1000000 },
+            ];
+
+            /* The classic Deal or No Deal value ladder. You CAN change these, but the
+   defaults are tuned to feel like the show — leave them alone unless you
+   know what you're doing. */
+            const VALUES = [
+                0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750, 1000,
+                5000, 10000, 25000, 50000, 75000, 100000, 200000, 300000,
+                400000, 500000, 750000, 1000000,
+            ];
+
+            /* Classic 26-case round pacing. Sum to 24 — leaves 2 for the final choice. */
+            const ROUND_PICKS = [6, 5, 4, 3, 2, 1, 1, 1, 1];
+
+            /* ===========================================================================
+   Validation
+   ========================================================================= */
+            if (DATES.length !== 26 || VALUES.length !== 26) {
+                document.body.innerHTML = `
+    <div class="config-error">
+      <h3>Configuration error</h3>
+      <p>Your <code>DATES</code> array must have exactly <strong>26</strong>
+        entries. You currently have <strong>${DATES.length}</strong>.</p>
+      <p>Open this file, find the <code>DATES</code> list near the top of
+        the script section, and make sure there are exactly 26 strings.</p>
+    </div>`;
+                throw new Error("DATES length must be 26");
+            }
+
+            /* ===========================================================================
+   Helpers
+   ========================================================================= */
+            const $ = (q) => document.querySelector(q);
+            const $$ = (q) => Array.from(document.querySelectorAll(q));
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            const shuffle = (arr) => {
+                const a = arr.slice();
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = (Math.random() * (i + 1)) | 0;
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            };
+            const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+            const stdDev = (arr) => {
+                const m = mean(arr);
+                return Math.sqrt(
+                    arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length,
+                );
+            };
+
+            function formatValue(v) {
+                if (v < 1) return `$${v.toFixed(2)}`;
+                if (v < 1000) return `$${v}`;
+                if (v < 1000000) return `$${v / 1000}K`;
+                return `$${v / 1000000}M`;
+            }
+
+            function tierFor(rank /* 1..26 */) {
+                if (rank <= 8) return "tier-low";
+                if (rank <= 17) return "tier-mid";
+                if (rank <= 23) return "tier-high";
+                return "tier-top";
+            }
+
+            /* Build the canonical 26 items in low→high order */
+            const CANONICAL = DATES.map((name, i) => ({
+                rank: i + 1, // 1..26
+                name,
+                value: VALUES[i],
+                tier: tierFor(i + 1),
+            }));
+
+            /* ===========================================================================
+   STATE
+   ========================================================================= */
+            let state = null;
+
+            function newGame() {
+                state = {
+                    /* case 1..26 → canonical item (shuffled mapping) */
+                    mapping: shuffle(CANONICAL),
+                    yourCase: null, // case number 1..26
+                    opened: new Set(), // set of opened case numbers
+                    phase: "pick", // pick | open | offer | end
+                    roundIndex: 0,
+                    picksLeft: ROUND_PICKS[0],
+                    finalPrize: null,
+                    dealt: false,
+                };
+                hideAllModals();
+                renderAll();
+            }
+
+            /* item in case #n */
+            const itemIn = (n) => state.mapping[n - 1];
+
+            function unopenedCases() {
+                const out = [];
+                for (let i = 1; i <= 26; i++)
+                    if (!state.opened.has(i)) out.push(i);
+                return out;
+            }
+
+            function unopenedItems() {
+                return unopenedCases().map(itemIn);
+            }
+
+            /* ===========================================================================
+   BANKER MATH
+   ========================================================================= */
+            function bankerOffer() {
+                const remaining = unopenedItems(); // includes player's case
+                const values = remaining.map((d) => d.value);
+                const ev = mean(values);
+                const sd = stdDev(values);
+                const cv = sd / Math.max(ev, 0.01);
+
+                /* progress through the game */
+                const progress = state.roundIndex / (ROUND_PICKS.length - 1);
+
+                /* offer scaling */
+                const baseFactor = 0.3 + 0.65 * Math.pow(progress, 0.75);
+
+                /* volatility adjustment */
+                const volPenalty = 1 - Math.min(0.2, cv * 0.08);
+
+                /* randomness */
+                const jitter = 0.92 + Math.random() * 0.16;
+
+                const rawOffer = ev * baseFactor * volPenalty * jitter;
+
+                /* Instead of choosing from remaining board dates,
+          choose from the SECRET BANKER_OFFERS list */
+                let best = BANKER_OFFERS[0];
+                let bestDiff = Math.abs(BANKER_OFFERS[0].value - rawOffer);
+
+                for (const offer of BANKER_OFFERS) {
+                    const d = Math.abs(offer.value - rawOffer);
+
+                    if (d < bestDiff) {
+                        bestDiff = d;
+                        best = offer;
+                    }
+                }
+
+                return {
+                    rawOffer,
+                    item: best,
+                    ev,
+                };
+            }
+
+            /* ===========================================================================
+   GAME FLOW
+   ========================================================================= */
+            async function clickCase(n) {
+                if (state.phase === "pick") {
+                    state.yourCase = n;
+                    state.phase = "open";
+                    renderAll();
+                    return;
+                }
+                if (state.phase !== "open") return;
+                if (n === state.yourCase) return;
+                if (state.opened.has(n)) return;
+
+                state.opened.add(n);
+
+                /* animate the opening on the case element */
+                const el = document.querySelector(`.case[data-num="${n}"]`);
+                if (el) {
+                    el.classList.add("opened");
+                    el.animate(
+                        [
+                            { transform: "translateY(0)" },
+                            { transform: "translateY(-4px) rotate(-1.5deg)" },
+                            { transform: "translateY(0) rotate(0)" },
+                        ],
+                        { duration: 260, easing: "ease-out" },
+                    );
+                }
+
+                const item = itemIn(n);
+                /* confetti tuned to tier */
+                const tier = item.tier;
+                if (tier === "tier-top")
+                    burst({
+                        count: 50,
+                        palette: ["#FFE08A", "#B53636", "#F4ECD4"],
+                    });
+                else if (tier === "tier-high")
+                    burst({
+                        count: 30,
+                        palette: ["#E8C97F", "#C9A267", "#F4ECD4"],
+                    });
+                else if (tier === "tier-mid")
+                    burst({ count: 18, palette: ["#C9A267", "#968B6A"] });
+                else burst({ count: 12, palette: ["#5A5547", "#968B6A"] });
+
+                state.picksLeft -= 1;
+                renderBoards();
+                renderStatus();
+
+                /* check: are we down to two cases? (yours + 1 other) */
+                await sleep(550);
+                const unopenedCount = 26 - state.opened.size;
+                if (unopenedCount === 2) {
+                    state.phase = "offer";
+                    showFinalTwo();
+                    return;
+                }
+
+                if (state.picksLeft <= 0) {
+                    state.phase = "offer";
+                    showBanker();
+                }
+            }
+
+            function acceptDeal() {
+                if (state.phase !== "offer") return;
+                state.dealt = true;
+                hideModal("#bankerModal");
+                finishWith({
+                    won: state._lastOffer.item,
+                    actually: itemIn(state.yourCase),
+                    dealt: true,
+                });
+            }
+
+            function declineDeal() {
+                if (state.phase !== "offer") return;
+                hideModal("#bankerModal");
+                state.roundIndex = Math.min(
+                    state.roundIndex + 1,
+                    ROUND_PICKS.length - 1,
+                );
+                state.picksLeft = ROUND_PICKS[state.roundIndex];
+                state.phase = "open";
+                renderStatus();
+                renderPrompt();
+                renderHeader();
+            }
+
+            function showBanker() {
+                const offer = bankerOffer();
+                state._lastOffer = offer;
+
+                const remaining = unopenedItems().length;
+                const leads = [
+                    `${remaining} cases still in play.`,
+                    `Crunching the numbers on what's left…`,
+                    `He's done the math. Here's the number.`,
+                    `Tick, tick, tick…`,
+                    `Final stretch. Last few cases.`,
+                ];
+                const leadIdx = Math.min(state.roundIndex, leads.length - 1);
+
+                $("#bankerLead").textContent = leads[leadIdx];
+                $("#offerName").textContent = offer.item.name;
+                $("#offerValue").textContent = formatValue(offer.item.value);
+                showModal("#bankerModal");
+            }
+
+            function showFinalTwo() {
+                const otherCase = unopenedCases().find(
+                    (n) => n !== state.yourCase,
+                );
+                const yourItem = itemIn(state.yourCase);
+                const otherItem = itemIn(otherCase);
+
+                $("#finalTwoLead").textContent =
+                    `Your case is #${state.yourCase}. The other case is #${otherCase}. ` +
+                    `One of them holds the date you walk away with.`;
+                $("#finalTwoText").innerHTML =
+                    `<span style="font-size:18px;color:var(--text-mid);font-style:normal;font-family:var(--mono);letter-spacing:0.18em;text-transform:uppercase;">Open Yours, or Switch?</span>`;
+
+                showModal("#finalTwoModal");
+
+                const keep = () => {
+                    hideModal("#finalTwoModal");
+                    revealFinal(state.yourCase, false);
+                };
+                const swap = () => {
+                    hideModal("#finalTwoModal");
+                    state.yourCase = otherCase;
+                    revealFinal(otherCase, true);
+                };
+
+                $("#keepBtn").onclick = keep;
+                $("#switchBtn").onclick = swap;
+            }
+
+            function revealFinal(caseNum, switched) {
+                /* open the held/chosen case dramatically */
+                state.opened.add(caseNum);
+                const el = document.querySelector(
+                    `.case[data-num="${caseNum}"]`,
+                );
+                if (el) el.classList.add("opened");
+
+                const item = itemIn(caseNum);
+                if (item.tier === "tier-top")
+                    burst({
+                        count: 200,
+                        palette: ["#FFE08A", "#B53636", "#F4ECD4"],
+                    });
+                else if (item.tier === "tier-high")
+                    burst({
+                        count: 120,
+                        palette: ["#E8C97F", "#C9A267", "#F4ECD4"],
+                    });
+                else
+                    burst({
+                        count: 80,
+                        palette: ["#C9A267", "#F4ECD4", "#968B6A"],
+                    });
+
+                renderBoards();
+                finishWith({
+                    won: item,
+                    actually: item,
+                    dealt: false,
+                    switched,
+                });
+            }
+
+            /* ===========================================================================
+   END SCREEN
+   ========================================================================= */
+            function finishWith({ won, actually, dealt, switched }) {
+                state.phase = "end";
+                state.finalPrize = won;
+
+                $("#resultStamp").textContent = dealt ? "Deal" : "No Deal";
+                $("#resultStamp").classList.toggle("no-deal", !dealt);
+
+                $("#resultPrize").innerHTML =
+                    `Your date: <em>${escapeHTML(won.name)}</em>.`;
+
+                let meta;
+                if (dealt) {
+                    meta = `Took the Banker's deal · ${formatValue(won.value)}`;
+                } else if (switched) {
+                    meta = `Switched on the final two · ${formatValue(won.value)}`;
+                } else {
+                    meta = `Held to the end · ${formatValue(won.value)}`;
+                }
+                $("#resultMeta").textContent = meta;
+
+                $("#resultNote").innerHTML = pickNote(won, dealt, actually);
+
+                setTimeout(() => showModal("#resultModal"), dealt ? 250 : 1400);
+            }
+
+            function pickNote(won, dealt, actuallyInYourCase) {
+                if (dealt) {
+                    const alt =
+                        actuallyInYourCase &&
+                        actuallyInYourCase.value > won.value * 1.5
+                            ? ` (For what it's worth — your case actually had <strong>${escapeHTML(actuallyInYourCase.name)}</strong> in it. The Banker stole that one from you.)`
+                            : ``;
+                    return `The Banker won this round. But you won me — and you're getting a date with me. Can't wait.${alt}`;
+                }
+                if (won.tier === "tier-top") {
+                    return `You played it perfectly and the Banker lost. Pack your bag. I'm already excited.`;
+                }
+                if (won.tier === "tier-high") {
+                    return `Solid. Locked in a great one — let's go.`;
+                }
+                if (won.tier === "tier-mid") {
+                    return `Honestly? Any night with you is a good night. Picking the day now.`;
+                }
+                return `It's not the fanciest one on the board, but I'd take a quiet one with you over anything else. Let's go.`;
+            }
+
+            function escapeHTML(s) {
+                return String(s)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+            }
+
+            /* ===========================================================================
+   RENDERING
+   ========================================================================= */
+            function renderAll() {
+                renderHeader();
+                renderBoards();
+                renderGrid();
+                renderStatus();
+                renderPrompt();
+            }
+
+            function renderHeader() {
+                const total = ROUND_PICKS.length;
+                $("#roundNum").textContent =
+                    state.phase === "end"
+                        ? "Final"
+                        : `${Math.min(state.roundIndex + 1, total)} of ${total}`;
+            }
+
+            function renderPrompt() {
+                const k = $("#promptKicker"),
+                    l = $("#promptLine");
+                if (state.phase === "pick") {
+                    k.textContent = "First Choice";
+                    l.innerHTML = "Pick a case to <em>keep</em>.";
+                } else if (state.phase === "open") {
+                    k.textContent = `Round ${state.roundIndex + 1}`;
+                    l.innerHTML = `Open <em>${state.picksLeft}</em> ${state.picksLeft === 1 ? "case" : "cases"}.`;
+                } else if (state.phase === "offer") {
+                    k.textContent = "Banker on the Line";
+                    l.innerHTML =
+                        "Take the <em>deal</em> — or open more cases.";
+                } else {
+                    k.textContent = "Finished";
+                    l.innerHTML = "Done.";
+                }
+            }
+
+            function renderStatus() {
+                const phaseLabel = {
+                    pick: "Pick your case",
+                    open: "Opening cases",
+                    offer: "Banker's offer",
+                    end: "Finished",
+                }[state.phase];
+
+                $("#phase").textContent = phaseLabel;
+                $("#yourCase").textContent = state.yourCase
+                    ? `№ ${state.yourCase}`
+                    : "—";
+                $("#yourCase").classList.toggle("muted", !state.yourCase);
+                $("#yourCase").classList.toggle("italic", !!state.yourCase);
+
+                $("#picksLeft").textContent =
+                    state.phase === "open" ? state.picksLeft : "—";
+            }
+
+            function buildBoard(target, rangeStart, rangeEnd, sideLabel) {
+                const rows = [];
+                for (let r = rangeStart; r <= rangeEnd; r++) {
+                    const item = CANONICAL[r - 1];
+                    /* eliminated = the case mapped to this canonical item has been opened */
+                    const eliminated = state.mapping.some(
+                        (m, idx) =>
+                            m.rank === item.rank && state.opened.has(idx + 1),
+                    );
+                    rows.push(`
+      <div class="value-row ${item.tier} ${eliminated ? "eliminated" : ""}">
+        <span class="val">${formatValue(item.value)}</span>
+        <span class="name">${escapeHTML(item.name)}</span>
+      </div>`);
+                }
+                target.innerHTML = rows.join("");
+            }
+
+            function renderBoards() {
+                buildBoard($("#boardLeft"), 1, 13);
+                buildBoard($("#boardRight"), 14, 26);
+            }
+
+            function renderGrid() {
+                const grid = $("#grid");
+                grid.innerHTML = "";
+                for (let i = 1; i <= 26; i++) {
+                    const isOpened = state.opened.has(i);
+                    const isMine = state.yourCase === i;
+                    const item = itemIn(i);
+
+                    const div = document.createElement("button");
+                    div.className = `case ${isOpened ? "opened" : ""} ${isMine ? "mine" : ""}`;
+                    div.dataset.num = i;
+                    div.innerHTML = `
+      ${isMine ? `<span class="mine-badge">Yours</span>` : ""}
+      <span class="case-number">${i}</span>
+      <div class="reveal-card ${item.tier}">
+        <div class="rc-name">${escapeHTML(item.name)}</div>
+        <div class="rc-val">${formatValue(item.value)}</div>
+      </div>
+    `;
+
+                    /* clickable conditions */
+                    const canClick =
+                        state.phase === "pick" ||
+                        (state.phase === "open" &&
+                            !isOpened &&
+                            i !== state.yourCase);
+                    if (canClick) {
+                        div.addEventListener("click", () => clickCase(i));
+                    } else {
+                        div.classList.add("disabled");
+                    }
+                    grid.appendChild(div);
+                }
+            }
+
+            /* ===========================================================================
+   MODAL UTILS
+   ========================================================================= */
+            function showModal(sel) {
+                const m = $(sel);
+                m.classList.add("show");
+                m.setAttribute("aria-hidden", "false");
+            }
+            function hideModal(sel) {
+                const m = $(sel);
+                m.classList.remove("show");
+                m.setAttribute("aria-hidden", "true");
+            }
+            function hideAllModals() {
+                ["#bankerModal", "#finalTwoModal", "#resultModal"].forEach(
+                    hideModal,
+                );
+            }
+
+            /* ===========================================================================
+   CONFETTI
+   ========================================================================= */
+            const cc = $("#confetti");
+            const cx = cc.getContext("2d");
+            let pieces = [];
+            function resizeCanvas() {
+                cc.width = innerWidth;
+                cc.height = innerHeight;
+            }
+            addEventListener("resize", resizeCanvas);
+            resizeCanvas();
+
+            function burst({
+                count = 60,
+                palette = ["#E8C97F", "#C9A267", "#F4ECD4"],
+            }) {
+                for (let i = 0; i < count; i++) {
+                    pieces.push({
+                        x: Math.random() * cc.width,
+                        y: -10 - Math.random() * 60,
+                        r: 2 + Math.random() * 3.5,
+                        c: palette[(Math.random() * palette.length) | 0],
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: 2 + Math.random() * 3.5,
+                        rot: Math.random() * Math.PI * 2,
+                        vr: (Math.random() - 0.5) * 0.25,
+                        alpha: 1,
+                    });
+                }
+            }
+
+            (function loop() {
+                requestAnimationFrame(loop);
+                cx.clearRect(0, 0, cc.width, cc.height);
+                for (let i = pieces.length - 1; i >= 0; i--) {
+                    const p = pieces[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy *= 0.998;
+                    p.rot += p.vr;
+                    if (p.y > cc.height + 30) p.alpha -= 0.05;
+
+                    cx.save();
+                    cx.translate(p.x, p.y);
+                    cx.rotate(p.rot);
+                    cx.globalAlpha = Math.max(0, p.alpha);
+                    cx.fillStyle = p.c;
+                    cx.fillRect(-p.r, -p.r * 0.55, p.r * 2, p.r * 1.1);
+                    cx.restore();
+
+                    if (p.alpha <= 0) pieces.splice(i, 1);
+                }
+            })();
+
+            /* ===========================================================================
+   WIRING
+   ========================================================================= */
+            $("#welcomeStart").addEventListener("click", () => {
+                $("#welcome").classList.add("hidden");
+            });
+            $("#newGameBtn").addEventListener("click", () => newGame());
+            $("#playAgainBtn").addEventListener("click", () => {
+                hideAllModals();
+                newGame();
+            });
+            $("#dealBtn").addEventListener("click", acceptDeal);
+            $("#noDealBtn").addEventListener("click", declineDeal);
+
+            /* Start */
+            newGame();
+        </script>
+    </body>
+</html>

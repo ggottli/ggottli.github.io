@@ -1,0 +1,1559 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>An Application to Spend Time With Greg</title>
+
+        <!--
+================================================================================
+  SETUP — DO THIS ONCE BEFORE PUBLISHING
+================================================================================
+  This page submits the form via Formspree (free, no backend required).
+  It takes 60 seconds to set up:
+
+  1.  Go to https://formspree.io and create a free account.
+  2.  Click "New Form", give it a name like "Date Application".
+  3.  Copy the endpoint URL it gives you. It looks like:
+        https://formspree.io/f/xqkrabcd
+  4.  In this file, find the line that starts with:
+        const FORMSPREE_ENDPOINT =
+      and paste your URL between the quotes, replacing the placeholder.
+  5.  Push to GitHub Pages. Done.
+
+  On her first submission Formspree will send YOU a one-click confirmation
+  email — accept it and all future submissions land in your inbox instantly.
+
+  If you'd rather not use Formspree: set FORMSPREE_ENDPOINT to an empty
+  string ("") and the submit button will fall back to opening her email
+  client with a pre-filled message to you. Less smooth but zero setup.
+================================================================================
+-->
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..800,0..100&family=DM+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            /* -----------------------------------------------------------------------
+     Tokens
+     ----------------------------------------------------------------------- */
+            :root {
+                --paper: #f2ead8;
+                --paper-deep: #e8ddc5;
+                --ink: #251d14;
+                --ink-soft: #4a3d2c;
+                --ink-faint: #8b7b62;
+                --rule: #c9b894;
+                --wine: #8c1f1f;
+                --wine-deep: #6b1515;
+                --gold: #b58a3c;
+
+                --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+                --mono: "DM Mono", ui-monospace, "Courier New", monospace;
+
+                --measure: 640px;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                min-height: 100%;
+                background: var(--paper);
+                color: var(--ink);
+                font-family: var(--serif);
+                font-variation-settings:
+                    "opsz" 14,
+                    "SOFT" 50;
+                font-weight: 380;
+                font-size: 17px;
+                line-height: 1.55;
+                -webkit-font-smoothing: antialiased;
+                text-rendering: optimizeLegibility;
+            }
+
+            /* Subtle paper texture using layered radial noise — adds warmth without screaming */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse at top left,
+                        rgba(139, 123, 98, 0.1),
+                        transparent 55%
+                    ),
+                    radial-gradient(
+                        ellipse at bottom right,
+                        rgba(139, 123, 98, 0.08),
+                        transparent 55%
+                    );
+                z-index: 0;
+            }
+            body::after {
+                content: "";
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                opacity: 0.35;
+                z-index: 0;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.14  0 0 0 0 0.11  0 0 0 0 0.08  0 0 0 0.20 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+            }
+
+            main.paper {
+                position: relative;
+                z-index: 1;
+                max-width: var(--measure);
+                margin: 0 auto;
+                padding: 48px 28px 80px;
+            }
+
+            /* -----------------------------------------------------------------------
+     Masthead
+     ----------------------------------------------------------------------- */
+            .masthead {
+                text-align: center;
+                padding-bottom: 26px;
+                border-bottom: 1px solid var(--rule);
+                margin-bottom: 30px;
+            }
+            .establishment {
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                margin-bottom: 14px;
+            }
+            .establishment .bull {
+                display: inline-block;
+                width: 4px;
+                height: 4px;
+                border-radius: 50%;
+                background: var(--ink-faint);
+                margin: 0 10px;
+                vertical-align: middle;
+            }
+            .title {
+                font-family: var(--serif);
+                font-variation-settings:
+                    "opsz" 144,
+                    "SOFT" 80;
+                font-weight: 400;
+                font-size: clamp(34px, 6.5vw, 52px);
+                line-height: 1.02;
+                letter-spacing: -0.01em;
+                margin: 0 0 12px;
+                color: var(--ink);
+            }
+            .title em {
+                font-style: italic;
+                font-weight: 300;
+                color: var(--wine);
+            }
+            .subtitle {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+            }
+
+            /* -----------------------------------------------------------------------
+     Progress
+     ----------------------------------------------------------------------- */
+            .progress {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                margin: 0 auto 36px;
+                padding: 0 4px;
+            }
+            .progress .tick {
+                width: 22px;
+                height: 1px;
+                background: var(--rule);
+                transition: background 400ms ease;
+            }
+            .progress .tick.done {
+                background: var(--wine);
+            }
+            .progress .tick.current {
+                background: var(--ink);
+                height: 2px;
+                box-shadow: 0 0 0 1px var(--paper);
+            }
+            .progress[hidden] {
+                display: none;
+            }
+
+            /* -----------------------------------------------------------------------
+     Step plumbing
+     ----------------------------------------------------------------------- */
+            .step {
+                display: none;
+                animation: stepIn 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+            }
+            .step.active {
+                display: block;
+            }
+            @keyframes stepIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .section-label {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                margin-bottom: 10px;
+            }
+            .section-label .num {
+                color: var(--wine);
+                font-weight: 500;
+            }
+            .step h2 {
+                font-family: var(--serif);
+                font-variation-settings:
+                    "opsz" 96,
+                    "SOFT" 70;
+                font-weight: 380;
+                font-size: clamp(26px, 4.5vw, 34px);
+                line-height: 1.15;
+                letter-spacing: -0.01em;
+                margin: 0 0 8px;
+                color: var(--ink);
+            }
+            .step h2 em {
+                font-style: italic;
+                font-weight: 300;
+            }
+            .step .lede {
+                color: var(--ink-soft);
+                margin: 0 0 26px;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+
+            /* Margin notes — handwritten asides from Greg */
+            .aside {
+                display: block;
+                font-family: var(--serif);
+                font-style: italic;
+                font-weight: 350;
+                font-variation-settings:
+                    "opsz" 14,
+                    "SOFT" 100;
+                font-size: 14.5px;
+                color: var(--ink-faint);
+                border-left: 2px solid var(--rule);
+                padding: 6px 0 6px 14px;
+                margin: 18px 0;
+            }
+            .aside::before {
+                content: "— G.";
+                display: block;
+                font-family: var(--mono);
+                font-style: normal;
+                font-size: 10px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--wine);
+                margin-bottom: 4px;
+            }
+
+            /* -----------------------------------------------------------------------
+     Inputs
+     ----------------------------------------------------------------------- */
+            .field {
+                margin-bottom: 22px;
+            }
+            .field label {
+                display: block;
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                margin-bottom: 8px;
+            }
+            .field input[type="date"],
+            .field input[type="time"],
+            .field input[type="text"],
+            .field textarea {
+                width: 100%;
+                background: transparent;
+                border: none;
+                border-bottom: 1px solid var(--rule);
+                padding: 8px 0 10px;
+                font-family: var(--serif);
+                font-size: 19px;
+                font-weight: 400;
+                color: var(--ink);
+                line-height: 1.4;
+                transition: border-color 200ms ease;
+                border-radius: 0;
+                outline: none;
+            }
+            .field textarea {
+                resize: vertical;
+                min-height: 90px;
+                font-size: 16.5px;
+                line-height: 1.55;
+            }
+            .field input:focus,
+            .field textarea:focus {
+                border-bottom-color: var(--wine);
+            }
+            .field input::placeholder,
+            .field textarea::placeholder {
+                color: var(--ink-faint);
+                opacity: 0.6;
+                font-style: italic;
+            }
+
+            .field-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 22px;
+            }
+            @media (max-width: 480px) {
+                .field-row {
+                    grid-template-columns: 1fr;
+                    gap: 0;
+                }
+            }
+
+            /* -----------------------------------------------------------------------
+     Activity selector
+     ----------------------------------------------------------------------- */
+            .activity-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+            @media (max-width: 480px) {
+                .activity-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .activity {
+                position: relative;
+                text-align: left;
+                background: transparent;
+                border: 1px solid var(--rule);
+                padding: 14px 16px;
+                cursor: pointer;
+                transition: all 200ms ease;
+                font-family: var(--serif);
+                color: var(--ink);
+                border-radius: 0;
+            }
+            .activity:hover {
+                border-color: var(--ink-soft);
+                background: rgba(0, 0, 0, 0.015);
+            }
+            .activity.selected {
+                border-color: var(--wine);
+                background: rgba(140, 31, 31, 0.04);
+            }
+            .activity.selected::after {
+                content: "✓";
+                position: absolute;
+                top: 10px;
+                right: 12px;
+                color: var(--wine);
+                font-size: 14px;
+                font-family: var(--mono);
+            }
+            .activity .name {
+                display: block;
+                font-size: 17px;
+                font-weight: 450;
+                font-variation-settings:
+                    "opsz" 36,
+                    "SOFT" 70;
+                line-height: 1.2;
+                margin-bottom: 3px;
+            }
+            .activity .blurb {
+                display: block;
+                font-family: var(--serif);
+                font-style: italic;
+                font-weight: 350;
+                font-size: 13.5px;
+                color: var(--ink-faint);
+                line-height: 1.3;
+            }
+
+            /* -----------------------------------------------------------------------
+     Company radio
+     ----------------------------------------------------------------------- */
+            .company-options {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 8px;
+            }
+            @media (max-width: 480px) {
+                .company-options {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .company-opt {
+                border: 1px solid var(--rule);
+                padding: 18px 18px;
+                cursor: pointer;
+                text-align: center;
+                transition: all 200ms ease;
+                background: transparent;
+                font-family: var(--serif);
+                color: var(--ink);
+            }
+            .company-opt:hover {
+                border-color: var(--ink-soft);
+            }
+            .company-opt.selected {
+                border-color: var(--wine);
+                background: rgba(140, 31, 31, 0.04);
+            }
+            .company-opt .name {
+                display: block;
+                font-size: 18px;
+                font-weight: 420;
+                margin-bottom: 2px;
+            }
+            .company-opt .blurb {
+                display: block;
+                font-style: italic;
+                font-size: 13.5px;
+                color: var(--ink-faint);
+            }
+
+            /* -----------------------------------------------------------------------
+     Conditional reveal
+     ----------------------------------------------------------------------- */
+            .reveal {
+                max-height: 0;
+                overflow: hidden;
+                transition:
+                    max-height 380ms ease,
+                    margin 380ms ease;
+                margin-top: 0;
+            }
+            .reveal.open {
+                max-height: 280px;
+                margin-top: 18px;
+            }
+
+            /* -----------------------------------------------------------------------
+     Review
+     ----------------------------------------------------------------------- */
+            .review-list {
+                list-style: none;
+                padding: 0;
+                margin: 0 0 26px;
+                border-top: 1px solid var(--rule);
+            }
+            .review-list li {
+                display: grid;
+                grid-template-columns: 130px 1fr;
+                gap: 18px;
+                padding: 14px 0;
+                border-bottom: 1px solid var(--rule);
+            }
+            .review-list .key {
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                padding-top: 4px;
+            }
+            .review-list .val {
+                font-family: var(--serif);
+                font-size: 17px;
+                color: var(--ink);
+                font-weight: 400;
+                line-height: 1.45;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+            .review-list .val.empty {
+                color: var(--ink-faint);
+                font-style: italic;
+            }
+
+            /* -----------------------------------------------------------------------
+     Buttons
+     ----------------------------------------------------------------------- */
+            .actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 36px;
+                gap: 14px;
+            }
+            .actions.solo {
+                justify-content: flex-end;
+            }
+
+            button.btn {
+                font-family: var(--mono);
+                font-size: 11.5px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                background: transparent;
+                border: 1px solid var(--ink);
+                color: var(--ink);
+                padding: 13px 22px;
+                cursor: pointer;
+                transition: all 180ms ease;
+                border-radius: 0;
+                -webkit-tap-highlight-color: transparent;
+            }
+            button.btn:hover:not(:disabled) {
+                background: var(--ink);
+                color: var(--paper);
+            }
+            button.btn.primary {
+                background: var(--ink);
+                color: var(--paper);
+                border-color: var(--ink);
+            }
+            button.btn.primary:hover:not(:disabled) {
+                background: var(--wine);
+                border-color: var(--wine);
+            }
+            button.btn.ghost {
+                border-color: transparent;
+                color: var(--ink-faint);
+                padding-left: 0;
+            }
+            button.btn.ghost:hover:not(:disabled) {
+                background: transparent;
+                color: var(--ink);
+            }
+            button.btn:disabled {
+                opacity: 0.32;
+                cursor: not-allowed;
+            }
+
+            /* The submit button — styled as a wax seal */
+            .submit-area {
+                display: flex;
+                justify-content: center;
+                margin-top: 36px;
+            }
+            button.seal {
+                position: relative;
+                width: 132px;
+                height: 132px;
+                border-radius: 50%;
+                background: var(--wine);
+                color: #f4e7c8;
+                border: none;
+                cursor: pointer;
+                font-family: var(--mono);
+                font-size: 10.5px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                text-align: center;
+                line-height: 1.3;
+                transition:
+                    transform 200ms ease,
+                    box-shadow 200ms ease,
+                    background 200ms ease;
+                box-shadow:
+                    inset 0 0 0 2px rgba(244, 231, 200, 0.35),
+                    inset 0 0 0 4px var(--wine),
+                    0 8px 24px -8px rgba(140, 31, 31, 0.5);
+                -webkit-tap-highlight-color: transparent;
+            }
+            button.seal:hover:not(:disabled) {
+                transform: scale(1.04) rotate(-2deg);
+                background: var(--wine-deep);
+                box-shadow:
+                    inset 0 0 0 2px rgba(244, 231, 200, 0.4),
+                    inset 0 0 0 4px var(--wine-deep),
+                    0 12px 32px -8px rgba(140, 31, 31, 0.55);
+            }
+            button.seal:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+            button.seal:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            button.seal .seal-inner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                height: 100%;
+            }
+            button.seal .seal-mark {
+                font-family: var(--serif);
+                font-style: italic;
+                font-size: 22px;
+                font-weight: 300;
+                letter-spacing: 0;
+                text-transform: none;
+                line-height: 1;
+            }
+
+            .status {
+                text-align: center;
+                margin-top: 18px;
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                min-height: 16px;
+            }
+            .status.error {
+                color: var(--wine);
+                text-transform: none;
+                letter-spacing: 0.06em;
+                font-family: var(--serif);
+                font-style: italic;
+                font-size: 14px;
+            }
+
+            /* -----------------------------------------------------------------------
+     Confirmation
+     ----------------------------------------------------------------------- */
+            .confirmation {
+                text-align: center;
+                padding: 30px 0 10px;
+            }
+            .stamp {
+                display: inline-block;
+                position: relative;
+                margin: 0 auto 28px;
+                padding: 12px 28px;
+                border: 2px solid var(--wine);
+                color: var(--wine);
+                font-family: var(--mono);
+                font-size: 14px;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                transform: rotate(-4deg);
+                animation: stampIn 700ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+                animation-delay: 200ms;
+            }
+            .stamp::before,
+            .stamp::after {
+                content: "";
+                position: absolute;
+                background: var(--wine);
+            }
+            .stamp::before {
+                top: -6px;
+                left: 8px;
+                right: 8px;
+                height: 1px;
+            }
+            .stamp::after {
+                bottom: -6px;
+                left: 8px;
+                right: 8px;
+                height: 1px;
+            }
+            @keyframes stampIn {
+                0% {
+                    opacity: 0;
+                    transform: rotate(-15deg) scale(2.4);
+                }
+                60% {
+                    opacity: 1;
+                    transform: rotate(-4deg) scale(0.92);
+                }
+                100% {
+                    opacity: 1;
+                    transform: rotate(-4deg) scale(1);
+                }
+            }
+
+            .love-note {
+                max-width: 460px;
+                margin: 0 auto;
+                font-family: var(--serif);
+                font-variation-settings:
+                    "opsz" 24,
+                    "SOFT" 90;
+            }
+            .love-note .line-1 {
+                font-size: clamp(28px, 5vw, 38px);
+                font-weight: 380;
+                line-height: 1.15;
+                letter-spacing: -0.01em;
+                margin: 0 0 22px;
+                color: var(--ink);
+                animation: rise 700ms ease both;
+                animation-delay: 500ms;
+                opacity: 0;
+            }
+            .love-note .line-1 em {
+                font-style: italic;
+                color: var(--wine);
+                font-weight: 300;
+            }
+            .love-note p {
+                font-size: 17px;
+                line-height: 1.7;
+                color: var(--ink-soft);
+                margin: 0 0 18px;
+                animation: rise 700ms ease both;
+                animation-delay: 700ms;
+                opacity: 0;
+            }
+            .love-note .sig {
+                margin-top: 32px;
+                font-style: italic;
+                font-size: 19px;
+                color: var(--ink);
+                animation: rise 700ms ease both;
+                animation-delay: 900ms;
+                opacity: 0;
+            }
+            .love-note .sig::before {
+                content: "";
+                display: block;
+                width: 60px;
+                height: 1px;
+                background: var(--rule);
+                margin: 24px auto;
+            }
+            @keyframes rise {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* -----------------------------------------------------------------------
+     Welcome screen
+     ----------------------------------------------------------------------- */
+            .welcome-body {
+                text-align: center;
+                padding: 8px 0 4px;
+            }
+            .welcome-body .salut {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                margin-bottom: 18px;
+            }
+            .welcome-body p {
+                text-align: left;
+                margin: 0 0 16px;
+                color: var(--ink-soft);
+                line-height: 1.65;
+            }
+            .welcome-body .ornament {
+                font-family: var(--serif);
+                color: var(--rule);
+                font-size: 22px;
+                margin: 28px 0 20px;
+                letter-spacing: 1em;
+                text-indent: 1em;
+            }
+
+            /* -----------------------------------------------------------------------
+     Footer line
+     ----------------------------------------------------------------------- */
+            footer.tiny {
+                margin-top: 56px;
+                text-align: center;
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                opacity: 0.7;
+            }
+            footer.tiny .heart {
+                display: inline-block;
+                color: var(--wine);
+                transform: translateY(1px);
+                margin: 0 6px;
+            }
+
+            /* Tiny screens */
+            @media (max-width: 380px) {
+                main.paper {
+                    padding: 36px 20px 60px;
+                }
+                .review-list li {
+                    grid-template-columns: 1fr;
+                    gap: 4px;
+                }
+                .review-list .key {
+                    padding-top: 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <main class="paper">
+            <!-- ============================================================ Masthead -->
+            <header class="masthead">
+                <div class="establishment">
+                    Est. 2026 <span class="bull"></span> No. 001
+                    <span class="bull"></span> For Sarah
+                </div>
+                <h1 class="title">
+                    An <em>Application</em><br />to Spend Time With Greg
+                </h1>
+                <div class="subtitle">Please complete all sections</div>
+            </header>
+
+            <!-- ============================================================ Progress -->
+            <div class="progress" id="progress" hidden>
+                <span class="tick" data-step="1"></span>
+                <span class="tick" data-step="2"></span>
+                <span class="tick" data-step="3"></span>
+                <span class="tick" data-step="4"></span>
+                <span class="tick" data-step="5"></span>
+            </div>
+
+            <!-- ============================================================ Welcome -->
+            <section class="step active" data-step="welcome">
+                <div class="welcome-body">
+                    <div class="salut">A note before you begin</div>
+
+                    <p>Hi Sarah,</p>
+
+                    <p>
+                        I know you want me to plan more dates, so I built this
+                        form so you can always request our next date whenever
+                        you want. Just tell me what you want to do and when and
+                        I can get it planned.
+                    </p>
+
+                    <p>I will plan and say yes to every single one.</p>
+
+                    <div class="ornament">⁕ ⁕ ⁕</div>
+                </div>
+
+                <div class="actions solo">
+                    <button class="btn primary" data-action="begin">
+                        Begin Application →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ============================================================ Step 1: Date / Time -->
+            <section class="step" data-step="datetime">
+                <div class="section-label">
+                    <span class="num">I.</span> &nbsp; When
+                </div>
+                <h2>Pick a day and a <em>time.</em></h2>
+                <p class="lede">
+                    Whatever works for you and I will try to plan around it.
+                </p>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="f-date">Date</label>
+                        <input type="date" id="f-date" required />
+                    </div>
+                    <div class="field">
+                        <label for="f-time">Time</label>
+                        <input type="time" id="f-time" required />
+                    </div>
+                </div>
+
+                <div class="aside">
+                    Pick the best time that works for you but if we need to
+                    adjust we can.
+                </div>
+
+                <div class="actions">
+                    <button class="btn ghost" data-action="back">← Back</button>
+                    <button
+                        class="btn primary"
+                        data-action="next"
+                        data-requires="datetime"
+                    >
+                        Continue →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ============================================================ Step 2: Activity -->
+            <section class="step" data-step="activity">
+                <div class="section-label">
+                    <span class="num">II.</span> &nbsp; What
+                </div>
+                <h2>What sounds good <em>that day?</em></h2>
+                <p class="lede">
+                    Pick one. If you want a surprise write that in something
+                    else.
+                </p>
+
+                <div class="activity-grid" id="activity-grid">
+                    <button class="activity" data-activity="Dinner date">
+                        <span class="name">Dinner Date</span>
+                        <span class="blurb">I'll pick you up with flowers</span>
+                    </button>
+                    <button class="activity" data-activity="Movie night">
+                        <span class="name">Movie Night</span>
+                        <span class="blurb">At home or in theaters</span>
+                    </button>
+                    <button class="activity" data-activity="Coffee">
+                        <span class="name">Coffee</span>
+                        <span class="blurb">We can go to any coffee shop</span>
+                    </button>
+                    <button class="activity" data-activity="Walk">
+                        <span class="name">A Walk</span>
+                        <span class="blurb">However long and far you want</span>
+                    </button>
+                    <button class="activity" data-activity="Game night">
+                        <span class="name">Game Night</span>
+                        <span class="blurb">Any game with anyone</span>
+                    </button>
+                    <button class="activity" data-activity="Adventure">
+                        <span class="name">Adventure</span>
+                        <span class="blurb">Try something new</span>
+                    </button>
+                    <button
+                        class="activity"
+                        data-activity="Just see each other"
+                    >
+                        <span class="name">Just See Each Other</span>
+                        <span class="blurb">Make time to see each other</span>
+                    </button>
+                    <button class="activity" data-activity="Lake">
+                        <span class="name">The Lake</span>
+                        <span class="blurb">Sun tan and go on the water</span>
+                    </button>
+                    <button
+                        class="activity activity-other"
+                        data-activity="Something else"
+                        style="grid-column: 1 / -1"
+                    >
+                        <span class="name">Something Else</span>
+                        <span class="blurb">Anything else you want to do</span>
+                    </button>
+                </div>
+
+                <div class="reveal" id="other-reveal">
+                    <div
+                        class="field"
+                        style="margin-top: 6px; margin-bottom: 0"
+                    >
+                        <label for="f-other">Your idea</label>
+                        <input
+                            type="text"
+                            id="f-other"
+                            placeholder="Whatever you have in mind..."
+                        />
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn ghost" data-action="back">← Back</button>
+                    <button
+                        class="btn primary"
+                        data-action="next"
+                        data-requires="activity"
+                    >
+                        Continue →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ============================================================ Step 3: Company -->
+            <section class="step" data-step="company">
+                <div class="section-label">
+                    <span class="num">III.</span> &nbsp; Who
+                </div>
+                <h2>Just <em>us</em>, or company welcome?</h2>
+                <p class="lede">
+                    Both are great. If you want to invite people, tell me who so
+                    I can plan accordingly.
+                </p>
+
+                <div class="company-options" id="company-options">
+                    <button class="company-opt" data-company="just-us">
+                        <span class="name">Just Us Two</span>
+                        <span class="blurb">My favorite default</span>
+                    </button>
+                    <button class="company-opt" data-company="others">
+                        <span class="name">Invite Others</span>
+                        <span class="blurb">The more the merrier</span>
+                    </button>
+                </div>
+
+                <div class="reveal" id="guests-reveal">
+                    <div
+                        class="field"
+                        style="margin-top: 6px; margin-bottom: 0"
+                    >
+                        <label for="f-guests">Who should I expect?</label>
+                        <input
+                            type="text"
+                            id="f-guests"
+                            placeholder="Names, or a general idea (couples, friends, family...)"
+                        />
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn ghost" data-action="back">← Back</button>
+                    <button
+                        class="btn primary"
+                        data-action="next"
+                        data-requires="company"
+                    >
+                        Continue →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ============================================================ Step 4: Details -->
+            <section class="step" data-step="details">
+                <div class="section-label">
+                    <span class="num">IV.</span> &nbsp; Details
+                </div>
+                <h2>Anything <em>specific</em> in mind?</h2>
+                <p class="lede">
+                    All of this is optional. Skip it if you'd rather be
+                    surprised.
+                </p>
+
+                <div class="field">
+                    <label for="f-specifics" id="f-specifics-label"
+                        >Specifics</label
+                    >
+                    <input type="text" id="f-specifics" placeholder="" />
+                </div>
+
+                <div class="field">
+                    <label for="f-requests"
+                        >Special requests / anything else</label
+                    >
+                    <textarea
+                        id="f-requests"
+                        placeholder="Wear that shirt I like, pick me up at 7, bring flowers, surprise me — anything."
+                    ></textarea>
+                </div>
+
+                <div class="aside">I will do anything to make you happy.</div>
+
+                <div class="actions">
+                    <button class="btn ghost" data-action="back">← Back</button>
+                    <button class="btn primary" data-action="next">
+                        Continue →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ============================================================ Step 5: Review -->
+            <section class="step" data-step="review">
+                <div class="section-label">
+                    <span class="num">V.</span> &nbsp; Final Review
+                </div>
+                <h2>Does this look <em>right?</em></h2>
+                <p class="lede">
+                    Give it a quick read. When you're ready, press the seal to
+                    send it over.
+                </p>
+
+                <ul class="review-list" id="review-list"></ul>
+
+                <div class="submit-area">
+                    <button class="seal" id="submit-btn">
+                        <span class="seal-inner">
+                            <span class="seal-mark">G &amp; you</span>
+                            <span>Submit</span>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="status" id="status"></div>
+
+                <div class="actions">
+                    <button class="btn ghost" data-action="back">← Edit</button>
+                    <span></span>
+                </div>
+            </section>
+
+            <!-- ============================================================ Confirmation -->
+            <section class="step" data-step="confirmation">
+                <div class="confirmation">
+                    <div class="stamp">Application Approved</div>
+
+                    <div class="love-note">
+                        <p class="line-1">I <em>love</em> you.</p>
+                        <p>
+                            Your application is in. I'm looking forward to
+                            seeing you.
+                        </p>
+                        <p>
+                            Whatever you picked to do I'm so excited for and
+                            will plan it so well so we have the best time ever.
+                        </p>
+                        <p>I can't wait!</p>
+                        <div class="sig">Yours, Greg.</div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="tiny">
+                Made for you <span class="heart">♥</span> By Greg
+            </footer>
+        </main>
+
+        <script>
+            /* ==========================================================================
+   STATE
+   ========================================================================== */
+            const FORMSPREE_ENDPOINT = "https://formspree.io/f/REPLACE_ME"; // <-- paste your Formspree URL here
+
+            const state = {
+                step: 0,
+                date: "",
+                time: "",
+                activity: "",
+                custom: "",
+                company: "",
+                guests: "",
+                specifics: "",
+                requests: "",
+            };
+
+            const STEPS = [
+                "welcome",
+                "datetime",
+                "activity",
+                "company",
+                "details",
+                "review",
+                "confirmation",
+            ];
+            const NUMBERED = [
+                "datetime",
+                "activity",
+                "company",
+                "details",
+                "review",
+            ]; // steps that count for progress
+
+            /* ==========================================================================
+   ELEMENTS
+   ========================================================================== */
+            const sections = document.querySelectorAll(".step");
+            const progressEl = document.getElementById("progress");
+            const progressTicks = progressEl.querySelectorAll(".tick");
+
+            const dateInput = document.getElementById("f-date");
+            const timeInput = document.getElementById("f-time");
+            const otherInput = document.getElementById("f-other");
+            const otherReveal = document.getElementById("other-reveal");
+            const guestsInput = document.getElementById("f-guests");
+            const guestsReveal = document.getElementById("guests-reveal");
+            const specificsInput = document.getElementById("f-specifics");
+            const specificsLabel = document.getElementById("f-specifics-label");
+            const requestsInput = document.getElementById("f-requests");
+
+            const reviewList = document.getElementById("review-list");
+            const submitBtn = document.getElementById("submit-btn");
+            const statusEl = document.getElementById("status");
+
+            const activityBtns = document.querySelectorAll(".activity");
+            const companyBtns = document.querySelectorAll(".company-opt");
+
+            /* Default to today's date, no past dates */
+            const todayISO = new Date().toISOString().split("T")[0];
+            dateInput.setAttribute("min", todayISO);
+
+            /* ==========================================================================
+   STEP NAVIGATION
+   ========================================================================== */
+            function showStep(idx) {
+                state.step = idx;
+                sections.forEach((s, i) =>
+                    s.classList.toggle("active", i === idx),
+                );
+
+                const name = STEPS[idx];
+
+                // Progress bar visible only on numbered steps
+                if (NUMBERED.includes(name)) {
+                    progressEl.hidden = false;
+                    const progressIdx = NUMBERED.indexOf(name);
+                    progressTicks.forEach((t, i) => {
+                        t.classList.toggle("done", i < progressIdx);
+                        t.classList.toggle("current", i === progressIdx);
+                    });
+                } else {
+                    progressEl.hidden = true;
+                }
+
+                // When entering review, rebuild it
+                if (name === "review") renderReview();
+
+                // Scroll to top of card on step change
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+
+            function nextStep() {
+                if (state.step < STEPS.length - 1) showStep(state.step + 1);
+            }
+            function prevStep() {
+                if (state.step > 0) showStep(state.step - 1);
+            }
+
+            /* ==========================================================================
+   VALIDATION
+   ========================================================================== */
+            function validate(requires) {
+                if (!requires) return true;
+                if (requires === "datetime") {
+                    return !!state.date && !!state.time;
+                }
+                if (requires === "activity") {
+                    if (!state.activity) return false;
+                    if (
+                        state.activity === "Something else" &&
+                        !state.custom.trim()
+                    )
+                        return false;
+                    return true;
+                }
+                if (requires === "company") {
+                    if (!state.company) return false;
+                    if (state.company === "others" && !state.guests.trim())
+                        return false;
+                    return true;
+                }
+                return true;
+            }
+
+            /* ==========================================================================
+   INPUT BINDINGS
+   ========================================================================== */
+            dateInput.addEventListener(
+                "input",
+                (e) => (state.date = e.target.value),
+            );
+            timeInput.addEventListener(
+                "input",
+                (e) => (state.time = e.target.value),
+            );
+            otherInput.addEventListener(
+                "input",
+                (e) => (state.custom = e.target.value),
+            );
+            guestsInput.addEventListener(
+                "input",
+                (e) => (state.guests = e.target.value),
+            );
+            specificsInput.addEventListener(
+                "input",
+                (e) => (state.specifics = e.target.value),
+            );
+            requestsInput.addEventListener(
+                "input",
+                (e) => (state.requests = e.target.value),
+            );
+
+            /* ==========================================================================
+   ACTIVITY SELECTION
+   ========================================================================== */
+            activityBtns.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const name = btn.dataset.activity;
+                    state.activity = name;
+                    activityBtns.forEach((b) =>
+                        b.classList.toggle("selected", b === btn),
+                    );
+                    otherReveal.classList.toggle(
+                        "open",
+                        name === "Something else",
+                    );
+                    if (name !== "Something else") state.custom = "";
+                    // Update the "Specifics" label on step 4 to match what they chose
+                    updateSpecificsLabel();
+                });
+            });
+
+            function updateSpecificsLabel() {
+                const a = state.activity;
+                const customLabels = {
+                    "Dinner date": {
+                        label: "Restaurant or cuisine",
+                        ph: "e.g. that Italian place we keep meaning to try",
+                    },
+                    "Movie night": {
+                        label: "A movie in mind?",
+                        ph: "e.g. the new one with Saoirse Ronan",
+                    },
+                    Coffee: {
+                        label: "A spot in mind?",
+                        ph: "e.g. the little place on Mass Ave",
+                    },
+                    Walk: {
+                        label: "Anywhere in particular?",
+                        ph: "e.g. the canal, the park, your neighborhood",
+                    },
+                    "Game night": {
+                        label: "A game you want to play?",
+                        ph: "e.g. Catan, cards, that one you always win",
+                    },
+                    Adventure: {
+                        label: "Got a destination?",
+                        ph: "e.g. day trip somewhere, a hike, a museum",
+                    },
+                    "Just see each other": {
+                        label: "Where should we land?",
+                        ph: "e.g. your place, mine, somewhere quiet",
+                    },
+                    Lake: {
+                        label: "Which lake / any plans?",
+                        ph: "e.g. picnic, swim, just sit and watch the water",
+                    },
+                    "Something else": {
+                        label: "Anything to add about it?",
+                        ph: "extra details for what you picked above",
+                    },
+                };
+                const cfg = customLabels[a] || {
+                    label: "Specifics",
+                    ph: "anything specific you'd like",
+                };
+                specificsLabel.textContent = cfg.label;
+                specificsInput.setAttribute("placeholder", cfg.ph);
+            }
+
+            /* ==========================================================================
+   COMPANY SELECTION
+   ========================================================================== */
+            companyBtns.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const val = btn.dataset.company;
+                    state.company = val;
+                    companyBtns.forEach((b) =>
+                        b.classList.toggle("selected", b === btn),
+                    );
+                    guestsReveal.classList.toggle("open", val === "others");
+                    if (val !== "others") state.guests = "";
+                });
+            });
+
+            /* ==========================================================================
+   NAV BUTTONS
+   ========================================================================== */
+            document
+                .querySelectorAll('[data-action="begin"]')
+                .forEach((b) =>
+                    b.addEventListener("click", () =>
+                        showStep(STEPS.indexOf("datetime")),
+                    ),
+                );
+
+            document
+                .querySelectorAll('[data-action="back"]')
+                .forEach((b) => b.addEventListener("click", prevStep));
+
+            document.querySelectorAll('[data-action="next"]').forEach((b) => {
+                b.addEventListener("click", () => {
+                    const req = b.dataset.requires;
+                    if (!validate(req)) {
+                        flash(b, "Please complete this section");
+                        return;
+                    }
+                    nextStep();
+                });
+            });
+
+            function flash(btn, msg) {
+                const original = btn.textContent;
+                btn.textContent = msg;
+                btn.disabled = true;
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.disabled = false;
+                }, 1400);
+            }
+
+            /* ==========================================================================
+   FORMATTING HELPERS
+   ========================================================================== */
+            function formatDate(iso) {
+                if (!iso) return "";
+                const [y, m, d] = iso.split("-").map(Number);
+                const dt = new Date(y, m - 1, d);
+                return dt.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                });
+            }
+            function formatTime(t) {
+                if (!t) return "";
+                const [h, m] = t.split(":").map(Number);
+                const period = h >= 12 ? "PM" : "AM";
+                const hh = ((h + 11) % 12) + 1;
+                return `${hh}:${m.toString().padStart(2, "0")} ${period}`;
+            }
+            function chosenActivity() {
+                if (
+                    state.activity === "Something else" &&
+                    state.custom.trim()
+                ) {
+                    return `Something else — ${state.custom.trim()}`;
+                }
+                return state.activity;
+            }
+            function chosenCompany() {
+                if (state.company === "just-us") return "Just the two of us";
+                if (state.company === "others") {
+                    return state.guests.trim()
+                        ? `Inviting others — ${state.guests.trim()}`
+                        : "Inviting others";
+                }
+                return "";
+            }
+
+            /* ==========================================================================
+   REVIEW RENDER
+   ========================================================================== */
+            function renderReview() {
+                const rows = [
+                    {
+                        key: "When",
+                        val:
+                            state.date && state.time
+                                ? `${formatDate(state.date)} at ${formatTime(state.time)}`
+                                : "",
+                    },
+                    { key: "What", val: chosenActivity() },
+                    { key: "Who", val: chosenCompany() },
+                    { key: "Specifics", val: state.specifics.trim() },
+                    { key: "Special notes", val: state.requests.trim() },
+                ];
+
+                reviewList.innerHTML = rows
+                    .map(
+                        (r) => `
+    <li>
+      <span class="key">${r.key}</span>
+      <span class="val ${r.val ? "" : "empty"}">${r.val ? escapeHTML(r.val) : "—"}</span>
+    </li>
+  `,
+                    )
+                    .join("");
+            }
+
+            function escapeHTML(s) {
+                return String(s)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+            }
+
+            /* ==========================================================================
+   SUBMIT
+   ========================================================================== */
+            submitBtn.addEventListener("click", async () => {
+                submitBtn.disabled = true;
+                statusEl.classList.remove("error");
+                statusEl.textContent = "Sending...";
+
+                const payload = {
+                    When:
+                        state.date && state.time
+                            ? `${formatDate(state.date)} at ${formatTime(state.time)}`
+                            : "(not specified)",
+                    What: chosenActivity() || "(not specified)",
+                    Who: chosenCompany() || "(not specified)",
+                    Specifics: state.specifics.trim() || "(none)",
+                    "Special notes": state.requests.trim() || "(none)",
+                    _subject: `New date application — ${formatDate(state.date)}`,
+                };
+
+                // No endpoint set → fall back to mailto
+                if (
+                    !FORMSPREE_ENDPOINT ||
+                    FORMSPREE_ENDPOINT.includes("REPLACE_ME")
+                ) {
+                    const body = `When: ${payload["When"]}
+What: ${payload["What"]}
+Who: ${payload["Who"]}
+Specifics: ${payload["Specifics"]}
+Special notes: ${payload["Special notes"]}`;
+                    const mailto = `mailto:GreGot0027@gmail.com?subject=${encodeURIComponent(payload["_subject"])}&body=${encodeURIComponent(body)}`;
+                    window.location.href = mailto;
+                    // Move to confirmation anyway — she's done her part
+                    setTimeout(
+                        () => showStep(STEPS.indexOf("confirmation")),
+                        400,
+                    );
+                    return;
+                }
+
+                try {
+                    const res = await fetch(FORMSPREE_ENDPOINT, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (res.ok) {
+                        statusEl.textContent = "";
+                        showStep(STEPS.indexOf("confirmation"));
+                    } else {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+                } catch (err) {
+                    submitBtn.disabled = false;
+                    statusEl.classList.add("error");
+                    statusEl.textContent =
+                        "Something glitched on the send — try once more?";
+                    console.error(err);
+                }
+            });
+
+            /* ==========================================================================
+   INIT
+   ========================================================================== */
+            showStep(0);
+            updateSpecificsLabel();
+        </script>
+    </body>
+</html>
