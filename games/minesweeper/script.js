@@ -1,161 +1,428 @@
+const presets = {
+  beginner: { rows: 9, cols: 9, mines: 10 },
+  intermediate: { rows: 16, cols: 16, mines: 40 },
+  expert: { rows: 16, cols: 30, mines: 99 },
+};
+
 const boardEl = document.getElementById("board");
-const sizeSelect = document.getElementById("size");
-const resetBtn = document.getElementById("reset");
-const mineCountEl = document.getElementById("mine-count");
+const settingsForm = document.getElementById("settings");
+const presetEl = document.getElementById("preset");
+const rowsEl = document.getElementById("rows");
+const colsEl = document.getElementById("cols");
+const minesEl = document.getElementById("mines");
+const minesLeftEl = document.getElementById("mines-left");
 const timerEl = document.getElementById("timer");
+const clearedEl = document.getElementById("cleared");
+const bestTimeEl = document.getElementById("best-time");
+const statusEl = document.getElementById("status");
 
-let rows, cols, mineCount, grid;
-let timerId = null;
-let elapsed = 0;
-let flagsUsed = 0;
+const state = {
+  rows: 9,
+  cols: 9,
+  mines: 10,
+  cells: [],
+  cellEls: [],
+  flags: 0,
+  revealed: 0,
+  started: false,
+  ended: false,
+  elapsed: 0,
+  timerId: null,
+  longPressId: null,
+};
 
-function init() {
-  // ─── Reset timer & stats ──────────────────────────
-  if (timerId) clearInterval(timerId);
-  elapsed = 0;
-  timerEl.textContent = `Time: 0s`;
-  flagsUsed = 0;
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
 
-  // ─── Figure out size & mines ──────────────────────
-  const sel = sizeSelect.value;
-  if (sel === "custom") {
-    rows = parseInt(prompt("Rows?", "10"), 10) || 10;
-    cols = parseInt(prompt("Cols?", "10"), 10) || 10;
-    mineCount = parseInt(
-      prompt(`Mines? (max ${rows * cols - 1})`, Math.floor(rows * cols * 0.15)),
-      10,
-    );
-    // clamp
-    mineCount = Math.min(Math.max(mineCount, 1), rows * cols - 1);
-  } else {
-    rows = cols = parseInt(sel, 10);
-    mineCount = rows === 9 ? 10 : 40;
+function getIndex(row, col) {
+  return row * state.cols + col;
+}
+
+function getCell(row, col) {
+  if (row < 0 || row >= state.rows || col < 0 || col >= state.cols) {
+    return null;
   }
-  mineCountEl.textContent = `Mines: ${mineCount}`;
+  return state.cells[getIndex(row, col)];
+}
 
-  // ─── Prepare grid data ────────────────────────────
-  grid = Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => ({
-      mine: false,
-      cnt: 0,
-      revealed: false,
-      flagged: false,
-    })),
-  );
-
-  // ─── Plant mines & neighbor counts ────────────────
-  let placed = 0;
-  while (placed < mineCount) {
-    let r = Math.floor(Math.random() * rows),
-      c = Math.floor(Math.random() * cols);
-    if (!grid[r][c].mine) {
-      grid[r][c].mine = true;
-      placed++;
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          let nr = r + dr,
-            nc = c + dc;
-          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-            grid[nr][nc].cnt++;
-          }
-        }
+function neighbors(row, col) {
+  const result = [];
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) {
+        continue;
+      }
+      const cell = getCell(row + dr, col + dc);
+      if (cell) {
+        result.push(cell);
       }
     }
   }
+  return result;
+}
 
-  // ─── Render board ─────────────────────────────────
-  boardEl.style.gridTemplate = `repeat(${rows}, 1fr) / repeat(${cols}, 1fr)`;
-  boardEl.innerHTML = "";
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cellEl = document.createElement("div");
-      cellEl.className = "cell";
-      cellEl.dataset.r = r;
-      cellEl.dataset.c = c;
-      cellEl.oncontextmenu = (e) => {
-        e.preventDefault();
-        toggleFlag(r, c, cellEl);
-      };
-      cellEl.onclick = () => revealCell(r, c, cellEl);
-      boardEl.appendChild(cellEl);
-    }
+function readSettings() {
+  const rows = clamp(parseInt(rowsEl.value, 10) || 9, 5, 40);
+  const cols = clamp(parseInt(colsEl.value, 10) || 9, 5, 50);
+  const maxMines = Math.max(1, rows * cols - 9);
+  const mines = clamp(parseInt(minesEl.value, 10) || 10, 1, maxMines);
+
+  rowsEl.value = rows;
+  colsEl.value = cols;
+  minesEl.max = maxMines;
+  minesEl.value = mines;
+
+  return { rows, cols, mines };
+}
+
+function applyPreset() {
+  const preset = presets[presetEl.value];
+  if (!preset) {
+    return;
   }
+
+  rowsEl.value = preset.rows;
+  colsEl.value = preset.cols;
+  minesEl.value = preset.mines;
+}
+
+function createCell(row, col) {
+  return {
+    row,
+    col,
+    mine: false,
+    count: 0,
+    revealed: false,
+    flagged: false,
+  };
+}
+
+function resetTimer() {
+  window.clearInterval(state.timerId);
+  state.timerId = null;
+  state.elapsed = 0;
+  timerEl.textContent = "0";
 }
 
 function startTimer() {
-  // ensure only one timer
-  if (timerId) clearInterval(timerId);
-  timerId = setInterval(() => {
-    elapsed++;
-    timerEl.textContent = `Time: ${elapsed}s`;
+  if (state.timerId) {
+    return;
+  }
+
+  state.timerId = window.setInterval(() => {
+    state.elapsed += 1;
+    timerEl.textContent = state.elapsed;
   }, 1000);
 }
 
-function revealCell(r, c, el) {
-  const cell = grid[r][c];
-  if (cell.flagged || cell.revealed) return;
-  if (elapsed === 0) startTimer();
+function bestTimeKey() {
+  return `minesweeper-best-${state.rows}x${state.cols}-${state.mines}`;
+}
 
-  cell.revealed = true;
-  el.classList.add("revealed");
-  if (cell.mine) {
-    el.classList.add("mine");
-    return gameOver(false);
+function updateBestTime() {
+  const best = window.localStorage.getItem(bestTimeKey());
+  bestTimeEl.textContent = best ? `${best}s` : "--";
+}
+
+function setStatus(message, mode = "") {
+  statusEl.textContent = message;
+  statusEl.classList.remove("win", "loss");
+  if (mode) {
+    statusEl.classList.add(mode);
   }
-  if (cell.cnt > 0) {
-    el.textContent = cell.cnt;
-    el.dataset.num = cell.cnt;
-  } else {
-    // flood-fill zeros
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        let nr = r + dr,
-          nc = c + dc;
-        if (
-          nr >= 0 &&
-          nr < rows &&
-          nc >= 0 &&
-          nc < cols &&
-          !grid[nr][nc].revealed
-        ) {
-          revealCell(
-            nr,
-            nc,
-            document.querySelector(`.cell[data-r="${nr}"][data-c="${nc}"]`),
-          );
-        }
-      }
+}
+
+function updateHud() {
+  minesLeftEl.textContent = state.mines - state.flags;
+  const safeCells = state.rows * state.cols - state.mines;
+  const progress = safeCells > 0 ? Math.floor((state.revealed / safeCells) * 100) : 0;
+  clearedEl.textContent = `${progress}%`;
+}
+
+function buildBoard() {
+  const settings = readSettings();
+  state.rows = settings.rows;
+  state.cols = settings.cols;
+  state.mines = settings.mines;
+  state.flags = 0;
+  state.revealed = 0;
+  state.started = false;
+  state.ended = false;
+  state.cells = [];
+  state.cellEls = [];
+  resetTimer();
+
+  for (let row = 0; row < state.rows; row++) {
+    for (let col = 0; col < state.cols; col++) {
+      state.cells.push(createCell(row, col));
     }
   }
+
+  boardEl.innerHTML = "";
+  boardEl.style.setProperty("--cols", state.cols);
+  boardEl.setAttribute("aria-rowcount", state.rows);
+  boardEl.setAttribute("aria-colcount", state.cols);
+
+  state.cells.forEach((cell) => {
+    const cellEl = document.createElement("button");
+    cellEl.className = "cell";
+    cellEl.type = "button";
+    cellEl.dataset.row = cell.row;
+    cellEl.dataset.col = cell.col;
+    cellEl.setAttribute("role", "gridcell");
+    cellEl.setAttribute("aria-label", `Hidden cell ${cell.row + 1}, ${cell.col + 1}`);
+
+    cellEl.addEventListener("click", () => revealCell(cell));
+    cellEl.addEventListener("dblclick", () => chordCell(cell));
+    cellEl.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      toggleFlag(cell);
+    });
+    cellEl.addEventListener("keydown", (event) => handleCellKey(event, cell));
+    cellEl.addEventListener("pointerdown", () => queueLongPress(cell));
+    cellEl.addEventListener("pointerup", clearLongPress);
+    cellEl.addEventListener("pointerleave", clearLongPress);
+    cellEl.addEventListener("pointercancel", clearLongPress);
+
+    boardEl.appendChild(cellEl);
+    state.cellEls.push(cellEl);
+  });
+
+  setStatus("Choose a field and make the first sweep.");
+  updateHud();
+  updateBestTime();
+}
+
+function placeMines(firstCell) {
+  const protectedCells = new Set([
+    getIndex(firstCell.row, firstCell.col),
+    ...neighbors(firstCell.row, firstCell.col).map((cell) => getIndex(cell.row, cell.col)),
+  ]);
+
+  let candidates = state.cells.filter(
+    (cell) => !protectedCells.has(getIndex(cell.row, cell.col)),
+  );
+
+  if (candidates.length < state.mines) {
+    candidates = state.cells.filter((cell) => getIndex(cell.row, cell.col) !== getIndex(firstCell.row, firstCell.col));
+  }
+
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  candidates.slice(0, state.mines).forEach((cell) => {
+    cell.mine = true;
+  });
+
+  state.cells.forEach((cell) => {
+    if (!cell.mine) {
+      cell.count = neighbors(cell.row, cell.col).filter((neighbor) => neighbor.mine).length;
+    }
+  });
+}
+
+function handleCellKey(event, cell) {
+  if (event.key === "f" || event.key === "F") {
+    event.preventDefault();
+    toggleFlag(cell);
+  }
+
+  if (event.key === " " || event.key === "Enter") {
+    event.preventDefault();
+    if (cell.revealed) {
+      chordCell(cell);
+    } else {
+      revealCell(cell);
+    }
+  }
+}
+
+function queueLongPress(cell) {
+  clearLongPress();
+  state.longPressId = window.setTimeout(() => {
+    toggleFlag(cell);
+  }, 520);
+}
+
+function clearLongPress() {
+  window.clearTimeout(state.longPressId);
+  state.longPressId = null;
+}
+
+function renderCell(cell) {
+  const el = state.cellEls[getIndex(cell.row, cell.col)];
+  el.classList.toggle("revealed", cell.revealed);
+  el.classList.toggle("flagged", cell.flagged && !cell.revealed);
+  el.classList.toggle("mine", cell.mine);
+  el.classList.toggle("game-ended", state.ended);
+
+  if (cell.revealed && !cell.mine && cell.count > 0) {
+    el.textContent = cell.count;
+    el.dataset.count = cell.count;
+    el.setAttribute("aria-label", `Revealed ${cell.count}`);
+  } else {
+    el.textContent = "";
+    delete el.dataset.count;
+    if (cell.flagged) {
+      el.setAttribute("aria-label", `Flagged cell ${cell.row + 1}, ${cell.col + 1}`);
+    } else if (!cell.revealed) {
+      el.setAttribute("aria-label", `Hidden cell ${cell.row + 1}, ${cell.col + 1}`);
+    }
+  }
+}
+
+function revealCell(cell) {
+  clearLongPress();
+  if (state.ended || cell.flagged || cell.revealed) {
+    return;
+  }
+
+  if (!state.started) {
+    state.started = true;
+    placeMines(cell);
+    startTimer();
+    setStatus("Sweep carefully. Right-click to flag, double-click a number to clear around it.");
+  }
+
+  if (cell.mine) {
+    cell.revealed = true;
+    renderCell(cell);
+    endGame(false, cell);
+    return;
+  }
+
+  floodReveal(cell);
+  updateHud();
   checkWin();
 }
 
-function toggleFlag(r, c, el) {
-  const cell = grid[r][c];
-  if (cell.revealed) return;
-  cell.flagged = !cell.flagged;
-  el.classList.toggle("flagged");
-  flagsUsed += cell.flagged ? 1 : -1;
-  mineCountEl.textContent = `Mines: ${mineCount - flagsUsed}`;
-}
+function floodReveal(startCell) {
+  const queue = [startCell];
 
-function gameOver(won) {
-  clearInterval(timerId);
-  // reveal all mines
-  document.querySelectorAll(".cell").forEach((el) => {
-    let r = +el.dataset.r,
-      c = +el.dataset.c;
-    if (grid[r][c].mine) el.classList.add("mine", "revealed");
-  });
-  setTimeout(() => alert(won ? "You Win! 🎉" : "Game Over 💥"), 100);
-}
+  while (queue.length) {
+    const cell = queue.shift();
+    if (cell.revealed || cell.flagged || cell.mine) {
+      continue;
+    }
 
-function checkWin() {
-  const revealedCount = grid.flat().filter((c) => c.revealed).length;
-  if (revealedCount === rows * cols - mineCount) {
-    gameOver(true);
+    cell.revealed = true;
+    state.revealed += 1;
+    renderCell(cell);
+
+    if (cell.count === 0) {
+      neighbors(cell.row, cell.col).forEach((neighbor) => {
+        if (!neighbor.revealed && !neighbor.flagged && !neighbor.mine) {
+          queue.push(neighbor);
+        }
+      });
+    }
   }
 }
 
-resetBtn.addEventListener("click", init);
-window.addEventListener("load", init);
+function toggleFlag(cell) {
+  clearLongPress();
+  if (state.ended || cell.revealed) {
+    return;
+  }
+
+  cell.flagged = !cell.flagged;
+  state.flags += cell.flagged ? 1 : -1;
+  renderCell(cell);
+  updateHud();
+}
+
+function chordCell(cell) {
+  if (state.ended || !cell.revealed || cell.count === 0) {
+    return;
+  }
+
+  const adjacent = neighbors(cell.row, cell.col);
+  const adjacentFlags = adjacent.filter((neighbor) => neighbor.flagged).length;
+  if (adjacentFlags !== cell.count) {
+    return;
+  }
+
+  adjacent.forEach((neighbor) => {
+    if (!neighbor.flagged && !neighbor.revealed) {
+      revealCell(neighbor);
+    }
+  });
+}
+
+function revealAllMines(hitCell) {
+  state.cells.forEach((cell) => {
+    const el = state.cellEls[getIndex(cell.row, cell.col)];
+    if (cell.mine) {
+      cell.revealed = true;
+      el.classList.add("revealed", "mine");
+    }
+    if (hitCell && cell === hitCell) {
+      el.classList.add("mine-hit");
+    }
+    if (cell.flagged && !cell.mine) {
+      el.classList.add("wrong-flag");
+    }
+    el.classList.add("game-ended");
+  });
+}
+
+function secureWinningBoard() {
+  state.cells.forEach((cell) => {
+    const el = state.cellEls[getIndex(cell.row, cell.col)];
+    if (cell.mine && !cell.flagged) {
+      cell.flagged = true;
+      state.flags += 1;
+      renderCell(cell);
+    }
+    el.classList.add("game-ended");
+  });
+}
+
+function endGame(won, hitCell = null) {
+  state.ended = true;
+  window.clearInterval(state.timerId);
+
+  if (won) {
+    const currentBest = parseInt(window.localStorage.getItem(bestTimeKey()), 10);
+    if (!currentBest || state.elapsed < currentBest) {
+      window.localStorage.setItem(bestTimeKey(), state.elapsed);
+    }
+    secureWinningBoard();
+    setStatus(`Field cleared in ${state.elapsed}s. Start a new game to run it back.`, "win");
+    updateBestTime();
+  } else {
+    revealAllMines(hitCell);
+    setStatus("Mine triggered. The field is revealed for review.", "loss");
+  }
+
+  updateHud();
+}
+
+function checkWin() {
+  if (state.revealed === state.rows * state.cols - state.mines) {
+    endGame(true);
+  }
+}
+
+presetEl.addEventListener("change", () => {
+  applyPreset();
+  buildBoard();
+});
+
+[rowsEl, colsEl, minesEl].forEach((input) => {
+  input.addEventListener("input", () => {
+    presetEl.value = "custom";
+    readSettings();
+  });
+});
+
+settingsForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  buildBoard();
+});
+
+applyPreset();
+buildBoard();

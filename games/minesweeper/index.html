@@ -1,24 +1,80 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Minesweeper</title>
-        <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-        <div class="controls">
-            <select id="size">
-                <option value="9">9×9 (10 mines)</option>
-                <option value="16">16×16 (40 mines)</option>
-                <option value="custom">Custom…</option>
-            </select>
-            <button id="reset">New Game</button>
-            <div class="stats">
-                <span id="mine-count">Mines: 0</span>
-                <span id="timer">Time: 0s</span>
-            </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Minesweeper</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="topbar" aria-label="Game setup">
+        <div class="title-block">
+          <p class="eyebrow">Field Command</p>
+          <h1>Minesweeper</h1>
+          <p id="status" class="status-message" aria-live="polite">
+            Choose a field and make the first sweep.
+          </p>
         </div>
-        <div id="board" class="board"></div>
-        <script src="script.js"></script>
-    </body>
+
+        <form id="settings" class="settings">
+          <label>
+            Preset
+            <select id="preset">
+              <option value="beginner">Beginner 9 x 9</option>
+              <option value="intermediate">Intermediate 16 x 16</option>
+              <option value="expert">Expert 16 x 30</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+
+          <label>
+            Rows
+            <input id="rows" type="number" min="5" max="40" value="9" />
+          </label>
+
+          <label>
+            Columns
+            <input id="cols" type="number" min="5" max="50" value="9" />
+          </label>
+
+          <label>
+            Mines
+            <input id="mines" type="number" min="1" value="10" />
+          </label>
+
+          <button id="new-game" class="primary-button" type="submit">
+            New Game
+          </button>
+        </form>
+      </section>
+
+      <section class="hud" aria-label="Current game status">
+        <div class="meter">
+          <span class="meter-label">Mines left</span>
+          <strong id="mines-left">10</strong>
+        </div>
+        <div class="meter">
+          <span class="meter-label">Time</span>
+          <strong id="timer">0</strong>
+        </div>
+        <div class="meter">
+          <span class="meter-label">Cleared</span>
+          <strong id="cleared">0%</strong>
+        </div>
+        <div class="meter">
+          <span class="meter-label">Best</span>
+          <strong id="best-time">--</strong>
+        </div>
+      </section>
+
+      <section class="board-panel" aria-label="Minefield">
+        <div class="board-frame">
+          <div id="board" class="board" role="grid" aria-label="Minesweeper board"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
 </html>
