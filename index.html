@@ -1826,7 +1826,7 @@
                         title: "Florida",
                         img: "portfolio/travel/FL.jpeg",
                         imgPos: "50% 30%",
-                        desc: "",
+                        desc: "Lots of family to visit and spring break trips",
                     },
                     GA: {
                         title: "Georgia",
@@ -1928,7 +1928,7 @@
                         title: "Montana",
                         img: "portfolio/travel/MT.jpeg",
                         imgPos: "50% 30%",
-                        desc: "",
+                        desc: "Road trip to see it",
                     },
                     NE: {
                         title: "Nebraska",
@@ -1976,7 +1976,7 @@
                         title: "North Dakota",
                         img: "portfolio/travel/ND.jpeg",
                         imgPos: "50% 30%",
-                        desc: "",
+                        desc: "Worst vacation of my life... sorry North Dakota",
                     },
                     OH: {
                         title: "Ohio",
@@ -2000,7 +2000,7 @@
                         title: "Pennsylvania",
                         img: "portfolio/travel/PA.jpeg",
                         imgPos: "50% 30%",
-                        desc: "",
+                        desc: "Where Washington crossed the Deleware",
                     },
                     RI: {
                         title: "Rhode Island",
@@ -2174,16 +2174,14 @@
                             }</div>`;
                         });
 
-                    function openPanel(code) {
-                        const info = stateData[code] || {
-                            title: code,
-                            desc: "No details yet.",
-                        };
-                        panelTitle.textContent = info.title || code;
+                    function showPanel(info) {
+                        const label = info.title || "";
+                        panelTitle.textContent = label;
 
                         if (info.img) {
                             panelImg.src = info.img;
-                            panelImg.alt = `${info.title || code} travel photo`;
+                            panelImg.alt =
+                                info.imgAlt || `${label} travel photo`;
                             panelImg.style.objectPosition =
                                 info.imgPos || "50% 50%";
                             panelImg.classList.remove("hidden");
@@ -2198,6 +2196,30 @@
                         panel.style.opacity = "1";
                         panel.style.transform = "translateX(0)";
                     }
+
+                    function openPanel(code) {
+                        showPanel(
+                            stateData[code] || {
+                                title: code,
+                                desc: "No details yet.",
+                            },
+                        );
+                    }
+
+                    // Space easter egg on map
+                    const SPACE_INFO = {
+                        title: "Space 🚀",
+                        img: "portfolio/travel/SPACE.jpeg",
+                        imgPos: "50% 70%",
+                        imgAlt: "A selfie of us displayed in space",
+                        desc: "Yes, my family has even been to space... at least a picture of us made it there",
+                    };
+
+                    mapArea.addEventListener("click", (e) => {
+                        // Ignore clicks that land on a state (handled above)
+                        if (e.target.closest(".state")) return;
+                        showPanel(SPACE_INFO);
+                    });
 
                     function closePanel() {
                         panel.style.opacity = "0";
