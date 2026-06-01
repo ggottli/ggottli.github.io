@@ -24,10 +24,10 @@
                             sans: ["Inter", "sans-serif"],
                         },
                         colors: {
-                            primary: "#1a202c",
-                            secondary: "#2d3748",
-                            accent: "#4fd1c5",
-                            light: "#e2e8f0",
+                            primary: "#1a1312",
+                            secondary: "#2b1f1d",
+                            accent: "#f0563f",
+                            light: "#f3eae6",
                         },
                         animation: {
                             shimmer: "shimmer 2s linear infinite",
@@ -48,41 +48,11 @@
                 width: 8px;
             }
             body::-webkit-scrollbar-track {
-                background: #2d3748;
+                background: #2b1f1d;
             }
             body::-webkit-scrollbar-thumb {
-                background-color: #4fd1c5;
+                background-color: #f0563f;
                 border-radius: 20px;
-            }
-
-            /* Interactive Particle Background Canvas */
-            #particle-canvas {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: -1;
-            }
-
-            /* Custom Cursor Follower */
-            .cursor-dot {
-                width: 8px;
-                height: 8px;
-                background-color: #4fd1c5;
-                border-radius: 50%;
-                position: fixed;
-                top: 0;
-                left: 0;
-                pointer-events: none;
-                z-index: 9999;
-                transition: transform 0.1s ease-out;
-                transform: translate(-50%, -50%);
-            }
-            @media (pointer: coarse) {
-                .cursor-dot {
-                    display: none;
-                }
             }
 
             /* Fade-in animation */
@@ -108,9 +78,9 @@
             .cta-button {
                 background-image: linear-gradient(
                     to right,
-                    #4fd1c5,
-                    #81e6d9,
-                    #4fd1c5
+                    #e2452f,
+                    #f87a60,
+                    #e2452f
                 );
                 background-size: 200% auto;
                 transition: background-position 0.5s;
@@ -202,6 +172,29 @@
                 opacity: 1;
             }
 
+            /* Custom bullet lists (experience, education, involvement) */
+            .exp-bullets {
+                list-style: none;
+                padding-left: 0;
+                margin: 0;
+            }
+            .exp-bullets > li {
+                position: relative;
+                padding-left: 1.5rem;
+                line-height: 1.6;
+            }
+            .exp-bullets > li::before {
+                content: "";
+                position: absolute;
+                left: 0.1rem;
+                top: 0.62em;
+                width: 7px;
+                height: 7px;
+                border-radius: 9999px;
+                background-color: #f0563f; /* accent */
+                box-shadow: 0 0 0 3px rgba(240, 86, 63, 0.18);
+            }
+
             /* Interactive Map Styles */
             /* Make the SVG responsive */
             #map-area svg {
@@ -212,8 +205,8 @@
 
             /* States: base look + smooth hover-grow */
             #travel-map svg .state {
-                fill: #2d3748; /* matches your secondary */
-                stroke: #1a202c;
+                fill: #2b1f1d; /* matches your secondary */
+                stroke: #1a1312;
                 stroke-width: 1;
                 cursor: pointer;
                 transition:
@@ -228,14 +221,14 @@
             /* Hover/Focus = slight pop + glow */
             #travel-map svg .state:hover,
             #travel-map svg .state:focus-visible {
-                fill: #4fd1c5;
+                fill: #f0563f;
                 transform: translateY(-1px) scale(1.06);
                 filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
             }
 
             /* Visited color (optional) */
             #travel-map svg .state.visited {
-                fill: #38b2ac;
+                fill: #b83a2b;
             }
 
             /* Side panel card transition */
@@ -261,10 +254,6 @@
         </style>
     </head>
     <body class="bg-primary text-light font-sans leading-relaxed">
-        <!-- Custom cursor and particle background canvas -->
-        <div class="cursor-dot"></div>
-        <canvas id="particle-canvas"></canvas>
-
         <!-- Header & Navigation -->
         <header
             class="bg-primary/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50 shadow-md"
@@ -377,12 +366,12 @@
                     Greg Gottlieb
                 </h1>
                 <h2 class="text-2xl md:text-4xl font-light text-accent mb-6">
-                    I <span id="typewriter"></span>
+                    "Always try to be a little kinder than is necessary"
                 </h2>
                 <p class="max-w-2xl text-lg text-gray-400 mb-8">
-                    A passionate developer, student, and lifelong learner
-                    seeking opportunities in AI to pioneer the future of
-                    technology.
+                    I've been blessed with many opportunites to learn from so
+                    many people who have all led me to be who I am now: A
+                    passionate, curious, and strong leader who loves to learn.
                 </p>
                 <div class="flex gap-4 justify-center">
                     <a
@@ -423,12 +412,14 @@
                             using AI.
                         </p>
                         <p class="text-lg mb-4 text-gray-300">
-                            I am currently a student at Purdue University,
-                            pursuing degrees in Computer Science, Data Science,
-                            and Applied Statistics. This interdisciplinary
-                            foundation allows me to approach problems from
-                            multiple angles, combining software engineering
-                            principles with rigorous data analysis.
+                            I recently graduated from Purdue University with
+                            degrees in Computer Science, Data Science, and
+                            Applied Statistics. I also earned a certificate in
+                            Entrepreneurship and Innovation and a minor in
+                            Mathematics. This interdisciplinary foundation
+                            allows me to approach problems from multiple angles,
+                            combining deep technical knowledge with a creative,
+                            problem-solving approach.
                         </p>
                         <p class="text-lg text-gray-300">
                             I'm always looking for software development
@@ -447,7 +438,7 @@
                 <div class="md:flex md:space-x-8">
                     <!-- Left Side: Sticky Visuals -->
                     <div
-                        class="md:w-1/2 md:sticky h-screen top-0 flex items-center justify-center mb-12 md:mb-0"
+                        class="hidden md:flex md:w-1/2 md:sticky h-screen top-0 items-center justify-center mb-12 md:mb-0"
                     >
                         <div
                             id="journey-visuals"
@@ -467,6 +458,13 @@
                             <div
                                 class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
                             >
+                                <img
+                                    src="portfolio/me+dad.jpeg"
+                                    alt="Me as a child with my dad"
+                                    loading="lazy"
+                                    class="md:hidden w-full h-56 object-cover rounded-lg mb-5"
+                                    style="object-position: 50% 30%"
+                                />
                                 <h3 class="text-2xl font-bold text-accent mb-2">
                                     The Beginning
                                 </h3>
@@ -486,6 +484,12 @@
                             <div
                                 class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
                             >
+                                <img
+                                    src="portfolio/giant-hunters.png"
+                                    alt="First game concept"
+                                    loading="lazy"
+                                    class="md:hidden w-full h-56 object-cover rounded-lg mb-5"
+                                />
                                 <h3 class="text-2xl font-bold text-accent mb-2">
                                     First Game in 5th Grade
                                 </h3>
@@ -504,18 +508,23 @@
                             <div
                                 class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
                             >
+                                <img
+                                    src="portfolio/purdue.jpeg"
+                                    alt="Me at Purdue University"
+                                    loading="lazy"
+                                    class="md:hidden w-full h-56 object-cover rounded-lg mb-5"
+                                />
                                 <h3 class="text-2xl font-bold text-accent mb-2">
                                     Heading to Purdue
                                 </h3>
                                 <p>
-                                    The in state rivalry runs strong in my
-                                    family. My decision to attend Purdue
-                                    solidified the even divide of three
-                                    attending IU and three attending Purdue.
-                                    Game days are rough, but it was here I began
-                                    to build a solid foundation in key concepts
-                                    including algorithms, data structures, and
-                                    software engineering principles.
+                                    The rivalry runs strong in my family. My
+                                    decision to attend Purdue solidified our
+                                    house divided with three attending IU and
+                                    three attending Purdue. Game days are rough,
+                                    but it was here I began to build a solid
+                                    foundation of knowledge as well as lifelong
+                                    friends and memories.
                                 </p>
                             </div>
                         </div>
@@ -526,6 +535,12 @@
                             <div
                                 class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
                             >
+                                <img
+                                    src="portfolio/first-internship.jpeg"
+                                    alt="Me working with my dad"
+                                    loading="lazy"
+                                    class="md:hidden w-full h-56 object-cover rounded-lg mb-5"
+                                />
                                 <h3 class="text-2xl font-bold text-accent mb-2">
                                     First Internship
                                 </h3>
@@ -545,6 +560,12 @@
                             <div
                                 class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
                             >
+                                <img
+                                    src="portfolio/more_internships.jpeg"
+                                    alt="Me at The Heritage Group"
+                                    loading="lazy"
+                                    class="md:hidden w-full h-56 object-cover rounded-lg mb-5"
+                                />
                                 <h3 class="text-2xl font-bold text-accent mb-2">
                                     More Internships
                                 </h3>
@@ -566,6 +587,12 @@
                             <div
                                 class="bg-secondary p-8 rounded-lg shadow-lg my-16 md:my-32"
                             >
+                                <img
+                                    src="portfolio/future.jpeg"
+                                    alt="Future with AI"
+                                    loading="lazy"
+                                    class="md:hidden w-full h-56 object-cover rounded-lg mb-5"
+                                />
                                 <h3 class="text-2xl font-bold text-accent mb-2">
                                     The Future with AI
                                 </h3>
@@ -602,7 +629,7 @@
                                 Purdue University, Class of 2026
                             </h4>
                             <ul
-                                class="list-disc list-inside mt-2 text-gray-300"
+                                class="exp-bullets mt-2 text-gray-300 space-y-2"
                             >
                                 <li>Bachelor of Science in Computer Science</li>
                                 <li>Bachelor of Science in Data Science</li>
@@ -634,6 +661,50 @@
                                     aria-expanded="false"
                                 >
                                     <h4 class="text-xl font-bold">
+                                        AI Strategist at The Heritage Group
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <ul
+                                        class="exp-bullets text-gray-300 space-y-2.5"
+                                    >
+                                        <li>Adopt AI across the company.</li>
+                                        <li>
+                                            Pilot AI initiatives and solutions
+                                            across teams.
+                                        </li>
+                                        <li>
+                                            Teach AI skills and best practices
+                                            to employees.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
                                         Campus Strategist for Perplexity
                                     </h4>
                                     <svg
@@ -654,7 +725,7 @@
                                     style="height: 0"
                                 >
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Planned on-campus activations to
@@ -669,16 +740,6 @@
                                             draw meaningful insights.
                                         </li>
                                     </ul>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Community</span
-                                        >
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Product Feedback</span
-                                        >
-                                    </div>
                                 </div>
                             </article>
 
@@ -711,9 +772,9 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Leverage AI to support business
@@ -735,16 +796,6 @@
                                             into business operations.
                                         </li>
                                     </ul>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >AI</span
-                                        >
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >LLM</span
-                                        >
-                                    </div>
                                 </div>
                             </article>
 
@@ -777,9 +828,9 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Expedited decision processes across
@@ -798,16 +849,6 @@
                                             processes.
                                         </li>
                                     </ul>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Power Apps</span
-                                        >
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Dashboards</span
-                                        >
-                                    </div>
                                 </div>
                             </article>
 
@@ -840,9 +881,9 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Oversaw an introductory Python class
@@ -856,16 +897,6 @@
                                             assignments.
                                         </li>
                                     </ul>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Python</span
-                                        >
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Leadership</span
-                                        >
-                                    </div>
                                 </div>
                             </article>
 
@@ -897,9 +928,9 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Designed a business intelligence
@@ -913,16 +944,6 @@
                                             across 50 counties.
                                         </li>
                                     </ul>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Java</span
-                                        >
-                                        <span
-                                            class="bg-gray-700 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                                            >Software Development</span
-                                        >
-                                    </div>
                                 </div>
                             </article>
                         </div>
@@ -970,7 +991,7 @@
                                         style="object-position: 50% 40%"
                                     />
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Held positions as Philanthropy
@@ -1032,7 +1053,7 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <img
                                         src="portfolio/socap.jpeg"
                                         alt="Special Olympics Flag Football Championship"
@@ -1041,7 +1062,7 @@
                                         style="object-position: 50% 40%"
                                     />
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Served as the Volunteerism Chair and
@@ -1095,7 +1116,7 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <img
                                         src="portfolio/pudm.jpeg"
                                         alt="Dance Marathon"
@@ -1104,7 +1125,7 @@
                                         style="object-position: 50% 40%"
                                     />
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Formed and directed a team to raise
@@ -1150,7 +1171,7 @@
                                     class="exp-panel overflow-hidden px-6 pb-6"
                                     style="height: 0"
                                 >
-                                    <!-- Put your details here -->
+                                    <!-- Details -->
                                     <img
                                         src="portfolio/runclub.jpeg"
                                         alt="Run Club"
@@ -1159,7 +1180,7 @@
                                         style="object-position: 50% 40%"
                                     />
                                     <ul
-                                        class="list-disc list-inside text-gray-300 space-y-2"
+                                        class="exp-bullets text-gray-300 space-y-2.5"
                                     >
                                         <li>
                                             Set a Purdue Club record in the
@@ -1168,6 +1189,57 @@
                                         <li>
                                             Traveled to Illinois and Taylor
                                             University to compete in Club meets.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
+
+                            <!-- Item -->
+                            <article
+                                class="bg-secondary rounded-lg shadow-lg border border-white/5"
+                            >
+                                <button
+                                    class="w-full flex items-center justify-between gap-4 p-6 text-left"
+                                    aria-expanded="false"
+                                >
+                                    <h4 class="text-xl font-bold">
+                                        Best Buddies
+                                    </h4>
+                                    <svg
+                                        class="w-5 h-5 shrink-0 transition-transform duration-300"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="exp-panel overflow-hidden px-6 pb-6"
+                                    style="height: 0"
+                                >
+                                    <!-- Details -->
+                                    <img
+                                        src="portfolio/best-buddies.jpeg"
+                                        alt="Me and Tommy - Best Buddies"
+                                        loading="lazy"
+                                        class="mt-4 w-full h-48 md:h-56 rounded-lg object-cover shadow-lg"
+                                        style="object-position: 50% 40%"
+                                    />
+                                    <ul
+                                        class="exp-bullets text-gray-300 space-y-2.5"
+                                    >
+                                        <li>
+                                            Got to hangout and make memories
+                                            with my awesome friend Tommy.
+                                        </li>
+                                        <li>
+                                            Lots of Karaoke, art, dinner,
+                                            bowling, and more!
                                         </li>
                                     </ul>
                                 </div>
@@ -1612,8 +1684,7 @@
         <!-- Footer -->
         <footer class="bg-secondary mt-20 py-8">
             <div class="container mx-auto px-6 text-center text-gray-400">
-                <p>&copy; 2025 Greg Gottlieb. All Rights Reserved.</p>
-                <!-- <p class="text-sm mt-2">Designed & Built with ❤️</p> -->
+                <p>&copy; 2026 Greg Gottlieb. All Rights Reserved.</p>
             </div>
         </footer>
 
@@ -1649,46 +1720,6 @@
 
         <script>
             document.addEventListener("DOMContentLoaded", function () {
-                // --- Particle Background ---
-                const canvas = document.getElementById("particle-canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                let particlesArray;
-
-                class Particle {
-                    constructor(x, y, directionX, directionY, size, color) {
-                        this.x = x;
-                        this.y = y;
-                        this.directionX = directionX;
-                        this.directionY = directionY;
-                        this.size = size;
-                        this.color = color;
-                    }
-                    draw() {
-                        ctx.beginPath();
-                        ctx.arc(
-                            this.x,
-                            this.y,
-                            this.size,
-                            0,
-                            Math.PI * 2,
-                            false,
-                        );
-                        ctx.fillStyle = this.color;
-                        ctx.fill();
-                    }
-                    update() {
-                        if (this.x > canvas.width || this.x < 0)
-                            this.directionX = -this.directionX;
-                        if (this.y > canvas.height || this.y < 0)
-                            this.directionY = -this.directionY;
-                        this.x += this.directionX;
-                        this.y += this.directionY;
-                        this.draw();
-                    }
-                }
-
                 const STATE_NAME_TO_CODE = {
                     Alabama: "AL",
                     Alaska: "AK",
@@ -2135,7 +2166,12 @@
                         })
                         .catch((err) => {
                             console.error("Map load failed:", err);
-                            mapArea.innerHTML = `<div class="p-6 text-center text-gray-400">Map failed to load.</div>`;
+                            const isFile = location.protocol === "file:";
+                            mapArea.innerHTML = `<div class="p-6 text-center text-gray-400">${
+                                isFile
+                                    ? "Map failed to load."
+                                    : "Map failed to load."
+                            }</div>`;
                         });
 
                     function openPanel(code) {
@@ -2172,89 +2208,6 @@
                     panelClose.addEventListener("click", closePanel);
                 })();
 
-                <!-- Particles -->
-                function initParticles() {
-                    particlesArray = [];
-                    let numberOfParticles =
-                        (canvas.height * canvas.width) / 9000;
-                    for (let i = 0; i < numberOfParticles; i++) {
-                        let size = Math.random() * 2 + 1;
-                        let x =
-                            Math.random() * (innerWidth - size * 2 - size * 2) +
-                            size * 2;
-                        let y =
-                            Math.random() *
-                                (innerHeight - size * 2 - size * 2) +
-                            size * 2;
-                        let directionX = Math.random() * 0.4 - 0.2;
-                        let directionY = Math.random() * 0.4 - 0.2;
-                        particlesArray.push(
-                            new Particle(
-                                x,
-                                y,
-                                directionX,
-                                directionY,
-                                size,
-                                "rgba(79, 209, 197, 0.5)",
-                            ),
-                        );
-                    }
-                }
-
-                function animateParticles() {
-                    requestAnimationFrame(animateParticles);
-                    ctx.clearRect(0, 0, innerWidth, innerHeight);
-                    for (let i = 0; i < particlesArray.length; i++) {
-                        particlesArray[i].update();
-                    }
-                }
-                initParticles();
-                animateParticles();
-                window.addEventListener("resize", () => {
-                    canvas.width = innerWidth;
-                    canvas.height = innerHeight;
-                    initParticles();
-                });
-
-                // --- Typewriter Effect ---
-                const typewriterElement = document.getElementById("typewriter");
-                const words = [
-                    "turn data into decisions.",
-                    "design tools that solve real problems.",
-                    "turn ideas into reality.",
-                    "design software with impact.",
-                    "want to change the world.",
-                    "ask questions.",
-                    "am always learning.",
-                ];
-                let wordIndex = 0,
-                    charIndex = 0,
-                    isDeleting = false;
-                function type() {
-                    const currentWord = words[wordIndex];
-                    const typeSpeed = isDeleting ? 50 : 75;
-                    const pauseTime = 1000; // 1 second pause when full word is typed
-                    typewriterElement.textContent = currentWord.substring(
-                        0,
-                        charIndex,
-                    );
-                    if (!isDeleting && charIndex < currentWord.length)
-                        charIndex++;
-                    else if (isDeleting && charIndex > 0) charIndex--;
-                    else {
-                        isDeleting = !isDeleting;
-                        if (!isDeleting)
-                            wordIndex = (wordIndex + 1) % words.length;
-                    }
-                    setTimeout(
-                        type,
-                        !isDeleting && charIndex === currentWord.length
-                            ? pauseTime
-                            : typeSpeed,
-                    );
-                }
-                type();
-
                 // --- Fade-in on Scroll ---
                 const observer = new IntersectionObserver(
                     (entries) => {
@@ -2280,12 +2233,6 @@
                     link.addEventListener("click", () =>
                         mobileMenu.classList.add("hidden"),
                     );
-                });
-
-                // --- Custom Cursor ---
-                const cursorDot = document.querySelector(".cursor-dot");
-                window.addEventListener("mousemove", (e) => {
-                    cursorDot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
                 });
 
                 // --- 3D Project Card Tilt Effect ---
