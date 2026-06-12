@@ -1358,7 +1358,7 @@
                     <h2>Plinko</h2>
                     <div class="deco-rule"><span>◆</span></div>
                     <p class="sub">
-                        Drop a ball through the pegs. The edges pay 13x — the
+                        Drop a ball through the pegs. The edges pay 8x — the
                         middle eats your money.
                     </p>
                     <div class="cwrap">
@@ -2309,7 +2309,7 @@
                     SPACING = 48,
                     PEG_R = 5,
                     BALL_R = 7;
-                const MULTS = [13, 4, 1.2, 0.6, 0.3, 0.6, 1.2, 4, 13]; // EV ≈ 0.96
+                const MULTS = [8, 2.5, 1.1, 0.5, 0.2, 0.5, 1.1, 2.5, 8]; // ~0.73 EV if binomial
                 const NB = MULTS.length;
                 const span = NB * SPACING; // bucket span = 432
                 const left = W / 2 - span / 2,
