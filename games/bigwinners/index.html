@@ -1753,6 +1753,25 @@
         </div>
 
         <!-- cash out modal -->
+        <div class="overlay" id="cashout-confirm-overlay">
+            <div class="modal" style="max-width: 340px">
+                <h3>Are You Sure?</h3>
+                <div class="big-mult" id="confirm-mult">2.00x</div>
+                <p class="sub2">
+                    Cashing out locks this score. After you share it, you cannot
+                    keep playing unless you refresh and start over at $1,000.
+                </p>
+                <div class="row">
+                    <button class="go-btn" id="confirm-cashout">
+                        Yes, Cash Out
+                    </button>
+                    <button class="ghost-btn" id="confirm-cancel">
+                        Keep Playing
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="overlay" id="cashout-overlay">
             <div class="modal">
                 <h3>Cash Out</h3>
@@ -1791,9 +1810,26 @@
                         Copy Brag Line
                     </button>
                     <button class="ghost-btn" id="brag-close">
-                        Keep Playing
+                        Done
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- locked after a completed cash out -->
+        <div class="overlay" id="cashedout-overlay">
+            <div class="modal">
+                <h3>Score Locked</h3>
+                <div class="big-mult" id="locked-mult">2.00x</div>
+                <div class="sub2" id="locked-amount">
+                    $2,000.00 is your final score for this run.
+                </div>
+                <p class="privacy">
+                    Refresh to begin a new run with a fresh $1,000 bankroll.
+                </p>
+                <button class="go-btn" id="locked-restart">
+                    Start Over at $1,000
+                </button>
             </div>
         </div>
 
@@ -1826,6 +1862,7 @@
             const START = 1000;
             let bankroll = START; // session-only, in-memory
             let pendingRounds = 0; // open wagers (blocks bust screen + nav)
+            let sessionLocked = false; // set after a score is posted
             const $ = (id) => document.getElementById(id);
 
             const fmt$ = (n) =>
@@ -1853,9 +1890,12 @@
                         : m < 0.9999999
                           ? "m-down"
                           : "m-even";
-                $("cashout-btn").disabled = !(
-                    bankroll > START && pendingRounds === 0
-                );
+                $("cashout-btn").disabled =
+                    sessionLocked ||
+                    !(bankroll > START && pendingRounds === 0);
+                $("cashout-btn").textContent = sessionLocked
+                    ? "Score Locked"
+                    : "Cash Out";
             }
 
             function beginRound() {
@@ -1872,6 +1912,7 @@
 
             /* take a wager; returns true if it could be afforded */
             function takeBet(amt) {
+                if (sessionLocked) return false;
                 amt = cents(amt);
                 if (!(amt > 0) || amt > bankroll + 1e-9) return false;
                 bankroll = cents(bankroll - amt);
@@ -1885,6 +1926,7 @@
 
             /* read + validate a bet input; flashes the field if invalid */
             function readBet(inputId) {
+                if (sessionLocked) return null;
                 const el = $(inputId);
                 let v = cents(parseFloat(el.value));
                 if (!isFinite(v) || v <= 0 || v > bankroll + 1e-9) {
@@ -2007,17 +2049,27 @@
             let currentView = "crash";
 
             function updateNavLock() {
-                const locked = pendingRounds > 0;
+                const locked = pendingRounds > 0 || sessionLocked;
                 document.querySelectorAll(".nav-btn").forEach((b) => {
-                    b.disabled = locked && b.dataset.view !== currentView;
+                    b.disabled =
+                        sessionLocked ||
+                        (locked && b.dataset.view !== currentView);
                 });
-                $("nav-hint").classList.toggle("show", locked);
+                $("nav-hint").classList.toggle(
+                    "show",
+                    pendingRounds > 0 && !sessionLocked,
+                );
             }
 
             document.querySelectorAll(".nav-btn").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const name = btn.dataset.view;
-                    if (name === currentView || pendingRounds > 0) return;
+                    if (
+                        name === currentView ||
+                        pendingRounds > 0 ||
+                        sessionLocked
+                    )
+                        return;
                     const old = views[currentView];
                     if (old && old.deactivate) old.deactivate();
                     document
@@ -3517,7 +3569,26 @@
             let lastBrag = "";
 
             $("cashout-btn").addEventListener("click", () => {
-                if (!(bankroll > START) || pendingRounds > 0) return;
+                if (
+                    sessionLocked ||
+                    !(bankroll > START) ||
+                    pendingRounds > 0
+                )
+                    return;
+                $("confirm-mult").textContent = fmtX(multiplier());
+                $("cashout-confirm-overlay").classList.add("show");
+            });
+            $("confirm-cancel").addEventListener("click", () =>
+                $("cashout-confirm-overlay").classList.remove("show"),
+            );
+            $("confirm-cashout").addEventListener("click", () => {
+                if (
+                    sessionLocked ||
+                    !(bankroll > START) ||
+                    pendingRounds > 0
+                )
+                    return;
+                $("cashout-confirm-overlay").classList.remove("show");
                 $("co-mult").textContent = fmtX(multiplier());
                 $("co-amount").textContent = fmt$(bankroll) + " locked in";
                 $("co-name").value = lastName;
@@ -3564,16 +3635,23 @@
                     m +
                     ") at Big Winners 🎰 — beat my number. " +
                     "www.ggottlieb.com/games/bigwinners";
+                sessionLocked = true;
+                renderBank();
+                updateNavLock();
                 $("cashout-overlay").classList.remove("show");
                 $("brag-mult").textContent = m;
                 $("brag-sub").textContent =
                     amt + " posted as “" + name + "”. Now make them beat it.";
+                $("locked-mult").textContent = m;
+                $("locked-amount").textContent =
+                    amt + " is your final score for this run.";
                 $("brag-overlay").classList.add("show");
             });
 
-            $("brag-close").addEventListener("click", () =>
-                $("brag-overlay").classList.remove("show"),
-            );
+            $("brag-close").addEventListener("click", () => {
+                $("brag-overlay").classList.remove("show");
+                $("cashedout-overlay").classList.add("show");
+            });
             $("brag-copy").addEventListener("click", async () => {
                 let ok = false;
                 try {
@@ -3595,6 +3673,9 @@
                 }
                 toast(ok ? "Brag line copied — go post it." : lastBrag);
             });
+            $("locked-restart").addEventListener("click", () =>
+                window.location.reload(),
+            );
 
             function showBusted() {
                 $("busted-overlay").classList.add("show");
@@ -3612,6 +3693,24 @@
             renderBank();
             updateNavLock();
             views.crash.activate();
+
+            window.render_game_to_text = () =>
+                JSON.stringify({
+                    mode: sessionLocked ? "cashed_out" : "playing",
+                    bankroll,
+                    multiplier: cents(multiplier()),
+                    pendingRounds,
+                    currentView,
+                    overlays: {
+                        confirm: $("cashout-confirm-overlay").classList.contains(
+                            "show",
+                        ),
+                        share: $("cashout-overlay").classList.contains("show"),
+                        brag: $("brag-overlay").classList.contains("show"),
+                        locked:
+                            $("cashedout-overlay").classList.contains("show"),
+                    },
+                });
         </script>
     </body>
 </html>
