@@ -1,0 +1,29 @@
+---
+layout: default
+title: Writing
+---
+
+<div class="writing">
+    <img
+        class="writing-photo"
+        src="/assets/carmel-sunset.jpeg"
+        alt="Sunset over Carmel, Indiana"
+    />
+    <h1>Hi, I'm Greg Gottlieb</h1>
+    <p class="writing-intro">
+        Writing about AI, sports, computer science, data, statistics,
+        entrepreneurship, and finance.
+    </p>
+    <p class="writing-contact">
+        You can contact me
+        <a href="mailto:GregGottlieb4@gmail.com">here</a>. I'm always
+        happy to have a conversation and discuss ideas further.
+    </p>
+    <ul class="writing-list">
+        {% for post in site.posts %}
+        <li>
+            <a href="{{ post.url }}">{{ post.title }}</a><span class="post-year">, {{ post.date | date: "%Y" }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

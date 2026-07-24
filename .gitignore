@@ -1,0 +1,9 @@
+# Local-only posting instructions
+HOW-TO-POST.md
+
+# macOS noise
+.DS_Store
+
+# Local Jekyll build output (if you ever build locally)
+_site/
+.jekyll-cache/

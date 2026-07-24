@@ -1,0 +1,163 @@
+/* Styles for the blog only (writing.html and posts). Plain on purpose. */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    max-width: 40em;
+    margin: 0 auto;
+    padding: 2.5em 1.25em 3em;
+    font-family: Charter, Georgia, "Times New Roman", serif;
+    font-size: 1.125rem;
+    line-height: 1.65;
+    color: #222;
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: #f0563f;
+    text-underline-offset: 2px;
+}
+
+a:hover {
+    background: rgba(240, 86, 63, 0.12);
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 1em;
+    margin-bottom: 2.5em;
+    border-bottom: 1px solid #ddd;
+}
+
+header .site-title {
+    font-weight: bold;
+}
+
+/* Writing index */
+.writing-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 0 auto 2em;
+}
+
+h1 {
+    font-size: 1.7em;
+    line-height: 1.2;
+    margin: 0 0 0.5em;
+}
+
+.writing-intro {
+    color: #555;
+    margin-top: 0;
+}
+
+.writing-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 2em;
+}
+
+.writing-list li {
+    margin-bottom: 0.7em;
+}
+
+.post-year {
+    color: #888;
+}
+
+/* Posts */
+.post-date {
+    color: #888;
+    font-size: 0.9em;
+    margin-top: -0.5em;
+    margin-bottom: 2em;
+}
+
+.post h2 {
+    font-size: 1.3em;
+    margin-top: 1.8em;
+}
+
+.post h3 {
+    font-size: 1.1em;
+    margin-top: 1.5em;
+}
+
+.post img {
+    max-width: 100%;
+    height: auto;
+}
+
+.post blockquote {
+    margin: 1.5em 0;
+    padding-left: 1em;
+    border-left: 3px solid #ddd;
+    color: #555;
+}
+
+.post ul,
+.post ol {
+    padding-left: 1.5em;
+}
+
+code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    background: #f5f5f2;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+}
+
+pre {
+    background: #f5f5f2;
+    padding: 1em;
+    overflow-x: auto;
+    border-radius: 4px;
+    line-height: 1.45;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 1.5em 0;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 0.4em 0.7em;
+    text-align: left;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 2.5em 0;
+}
+
+.post-back {
+    margin-top: 3em;
+}
+
+/* Footer */
+footer {
+    margin-top: 4em;
+    padding-top: 1.25em;
+    border-top: 1px solid #ddd;
+    color: #888;
+    font-size: 0.85em;
+}
