@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bored Games — a small collection of games</title>
+<meta name="description" content="A small, fun collection of browser games — Minesweeper, Solitaire, 2048, Snake, Tetris, Pac-Man. No ads, no accounts, works offline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="./">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status">
+      <span id="clock"></span>
+      <span>no ads · offline</span>
+      <span class="battery" title="100% — barely uses any"></span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>A small, fun <span class="blink">collection of games.</span></h1>
+    <p>The classics, redrawn on paper. Pick one and play.</p>
+    <p class="promise">no ads · no accounts · runs offline · high scores saved on your device</p>
+  </section>
+
+  <div class="search-row">
+    <input id="q" type="text" placeholder="Search games…" autocomplete="off" spellcheck="false" aria-label="Search games">
+    <kbd class="hint">/</kbd>
+  </div>
+  <div class="filter-row" id="filters" role="group" aria-label="Filter by category"></div>
+  <p class="sr-only" id="count" role="status" aria-live="polite"></p>
+
+  <main id="view"></main>
+
+  <footer>
+    <span>Bored Games — part of <a href="/">ggottlieb.com</a></span>
+    <span>built on paper · <a href="/toolbox/">try the toolbox</a></span>
+  </footer>
+</div>
+
+<script>
+const GAMES = [
+  { id:"minesweeper", cat:"Puzzle", name:"Minesweeper", accent:"var(--nes-blue)",
+    desc:"Clear the field, don't hit a mine.", kw:"mines flags grid classic" },
+  { id:"2048", cat:"Puzzle", name:"2048", accent:"var(--nes-orange)",
+    desc:"Slide tiles, chase the big number.", kw:"tiles merge numbers slide" },
+  { id:"solitaire", cat:"Cards", name:"Solitaire", accent:"var(--nes-green)",
+    desc:"Klondike. Stack it down to the aces.", kw:"cards klondike patience deck" },
+  { id:"snake", cat:"Arcade", name:"Snake", accent:"var(--nes-lime)",
+    desc:"Eat, grow, try not to bite yourself.", kw:"snake nokia grow food" },
+  { id:"tetris", cat:"Arcade", name:"Tetris", accent:"var(--nes-cyan)",
+    desc:"Stack the blocks, clear the lines.", kw:"blocks tetromino lines stack" },
+  { id:"pacman", cat:"Arcade", name:"Pac-Man", accent:"var(--nes-yellow)",
+    desc:"Eat the dots, dodge the ghosts.", kw:"pacman ghosts maze dots pellets arcade" },
+];
+const CATS = ["Puzzle","Cards","Arcade"];
+
+const view = document.getElementById("view");
+const q = document.getElementById("q");
+const filters = document.getElementById("filters");
+const countEl = document.getElementById("count");
+let activeCat = "All";
+
+function matches(g){
+  const t = q.value.trim().toLowerCase();
+  const inCat = activeCat === "All" || g.cat === activeCat;
+  if(!inCat) return false;
+  if(!t) return true;
+  return (g.name + " " + g.desc + " " + g.kw).toLowerCase().includes(t);
+}
+
+function renderFilters(){
+  const all = [{key:"All", n:GAMES.length}].concat(
+    CATS.map(c => ({key:c, n:GAMES.filter(g=>g.cat===c).length}))
+  );
+  filters.innerHTML = all.map(c =>
+    `<button class="filter-btn" data-cat="${c.key}" aria-pressed="${c.key===activeCat}">${c.key} <span class="count">${c.n}</span></button>`
+  ).join("");
+  filters.querySelectorAll("button").forEach(b=>{
+    b.onclick = ()=>{ activeCat = b.dataset.cat; renderFilters(); renderGrid(); };
+  });
+}
+
+function renderGrid(){
+  const shown = GAMES.filter(matches);
+  countEl.textContent = `${shown.length} game${shown.length===1?"":"s"}`;
+  if(!shown.length){ view.innerHTML = `<p class="empty-note">Nothing matches that. Try another word.</p>`; return; }
+  const cats = CATS.filter(c => shown.some(g=>g.cat===c));
+  view.innerHTML = cats.map(c => `
+    <section class="cat">
+      <h2 class="cat-label">${c}</h2>
+      <div class="grid">
+        ${shown.filter(g=>g.cat===c).map(g => `
+          <a class="card" href="${g.id}/" style="--card-accent:${g.accent}">
+            <span class="chip" aria-hidden="true"></span>
+            <span class="t">${g.name}</span>
+            <span class="d">${g.desc}</span>
+          </a>`).join("")}
+      </div>
+    </section>`).join("");
+}
+
+q.addEventListener("input", renderGrid);
+document.addEventListener("keydown", e=>{
+  if(e.key === "/" && document.activeElement !== q){ e.preventDefault(); q.focus(); }
+  else if(e.key === "Escape" && document.activeElement === q){ q.value=""; q.blur(); renderGrid(); }
+  else if(e.key === "Enter" && document.activeElement === q){
+    const first = GAMES.filter(matches)[0];
+    if(first) location.href = first.id + "/";
+  }
+});
+
+// live clock in the status bar
+function tick(){
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+}
+tick(); setInterval(tick, 15000);
+
+// e-ink refresh flash on load
+const flash = document.getElementById("flash");
+requestAnimationFrame(()=>{ flash.classList.add("go"); });
+flash.addEventListener("animationend", ()=> flash.classList.remove("go"));
+
+renderFilters();
+renderGrid();
+</script>
+</body>
+</html>

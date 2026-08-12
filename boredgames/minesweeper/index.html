@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper — Bored Games</title>
+<meta name="description" content="Minesweeper — clear the field without hitting a mine. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-blue); }
+  .board-wrap{ overflow:auto; max-width:100%; border:1.5px solid var(--ink); background:var(--ink); }
+  .board{
+    --cell: 30px;
+    display:grid; gap:2px; padding:2px; width:max-content; background:var(--ink);
+    touch-action:manipulation;
+  }
+  /* unrevealed = raised cool-blue "chip"; revealed = flat sunken warm paper.
+     Colour + depth both change, so the two states are unmistakable. */
+  .cell{
+    width:var(--cell); height:var(--cell); border:0; padding:0; margin:0;
+    font-family:var(--pixel); font-size:calc(var(--cell)*.40); line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    background:#BFCDDF; color:var(--ink);
+    box-shadow:inset 4px 4px 0 #E9EFF7, inset -4px -4px 0 #8FA4BE;
+    -webkit-user-select:none; user-select:none;
+  }
+  .cell:hover:not(.revealed):not(.flag){ background:#D0DBEA; box-shadow:inset 4px 4px 0 #F1F5FB, inset -4px -4px 0 #9DB0C8; }
+  .cell:active:not(.revealed):not(.flag){ box-shadow:inset -2px -2px 0 #E9EFF7, inset 2px 2px 0 #8FA4BE; }
+  .cell.revealed{
+    background:var(--paper); color:var(--ink); cursor:default;
+    box-shadow:inset 2px 2px 0 rgba(0,0,0,.13), inset -1px -1px 0 rgba(255,255,255,.5);
+  }
+  .cell.flag{ background:#BFCDDF; box-shadow:inset 4px 4px 0 #E9EFF7, inset -4px -4px 0 #8FA4BE; }
+  .cell.flag .fg{ color:var(--nes-red); font-size:calc(var(--cell)*.52); filter:drop-shadow(1px 1px 0 rgba(0,0,0,.25)); }
+  .cell.mine{ background:var(--ink); color:#fff; box-shadow:inset 0 0 0 1px var(--ink); }
+  .cell.mine .mn{ font-size:calc(var(--cell)*.6); }
+  .cell.boom{ background:var(--nes-red); color:#fff; box-shadow:inset 0 0 0 2px var(--nes-orange); }
+  .n1{ color:var(--nes-blue);} .n2{ color:var(--nes-green);} .n3{ color:var(--nes-red);}
+  .n4{ color:var(--nes-purple);} .n5{ color:#9c3b2e;} .n6{ color:var(--nes-cyan);}
+  .n7{ color:var(--ink);} .n8{ color:var(--ink-faint);}
+  .diff-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Minesweeper</h1>
+    <p>Click to reveal. Right-click (or long-press) to flag. Numbers say how many mines touch that square. First click is always safe.</p>
+  </div>
+
+  <div class="diff-row" id="diff" role="group" aria-label="Difficulty"></div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">Mines</span><span class="n" id="mines">0</span></div>
+    <div class="stat"><span class="l">Time</span><span class="n" id="time">0</span></div>
+    <div class="stat"><span class="l">State</span><span class="n" id="face">·_·</span></div>
+  </div>
+
+  <div class="stage">
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">New game</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="act ghost" id="newGame">New game</button>
+  </div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const DIFFS = {
+  Beginner:     { rows:9,  cols:9,  mines:10, cell:32 },
+  Intermediate: { rows:16, cols:16, mines:40, cell:28 },
+  Expert:       { rows:16, cols:30, mines:99, cell:26 },
+};
+let diffName = "Beginner";
+
+const boardEl = document.getElementById("board");
+const minesEl = document.getElementById("mines");
+const timeEl = document.getElementById("time");
+const faceEl = document.getElementById("face");
+const overlay = document.getElementById("overlay");
+const overMsg = document.getElementById("overMsg");
+const overSub = document.getElementById("overSub");
+
+let ROWS, COLS, MINES, grid, started, alive, won, flags, revealedCount, timer, seconds;
+
+function buildDiffButtons(){
+  const el = document.getElementById("diff");
+  el.innerHTML = Object.keys(DIFFS).map(d =>
+    `<button class="filter-btn" data-d="${d}" aria-pressed="${d===diffName}">${d} <span class="count">${DIFFS[d].mines}💣</span></button>`
+  ).join("");
+  el.querySelectorAll("button").forEach(b=>{
+    b.onclick = ()=>{ diffName = b.dataset.d; buildDiffButtons(); newGame(); };
+  });
+}
+
+function newGame(){
+  const cfg = DIFFS[diffName];
+  ROWS = cfg.rows; COLS = cfg.cols; MINES = cfg.mines;
+  grid = [];
+  for(let r=0;r<ROWS;r++){ const row=[]; for(let c=0;c<COLS;c++) row.push({mine:false,rev:false,flag:false,adj:0}); grid.push(row); }
+  started = false; alive = true; won = false; flags = 0; revealedCount = 0; seconds = 0;
+  clearInterval(timer); timeEl.textContent = 0;
+  minesEl.textContent = MINES; faceEl.textContent = "·_·";
+  overlay.classList.add("hide");
+  boardEl.style.setProperty("--cell", cfg.cell + "px");
+  boardEl.style.gridTemplateColumns = `repeat(${COLS}, var(--cell))`;
+  renderAll();
+}
+
+function renderAll(){
+  boardEl.innerHTML = "";
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const b = document.createElement("button");
+    b.className = "cell"; b.dataset.r = r; b.dataset.c = c;
+    b.setAttribute("aria-label", `row ${r+1} column ${c+1}`);
+    boardEl.appendChild(b);
+  }
+}
+
+function cellEl(r,c){ return boardEl.children[r*COLS + c]; }
+
+function placeMines(safeR, safeC){
+  let placed = 0;
+  const safe = new Set();
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    const r=safeR+dr, c=safeC+dc;
+    if(r>=0&&r<ROWS&&c>=0&&c<COLS) safe.add(r*COLS+c);
+  }
+  while(placed < MINES){
+    const r = Math.floor(Math.random()*ROWS), c = Math.floor(Math.random()*COLS);
+    if(grid[r][c].mine || safe.has(r*COLS+c)) continue;
+    grid[r][c].mine = true; placed++;
+  }
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(grid[r][c].mine) continue;
+    let n=0;
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS && grid[nr][nc].mine) n++;
+    }
+    grid[r][c].adj = n;
+  }
+}
+
+function startTimer(){
+  timer = setInterval(()=>{ seconds++; timeEl.textContent = seconds; }, 1000);
+}
+
+function reveal(r,c){
+  const cell = grid[r][c];
+  if(cell.rev || cell.flag || !alive) return;
+  cell.rev = true; revealedCount++;
+  const el = cellEl(r,c); el.classList.add("revealed");
+  if(cell.mine){ el.classList.add("mine","boom"); el.innerHTML = '<span class="mn">✸</span>'; return lose(r,c); }
+  if(cell.adj > 0){ el.textContent = cell.adj; el.classList.add("n"+cell.adj); }
+  else{
+    // flood fill
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS && !(dr===0&&dc===0)) reveal(nr,nc);
+    }
+  }
+  checkWin();
+}
+
+function chord(r,c){
+  // click on a revealed number with matching flags → open neighbors
+  const cell = grid[r][c];
+  if(!cell.rev || cell.adj===0) return;
+  let f=0;
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    const nr=r+dr, nc=c+dc;
+    if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS && grid[nr][nc].flag) f++;
+  }
+  if(f !== cell.adj) return;
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    const nr=r+dr, nc=c+dc;
+    if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS && !grid[nr][nc].flag) reveal(nr,nc);
+  }
+}
+
+function toggleFlag(r,c){
+  const cell = grid[r][c];
+  if(cell.rev || !alive) return;
+  cell.flag = !cell.flag;
+  flags += cell.flag ? 1 : -1;
+  const el = cellEl(r,c);
+  el.classList.toggle("flag", cell.flag);
+  el.innerHTML = cell.flag ? '<span class="fg">⚑</span>' : "";
+  minesEl.textContent = MINES - flags;
+}
+
+function lose(br,bc){
+  alive = false; clearInterval(timer); faceEl.textContent = "x_x";
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(grid[r][c].mine && !(r===br&&c===bc)){
+      const el = cellEl(r,c); el.classList.add("revealed","mine"); el.innerHTML = '<span class="mn">✸</span>';
+    }
+  }
+  overMsg.textContent = "Boom.";
+  overSub.textContent = "You hit a mine. Try again?";
+  overlay.classList.remove("hide");
+}
+
+function checkWin(){
+  if(revealedCount === ROWS*COLS - MINES && alive){
+    won = true; alive = false; clearInterval(timer); faceEl.textContent = "^_^";
+    overMsg.textContent = "Swept!";
+    overSub.textContent = `Cleared in ${seconds}s. Nicely done.`;
+    overlay.classList.remove("hide");
+  }
+}
+
+function handleReveal(r,c){
+  if(!started){ started = true; placeMines(r,c); startTimer(); }
+  if(grid[r][c].rev) chord(r,c); else reveal(r,c);
+}
+
+// mouse
+boardEl.addEventListener("click", e=>{
+  const b = e.target.closest(".cell"); if(!b) return;
+  handleReveal(+b.dataset.r, +b.dataset.c);
+});
+boardEl.addEventListener("contextmenu", e=>{
+  const b = e.target.closest(".cell"); if(!b) return;
+  e.preventDefault();
+  toggleFlag(+b.dataset.r, +b.dataset.c);
+});
+
+// touch long-press to flag
+let lpTimer=null, lpFired=false;
+boardEl.addEventListener("touchstart", e=>{
+  const b = e.target.closest(".cell"); if(!b) return;
+  lpFired = false;
+  lpTimer = setTimeout(()=>{ lpFired = true; toggleFlag(+b.dataset.r, +b.dataset.c); }, 380);
+}, {passive:true});
+boardEl.addEventListener("touchend", e=>{
+  clearTimeout(lpTimer);
+  const b = e.target.closest(".cell"); if(!b) return;
+  if(!lpFired){ e.preventDefault(); handleReveal(+b.dataset.r, +b.dataset.c); }
+}, {passive:false});
+boardEl.addEventListener("touchmove", ()=> clearTimeout(lpTimer), {passive:true});
+
+document.getElementById("newGame").onclick = newGame;
+document.getElementById("overBtn").onclick = newGame;
+
+// chrome
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+buildDiffButtons();
+newGame();
+</script>
+</body>
+</html>
