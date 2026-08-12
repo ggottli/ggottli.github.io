@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word — Bored Games</title>
+<meta name="description" content="Word — guess the five-letter word in six tries. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-red); }
+  .grid{ display:grid; grid-template-rows:repeat(6,1fr); gap:7px; width:min(330px,86vw); margin:0 auto; }
+  .grid .r{ display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
+  .tile{
+    aspect-ratio:1; border:1.5px solid var(--ink); display:flex; align-items:center; justify-content:center;
+    font-family:var(--pixel); font-size:clamp(16px,5vw,24px); color:var(--ink); background:var(--paper-hi); text-transform:uppercase;
+  }
+  .tile.filled{ box-shadow:inset 2px 2px 0 rgba(0,0,0,.10); }
+  .tile.g{ background:var(--nes-green); color:#fff; border-color:var(--nes-green); }
+  .tile.y{ background:var(--nes-yellow); color:var(--ink); border-color:var(--nes-yellow); }
+  .tile.x{ background:var(--ink-faint); color:#fff; border-color:var(--ink-faint); }
+  .kbd{ margin:18px auto 0; width:min(500px,98vw); display:flex; flex-direction:column; gap:7px; }
+  .kbd .kr{ display:flex; gap:5px; justify-content:center; }
+  .key{
+    font-family:var(--mono); font-size:13px; font-weight:600; border:1.5px solid var(--ink); background:var(--paper-hi);
+    color:var(--ink); padding:12px 0; min-width:28px; flex:1; cursor:pointer; text-transform:uppercase; -webkit-user-select:none; user-select:none;
+  }
+  .key.wide{ flex:1.6; font-size:11px; }
+  .key.g{ background:var(--nes-green); color:#fff; border-color:var(--nes-green); }
+  .key.y{ background:var(--nes-yellow); border-color:var(--nes-yellow); }
+  .key.x{ background:var(--ink-faint); color:#fff; border-color:var(--ink-faint); }
+  .key:active{ background:var(--ink); color:var(--paper); }
+  .msg{ text-align:center; font-family:var(--mono); font-size:13px; color:var(--ink-soft); min-height:18px; margin-top:12px; }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Word</h1>
+    <p>Guess the five-letter word in six tries. Green = right spot, yellow = wrong spot, grey = not in the word.</p>
+  </div>
+
+  <div class="stage" style="display:block;width:100%">
+    <div class="grid" id="grid"></div>
+    <div class="msg" id="msg"></div>
+    <div class="kbd" id="kbd"></div>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">New word</button>
+    </div>
+  </div>
+
+  <div class="controls"><button class="act ghost" id="newGame">New word</button></div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const WORDS=("about above abuse actor acute admit adopt adult after again agent agree ahead alarm album alert alike alive allow alone along alter among anger angle angry apart apple apply arena argue arise array aside asset audio audit avoid award aware badly baker bases basic beach began begin being below bench birth black blame blank blast blind block blood board boost booth bound brain brand brave bread break breed brief bring broad broke brown build built buyer cable carry catch cause chain chair chaos charm chart chase cheap check chest chief child chose civil claim class clean clear click climb clock close cloud coach coast could count court cover craft crash crazy cream crime cross crowd crown crude curve cycle daily dance dated dealt death debut delay depth doing doubt dozen draft drama drank drawn dream dress drill drink drive drove dying eager early earth eight elite empty enemy enjoy enter entry equal error event every exact exist extra faith false fault fiber field fifth fifty fight final first fixed flame flash fleet floor fluid focus force forth forty forum found frame frank fraud fresh front fruit fully funny giant given glass globe glory grace grade grain grand grant grass grave great green greet gross group grown guard guess guest guide happy harsh heart heavy hence horse hotel house human ideal image index inner input issue joint judge known label large laser later laugh layer learn lease least leave legal level light limit lived local logic loose lower lucky lunch lying magic major maker march match maybe mayor meant medal media metal might minor minus mixed model money month moral motor mount mouse mouth movie music needs never newly night noise north noted novel nurse ocean offer often order other ought paint panel paper party peace phase phone photo piece pilot pitch place plain plane plant plate point pound power press price pride prime print prior prize proof proud prove queen quick quiet quite radio raise range rapid ratio reach ready realm rebel refer relax reply right rigid rival river robin roman rough round route royal rural scale scene scope score sense serve seven shall shape share sharp sheet shelf shell shift shine shirt shock shoot short shown sight since sixth sixty sized skill sleep slide small smart smile smoke solid solve sorry sound south space spare speak speed spend spent split spoke sport staff stage stake stand start state steam steel stick still stock stone stood store storm story strip stuck study stuff style sugar suite super sweet table taken taste taxes teach teeth terry texas thank theft their theme there these thick thing think third those three threw throw tight times tired title today topic total touch tough tower track trade train treat trend trial tribe trick tried tries truck truly trust truth twice under undue union unity until upper upset urban usage usual valid value video virus visit vital voice waste watch water wheel where which while white whole whose woman world worry worse worst worth would wound write wrong wrote yield young youth").split(" ");
+const ANSWER_SET=new Set(WORDS), DICT=new Set(WORDS);
+const ROWS=6, LEN=5;
+const gridEl=document.getElementById("grid"), kbdEl=document.getElementById("kbd"), msgEl=document.getElementById("msg");
+const overlay=document.getElementById("overlay"), overMsg=document.getElementById("overMsg"), overSub=document.getElementById("overSub");
+
+let answer, row, cur, done, keyState;
+
+function newGame(){
+  answer=WORDS[Math.floor(Math.random()*WORDS.length)];
+  row=0; cur=""; done=false; keyState={};
+  overlay.classList.add("hide"); msgEl.textContent="";
+  renderGrid(); renderKbd();
+}
+
+function renderGrid(){
+  gridEl.innerHTML="";
+  for(let r=0;r<ROWS;r++){
+    const rd=document.createElement("div"); rd.className="r";
+    for(let c=0;c<LEN;c++){ const t=document.createElement("div"); t.className="tile"; t.id=`t${r}_${c}`; rd.appendChild(t); }
+    gridEl.appendChild(rd);
+  }
+  syncCurrent();
+}
+function syncCurrent(){
+  for(let c=0;c<LEN;c++){ const t=document.getElementById(`t${row}_${c}`); if(!t) continue; t.textContent=cur[c]||""; t.classList.toggle("filled", !!cur[c]); }
+}
+
+const KROWS=["qwertyuiop","asdfghjkl","zxcvbnm"];
+function renderKbd(){
+  kbdEl.innerHTML="";
+  KROWS.forEach((rk,i)=>{
+    const rd=document.createElement("div"); rd.className="kr";
+    if(i===2){ rd.appendChild(makeKey("Enter","enter",true)); }
+    for(const ch of rk){ rd.appendChild(makeKey(ch,ch,false)); }
+    if(i===2){ rd.appendChild(makeKey("⌫","back",true)); }
+    kbdEl.appendChild(rd);
+  });
+}
+function makeKey(label,val,wide){
+  const b=document.createElement("button");
+  b.className="key"+(wide?" wide":"")+(keyState[val]?" "+keyState[val]:"");
+  b.textContent=label; b.onclick=()=>handleKey(val);
+  return b;
+}
+
+function handleKey(k){
+  if(done) return;
+  if(k==="enter") return submit();
+  if(k==="back"){ cur=cur.slice(0,-1); syncCurrent(); return; }
+  if(/^[a-z]$/.test(k) && cur.length<LEN){ cur+=k; syncCurrent(); }
+}
+
+function submit(){
+  if(cur.length<LEN){ return flash("Not enough letters"); }
+  if(!DICT.has(cur)){ return flash("Not in word list"); }
+  const marks=mark(cur, answer);
+  for(let c=0;c<LEN;c++){
+    const t=document.getElementById(`t${row}_${c}`);
+    t.classList.add(marks[c]); t.classList.add("filled");
+    const ch=cur[c];
+    // upgrade key colour g>y>x
+    const rank={g:3,y:2,x:1}; if(!keyState[ch] || rank[marks[c]]>rank[keyState[ch]]) keyState[ch]=marks[c];
+  }
+  renderKbd();
+  if(cur===answer){ done=true; setTimeout(()=>finish(true),150); return; }
+  row++; cur="";
+  if(row>=ROWS){ done=true; setTimeout(()=>finish(false),150); }
+}
+
+function mark(guess, ans){
+  const res=Array(LEN).fill("x");
+  const counts={};
+  for(const ch of ans) counts[ch]=(counts[ch]||0)+1;
+  for(let i=0;i<LEN;i++){ if(guess[i]===ans[i]){ res[i]="g"; counts[guess[i]]--; } }
+  for(let i=0;i<LEN;i++){ if(res[i]==="g") continue; if(counts[guess[i]]>0){ res[i]="y"; counts[guess[i]]--; } }
+  return res;
+}
+
+let msgTimer;
+function flash(m){ msgEl.textContent=m; clearTimeout(msgTimer); msgTimer=setTimeout(()=>{ if(!done) msgEl.textContent=""; },1400); }
+
+function finish(win){
+  overMsg.textContent = win ? "Got it!" : "Out of guesses";
+  overSub.textContent = win ? `Solved in ${row+1} ${row===0?"guess":"guesses"}.` : `The word was “${answer.toUpperCase()}”.`;
+  overlay.classList.remove("hide");
+}
+
+window.addEventListener("keydown", e=>{
+  if(e.key==="Enter") handleKey("enter");
+  else if(e.key==="Backspace") handleKey("back");
+  else if(/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toLowerCase());
+});
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("overBtn").onclick=newGame;
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flashEl=document.getElementById("flash");
+requestAnimationFrame(()=>flashEl.classList.add("go"));
+flashEl.addEventListener("animationend",()=>flashEl.classList.remove("go"));
+
+newGame();
+</script>
+</body>
+</html>

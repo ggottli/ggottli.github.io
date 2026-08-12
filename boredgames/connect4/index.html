@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect Four — Bored Games</title>
+<meta name="description" content="Connect Four — four in a row, beat the CPU. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-red); }
+  .board{ border:1.5px solid var(--ink); background:#123a6b; touch-action:manipulation; max-width:100%; height:auto; cursor:pointer; }
+  .stage{ width:min(430px,96vw); }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Connect Four</h1>
+    <p>You're red. Click a column to drop a disc. First to line up four — across, down or diagonally — wins.</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">You</span><span class="n" id="wins">0</span></div>
+    <div class="stat"><span class="l">CPU</span><span class="n" id="losses">0</span></div>
+    <div class="stat"><span class="l">Turn</span><span class="n" id="turn">You</span></div>
+  </div>
+
+  <div class="stage">
+    <canvas class="board" id="board" width="420" height="360" aria-label="Connect Four board"></canvas>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">Play again</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="act ghost" id="newGame">New game</button>
+    <button class="act ghost" id="diffBtn">Difficulty: Normal</button>
+  </div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const COLS=7, ROWS=6, CELL=60;
+const canvas=document.getElementById("board"), ctx=canvas.getContext("2d");
+const turnEl=document.getElementById("turn"), winsEl=document.getElementById("wins"), lossesEl=document.getElementById("losses");
+const overlay=document.getElementById("overlay"), overMsg=document.getElementById("overMsg"), overSub=document.getElementById("overSub");
+const HUMAN=1, CPU=2;
+const DEPTHS={Easy:2, Normal:5, Hard:7}; let diff="Normal";
+
+let board, turn, gameOver, winLine, wins=0, losses=0, hoverCol=-1, busy;
+
+function newGame(){
+  board=Array.from({length:ROWS},()=>new Array(COLS).fill(0));
+  turn=HUMAN; gameOver=false; winLine=null; busy=false;
+  turnEl.textContent="You"; overlay.classList.add("hide");
+  draw();
+}
+
+function validCols(b){ const v=[]; for(let c=0;c<COLS;c++) if(b[0][c]===0) v.push(c); return v; }
+function dropRow(b,c){ for(let r=ROWS-1;r>=0;r--) if(b[r][c]===0) return r; return -1; }
+
+function winnerLine(b,p){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(b[r][c]!==p) continue;
+    for(const [dr,dc] of dirs){
+      const cells=[[r,c]];
+      for(let k=1;k<4;k++){ const nr=r+dr*k, nc=c+dc*k; if(nr<0||nr>=ROWS||nc<0||nc>=COLS||b[nr][nc]!==p) break; cells.push([nr,nc]); }
+      if(cells.length===4) return cells;
+    }
+  }
+  return null;
+}
+function isWin(b,p){ return !!winnerLine(b,p); }
+function boardFull(b){ return validCols(b).length===0; }
+
+// ---- AI ----
+function scoreWindow(w,p){
+  const opp = p===CPU?HUMAN:CPU;
+  const pc=w.filter(x=>x===p).length, oc=w.filter(x=>x===opp).length, ec=w.filter(x=>x===0).length;
+  if(pc===4) return 1000;
+  if(pc===3&&ec===1) return 10;
+  if(pc===2&&ec===2) return 4;
+  if(oc===3&&ec===1) return -30;
+  return 0;
+}
+function evaluate(b,p){
+  let s=0;
+  for(let r=0;r<ROWS;r++) s += b[r][3]===p?6:0; // center bias
+  const add=(cells)=>{ s+=scoreWindow(cells,p); };
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS-3;c++) add([b[r][c],b[r][c+1],b[r][c+2],b[r][c+3]]);
+  for(let c=0;c<COLS;c++) for(let r=0;r<ROWS-3;r++) add([b[r][c],b[r+1][c],b[r+2][c],b[r+3][c]]);
+  for(let r=0;r<ROWS-3;r++) for(let c=0;c<COLS-3;c++) add([b[r][c],b[r+1][c+1],b[r+2][c+2],b[r+3][c+3]]);
+  for(let r=3;r<ROWS;r++) for(let c=0;c<COLS-3;c++) add([b[r][c],b[r-1][c+1],b[r-2][c+2],b[r-3][c+3]]);
+  return s;
+}
+function minimax(b,depth,alpha,beta,maxing){
+  if(isWin(b,CPU)) return {score:100000+depth};
+  if(isWin(b,HUMAN)) return {score:-100000-depth};
+  const moves=validCols(b);
+  if(depth===0||moves.length===0) return {score:evaluate(b,CPU)};
+  // order: center first
+  moves.sort((a,c)=>Math.abs(3-a)-Math.abs(3-c));
+  let best={col:moves[0]};
+  if(maxing){
+    best.score=-Infinity;
+    for(const c of moves){ const r=dropRow(b,c); b[r][c]=CPU; const v=minimax(b,depth-1,alpha,beta,false).score; b[r][c]=0;
+      if(v>best.score){ best={col:c,score:v}; } alpha=Math.max(alpha,v); if(alpha>=beta) break; }
+  }else{
+    best.score=Infinity;
+    for(const c of moves){ const r=dropRow(b,c); b[r][c]=HUMAN; const v=minimax(b,depth-1,alpha,beta,true).score; b[r][c]=0;
+      if(v<best.score){ best={col:c,score:v}; } beta=Math.min(beta,v); if(alpha>=beta) break; }
+  }
+  return best;
+}
+
+function cpuMove(){
+  const {col}=minimax(board, DEPTHS[diff], -Infinity, Infinity, true);
+  place(col===undefined?validCols(board)[0]:col, CPU);
+}
+
+function place(col,p){
+  const r=dropRow(board,col); if(r<0) return false;
+  board[r][col]=p;
+  const line=winnerLine(board,p);
+  if(line){ winLine=line; return finish(p); }
+  if(boardFull(board)){ return finish(0); }
+  turn = p===HUMAN?CPU:HUMAN;
+  turnEl.textContent = turn===HUMAN?"You":"CPU";
+  draw();
+  return true;
+}
+
+function finish(winner){
+  gameOver=true; draw();
+  if(winner===HUMAN){ wins++; winsEl.textContent=wins; overMsg.textContent="You win!"; overSub.textContent="Four in a row. Nicely done."; }
+  else if(winner===CPU){ losses++; lossesEl.textContent=losses; overMsg.textContent="CPU wins"; overSub.textContent="The machine got there first."; }
+  else{ overMsg.textContent="Draw"; overSub.textContent="Board's full. Nobody lined up four."; }
+  overlay.classList.remove("hide");
+}
+
+function humanPlay(col){
+  if(gameOver || busy || turn!==HUMAN) return;
+  if(dropRow(board,col)<0) return;
+  busy=true;
+  place(col,HUMAN);
+  if(!gameOver && turn===CPU){ setTimeout(()=>{ cpuMove(); busy=false; }, 260); }
+  else busy=false;
+}
+
+function draw(){
+  ctx.fillStyle="#123a6b"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#2C6FB5"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
+    const v=board[r][c];
+    if(v===0){ disc(x,y,"#0f2745",true); }
+    else disc(x,y, v===HUMAN?"#E43B44":"#F6C445", false);
+  }
+  if(hoverCol>=0 && !gameOver && turn===HUMAN){
+    ctx.fillStyle="rgba(228,59,68,.25)"; ctx.fillRect(hoverCol*CELL,0,CELL,canvas.height);
+  }
+  if(winLine){
+    ctx.strokeStyle="#EDEBE5"; ctx.lineWidth=4;
+    const a=winLine[0], b=winLine[3];
+    ctx.beginPath(); ctx.moveTo(a[1]*CELL+CELL/2,a[0]*CELL+CELL/2); ctx.lineTo(b[1]*CELL+CELL/2,b[0]*CELL+CELL/2); ctx.stroke();
+  }
+}
+function disc(x,y,color,hole){
+  const R=CELL/2-6;
+  ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+  if(!hole){
+    ctx.beginPath(); ctx.arc(x-R*0.3,y-R*0.3,R*0.5,0,Math.PI*2); ctx.fillStyle="rgba(255,255,255,.25)"; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.strokeStyle="rgba(0,0,0,.3)"; ctx.lineWidth=2; ctx.stroke();
+  }
+}
+
+function colFromX(clientX){ const r=canvas.getBoundingClientRect(); return Math.floor((clientX-r.left)*(canvas.width/r.width)/CELL); }
+canvas.addEventListener("mousemove", e=>{ hoverCol=colFromX(e.clientX); if(!gameOver) draw(); });
+canvas.addEventListener("mouseleave", ()=>{ hoverCol=-1; if(!gameOver) draw(); });
+canvas.addEventListener("click", e=>{ humanPlay(colFromX(e.clientX)); });
+canvas.addEventListener("touchend", e=>{ e.preventDefault(); const t=e.changedTouches[0]; humanPlay(colFromX(t.clientX)); }, {passive:false});
+
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("overBtn").onclick=newGame;
+document.getElementById("diffBtn").onclick=(e)=>{
+  const keys=Object.keys(DEPTHS); diff=keys[(keys.indexOf(diff)+1)%keys.length];
+  e.target.textContent="Difficulty: "+diff;
+};
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+newGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mastermind — Bored Games</title>
+<meta name="description" content="Mastermind — crack the hidden colour code. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-pink); }
+  .board{ border:1.5px solid var(--ink); background:var(--paper-hi); padding:12px; display:inline-block; }
+  .row{ display:flex; align-items:center; gap:12px; padding:6px 8px; }
+  .row.active{ background:var(--dither-lt); outline:1.5px solid var(--ink); }
+  .slots{ display:flex; gap:8px; }
+  .peg{ width:34px; height:34px; border:1.5px solid var(--ink); background:var(--paper); }
+  .peg.filled{ box-shadow:inset 4px 4px 0 rgba(255,255,255,.4), inset -4px -4px 0 rgba(0,0,0,.28); }
+  .peg.empty{ border-style:dashed; border-color:var(--ink-faint); background:var(--dither-lt); }
+  .peg.pick{ cursor:pointer; }
+  .fb{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; width:26px; height:26px; }
+  .fb i{ width:100%; height:100%; border:1px solid var(--ink); background:transparent; }
+  .fb i.black{ background:var(--ink); } .fb i.white{ background:var(--paper); }
+  .num{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); width:20px; text-align:right; }
+  .palette{ display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 6px; }
+  .swatch{ width:40px; height:40px; border:1.5px solid var(--ink); cursor:pointer; box-shadow:inset 4px 4px 0 rgba(255,255,255,.4), inset -4px -4px 0 rgba(0,0,0,.28); }
+  .swatch[aria-pressed="true"]{ outline:3px solid var(--ink); outline-offset:2px; }
+  .c0{ background:var(--nes-red);} .c1{ background:var(--nes-orange);} .c2{ background:var(--nes-yellow);}
+  .c3{ background:var(--nes-green);} .c4{ background:var(--nes-cyan);} .c5{ background:var(--nes-purple);}
+  .legend{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin-top:10px; line-height:1.6; }
+  .legend b{ display:inline-block; width:12px; height:12px; vertical-align:-1px; border:1px solid var(--ink); }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Mastermind</h1>
+    <p>A secret code of four colours (repeats allowed). Pick a colour, fill the row, submit. You get ten tries.</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">Guess</span><span class="n" id="turn">1/10</span></div>
+  </div>
+
+  <div class="stage">
+    <div class="board" id="board"></div>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">New game</button>
+    </div>
+  </div>
+
+  <div class="palette" id="palette" role="group" aria-label="Colours"></div>
+  <div class="controls">
+    <button class="act" id="submitBtn" disabled>Submit</button>
+    <button class="act ghost" id="clearBtn">Clear row</button>
+    <button class="act ghost" id="newGame">New game</button>
+  </div>
+  <p class="legend"><b class="c-black" style="background:var(--ink)"></b> right colour &amp; spot &nbsp;·&nbsp; <b style="background:var(--paper)"></b> right colour, wrong spot</p>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const N=4, COLORS=6, TRIES=10;
+const boardEl=document.getElementById("board"), paletteEl=document.getElementById("palette");
+const turnEl=document.getElementById("turn");
+const overlay=document.getElementById("overlay"), overMsg=document.getElementById("overMsg"), overSub=document.getElementById("overSub");
+const submitBtn=document.getElementById("submitBtn");
+
+let secret, guesses, current, sel, over;
+
+function newGame(){
+  secret=Array.from({length:N},()=>Math.floor(Math.random()*COLORS));
+  guesses=[]; current=Array(N).fill(null); sel=0; over=false;
+  overlay.classList.add("hide");
+  renderPalette(); render();
+}
+
+function renderPalette(){
+  paletteEl.innerHTML="";
+  for(let c=0;c<COLORS;c++){
+    const b=document.createElement("button");
+    b.className="swatch c"+c; b.dataset.c=c; b.setAttribute("aria-pressed", c===sel);
+    b.setAttribute("aria-label","colour "+(c+1));
+    b.onclick=()=>{ sel=c; renderPalette(); };
+    paletteEl.appendChild(b);
+  }
+}
+
+function render(){
+  boardEl.innerHTML="";
+  turnEl.textContent=`${Math.min(guesses.length+1,TRIES)}/${TRIES}`;
+  for(let r=0;r<TRIES;r++){
+    const row=document.createElement("div"); row.className="row";
+    const num=document.createElement("span"); num.className="num"; num.textContent=r+1; row.appendChild(num);
+    const slots=document.createElement("div"); slots.className="slots";
+    const g = guesses[r];
+    const isActive = !over && r===guesses.length;
+    if(isActive) row.classList.add("active");
+    for(let i=0;i<N;i++){
+      const peg=document.createElement("div");
+      let val = g ? g.code[i] : (isActive ? current[i] : null);
+      if(val===null || val===undefined){ peg.className="peg empty"; }
+      else{ peg.className="peg filled c"+val; }
+      if(isActive){
+        peg.classList.add("pick");
+        peg.onclick=()=>{ current[i]=(current[i]===sel? null : sel); render(); };
+      }
+      slots.appendChild(peg);
+    }
+    row.appendChild(slots);
+    // feedback
+    const fb=document.createElement("div"); fb.className="fb";
+    if(g){
+      const marks=[]; for(let k=0;k<g.black;k++) marks.push("black"); for(let k=0;k<g.white;k++) marks.push("white");
+      while(marks.length<N) marks.push("");
+      for(const m of marks){ const i=document.createElement("i"); if(m) i.className=m; fb.appendChild(i); }
+    }else{ for(let k=0;k<N;k++) fb.appendChild(document.createElement("i")); }
+    row.appendChild(fb);
+    boardEl.appendChild(row);
+  }
+  submitBtn.disabled = over || current.some(v=>v===null);
+}
+
+function score(code){
+  let black=0, white=0;
+  const sc=[...secret], gc=[...code];
+  for(let i=0;i<N;i++){ if(gc[i]===sc[i]){ black++; sc[i]=-1; gc[i]=-2; } }
+  for(let i=0;i<N;i++){ if(gc[i]<0) continue; const j=sc.indexOf(gc[i]); if(j>=0){ white++; sc[j]=-1; } }
+  return {black, white};
+}
+
+function submit(){
+  if(over || current.some(v=>v===null)) return;
+  const {black,white}=score(current);
+  guesses.push({code:[...current], black, white});
+  current=Array(N).fill(null);
+  if(black===N){ return finish(true); }
+  if(guesses.length>=TRIES){ return finish(false); }
+  render();
+}
+
+function finish(win){
+  over=true; render();
+  overMsg.textContent = win ? "Cracked it!" : "Out of tries";
+  overSub.textContent = win ? `Solved in ${guesses.length} ${guesses.length===1?"guess":"guesses"}.` : "The code is shown below.";
+  overlay.classList.remove("hide");
+  if(!win){
+    // reveal in a final row
+    const row=document.createElement("div"); row.className="row";
+    const num=document.createElement("span"); num.className="num"; num.textContent="✓"; row.appendChild(num);
+    const slots=document.createElement("div"); slots.className="slots";
+    for(const v of secret){ const p=document.createElement("div"); p.className="peg filled c"+v; slots.appendChild(p); }
+    row.appendChild(slots); boardEl.appendChild(row);
+  }
+}
+
+submitBtn.onclick=submit;
+document.getElementById("clearBtn").onclick=()=>{ if(!over){ current=Array(N).fill(null); render(); } };
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("overBtn").onclick=newGame;
+window.addEventListener("keydown", e=>{ if(e.key==="Enter" && !submitBtn.disabled) submit(); });
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+newGame();
+</script>
+</body>
+</html>

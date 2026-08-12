@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory — Bored Games</title>
+<meta name="description" content="Memory — flip the cards, find the pairs. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-cyan); }
+  .board{ display:grid; gap:10px; }
+  .card{
+    aspect-ratio:1; border:1.5px solid var(--ink); cursor:pointer; position:relative;
+    background:var(--nes-cyan); display:flex; align-items:center; justify-content:center;
+    font-size:clamp(22px,7vw,40px); -webkit-user-select:none; user-select:none;
+    box-shadow:inset 4px 4px 0 rgba(255,255,255,.35), inset -4px -4px 0 rgba(0,0,0,.28);
+  }
+  .card .face{ opacity:0; }
+  .card.up, .card.done{ background:var(--paper); box-shadow:inset 0 0 0 1px var(--rule); }
+  .card.up .face, .card.done .face{ opacity:1; }
+  .card .back{ position:absolute; font-family:var(--pixel); font-size:clamp(12px,3.4vw,18px); color:rgba(255,255,255,.85); }
+  .card.up .back, .card.done .back{ display:none; }
+  .card.done{ outline:2px solid var(--nes-green); }
+  .stage{ width:min(460px,96vw); }
+  .diff-row{ display:flex; gap:8px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Memory</h1>
+    <p>Flip two cards. If they match, they stay. If not, they flip back. Clear the board in as few moves as you can.</p>
+  </div>
+
+  <div class="diff-row" id="diff" role="group" aria-label="Size"></div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">Moves</span><span class="n" id="moves">0</span></div>
+    <div class="stat"><span class="l">Pairs</span><span class="n" id="pairs">0</span></div>
+    <div class="stat"><span class="l">Time</span><span class="n" id="time">0</span></div>
+  </div>
+
+  <div class="stage">
+    <div class="board" id="board"></div>
+    <div class="overlay hide" id="overlay">
+      <div class="big">All matched!</div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">New game</button>
+    </div>
+  </div>
+
+  <div class="controls"><button class="act ghost" id="newGame">New game</button></div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const SYMS=["👾","🍄","⭐","🔔","💎","🚀","🎲","🕹️","🌟","🎯","🧩","🐙"];
+const SIZES={ Easy:{cols:4,pairs:8}, Hard:{cols:6,pairs:12} };
+let sizeName="Easy";
+const boardEl=document.getElementById("board"), movesEl=document.getElementById("moves"),
+      pairsEl=document.getElementById("pairs"), timeEl=document.getElementById("time");
+const overlay=document.getElementById("overlay"), overSub=document.getElementById("overSub");
+
+let deck, flipped, lock, moves, matched, total, seconds, timer, started;
+
+function buildDiff(){
+  const el=document.getElementById("diff");
+  el.innerHTML=Object.keys(SIZES).map(s=>`<button class="filter-btn" data-s="${s}" aria-pressed="${s===sizeName}">${s} <span class="count">${SIZES[s].pairs*2}</span></button>`).join("");
+  el.querySelectorAll("button").forEach(b=> b.onclick=()=>{ sizeName=b.dataset.s; buildDiff(); newGame(); });
+}
+
+function newGame(){
+  const cfg=SIZES[sizeName];
+  total=cfg.pairs;
+  const chosen=SYMS.slice(0,cfg.pairs);
+  deck=[...chosen,...chosen].map((sym,i)=>({sym,id:i,done:false}));
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  flipped=[]; lock=false; moves=0; matched=0; seconds=0; started=false;
+  clearInterval(timer); timeEl.textContent=0; movesEl.textContent=0; pairsEl.textContent=`0/${total}`;
+  overlay.classList.add("hide");
+  boardEl.style.gridTemplateColumns=`repeat(${cfg.cols}, 1fr)`;
+  render();
+}
+
+function render(){
+  boardEl.innerHTML="";
+  deck.forEach((c,idx)=>{
+    const el=document.createElement("div");
+    el.className="card"+(c.done?" done":"");
+    el.innerHTML=`<span class="back">?</span><span class="face">${c.sym}</span>`;
+    el.onclick=()=>flip(idx,el);
+    c.el=el;
+    boardEl.appendChild(el);
+  });
+}
+
+function startTimer(){ if(started) return; started=true; timer=setInterval(()=>{ seconds++; timeEl.textContent=seconds; },1000); }
+
+function flip(idx,el){
+  const c=deck[idx];
+  if(lock || c.done || flipped.includes(idx)) return;
+  startTimer();
+  el.classList.add("up"); flipped.push(idx);
+  if(flipped.length===2){
+    moves++; movesEl.textContent=moves; lock=true;
+    const [a,b]=flipped;
+    if(deck[a].sym===deck[b].sym){
+      deck[a].done=deck[b].done=true;
+      deck[a].el.classList.add("done"); deck[b].el.classList.add("done");
+      matched++; pairsEl.textContent=`${matched}/${total}`;
+      flipped=[]; lock=false;
+      if(matched===total) win();
+    }else{
+      setTimeout(()=>{
+        deck[a].el.classList.remove("up"); deck[b].el.classList.remove("up");
+        flipped=[]; lock=false;
+      }, 750);
+    }
+  }
+}
+
+function win(){
+  clearInterval(timer);
+  overSub.textContent=`${moves} moves · ${seconds}s. Sharp memory.`;
+  overlay.classList.remove("hide");
+}
+
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("overBtn").onclick=newGame;
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+buildDiff();
+newGame();
+</script>
+</body>
+</html>

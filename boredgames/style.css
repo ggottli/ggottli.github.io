@@ -181,6 +181,36 @@ button.act:disabled{ opacity:.4; cursor:default; }
 /* pixel-art bevel used by tiles/cells inside games */
 .bevel{ box-shadow:inset 3px 3px 0 rgba(255,255,255,.35), inset -3px -3px 0 rgba(0,0,0,.30); }
 
+/* ---------- playing-card component (Solitaire, Gin Rummy) ---------- */
+.pcard{
+  --red:#CE3B36; --cr:calc(var(--cw) * 0.12);
+  width:var(--cw); height:var(--ch); position:relative; box-sizing:border-box;
+  background:linear-gradient(158deg,#FFFEFA 0%,#FBF5E7 55%,#F0E7D0 100%);
+  border:1.5px solid #26251f; border-radius:var(--cr);
+  box-shadow:0 1.5px 2px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.75);
+  color:#1B1B18; overflow:hidden; -webkit-user-select:none; user-select:none;
+}
+.pcard.red{ color:var(--red); }
+.pcard .idx{ position:absolute; display:flex; flex-direction:column; align-items:center; line-height:.8; z-index:2; }
+.pcard .idx .r{ font-family:var(--mono); font-weight:600; font-size:calc(var(--cw)*0.32); letter-spacing:-.03em; }
+.pcard .idx .s{ font-size:calc(var(--cw)*0.24); margin-top:1px; }
+.pcard .idx.tl{ top:calc(var(--ch)*0.05); left:calc(var(--cw)*0.11); }
+.pcard .idx.br{ bottom:calc(var(--ch)*0.05); right:calc(var(--cw)*0.11); transform:rotate(180deg); }
+.pcard .center{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:calc(var(--cw)*0.6); z-index:1; }
+.pcard.ace .center{ font-size:calc(var(--cw)*0.82); }
+.pcard.face .center{ font-family:var(--mono); font-weight:700; font-size:calc(var(--cw)*0.52); }
+.pcard.face::after{ content:""; position:absolute; inset:17% 13%; border:1.5px solid currentColor; opacity:.22; border-radius:calc(var(--cw)*0.05); }
+.pcard.back{
+  background:var(--back,#2C6FB5);
+  background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.16) 0 5px, transparent 5px 10px), repeating-linear-gradient(-45deg, rgba(0,0,0,.14) 0 5px, transparent 5px 10px);
+}
+.pcard.back::after{ content:""; position:absolute; inset:15%; border:2px solid rgba(255,255,255,.55); border-radius:calc(var(--cw)*0.08); }
+.pcard.back::before{ content:""; position:absolute; top:50%; left:50%; width:32%; height:32%; transform:translate(-50%,-50%) rotate(45deg); border:2px solid rgba(255,255,255,.5); }
+.pcard.pick{ cursor:pointer; }
+.pcard.pick:hover{ box-shadow:0 1.5px 2px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.75), 0 0 0 2px var(--accent); }
+.pcard.sel{ box-shadow:0 4px 0 rgba(0,0,0,.28), 0 0 0 3px var(--accent); }
+.pcard.meld{ outline:2px solid var(--nes-green); outline-offset:-2px; }
+
 /* overlay for win/lose messages over a board */
 .overlay{
   position:absolute; inset:0; display:flex; flex-direction:column; gap:16px;

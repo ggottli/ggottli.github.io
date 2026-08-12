@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Bird — Bored Games</title>
+<meta name="description" content="Flappy Bird — tap to fly, mind the pipes. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-purple); }
+  .board{ border:1.5px solid var(--ink); background:#3FB7C6; touch-action:none; max-width:100%; height:auto; cursor:pointer; }
+  .stage{ width:min(400px,94vw); }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Flappy Bird</h1>
+    <p>Click, tap or press space to flap. Slip through the gaps. That's the whole game.</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">Score</span><span class="n" id="score">0</span></div>
+    <div class="stat"><span class="l">Best</span><span class="n" id="best">0</span></div>
+  </div>
+
+  <div class="stage">
+    <canvas class="board" id="board" width="400" height="560" aria-label="Flappy Bird"></canvas>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg">Ready?</div>
+      <div class="sub" id="overSub">Click or press space to flap.</div>
+      <button class="act" id="overBtn">Flap!</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="act ghost" id="newGame">New game</button>
+    <button class="act ghost" id="soundBtn" aria-pressed="false">Sound: off</button>
+  </div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const canvas=document.getElementById("board"), ctx=canvas.getContext("2d");
+const W=canvas.width, H=canvas.height;
+const scoreEl=document.getElementById("score"), bestEl=document.getElementById("best");
+const overlay=document.getElementById("overlay"), overMsg=document.getElementById("overMsg"), overSub=document.getElementById("overSub");
+
+const GROUND=H-40, GRAV=0.42, FLAP=-7.2, PIPE_W=62, GAP=150, SPACING=220, SPEED=2.3, BIRDX=96, R=14;
+let bird, pipes, score, best, running, started, dead, frame, acc, last, groundX;
+best=+(localStorage.getItem("bg_flappy_best")||0); bestEl.textContent=best;
+
+let soundOn=false, actx=null;
+function beep(f,d,t="square"){ if(!soundOn) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(),g=actx.createGain(); o.type=t; o.frequency.value=f; g.gain.value=.05; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);}catch(e){} }
+
+function reset(){
+  bird={ y:H/2, v:0, rot:0 };
+  pipes=[];
+  for(let i=0;i<3;i++) addPipe(W + 160 + i*SPACING);
+  score=0; scoreEl.textContent=0; started=false; dead=false; running=true; frame=0; acc=0; last=0; groundX=0;
+  overMsg.textContent="Ready?"; overSub.textContent="Click or press space to flap.";
+  overlay.classList.remove("hide");
+  draw();
+}
+function addPipe(x){
+  const margin=60;
+  const gy = margin + Math.floor(Math.random()*(GROUND - GAP - margin*2));
+  pipes.push({ x, gapY:gy, scored:false });
+}
+
+function flap(){
+  if(dead) return;
+  if(!started){ started=true; overlay.classList.add("hide"); }
+  bird.v=FLAP; beep(520,.04);
+}
+
+function update(){
+  if(!started) return;
+  bird.v += GRAV; bird.y += bird.v;
+  bird.rot = Math.max(-0.4, Math.min(1.2, bird.v*0.06));
+  groundX = (groundX - SPEED) % 16;
+
+  for(const p of pipes){ p.x -= SPEED; }
+  if(pipes.length && pipes[0].x + PIPE_W < 0){ pipes.shift(); addPipe(pipes[pipes.length-1].x + SPACING); }
+
+  // score + collision
+  for(const p of pipes){
+    if(!p.scored && p.x + PIPE_W < BIRDX-R){ p.scored=true; score++; scoreEl.textContent=score; beep(660,.05); }
+    // collision with pipe
+    if(BIRDX+R > p.x && BIRDX-R < p.x+PIPE_W){
+      if(bird.y-R < p.gapY || bird.y+R > p.gapY+GAP){ return die(); }
+    }
+  }
+  if(bird.y+R > GROUND){ bird.y=GROUND-R; return die(); }
+  if(bird.y-R < 0){ bird.y=R; bird.v=0; }
+}
+
+function die(){
+  if(dead) return;
+  dead=true; started=false; beep(150,.25,"sawtooth");
+  if(score>best){ best=score; localStorage.setItem("bg_flappy_best",best); bestEl.textContent=best; }
+  overMsg.textContent="Down you go"; overSub.textContent=`Score ${score}. ${score>=best?"New best!":"Best "+best+"."}`;
+  overlay.classList.remove("hide");
+}
+
+function draw(){
+  // sky
+  ctx.fillStyle="#3FB7C6"; ctx.fillRect(0,0,W,GROUND);
+  // clouds (simple pixel blobs)
+  ctx.fillStyle="rgba(255,255,255,.35)";
+  for(let i=0;i<3;i++){ const cx=((i*160 - frame*0.3)%(W+120))-60; ctx.fillRect(cx,60+i*40,60,14); ctx.fillRect(cx+12,50+i*40,36,14); }
+  // pipes
+  for(const p of pipes){ drawPipe(p); }
+  // ground
+  ctx.fillStyle="#3E8948"; ctx.fillRect(0,GROUND,W,H-GROUND);
+  ctx.fillStyle="#62C64B"; for(let x=groundX; x<W; x+=16){ ctx.fillRect(x,GROUND,8,6); }
+  ctx.fillStyle="rgba(0,0,0,.2)"; ctx.fillRect(0,GROUND,W,3);
+  // bird
+  drawBird();
+}
+function drawPipe(p){
+  const drawSeg=(y,h)=>{
+    ctx.fillStyle="#3E8948"; ctx.fillRect(p.x,y,PIPE_W,h);
+    ctx.fillStyle="rgba(255,255,255,.28)"; ctx.fillRect(p.x,y,5,h);
+    ctx.fillStyle="rgba(0,0,0,.28)"; ctx.fillRect(p.x+PIPE_W-5,y,5,h);
+  };
+  const drawLip=(y)=>{ ctx.fillStyle="#2f6b38"; ctx.fillRect(p.x-4,y,PIPE_W+8,16); ctx.fillStyle="rgba(255,255,255,.25)"; ctx.fillRect(p.x-4,y,PIPE_W+8,4); };
+  drawSeg(0, p.gapY); drawLip(p.gapY-16);
+  drawSeg(p.gapY+GAP, GROUND-(p.gapY+GAP)); drawLip(p.gapY+GAP);
+}
+function drawBird(){
+  ctx.save(); ctx.translate(BIRDX,bird.y); ctx.rotate(bird.rot);
+  ctx.fillStyle="#F6C445"; ctx.fillRect(-R,-R+2,R*2,R*2-4);
+  ctx.fillStyle="rgba(255,255,255,.35)"; ctx.fillRect(-R,-R+2,R*2,4);
+  ctx.fillStyle="rgba(0,0,0,.30)"; ctx.fillRect(-R,R-6,R*2,4);
+  ctx.fillStyle="#F07F2E"; ctx.fillRect(R-4,-2,8,6); // beak
+  ctx.fillStyle="#fff"; ctx.fillRect(2,-8,7,7); ctx.fillStyle="#1B1B18"; ctx.fillRect(5,-6,3,4); // eye
+  ctx.fillStyle="#E8A93A"; ctx.fillRect(-R+2,0,10,7); // wing
+  ctx.restore();
+}
+
+function loop(ts){
+  if(!running) return;
+  if(!last) last=ts; let dt=ts-last; last=ts; if(dt>50) dt=50;
+  acc+=dt; const STEP=1000/60;
+  while(acc>=STEP){ if(!dead) update(); acc-=STEP; frame++; if(dead) break; }
+  draw();
+  if(running) requestAnimationFrame(loop);
+}
+function newGame(){ reset(); last=0; requestAnimationFrame(loop); }
+
+window.addEventListener("keydown", e=>{ if(e.key===" "||e.key==="ArrowUp"){ e.preventDefault(); if(dead) newGame(); else flap(); } });
+canvas.addEventListener("mousedown", ()=>{ if(dead) newGame(); else flap(); });
+canvas.addEventListener("touchstart", e=>{ e.preventDefault(); if(dead) newGame(); else flap(); }, {passive:false});
+document.getElementById("overBtn").onclick=()=>{ if(dead) newGame(); else flap(); };
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("soundBtn").onclick=(e)=>{ soundOn=!soundOn; e.target.textContent="Sound: "+(soundOn?"on":"off"); e.target.setAttribute("aria-pressed",soundOn); };
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+newGame();
+</script>
+</body>
+</html>

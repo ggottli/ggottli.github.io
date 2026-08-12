@@ -49,16 +49,36 @@ const GAMES = [
     desc:"Clear the field, don't hit a mine.", kw:"mines flags grid classic" },
   { id:"2048", cat:"Puzzle", name:"2048", accent:"var(--nes-orange)",
     desc:"Slide tiles, chase the big number.", kw:"tiles merge numbers slide" },
+  { id:"sudoku", cat:"Puzzle", name:"Sudoku", accent:"var(--nes-purple)",
+    desc:"Fill the grid, one to nine.", kw:"numbers logic grid japanese" },
+  { id:"mastermind", cat:"Puzzle", name:"Mastermind", accent:"var(--nes-pink)",
+    desc:"Crack the hidden colour code.", kw:"code breaker colours logic pegs" },
+  { id:"memory", cat:"Puzzle", name:"Memory", accent:"var(--nes-cyan)",
+    desc:"Flip cards, find the pairs.", kw:"concentration pairs match cards" },
+  { id:"mahjong", cat:"Puzzle", name:"Mahjong", accent:"var(--nes-green)",
+    desc:"Match free tiles, clear the board.", kw:"tiles solitaire match turtle" },
+  { id:"word", cat:"Puzzle", name:"Word", accent:"var(--nes-red)",
+    desc:"Guess the five-letter word.", kw:"wordle letters guess vocabulary" },
   { id:"solitaire", cat:"Cards", name:"Solitaire", accent:"var(--nes-green)",
     desc:"Klondike. Stack it down to the aces.", kw:"cards klondike patience deck" },
+  { id:"gin", cat:"Cards", name:"Gin Rummy", accent:"var(--nes-pink)",
+    desc:"Melds, knocks and deadwood vs the CPU.", kw:"cards rummy gin melds knock ai" },
+  { id:"chess", cat:"Board", name:"Chess", accent:"var(--nes-blue)",
+    desc:"Play the CPU. Full rules.", kw:"chess board ai checkmate strategy" },
+  { id:"connect4", cat:"Board", name:"Connect Four", accent:"var(--nes-red)",
+    desc:"Four in a row, beat the CPU.", kw:"connect four discs drop ai" },
   { id:"snake", cat:"Arcade", name:"Snake", accent:"var(--nes-lime)",
     desc:"Eat, grow, try not to bite yourself.", kw:"snake nokia grow food" },
   { id:"tetris", cat:"Arcade", name:"Tetris", accent:"var(--nes-cyan)",
     desc:"Stack the blocks, clear the lines.", kw:"blocks tetromino lines stack" },
   { id:"pacman", cat:"Arcade", name:"Pac-Man", accent:"var(--nes-yellow)",
     desc:"Eat the dots, dodge the ghosts.", kw:"pacman ghosts maze dots pellets arcade" },
+  { id:"breakout", cat:"Arcade", name:"Breakout", accent:"var(--nes-orange)",
+    desc:"Bounce the ball, smash the bricks.", kw:"breakout arkanoid paddle ball bricks" },
+  { id:"flappy", cat:"Arcade", name:"Flappy Bird", accent:"var(--nes-purple)",
+    desc:"Tap to fly, mind the pipes.", kw:"flappy bird tap pipes arcade" },
 ];
-const CATS = ["Puzzle","Cards","Arcade"];
+const CATS = ["Puzzle","Cards","Board","Arcade"];
 
 const view = document.getElementById("view");
 const q = document.getElementById("q");

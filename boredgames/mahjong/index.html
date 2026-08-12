@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mahjong — Bored Games</title>
+<meta name="description" content="Mahjong solitaire — match free tiles, clear the board. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-green); }
+  .wrap{ overflow-x:auto; border:1.5px solid var(--ink); background:#2f6b38; padding:12px; }
+  .board{ position:relative; transform-origin:top left; }
+  .tile{
+    position:absolute; box-sizing:border-box;
+    background:#F3ECD9; border:1.5px solid #7a6f52;
+    border-radius:5px; display:flex; align-items:center; justify-content:center;
+    box-shadow:3px 4px 0 rgba(0,0,0,.35); cursor:pointer; -webkit-user-select:none; user-select:none;
+    line-height:1;
+  }
+  .tile .g{ font-size:26px; }
+  .tile.blocked{ cursor:default; filter:brightness(.72) saturate(.7); }
+  .tile.blocked::after{ content:""; position:absolute; inset:0; background:rgba(27,27,24,.28); border-radius:4px; }
+  .tile.sel{ outline:3px solid var(--nes-green); outline-offset:-1px; background:#FFF7E3; }
+  .tile.hint{ outline:3px solid var(--nes-yellow); outline-offset:-1px; }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Mahjong</h1>
+    <p>Match pairs of identical tiles. A tile is playable only when its left or right edge is clear and nothing sits on top. Clear the whole board.</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">Left</span><span class="n" id="left">144</span></div>
+    <div class="stat"><span class="l">Moves</span><span class="n" id="moves">0</span></div>
+    <div class="stat"><span class="l">Time</span><span class="n" id="time">0</span></div>
+  </div>
+
+  <div class="stage" style="display:block;width:100%">
+    <div class="wrap"><div class="board" id="board"></div></div>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">New board</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="act ghost" id="newGame">New board</button>
+    <button class="act ghost" id="hintBtn">Hint</button>
+    <button class="act ghost" id="undoBtn">Undo</button>
+  </div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const GLYPHS="🀇 🀈 🀉 🀊 🀋 🀌 🀍 🀎 🀏 🀙 🀚 🀛 🀜 🀝 🀞 🀟 🀠 🀡 🀐 🀑 🀒 🀓 🀔 🀕 🀖 🀗 🀘 🀀 🀁 🀂 🀃 🀄 🀅 🀆 🀢 🀣".split(" ");
+const TW=42, TH=56, LOFF=7;
+const boardEl=document.getElementById("board"), wrapEl=document.querySelector(".wrap");
+const leftEl=document.getElementById("left"), movesEl=document.getElementById("moves"), timeEl=document.getElementById("time");
+const overlay=document.getElementById("overlay"), overMsg=document.getElementById("overMsg"), overSub=document.getElementById("overSub");
+
+let tiles, sel, moves, seconds, timer, started, history;
+
+function buildLayout(){
+  const out=[];
+  const add=(x0,y0,w,h,z)=>{ for(let y=0;y<h;y++)for(let x=0;x<w;x++) out.push({x:x0+x,y:y0+y,z}); };
+  add(0,0,12,8,0); add(2,1,8,5,1); add(4,2,4,2,2);
+  return out;
+}
+const K=(x,y,z)=>x+","+y+","+z;
+
+function present(){ const s=new Set(); for(const t of tiles) if(!t.removed) s.add(K(t.x,t.y,t.z)); return s; }
+function isFree(t, pres){
+  if(t.removed) return false;
+  if(pres.has(K(t.x,t.y,t.z+1))) return false;
+  const left=pres.has(K(t.x-1,t.y,t.z)), right=pres.has(K(t.x+1,t.y,t.z));
+  return !left || !right;
+}
+
+function generateSolvable(){
+  for(let attempt=0; attempt<300; attempt++){
+    const layout=buildLayout().map(t=>({...t, removed:false, kind:null}));
+    if(layout.length%2) continue;
+    const pres=new Set(layout.map(t=>K(t.x,t.y,t.z)));
+    const byKey=new Map(layout.map(t=>[K(t.x,t.y,t.z),t]));
+    const pairs=[]; for(let k=0;k<GLYPHS.length;k++){ pairs.push(k); pairs.push(k); }
+    for(let i=pairs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pairs[i],pairs[j]]=[pairs[j],pairs[i]]; }
+    let pi=0, ok=true;
+    const freeNow=()=> [...pres].map(k=>byKey.get(k)).filter(t=>{
+      if(pres.has(K(t.x,t.y,t.z+1))) return false;
+      const l=pres.has(K(t.x-1,t.y,t.z)), r=pres.has(K(t.x+1,t.y,t.z)); return !l||!r;
+    });
+    while(pres.size>0){
+      const fr=freeNow();
+      if(fr.length<2){ ok=false; break; }
+      const a=fr[Math.floor(Math.random()*fr.length)]; let b; do{ b=fr[Math.floor(Math.random()*fr.length)]; }while(b===a);
+      const kind=pairs[pi++]; a.kind=kind; b.kind=kind;
+      pres.delete(K(a.x,a.y,a.z)); pres.delete(K(b.x,b.y,b.z));
+    }
+    if(ok) return layout;
+  }
+  return null;
+}
+
+function newGame(){
+  tiles=generateSolvable();
+  sel=null; moves=0; seconds=0; started=false; history=[];
+  clearInterval(timer); timeEl.textContent=0; movesEl.textContent=0;
+  overlay.classList.add("hide");
+  build(); update(); fit();
+}
+
+function build(){
+  boardEl.innerHTML="";
+  // draw order: z, then y, then x
+  const sorted=[...tiles].sort((a,b)=> a.z-b.z || a.y-b.y || a.x-b.x);
+  let maxX=0,maxY=0,maxZ=0;
+  for(const t of tiles){ maxX=Math.max(maxX,t.x); maxY=Math.max(maxY,t.y); maxZ=Math.max(maxZ,t.z); }
+  for(const t of sorted){
+    const el=document.createElement("div");
+    el.className="tile";
+    el.style.width=TW+"px"; el.style.height=TH+"px";
+    el.style.left=(t.x*TW - t.z*LOFF)+"px";
+    el.style.top=(t.y*TH - t.z*LOFF)+"px";
+    el.style.zIndex = t.z*10000 + t.y*100 + t.x;
+    el.innerHTML=`<span class="g">${GLYPHS[t.kind]}</span>`;
+    el.onclick=()=>clickTile(t);
+    t.el=el;
+    boardEl.appendChild(el);
+  }
+  const W=(maxX+1)*TW + 20, H=(maxY+1)*TH + 20;
+  boardEl.style.width=W+"px"; boardEl.style.height=H+"px";
+  boardEl.dataset.w=W; boardEl.dataset.h=H;
+}
+
+function fit(){
+  const avail=wrapEl.clientWidth-24;
+  const W=+boardEl.dataset.w;
+  const scale=Math.min(1, avail/W);
+  boardEl.style.transform=`scale(${scale})`;
+  wrapEl.style.height=(+boardEl.dataset.h*scale + 24)+"px";
+}
+
+function startTimer(){ if(started) return; started=true; timer=setInterval(()=>{ seconds++; timeEl.textContent=seconds; },1000); }
+
+function update(){
+  const pres=present();
+  let remaining=0;
+  for(const t of tiles){
+    if(t.removed){ t.el.style.display="none"; continue; }
+    remaining++;
+    t.el.style.display="";
+    const free=isFree(t,pres);
+    t.el.classList.toggle("blocked", !free);
+    t.el.classList.toggle("sel", sel===t);
+    t.el.classList.remove("hint");
+  }
+  leftEl.textContent=remaining;
+  if(remaining===0) return win();
+}
+
+function clickTile(t){
+  const pres=present();
+  if(t.removed || !isFree(t,pres)) return;
+  startTimer();
+  if(sel===t){ sel=null; update(); return; }
+  if(sel && sel.kind===t.kind){
+    // match
+    sel.removed=true; t.removed=true;
+    history.push([sel,t]); sel=null;
+    moves++; movesEl.textContent=moves;
+    update();
+    if(tiles.some(x=>!x.removed) && !anyMove()) noMoves();
+  }else{
+    sel=t; update();
+  }
+}
+
+function anyMove(){
+  const pres=present();
+  const frees=tiles.filter(t=>!t.removed && isFree(t,pres));
+  const seen={};
+  for(const t of frees){ if(seen[t.kind]!==undefined) return true; seen[t.kind]=1; }
+  return false;
+}
+
+function hint(){
+  const pres=present();
+  const frees=tiles.filter(t=>!t.removed && isFree(t,pres));
+  const byKind={};
+  for(const t of frees){ (byKind[t.kind]=byKind[t.kind]||[]).push(t); }
+  for(const k in byKind){ if(byKind[k].length>=2){ byKind[k][0].el.classList.add("hint"); byKind[k][1].el.classList.add("hint");
+    setTimeout(()=>update(), 900); return; } }
+}
+
+function undo(){
+  if(!history.length) return;
+  const [a,b]=history.pop();
+  a.removed=false; b.removed=false; sel=null;
+  moves=Math.max(0,moves-1); movesEl.textContent=moves;
+  update();
+}
+
+function noMoves(){
+  overMsg.textContent="No moves left"; overSub.textContent="Every free pair is gone. Undo a move, or start a fresh board.";
+  overlay.classList.remove("hide");
+}
+function win(){
+  clearInterval(timer);
+  overMsg.textContent="Board cleared!"; overSub.textContent=`${moves} pairs in ${seconds}s. Well matched.`;
+  overlay.classList.remove("hide");
+}
+
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("overBtn").onclick=newGame;
+document.getElementById("hintBtn").onclick=hint;
+document.getElementById("undoBtn").onclick=()=>{ overlay.classList.add("hide"); undo(); };
+window.addEventListener("resize", fit);
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+newGame();
+</script>
+</body>
+</html>

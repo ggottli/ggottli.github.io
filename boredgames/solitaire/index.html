@@ -11,32 +11,19 @@
 <link rel="stylesheet" href="../style.css">
 <style>
   :root{ --accent: var(--nes-green);
-    --cw:62px; --ch:88px; --up:26px; --down:16px; }
-  .felt{ border:1.5px solid var(--ink); background:var(--paper-hi); padding:14px; overflow-x:auto; }
-  .top-row{ display:flex; gap:8px; margin-bottom:16px; }
+    --cw:64px; --ch:90px; --up:27px; --down:15px; }
+  .pcard{ --back:#2f6b38; }
+  .felt{ border:1.5px solid var(--ink); background:#3d7a45; background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px); background-size:6px 6px; padding:16px; border-radius:8px; overflow-x:auto; }
+  .top-row{ display:flex; gap:10px; margin-bottom:18px; }
   .spacer{ flex:1; min-width:8px; }
-  .tableau{ display:flex; gap:8px; align-items:flex-start; }
+  .tableau{ display:flex; gap:10px; align-items:flex-start; }
   .pile{ position:relative; width:var(--cw); }
-  .slot{ width:var(--cw); height:var(--ch); border:1.5px dashed var(--ink-faint); background:var(--dither-lt); }
+  .slot{ width:var(--cw); height:var(--ch); border:1.5px dashed rgba(255,255,255,.5); border-radius:calc(var(--cw)*0.12); background:rgba(0,0,0,.12); }
   .col{ position:relative; width:var(--cw); min-height:var(--ch); }
-  .card{
-    position:absolute; left:0; width:var(--cw); height:var(--ch);
-    border:1.5px solid var(--ink); background:var(--paper); cursor:pointer;
-    font-family:var(--mono); box-shadow:1px 1px 0 rgba(0,0,0,.35);
-    -webkit-user-select:none; user-select:none;
-  }
-  .top-row .card, .top-row .slot{ position:relative; }
-  .card .corner{ position:absolute; top:4px; left:5px; font-family:var(--pixel); font-size:11px; line-height:1; }
-  .card .suit{ position:absolute; bottom:5px; right:6px; font-size:20px; line-height:1; }
-  .card.red{ color:var(--nes-red); }
-  .card.black{ color:var(--ink); }
-  .card.down{
-    background:var(--nes-blue); border-color:var(--ink); cursor:pointer;
-    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 4px, transparent 4px 8px);
-  }
-  .card.down .corner, .card.down .suit{ display:none; }
-  .card.playable:hover{ box-shadow:2px 2px 0 var(--nes-green); }
-  .stock-empty{ width:var(--cw); height:var(--ch); border:1.5px solid var(--ink-faint); background:var(--dither-lt); cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:18px; color:var(--ink-soft); }
+  .col .pcard{ position:absolute; left:0; }
+  .top-row .pcard{ position:relative; }
+  .foundation-slot{ border-color:var(--nes-yellow); }
+  .stock-empty{ width:var(--cw); height:var(--ch); border:1.5px dashed rgba(255,255,255,.6); border-radius:calc(var(--cw)*0.12); background:rgba(0,0,0,.12); cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:20px; color:rgba(255,255,255,.8); }
 </style>
 </head>
 <body>
@@ -115,13 +102,13 @@ function render(){
   topRow.innerHTML="";
   // stock
   const stockCell = document.createElement("div");
-  if(stock.length){ stockCell.className="card down"; }
+  if(stock.length){ stockCell.className="pcard back pick"; }
   else{ stockCell.className="stock-empty"; stockCell.textContent="↻"; }
   stockCell.dataset.pile="stock";
   topRow.appendChild(stockCell);
   // waste (show top)
   const wasteCell = document.createElement("div");
-  if(waste.length){ const c=waste[waste.length-1]; decorate(wasteCell,c); wasteCell.dataset.pile="waste"; }
+  if(waste.length){ const c=waste[waste.length-1]; decorate(wasteCell,c); wasteCell.classList.add("pick"); wasteCell.dataset.pile="waste"; }
   else{ wasteCell.className="slot"; }
   topRow.appendChild(wasteCell);
   // spacer
@@ -129,8 +116,8 @@ function render(){
   // foundations
   for(let f=0;f<4;f++){
     const cell=document.createElement("div");
-    if(foundations[f].length){ const c=foundations[f][foundations[f].length-1]; decorate(cell,c); }
-    else{ cell.className="slot"; cell.style.borderColor="var(--nes-green)"; }
+    if(foundations[f].length){ const c=foundations[f][foundations[f].length-1]; decorate(cell,c); cell.classList.add("pick"); }
+    else{ cell.className="slot foundation-slot"; }
     cell.dataset.pile="found"; cell.dataset.i=f;
     topRow.appendChild(cell);
   }
@@ -152,7 +139,7 @@ function render(){
       decorate(el,c);
       el.style.top=y+"px";
       el.dataset.pile="tab"; el.dataset.i=t; el.dataset.idx=idx;
-      if(c.up) el.classList.add("playable");
+      if(c.up) el.classList.add("pick");
       col.appendChild(el);
       y += c.up ? up : down;
     });
@@ -162,10 +149,12 @@ function render(){
 }
 
 function decorate(el, c){
-  el.className = "card " + (c.up ? (isRed(c.suit)?"red":"black") : "down");
-  if(c.up){
-    el.innerHTML = `<span class="corner">${RANKS[c.rank]}</span><span class="suit">${SUITS[c.suit]}</span>`;
-  }
+  if(!c.up){ el.className="pcard back"; el.innerHTML=""; return; }
+  const r=RANKS[c.rank], s=SUITS[c.suit], isFace=c.rank>=11;
+  el.className = "pcard " + (isRed(c.suit)?"red":"black") + (isFace?" face":"") + (c.rank===1?" ace":"");
+  el.innerHTML = `<span class="idx tl"><span class="r">${r}</span><span class="s">${s}</span></span>`+
+                 `<span class="center">${isFace?r:s}</span>`+
+                 `<span class="idx br"><span class="r">${r}</span><span class="s">${s}</span></span>`;
 }
 
 function bump(){ moves++; movesEl.textContent=moves; startTimer(); }

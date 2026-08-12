@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gin Rummy — Bored Games</title>
+<meta name="description" content="Gin Rummy vs the CPU — melds, knocks and deadwood. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-pink); --cw:56px; --ch:80px; }
+  .pcard{ --back:#B0447E; }
+  .felt{ border:1.5px solid var(--ink); background:#3d7a45; background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px); background-size:6px 6px; padding:16px; border-radius:8px; }
+  .zone{ margin:6px 0 18px; }
+  .zone h3{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,.75); margin:0 0 8px; }
+  .hand{ display:flex; flex-wrap:wrap; gap:8px; min-height:var(--ch); }
+  #playerHand{ position:relative; display:block; }
+  #playerHand .pcard{ touch-action:none; transition:left .12s ease; }
+  #playerHand .pcard.dragging{ transition:none; box-shadow:0 8px 14px rgba(0,0,0,.35), 0 0 0 3px var(--accent); }
+  .pilerow{ display:flex; gap:22px; align-items:flex-start; }
+  .slot{ width:var(--cw); height:var(--ch); border:1.5px dashed rgba(255,255,255,.55); border-radius:calc(var(--cw)*0.12); background:rgba(0,0,0,.12); }
+  .lbl{ font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.8); text-align:center; margin-top:4px; }
+  .scores{ display:flex; gap:14px; }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Gin Rummy</h1>
+    <p>Draw a card, discard a card. Build sets and runs to shrink your deadwood. Knock at 10 or under — or go gin at zero. First to 100 wins.</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">You</span><span class="n" id="ps">0</span></div>
+    <div class="stat"><span class="l">CPU</span><span class="n" id="cs">0</span></div>
+    <div class="stat"><span class="l">Deadwood</span><span class="n" id="dw">—</span></div>
+  </div>
+
+  <div class="stage" style="display:block;width:100%">
+    <div class="felt">
+      <div class="zone"><h3>CPU</h3><div class="hand" id="cpuHand"></div></div>
+      <div class="zone"><h3>Stock &amp; discard</h3>
+        <div class="pilerow">
+          <div><div class="pcard back" id="stock"></div><div class="lbl" id="stockLbl">stock</div></div>
+          <div><div id="discardCard"></div><div class="lbl">discard</div></div>
+        </div>
+      </div>
+      <div class="zone"><h3>Your hand</h3><div class="hand" id="playerHand"></div></div>
+    </div>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">Deal</button>
+    </div>
+  </div>
+
+  <div class="controls" id="controls"></div>
+  <p class="legend" style="font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:10px" id="msg"></p>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const SUITS=["♠","♥","♦","♣"], RANKS=[null,"A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const val=r=>Math.min(r,10);
+const isRed=s=>s===1||s===2;
+
+/* ---- meld / deadwood solver (validated) ---- */
+function enumerateMelds(hand){
+  const melds=[], n=hand.length;
+  const combos=(arr,k)=>{ const res=[]; (function rec(st,cur){ if(cur.length===k){res.push(cur.slice());return;} for(let i=st;i<arr.length;i++){cur.push(arr[i]);rec(i+1,cur);cur.pop();} })(0,[]); return res; };
+  for(let r=1;r<=13;r++){ const idx=[]; for(let i=0;i<n;i++) if(hand[i].r===r) idx.push(i);
+    if(idx.length>=3){ combos(idx,3).forEach(c=>melds.push(c)); if(idx.length===4) melds.push(idx.slice()); } }
+  for(let s=0;s<4;s++){ const bs=[]; for(let i=0;i<n;i++) if(hand[i].s===s) bs.push(i); bs.sort((a,b)=>hand[a].r-hand[b].r);
+    for(let a=0;a<bs.length;a++){ const run=[bs[a]]; for(let b=a+1;b<bs.length;b++){ if(hand[bs[b]].r===hand[run[run.length-1]].r+1) run.push(bs[b]); else break; }
+      for(let len=3;len<=run.length;len++) melds.push(run.slice(0,len)); } }
+  return melds;
+}
+function bestArrangement(hand){
+  const meldMasks=enumerateMelds(hand).map(m=>{ let mask=0; for(const i of m) mask|=(1<<i); return {mask,cards:m}; });
+  const memo=new Map();
+  function solve(used){
+    if(memo.has(used)) return memo.get(used);
+    let i=-1; for(let k=0;k<hand.length;k++) if(!(used&(1<<k))){ i=k; break; }
+    if(i<0){ const r={dw:0,melds:[]}; memo.set(used,r); return r; }
+    const skip=solve(used|(1<<i)); let best={dw:val(hand[i].r)+skip.dw, melds:skip.melds};
+    for(const mm of meldMasks){ if((mm.mask&(1<<i))&&(mm.mask&used)===0){ const sub=solve(used|mm.mask); if(sub.dw<best.dw) best={dw:sub.dw,melds:[mm.cards,...sub.melds]}; } }
+    memo.set(used,best); return best;
+  }
+  return solve(0);
+}
+function meldedIndexSet(hand){ const s=new Set(); for(const m of bestArrangement(hand).melds) for(const i of m) s.add(i); return s; }
+function bestDiscard(hand11){ // returns {dw, index}
+  let best={dw:Infinity, index:0};
+  for(let i=0;i<hand11.length;i++){ const rest=hand11.slice(0,i).concat(hand11.slice(i+1)); const d=bestArrangement(rest).dw;
+    if(d<best.dw || (d===best.dw && val(hand11[i].r)>val(hand11[best.index].r))) best={dw:d,index:i}; }
+  return best;
+}
+
+/* ---- game state ---- */
+let stock, discard, player, cpu, turn, phase, sel, scores, matchOver, busy;
+scores={player:0, cpu:0};
+const $=id=>document.getElementById(id);
+const overlay=$("overlay"), overMsg=$("overMsg"), overSub=$("overSub"), controls=$("controls"), msgEl=$("msg");
+
+function makeDeck(){ const d=[]; let id=0; for(let s=0;s<4;s++)for(let r=1;r<=13;r++) d.push({r,s,id:id++}); for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; } return d; }
+function sortHand(h){ h.sort((a,b)=> a.s-b.s || a.r-b.r); }
+
+function deal(){
+  const d=makeDeck();
+  player=d.splice(0,10); cpu=d.splice(0,10); discard=[d.pop()]; stock=d;
+  sortHand(player);
+  turn="player"; phase="draw"; sel=null; busy=false;
+  overlay.classList.add("hide");
+  msg("Your turn — draw from the stock or take the discard.");
+  render();
+}
+
+function msg(t){ msgEl.textContent=t; }
+
+function render(){
+  $("cpuHand").innerHTML = cpu.map(()=>cardStr(null,true)).join("");
+  $("stockLbl").textContent = `stock · ${stock.length}`;
+  $("stock").style.visibility = stock.length? "visible":"hidden";
+  const dc=$("discardCard");
+  dc.innerHTML = discard.length ? cardStr(discard[discard.length-1]) : `<div class="slot"></div>`;
+  renderHand();
+  $("dw").textContent = bestArrangement(player).dw;
+  $("ps").textContent=scores.player; $("cs").textContent=scores.cpu;
+  renderControls();
+}
+
+function faceInner(c){
+  const r=RANKS[c.r], s=SUITS[c.s], isFace=c.r>=11;
+  return `<span class="idx tl"><span class="r">${r}</span><span class="s">${s}</span></span>`+
+         `<span class="center">${isFace?r:s}</span>`+
+         `<span class="idx br"><span class="r">${r}</span><span class="s">${s}</span></span>`;
+}
+function cardClass(c){ const isFace=c.r>=11; return "pcard "+(isRed(c.s)?"red":"black")+(isFace?" face":"")+(c.r===1?" ace":""); }
+function cardStr(c,back){ if(back) return `<div class="pcard back"></div>`; return `<div class="${cardClass(c)}">${faceInner(c)}</div>`; }
+function cardEl(c){ const el=document.createElement("div"); el.className=cardClass(c); el.innerHTML=faceInner(c); return el; }
+
+/* ---- player hand: fanned layout + drag-to-reorder ---- */
+let cardEls=[], handStep=0, drag=null;
+function renderHand(){
+  if(drag) return; // don't rebuild mid-drag
+  const ph=$("playerHand"); ph.innerHTML=""; cardEls=[];
+  const cs=getComputedStyle(document.documentElement);
+  const cw=parseFloat(cs.getPropertyValue("--cw"))||56;
+  const ch=parseFloat(cs.getPropertyValue("--ch"))||80;
+  const n=player.length;
+  const containerW=ph.clientWidth||360;
+  handStep = n>1 ? Math.min(cw+10, Math.max(20,(containerW-cw)/(n-1))) : 0;
+  ph.style.height=(ch+12)+"px";
+  const melded=meldedIndexSet(player);
+  player.forEach((c,i)=>{
+    const el=cardEl(c); el.classList.add("pick");
+    if(melded.has(i)) el.classList.add("meld");
+    if(sel===i) el.classList.add("sel");
+    el.style.position="absolute"; el.style.left=(i*handStep)+"px"; el.style.top=(sel===i?"0":"8px"); el.style.zIndex=i;
+    el.addEventListener("pointerdown", e=>startDrag(e,i));
+    cardEls.push(el); ph.appendChild(el);
+  });
+}
+function startDrag(e,i){
+  if(matchOver) return;
+  e.preventDefault();
+  const rect=$("playerHand").getBoundingClientRect();
+  drag={ i, startX:e.clientX, moved:false, target:i, offset:(e.clientX-rect.left)-(i*handStep), rect };
+  const el=cardEls[i]; el.setPointerCapture(e.pointerId);
+  el.addEventListener("pointermove", onDragMove);
+  el.addEventListener("pointerup", onDragEnd);
+  el.addEventListener("pointercancel", onDragEnd);
+}
+function onDragMove(e){
+  if(!drag) return;
+  const dx=e.clientX-drag.startX;
+  if(!drag.moved){ if(Math.abs(dx)>6) drag.moved=true; else return; }
+  const el=cardEls[drag.i];
+  const x=(e.clientX-drag.rect.left)-drag.offset;
+  el.classList.add("dragging"); el.style.left=x+"px"; el.style.top="0px"; el.style.zIndex=999;
+  let t=Math.round(x/handStep); t=Math.max(0,Math.min(player.length-1,t)); drag.target=t;
+  for(let j=0;j<cardEls.length;j++){ if(j===drag.i) continue; let slot=j;
+    if(drag.i<t){ if(j>drag.i && j<=t) slot=j-1; } else if(drag.i>t){ if(j>=t && j<drag.i) slot=j+1; }
+    cardEls[j].style.left=(slot*handStep)+"px";
+  }
+}
+function onDragEnd(e){
+  if(!drag) return;
+  const el=cardEls[drag.i];
+  try{ el.releasePointerCapture(e.pointerId); }catch(_){}
+  el.removeEventListener("pointermove", onDragMove);
+  el.removeEventListener("pointerup", onDragEnd);
+  el.removeEventListener("pointercancel", onDragEnd);
+  const d=drag; drag=null;
+  if(!d.moved){ handleTap(d.i); return; }
+  const card=player.splice(d.i,1)[0]; player.splice(d.target,0,card);
+  sel=null; render();
+}
+function handleTap(i){
+  if(turn==="player" && phase==="discard"){ sel=(sel===i?null:i); render(); }
+}
+
+function renderControls(){
+  controls.innerHTML="";
+  if(matchOver || turn!=="player"){ return; }
+  if(phase==="draw"){
+    addBtn("Draw stock", ()=>playerDraw("stock"), stock.length===0);
+    const top=discard[discard.length-1];
+    addBtn(`Take ${RANKS[top.r]}${SUITS[top.s]}`, ()=>playerDraw("discard"));
+  } else if(phase==="discard"){
+    const canDiscard = sel!==null;
+    addBtn("Discard", ()=>playerDiscard(false), !canDiscard);
+    if(sel!==null){
+      const rest=player.slice(0,sel).concat(player.slice(sel+1));
+      const dw=bestArrangement(rest).dw;
+      if(dw===0) addBtn("Gin!", ()=>playerDiscard(true));
+      else if(dw<=10) addBtn(`Knock (${dw})`, ()=>playerDiscard(true));
+    }
+  }
+}
+function addBtn(label,fn,disabled){ const b=document.createElement("button"); b.className="act"+(label.startsWith("Draw")||label==="Discard"?"":" ghost"); b.textContent=label; b.disabled=!!disabled; b.onclick=fn; controls.appendChild(b); }
+
+/* ---- player actions ---- */
+function playerDraw(from){
+  if(phase!=="draw"||turn!=="player") return;
+  if(from==="stock"){ if(!stock.length) return checkWash(); player.push(stock.pop()); }
+  else { player.push(discard.pop()); }
+  phase="discard"; sel=null; msg("Now discard a card — drag to rearrange your hand, or knock if your deadwood is 10 or less.");
+  render();
+}
+function playerDiscard(knock){
+  if(sel===null) return;
+  const card=player.splice(sel,1)[0];
+  discard.push(card); sel=null;
+  if(knock){ return endHand("player"); }
+  phase="draw"; turn="cpu"; render();
+  msg("CPU is thinking…");
+  setTimeout(cpuTurn, 700);
+}
+
+/* ---- cpu ---- */
+function cpuTurn(){
+  if(matchOver) return;
+  // draw decision
+  const cur=bestArrangement(cpu).dw;
+  const top=discard[discard.length-1];
+  const withDisc=bestDiscard(cpu.concat([top])).dw;
+  let took="stock";
+  if(withDisc < cur && discard.length){ cpu.push(discard.pop()); took="discard"; }
+  else { if(!stock.length) return checkWash(); cpu.push(stock.pop()); }
+  render();
+  setTimeout(()=>{
+    // discard decision
+    const bd=bestDiscard(cpu);
+    const card=cpu.splice(bd.index,1)[0];
+    discard.push(card);
+    render();
+    if(bd.dw<=10){ // cpu knocks
+      return setTimeout(()=>endHand("cpu"), 500);
+    }
+    turn="player"; phase="draw";
+    msg(`CPU ${took==="discard"?"took the discard":"drew from the stock"} and discarded ${RANKS[card.r]}${SUITS[card.s]}. Your turn.`);
+    render();
+  }, 650);
+}
+
+function checkWash(){
+  overMsg.textContent="Washed hand"; overSub.textContent="Stock ran out. No score — deal again."; showOver("Deal");
+}
+
+/* ---- scoring ---- */
+function layoff(knockerMelds, oppDeadwood){
+  // knockerMelds: array of {type:'set'|'run', ...}
+  const sets=knockerMelds.filter(m=>m.type==="set");
+  const runs=knockerMelds.filter(m=>m.type==="run");
+  let changed=true; const remaining=[...oppDeadwood];
+  while(changed){ changed=false;
+    for(let i=remaining.length-1;i>=0;i--){ const c=remaining[i];
+      const set=sets.find(s=>s.rank===c.r && s.count<4);
+      if(set){ set.count++; remaining.splice(i,1); changed=true; continue; }
+      const run=runs.find(r=>r.suit===c.s && (c.r===r.lo-1 || c.r===r.hi+1));
+      if(run){ if(c.r===run.lo-1) run.lo--; else run.hi++; remaining.splice(i,1); changed=true; }
+    }
+  }
+  return remaining.reduce((s,c)=>s+val(c.r),0);
+}
+function meldStructs(hand){
+  const arr=bestArrangement(hand);
+  return arr.melds.map(m=>{ const cards=m.map(i=>hand[i]);
+    if(cards.every(c=>c.r===cards[0].r)) return {type:"set", rank:cards[0].r, count:cards.length};
+    const rs=cards.map(c=>c.r).sort((a,b)=>a-b); return {type:"run", suit:cards[0].s, lo:rs[0], hi:rs[rs.length-1]}; });
+}
+function deadwoodCards(hand){ const melded=meldedIndexSet(hand); return hand.filter((c,i)=>!melded.has(i)); }
+
+function endHand(knocker){
+  const kHand = knocker==="player"?player:cpu;
+  const oHand = knocker==="player"?cpu:player;
+  const kdw = bestArrangement(kHand).dw;
+  const gin = kdw===0;
+  let scorer, points, detail;
+  if(gin){
+    const odw=bestArrangement(oHand).dw;
+    scorer=knocker; points=25+odw; detail=`Gin! +25 bonus + ${odw} deadwood.`;
+  } else {
+    const kMelds=meldStructs(kHand);
+    const oDead=deadwoodCards(oHand);
+    const oAfter=layoff(kMelds, oDead);
+    if(kdw < oAfter){ scorer=knocker; points=oAfter-kdw; detail=`Knock with ${kdw}. Opponent ${oAfter} after lay-off → +${points}.`; }
+    else { scorer=knocker==="player"?"cpu":"player"; points=(kdw-oAfter)+25; detail=`Undercut! ${scorer==="player"?"You":"CPU"} +${kdw-oAfter} + 25.`; }
+  }
+  scores[scorer]+=points;
+  const who = scorer==="player"?"You score":"CPU scores";
+  // reveal cpu hand
+  $("cpuHand").innerHTML = cpu.map(c=>cardStr(c)).join("");
+  const melded=meldedIndexSet(cpu); [...$("cpuHand").children].forEach((el,i)=>{ if(melded.has(i)) el.classList.add("meld"); });
+  overMsg.textContent = (knocker==="player"?"You knocked":"CPU knocked")+(gin?" — Gin":"");
+  let sub=`${detail} ${who} ${points}. `;
+  if(scores.player>=100||scores.cpu>=100){ matchOver=true; sub+= scores.player>scores.cpu?"You win the match!":"CPU wins the match."; }
+  else sub+=`Match: you ${scores.player}, CPU ${scores.cpu}.`;
+  overSub.textContent=sub;
+  showOver(matchOver?"New match":"Next hand");
+  render();
+}
+
+function showOver(btn){ $("overBtn").textContent=btn; overlay.classList.remove("hide"); controls.innerHTML=""; }
+$("overBtn").onclick=()=>{ if(matchOver){ scores={player:0,cpu:0}; matchOver=false; } deal(); };
+$("overBtn").textContent="Deal";
+
+// controls: New hand always available
+function addTopControls(){}
+document.addEventListener("keydown",()=>{});
+
+function tick(){ const d=new Date(); $("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=$("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+matchOver=false;
+deal();
+</script>
+</body>
+</html>

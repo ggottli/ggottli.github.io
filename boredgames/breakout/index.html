@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout — Bored Games</title>
+<meta name="description" content="Breakout — bounce the ball, smash the bricks. Part of Bored Games.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root{ --accent: var(--nes-orange); }
+  .board{ border:1.5px solid var(--ink); background:#0f0f0d; touch-action:none; max-width:100%; height:auto; cursor:pointer; }
+  .stage{ width:min(440px,94vw); }
+</style>
+</head>
+<body>
+<div id="flash" aria-hidden="true"></div>
+<div id="app">
+  <header class="masthead">
+    <a class="brand" href="../">BORED GAMES <em>&nbsp;a small game collection</em></a>
+    <div class="status"><span id="clock"></span><span>no ads · offline</span><span class="battery"></span></div>
+  </header>
+
+  <div class="toolbar"><a class="backlink" href="../">← all games</a></div>
+  <div class="game-head">
+    <h1>Breakout</h1>
+    <p>Move the paddle with the mouse, arrow keys or drag. Click or press space to launch. Clear every brick.</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="l">Score</span><span class="n" id="score">0</span></div>
+    <div class="stat"><span class="l">Lives</span><span class="n" id="lives">3</span></div>
+    <div class="stat"><span class="l">Level</span><span class="n" id="level">1</span></div>
+  </div>
+
+  <div class="stage">
+    <canvas class="board" id="board" width="420" height="500" aria-label="Breakout board"></canvas>
+    <div class="overlay hide" id="overlay">
+      <div class="big" id="overMsg"></div>
+      <div class="sub" id="overSub"></div>
+      <button class="act" id="overBtn">New game</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="act ghost" id="newGame">New game</button>
+    <button class="act ghost" id="soundBtn" aria-pressed="false">Sound: off</button>
+  </div>
+
+  <div class="dpad">
+    <button class="left" data-dir="-1">←</button>
+    <button class="right" data-dir="1">→</button>
+  </div>
+
+  <footer><span>Bored Games</span><span><a href="../">← all games</a></span></footer>
+</div>
+
+<script>
+const canvas=document.getElementById("board"), ctx=canvas.getContext("2d");
+const W=canvas.width, H=canvas.height;
+const scoreEl=document.getElementById("score"), livesEl=document.getElementById("lives"), levelEl=document.getElementById("level");
+const overlay=document.getElementById("overlay"), overMsg=document.getElementById("overMsg"), overSub=document.getElementById("overSub");
+
+const COLS=9, ROWS=6, BTOP=54, BPAD=4;
+const BW=W/COLS, BH=20;
+const ROWCOLORS=["#E43B44","#F07F2E","#F6C445","#62C64B","#3FB7C6","#7B53A6"];
+
+let bricks, paddle, ball, score, lives, level, running, launched, dead, moveDir;
+
+let soundOn=false, actx=null;
+function beep(f,d){ if(!soundOn) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(),g=actx.createGain(); o.type="square"; o.frequency.value=f; g.gain.value=.05; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);}catch(e){} }
+
+function buildBricks(){
+  bricks=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+    bricks.push({ x:c*BW, y:BTOP+r*BH, alive:true, color:ROWCOLORS[r] });
+}
+
+function resetBall(){
+  paddle={ w:74, h:12, x:W/2-37, y:H-28 };
+  const sp=3.2 + (level-1)*0.4;
+  ball={ x:W/2, y:paddle.y-8, r:6, vx:0, vy:0, speed:sp };
+  launched=false;
+}
+
+function newGame(){
+  score=0; lives=3; level=1;
+  buildBricks(); resetBall();
+  running=true; dead=false; moveDir=0;
+  updateHud(); overlay.classList.add("hide");
+  requestAnimationFrame(loop);
+}
+function updateHud(){ scoreEl.textContent=score; livesEl.textContent=lives; levelEl.textContent=level; }
+
+function launch(){
+  if(launched||dead) return;
+  launched=true;
+  ball.vx = ball.speed*0.5; ball.vy = -ball.speed;
+}
+
+function update(){
+  // paddle keyboard
+  if(moveDir){ paddle.x += moveDir*6; }
+  paddle.x = Math.max(0, Math.min(W-paddle.w, paddle.x));
+  if(!launched){ ball.x = paddle.x+paddle.w/2; ball.y = paddle.y-8; return; }
+
+  ball.x += ball.vx; ball.y += ball.vy;
+  // walls
+  if(ball.x-ball.r<0){ ball.x=ball.r; ball.vx*=-1; beep(300,.02); }
+  if(ball.x+ball.r>W){ ball.x=W-ball.r; ball.vx*=-1; beep(300,.02); }
+  if(ball.y-ball.r<0){ ball.y=ball.r; ball.vy*=-1; beep(300,.02); }
+  // floor
+  if(ball.y-ball.r>H){ return loseLife(); }
+  // paddle
+  if(ball.vy>0 && ball.y+ball.r>=paddle.y && ball.y+ball.r<=paddle.y+paddle.h+6 &&
+     ball.x>=paddle.x && ball.x<=paddle.x+paddle.w){
+    const hit=(ball.x-(paddle.x+paddle.w/2))/(paddle.w/2); // -1..1
+    const ang=hit*1.05; // max ~60deg
+    ball.vx=ball.speed*Math.sin(ang); ball.vy=-ball.speed*Math.cos(ang);
+    ball.y=paddle.y-ball.r; beep(440,.02);
+  }
+  // bricks
+  for(const b of bricks){
+    if(!b.alive) continue;
+    if(ball.x+ball.r>b.x && ball.x-ball.r<b.x+BW && ball.y+ball.r>b.y && ball.y-ball.r<b.y+BH){
+      b.alive=false; score+=10; updateHud(); beep(520,.03);
+      // reflect based on shallow penetration axis
+      const overlapX = Math.min(ball.x+ball.r-b.x, b.x+BW-(ball.x-ball.r));
+      const overlapY = Math.min(ball.y+ball.r-b.y, b.y+BH-(ball.y-ball.r));
+      if(overlapX<overlapY) ball.vx*=-1; else ball.vy*=-1;
+      break;
+    }
+  }
+  if(bricks.every(b=>!b.alive)) return nextLevel();
+}
+
+function loseLife(){
+  lives--; updateHud(); beep(160,.2);
+  if(lives<=0){ dead=true; running=false; over("Game over", `Final score ${score}.`); return; }
+  resetBall();
+}
+function nextLevel(){
+  level++; updateHud(); beep(660,.12);
+  buildBricks(); resetBall();
+}
+function over(msg,sub){ overMsg.textContent=msg; overSub.textContent=sub; overlay.classList.remove("hide"); }
+
+function draw(){
+  ctx.fillStyle="#0f0f0d"; ctx.fillRect(0,0,W,H);
+  // bricks
+  for(const b of bricks){ if(!b.alive) continue; drawBlock(b.x+2, b.y+2, BW-4, BH-4, b.color); }
+  // paddle
+  drawBlock(paddle.x, paddle.y, paddle.w, paddle.h, "#EDEBE5");
+  // ball
+  ctx.fillStyle="#F6C445"; ctx.fillRect(ball.x-ball.r, ball.y-ball.r, ball.r*2, ball.r*2);
+  ctx.fillStyle="rgba(255,255,255,.4)"; ctx.fillRect(ball.x-ball.r, ball.y-ball.r, ball.r*2, 2);
+}
+function drawBlock(x,y,w,h,color){
+  ctx.fillStyle=color; ctx.fillRect(x,y,w,h);
+  ctx.fillStyle="rgba(255,255,255,.30)"; ctx.fillRect(x,y,w,3); ctx.fillRect(x,y,3,h);
+  ctx.fillStyle="rgba(0,0,0,.30)"; ctx.fillRect(x,y+h-3,w,3); ctx.fillRect(x+w-3,y,3,h);
+}
+
+function loop(){
+  if(!running) return;
+  if(!dead) update();
+  draw();
+  if(running) requestAnimationFrame(loop);
+}
+
+// input
+window.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft"||e.key==="a"){ moveDir=-1; }
+  else if(e.key==="ArrowRight"||e.key==="d"){ moveDir=1; }
+  else if(e.key===" "){ e.preventDefault(); launch(); }
+});
+window.addEventListener("keyup", e=>{
+  if((e.key==="ArrowLeft"||e.key==="a")&&moveDir===-1) moveDir=0;
+  if((e.key==="ArrowRight"||e.key==="d")&&moveDir===1) moveDir=0;
+});
+function pointerX(clientX){ const r=canvas.getBoundingClientRect(); return (clientX-r.left)*(W/r.width); }
+canvas.addEventListener("mousemove", e=>{ paddle.x=pointerX(e.clientX)-paddle.w/2; });
+canvas.addEventListener("mousedown", launch);
+canvas.addEventListener("touchstart", e=>{ e.preventDefault(); paddle.x=pointerX(e.touches[0].clientX)-paddle.w/2; launch(); }, {passive:false});
+canvas.addEventListener("touchmove", e=>{ e.preventDefault(); paddle.x=pointerX(e.touches[0].clientX)-paddle.w/2; }, {passive:false});
+document.querySelectorAll(".dpad button").forEach(b=>{
+  const dir=+b.dataset.dir;
+  b.addEventListener("touchstart", e=>{ e.preventDefault(); moveDir=dir; launch(); }, {passive:false});
+  b.addEventListener("touchend", ()=>{ if(moveDir===dir) moveDir=0; });
+  b.addEventListener("mousedown", ()=>{ moveDir=dir; launch(); });
+  b.addEventListener("mouseup", ()=>{ if(moveDir===dir) moveDir=0; });
+});
+
+document.getElementById("newGame").onclick=newGame;
+document.getElementById("overBtn").onclick=newGame;
+document.getElementById("soundBtn").onclick=(e)=>{ soundOn=!soundOn; e.target.textContent="Sound: "+(soundOn?"on":"off"); e.target.setAttribute("aria-pressed",soundOn); };
+
+function tick(){ const d=new Date(); document.getElementById("clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick,15000);
+const flash=document.getElementById("flash");
+requestAnimationFrame(()=>flash.classList.add("go"));
+flash.addEventListener("animationend",()=>flash.classList.remove("go"));
+
+newGame();
+</script>
+</body>
+</html>
