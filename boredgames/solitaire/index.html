@@ -20,7 +20,12 @@
   .pile{ position:relative; width:var(--cw); }
   .slot{ width:var(--cw); height:var(--ch); border:1.5px dashed rgba(255,255,255,.5); border-radius:calc(var(--cw)*0.12); background:rgba(0,0,0,.12); }
   .col{ position:relative; width:var(--cw); min-height:var(--ch); }
-  .col .pcard{ position:absolute; left:0; }
+  /* stacked tableau cards: crisp top-lip separator so overlaps read cleanly */
+  .col .pcard{ position:absolute; left:0;
+    box-shadow:0 -1px 0 rgba(0,0,0,.28), 0 2px 3px rgba(0,0,0,.22), inset 0 0 0 1px rgba(255,255,255,.6); }
+  /* face-down slivers: solid back, drop the pattern/motif that breaks across the overlap */
+  .col .pcard.back{ background:#2f6b38; background-image:none; }
+  .col .pcard.back::before, .col .pcard.back::after{ display:none; }
   .top-row .pcard{ position:relative; }
   .foundation-slot{ border-color:var(--nes-yellow); }
   .stock-empty{ width:var(--cw); height:var(--ch); border:1.5px dashed rgba(255,255,255,.6); border-radius:calc(var(--cw)*0.12); background:rgba(0,0,0,.12); cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:20px; color:rgba(255,255,255,.8); }
