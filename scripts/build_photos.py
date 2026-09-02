@@ -252,14 +252,24 @@ def main():
     for name in removed:
         print(f"note: {name} is in photos.json but no longer on disk — dropped.")
 
-    data = {
-        "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "photos": photos,
-    }
-    with open(JSON_PATH, "w") as f:
-        json.dump(data, f, indent=1)
-        f.write("\n")
-    write_csv(photos)
+    # Only rewrite outputs when something real changed, so the CI job
+    # doesn't commit a timestamp-only diff on every run.
+    unchanged = False
+    if JSON_PATH.exists():
+        with open(JSON_PATH) as f:
+            old_data = json.load(f)
+        unchanged = old_data.get("photos") == photos
+    if unchanged:
+        print("photos.json unchanged — not rewritten.")
+    else:
+        data = {
+            "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "photos": photos,
+        }
+        with open(JSON_PATH, "w") as f:
+            json.dump(data, f, indent=1)
+            f.write("\n")
+        write_csv(photos)
 
     no_gps = [p for p in photos if p["lat"] is None]
     no_date = [p for p in photos if p["date_source"] == "file"]
