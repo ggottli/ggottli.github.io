@@ -1,0 +1,639 @@
+/* Photos page. Loads after writing.css and widens the page for the map;
+   type, colors, and link styles still come from writing.css. */
+
+body {
+    max-width: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    padding: 1.1em 1.25em;
+    margin-bottom: 0;
+}
+
+header nav a {
+    margin-left: 1em;
+}
+
+header a[aria-current="page"] {
+    text-decoration: none;
+    font-weight: bold;
+}
+
+main {
+    flex: 1;
+}
+
+footer {
+    margin-top: 0;
+    padding: 1.25em;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid #f0563f;
+    outline-offset: 2px;
+}
+
+/* ===== Map view layout ===== */
+
+.layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    border-bottom: 1px solid #ddd;
+}
+
+.side {
+    padding: 1.5em 1.25em 2em;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4em;
+}
+
+.side h1 {
+    font-size: 1.4em;
+    margin: 0;
+}
+
+.intro {
+    color: #555;
+    font-size: 0.85em;
+    margin: 0.4em 0 0;
+    max-width: 34ch;
+}
+
+.facts {
+    color: #555;
+    font-size: 0.8em;
+    margin: 0;
+}
+
+.facts b {
+    color: #222;
+    font-variant-numeric: tabular-nums;
+}
+
+.side fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.side legend {
+    font-size: 0.75em;
+    color: #888;
+    padding: 0;
+    margin-bottom: 0.6em;
+}
+
+/* Who checkboxes */
+.who {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3em 1em;
+}
+
+.who label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.85em;
+    cursor: pointer;
+    padding: 0.15em 0;
+}
+
+.who input {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid #888;
+    border-radius: 3px;
+    position: relative;
+    flex: none;
+    cursor: pointer;
+    margin: 0;
+}
+
+.who input:checked {
+    background: #f0563f;
+    border-color: #f0563f;
+}
+
+.who input:checked::after {
+    content: "";
+    position: absolute;
+    left: 3.5px;
+    top: 0.5px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.who .n {
+    margin-left: auto;
+    color: #888;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Chapters */
+.chapters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    margin-bottom: 0.9em;
+}
+
+.chapters button {
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    padding: 0.25em 0.6em;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.chapters button[aria-pressed="true"] {
+    background: #222;
+    border-color: #222;
+    color: #fff;
+}
+
+/* Year range slider with histogram */
+.tl {
+    position: relative;
+    height: 76px;
+    user-select: none;
+    touch-action: none;
+}
+
+.hist {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 36px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.hist i {
+    flex: 1;
+    background: #ddd;
+    min-height: 2px;
+    border-radius: 1px;
+}
+
+.hist i.in {
+    background: #f0563f;
+}
+
+.range {
+    position: absolute;
+    top: 0;
+    height: 36px;
+    background: rgba(240, 86, 63, 0.12);
+    border-left: 2px solid #f0563f;
+    border-right: 2px solid #f0563f;
+    pointer-events: none;
+}
+
+.axis {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65em;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+}
+
+.handle {
+    position: absolute;
+    top: 24px;
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #f0563f;
+    cursor: grab;
+    z-index: 2;
+    padding: 0;
+}
+
+.sel {
+    font-size: 0.8em;
+    margin: 0.3em 0 0;
+    color: #555;
+}
+
+.sel b {
+    color: #222;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Collections list */
+.colls {
+    border-top: 1px solid #ddd;
+    padding-top: 1em;
+}
+
+.colls h2 {
+    font-size: 0.75em;
+    color: #888;
+    font-weight: normal;
+    margin: 0 0 0.4em;
+}
+
+.colls a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.7em;
+    padding: 0.5em 0;
+    border-bottom: 1px solid #eee;
+    text-decoration: none;
+    font-size: 0.85em;
+}
+
+.colls a:last-child {
+    border-bottom: 0;
+}
+
+.colls a:hover span:first-child {
+    text-decoration: underline;
+    text-decoration-color: #f0563f;
+}
+
+.colls small {
+    color: #888;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.colls a.dim {
+    opacity: 0.4;
+}
+
+/* The map/strip column must not grow to the filmstrip's content width
+   (grid items default to min-width:auto). */
+.main-col {
+    min-width: 0;
+}
+
+/* Map */
+.mapwrap {
+    position: relative;
+    height: 72vh;
+    min-height: 420px;
+}
+
+#map {
+    position: absolute;
+    inset: 0;
+    background: #f5f5f2;
+}
+
+.leaflet-container {
+    font: inherit;
+}
+
+.leaflet-tile {
+    filter: grayscale(1) brightness(1.04) contrast(0.94);
+}
+
+.leaflet-control-attribution {
+    font-size: 0.6rem;
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.pin {
+    width: 48px;
+    height: 48px;
+    border: 2px solid #fff;
+    outline: 1px solid rgba(0, 0, 0, 0.2);
+    background: #eee;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+}
+
+.pin:hover {
+    outline: 2px solid #f0563f;
+}
+
+.pin img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pin .n {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background: #222;
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 0 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.mapnote {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 500;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.3em 0.6em;
+    font-size: 0.75em;
+    color: #555;
+    margin: 0;
+}
+
+/* Filmstrip */
+.strip {
+    border-top: 1px solid #ddd;
+    padding: 0.7em 1.25em;
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    min-height: 64px;
+}
+
+.strip button {
+    flex: none;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: 2px solid transparent;
+    background: #eee;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.strip button.on {
+    border-color: #f0563f;
+}
+
+.strip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.strip .more {
+    flex: none;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    color: #555;
+    background: #f5f5f2;
+    border: 1px solid #ddd;
+}
+
+.strip .empty {
+    font-size: 0.85em;
+    color: #555;
+    align-self: center;
+    margin: 0;
+}
+
+/* ===== Photo view ===== */
+
+.lb {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: rgba(34, 34, 34, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1em;
+}
+
+.lb.open {
+    display: flex;
+}
+
+.lb .card {
+    position: relative;
+    background: #fff;
+    max-width: 720px;
+    max-height: 92vh;
+    overflow-y: auto;
+    width: 100%;
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 1fr 250px;
+}
+
+.lb .img {
+    background: #eee;
+    min-height: 260px;
+}
+
+.lb .img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    min-height: 260px;
+}
+
+.lb .body {
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    font-size: 0.85em;
+}
+
+.lb h2 {
+    font-size: 1.15em;
+    margin: 0;
+    padding-right: 1.6em;
+}
+
+.lb .caption {
+    color: #555;
+    margin: 0;
+}
+
+.lb dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25em 0.8em;
+    margin: 0;
+    font-size: 0.9em;
+}
+
+.lb dt {
+    color: #888;
+}
+
+.lb dd {
+    margin: 0;
+}
+
+.lb .acts {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    padding-top: 0.7em;
+}
+
+.lb .acts button {
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    padding: 0.5em 0.7em;
+    cursor: pointer;
+    text-align: left;
+}
+
+.lb .acts button:hover {
+    background: rgba(240, 86, 63, 0.08);
+    border-color: #f0563f;
+}
+
+.lb .x {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: 1px solid #ddd;
+    background: rgba(255, 255, 255, 0.95);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* ===== Collection view ===== */
+
+.collection {
+    max-width: 40em;
+    margin: 0 auto;
+    padding: 2em 1.25em 3em;
+}
+
+.collection h1 {
+    margin-bottom: 0.2em;
+}
+
+.collection .range-line {
+    color: #888;
+    font-size: 0.9em;
+    margin-top: 0;
+}
+
+.collection .coll-intro {
+    color: #555;
+}
+
+.collection figure {
+    margin: 2.5em 0;
+}
+
+.collection figure img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    background: #eee;
+}
+
+.collection figcaption {
+    color: #555;
+    font-size: 0.9em;
+    margin-top: 0.5em;
+}
+
+.collection figcaption .when {
+    color: #888;
+}
+
+.coll-back {
+    margin-bottom: 2em;
+    font-size: 0.9em;
+}
+
+/* ===== Small screens ===== */
+
+@media (max-width: 860px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .side {
+        border-right: 0;
+        border-bottom: 1px solid #ddd;
+        padding: 1.2em 1.25em 1.5em;
+        gap: 1.1em;
+    }
+
+    .who {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mapwrap {
+        height: 62vh;
+        min-height: 60vh;
+    }
+}
+
+@media (min-width: 861px) {
+    .side {
+        position: sticky;
+        top: 0;
+        max-height: 100vh;
+        overflow-y: auto;
+        align-self: start;
+    }
+
+    .who {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .lb .card {
+        grid-template-columns: 1fr;
+    }
+
+    .lb .img img {
+        max-height: 45vh;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Photos | Greg Gottlieb</title>
+        <meta
+            name="description"
+            content="Pictures from my life, placed on a map and a timeline."
+        />
+        <link rel="stylesheet" href="/assets/writing.css" />
+        <link rel="stylesheet" href="/assets/vendor/leaflet.min.css" />
+        <link rel="stylesheet" href="/assets/photos.css" />
+    </head>
+    <body>
+        <header>
+            <a class="site-title" href="/">ggottlieb.com</a>
+            <nav>
+                <a href="/writing.html">Writing</a>
+                <a href="/photos.html" aria-current="page">Photos</a>
+            </nav>
+        </header>
+        <main>
+            <div id="map-view">
+                <div class="layout">
+                    <aside class="side">
+                        <div>
+                            <h1>Photos</h1>
+                            <p class="intro">
+                                Pictures from my life, placed on a map and a
+                                timeline. Narrow it down by who's in them and
+                                when they were taken.
+                            </p>
+                        </div>
+                        <p class="facts" id="facts"></p>
+
+                        <fieldset>
+                            <legend>Who</legend>
+                            <div class="who" id="who"></div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>When</legend>
+                            <div class="chapters" id="chapters"></div>
+                            <div class="tl" id="tl">
+                                <div class="hist" id="hist"></div>
+                                <div class="range" id="range"></div>
+                                <div class="axis" id="axis"></div>
+                                <button
+                                    class="handle"
+                                    id="h0"
+                                    role="slider"
+                                    aria-label="Start year"
+                                ></button>
+                                <button
+                                    class="handle"
+                                    id="h1"
+                                    role="slider"
+                                    aria-label="End year"
+                                ></button>
+                            </div>
+                            <p class="sel" id="sel"></p>
+                        </fieldset>
+
+                        <div class="colls">
+                            <h2>Collections in this view</h2>
+                            <div id="colls"></div>
+                        </div>
+                    </aside>
+
+                    <div class="main-col">
+                        <div class="mapwrap">
+                            <div id="map"></div>
+                            <p class="mapnote" id="mapnote"></p>
+                        </div>
+                        <div class="strip" id="strip"></div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="collection" id="collection-view" hidden></section>
+        </main>
+        <footer>
+            <p>&copy; 2026 Greg Gottlieb</p>
+        </footer>
+
+        <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Photo">
+            <div class="card" id="card"></div>
+        </div>
+
+        <script src="/assets/vendor/leaflet.min.js"></script>
+        <script src="/assets/vendor/supercluster.min.js"></script>
+        <script src="/assets/photos.js"></script>
+    </body>
+</html>
