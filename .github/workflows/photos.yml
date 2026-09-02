@@ -28,5 +28,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add portfolio/photos/photos.json portfolio/photos/photos.csv portfolio/photos/_thumbs
+          git add portfolio/photos/photos.json portfolio/photos/photos.csv portfolio/photos/thumbs
           git diff --cached --quiet || (git commit -m "Rebuild photos data and thumbnails" && git push)

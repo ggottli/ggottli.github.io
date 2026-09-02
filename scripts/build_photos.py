@@ -25,7 +25,7 @@ register_heif_opener()
 
 ROOT = Path(__file__).resolve().parent.parent
 PHOTOS_DIR = ROOT / "portfolio" / "photos"
-THUMBS_DIR = PHOTOS_DIR / "_thumbs"
+THUMBS_DIR = PHOTOS_DIR / "thumbs"
 JSON_PATH = PHOTOS_DIR / "photos.json"
 CSV_PATH = PHOTOS_DIR / "photos.csv"
 
@@ -114,7 +114,7 @@ def build_outputs(src, rel, img):
     for width in WIDTHS:
         out_rel = thumb_name(rel, width)
         out = THUMBS_DIR / out_rel
-        thumbs[str(width)] = f"_thumbs/{out_rel.as_posix()}"
+        thumbs[str(width)] = f"thumbs/{out_rel.as_posix()}"
         if not is_stale(out, src_mtime):
             continue
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -126,7 +126,7 @@ def build_outputs(src, rel, img):
     if src.suffix.lower() == ".heic":
         out_rel = rel.with_name(f"{rel.stem}.jpg")
         out = THUMBS_DIR / out_rel
-        thumbs["jpg"] = f"_thumbs/{out_rel.as_posix()}"
+        thumbs["jpg"] = f"thumbs/{out_rel.as_posix()}"
         if is_stale(out, src_mtime):
             out.parent.mkdir(parents=True, exist_ok=True)
             full_image().convert("RGB").save(out, "JPEG", quality=85)

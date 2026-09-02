@@ -1,7 +1,7 @@
 # Photo pipeline
 
 `build_photos.py` turns the images in `/portfolio/photos/` into
-`photos.json`, `photos.csv`, and WebP thumbnails in `/portfolio/photos/_thumbs/`.
+`photos.json`, `photos.csv`, and WebP thumbnails in `/portfolio/photos/thumbs/`.
 Originals are never modified.
 
 ## Setup
@@ -21,7 +21,7 @@ Drop images (jpg, jpeg, png, heic) into `/portfolio/photos/`, then:
 
 This reads EXIF for date and GPS, writes thumbnails at 160/800/1600px
 (skipping ones that are already up to date), and rewrites `photos.json`
-and `photos.csv`. HEIC files also get a full-size JPG copy in `_thumbs/`.
+and `photos.csv`. HEIC files also get a full-size JPG copy in `thumbs/`.
 
 A photo with no GPS gets `lat`/`lng` of null. A photo with no EXIF date
 falls back to the file's modified time and is flagged `"date_source": "file"`

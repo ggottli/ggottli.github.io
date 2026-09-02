@@ -1,12 +1,12 @@
 {
- "generated": "2026-09-02T05:06:35+00:00",
+ "generated": "2026-09-02T05:33:20+00:00",
  "photos": [
   {
    "file": "sample-purdue.jpg",
    "thumbs": {
-    "160": "_thumbs/sample-purdue-160.webp",
-    "800": "_thumbs/sample-purdue-800.webp",
-    "1600": "_thumbs/sample-purdue-1600.webp"
+    "160": "thumbs/sample-purdue-160.webp",
+    "800": "thumbs/sample-purdue-800.webp",
+    "1600": "thumbs/sample-purdue-1600.webp"
    },
    "date": "2023-04-14T12:00:00",
    "date_source": "exif",
@@ -23,9 +23,9 @@
   {
    "file": "sample-lake.jpg",
    "thumbs": {
-    "160": "_thumbs/sample-lake-160.webp",
-    "800": "_thumbs/sample-lake-800.webp",
-    "1600": "_thumbs/sample-lake-1600.webp"
+    "160": "thumbs/sample-lake-160.webp",
+    "800": "thumbs/sample-lake-800.webp",
+    "1600": "thumbs/sample-lake-1600.webp"
    },
    "date": "2024-07-19T18:42:03",
    "date_source": "exif",
@@ -45,10 +45,10 @@
   {
    "file": "sample-boat.heic",
    "thumbs": {
-    "160": "_thumbs/sample-boat-160.webp",
-    "800": "_thumbs/sample-boat-800.webp",
-    "1600": "_thumbs/sample-boat-1600.webp",
-    "jpg": "_thumbs/sample-boat.jpg"
+    "160": "thumbs/sample-boat-160.webp",
+    "800": "thumbs/sample-boat-800.webp",
+    "1600": "thumbs/sample-boat-1600.webp",
+    "jpg": "thumbs/sample-boat.jpg"
    },
    "date": "2025-07-05T15:30:00",
    "date_source": "exif",

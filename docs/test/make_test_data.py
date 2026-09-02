@@ -47,7 +47,7 @@ for i in range(3000):
     stem = random.choice(THUMBS)
     photos.append({
         "file": f"synthetic-{i:04d}.jpg",
-        "thumbs": {w: f"_thumbs/{stem}-{w}.webp" for w in ("160", "800", "1600")},
+        "thumbs": {w: f"thumbs/{stem}-{w}.webp" for w in ("160", "800", "1600")},
         "date": date,
         "date_source": "exif",
         "lat": lat,
