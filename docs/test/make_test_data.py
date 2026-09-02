@@ -45,6 +45,8 @@ for i in range(3000):
         lat = round(clat + random.gauss(0, spread), 6)
         lng = round(clng + random.gauss(0, spread), 6)
     stem = random.choice(THUMBS)
+    width, height = random.choice([(2400, 1600), (1600, 2400), (3024, 4032),
+                                   (4032, 3024), (2000, 2000), (1280, 960)])
     photos.append({
         "file": f"synthetic-{i:04d}.jpg",
         "thumbs": {w: f"thumbs/{stem}-{w}.webp" for w in ("160", "800", "1600")},
@@ -52,8 +54,8 @@ for i in range(3000):
         "date_source": "exif",
         "lat": lat,
         "lng": lng,
-        "width": 2400,
-        "height": 1600,
+        "width": width,
+        "height": height,
         "title": f"Synthetic photo {i}" if random.random() < 0.5 else "",
         "caption": "",
         "who": random.sample(WHO, random.choice([0, 1, 1, 1, 2])),

@@ -88,6 +88,7 @@
             return p;
         });
         photos.sort(function (a, b) { return a.time - b.time; });
+        photos.forEach(function (p, i) { p.i = i; });
 
         if (photos.length) {
             YMIN = photos[0].year;
@@ -111,6 +112,7 @@
         buildAxis();
         initMap();
         initSlider();
+        initGallery();
         update();
         route();
     }).catch(function (err) {
@@ -282,6 +284,7 @@
                 " in <b>" + states.size + "</b> state" + (states.size === 1 ? "" : "s"));
         }
         $("facts").innerHTML = bits.join(" · ");
+        $("views-facts").innerHTML = bits.join(" · ");
     }
 
     function drawCollections(current) {
@@ -304,7 +307,7 @@
 
     // ---- Map -------------------------------------------------------------
     function initMap() {
-        map = L.map("map", { zoomControl: true });
+        map = L.map("map", { zoomControl: true }).setView([39.8, -86.1], 4);
         // Greyscale comes from a CSS filter on .leaflet-tile.
         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "&copy; OpenStreetMap contributors",
@@ -428,6 +431,8 @@
         if (p.place) rows.push(["Place", p.place]);
         if (p.who.length) rows.push(["Who", p.who.join(", ")]);
         if (p.collection) rows.push(["Collection", p.collection]);
+        var inTimeline = !$("timeline-view").hidden;
+        var yearLabel = inTimeline ? "Go to " + p.year : "Show only " + p.year;
         var big = p.thumbs["800"] || p.thumbs["160"];
         var full = p.thumbs["1600"] || big;
         card.innerHTML =
@@ -442,7 +447,7 @@
             }).join("") + "</dl>" +
             '<div class="acts">' +
             (p.collection ? '<button type="button" id="lb-coll">Open the ' + p.collection + " collection</button>" : "") +
-            '<button type="button" id="lb-year">Show only ' + p.year + "</button>" +
+            '<button type="button" id="lb-year">' + yearLabel + "</button>" +
             "</div></div>" +
             '<button type="button" class="x" id="lb-x" aria-label="Close">&times;</button>';
         lastFocus = document.activeElement;
@@ -450,9 +455,13 @@
         $("lb-x").focus();
         $("lb-x").addEventListener("click", closePhoto);
         $("lb-year").addEventListener("click", function () {
-            yearLo = yearHi = p.year;
             closePhoto();
-            update();
+            if (inTimeline) {
+                scrollToYear(p.year);
+            } else {
+                yearLo = yearHi = p.year;
+                update();
+            }
         });
         var collBtn = $("lb-coll");
         if (collBtn) {
@@ -475,20 +484,168 @@
         if (e.key === "Escape" && $("lb").classList.contains("open")) closePhoto();
     });
 
-    // ---- Collection view (hash route) ------------------------------------
+    // ---- Timeline gallery (default view) -----------------------------------
+    var galleryRows = 0;
+
+    function galleryRowCount() {
+        var h = $("tlg").clientHeight || 400;
+        return Math.max(2, Math.min(4, Math.floor(h / 235)));
+    }
+
+    function renderGallery() {
+        var canvas = $("tlg");
+        var rows = galleryRowCount();
+        galleryRows = rows;
+        if (!photos.length) {
+            canvas.innerHTML = '<p class="tlg-empty">No photos yet.</p>';
+            return;
+        }
+        var byYear = {};
+        photos.forEach(function (p) {
+            (byYear[p.year] = byYear[p.year] || []).push(p);
+        });
+        var years = Object.keys(byYear).sort();
+        canvas.innerHTML = years.map(function (y) {
+            var lanes = [], widths = [];
+            for (var i = 0; i < rows; i++) { lanes.push([]); widths.push(0); }
+            byYear[y].forEach(function (p) {
+                var ar = p.width && p.height ? p.width / p.height : 4 / 3;
+                var k = widths.indexOf(Math.min.apply(null, widths));
+                lanes[k].push(p);
+                widths[k] += ar;
+            });
+            return '<section class="tlg-year" id="year-' + y + '"><h3>' + y + "</h3>" +
+                lanes.map(function (lane) {
+                    return '<div class="tlg-row">' + lane.map(function (p) {
+                        var ar = p.width && p.height ? p.width / p.height : 4 / 3;
+                        var alt = (p.title || "Photo from " + p.year).replace(/"/g, "&quot;");
+                        return '<button type="button" data-i="' + p.i +
+                            '" style="aspect-ratio:' + ar.toFixed(4) +
+                            '" aria-label="' + alt + '"><img loading="lazy" decoding="async" src="' +
+                            src(p.thumbs["800"] || p.thumbs["160"]) + '" alt="' + alt + '"></button>';
+                    }).join("") + "</div>";
+                }).join("") + "</section>";
+        }).join("");
+        canvas.querySelectorAll("button").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                openPhoto(photos[+btn.dataset.i]);
+            });
+        });
+        $("tlg-years").innerHTML = years.map(function (y) {
+            return '<button type="button" data-y="' + y + '">' + y + "</button>";
+        }).join("");
+        $("tlg-years").querySelectorAll("button").forEach(function (btn) {
+            btn.addEventListener("click", function () { scrollToYear(btn.dataset.y); });
+        });
+    }
+
+    function scrollToYear(y) {
+        var el = $("year-" + y);
+        if (!el) return;
+        $("tlg").scrollTo({
+            left: el.offsetLeft - 20,
+            behavior: REDUCED ? "auto" : "smooth",
+        });
+    }
+
+    function initGallery() {
+        var canvas = $("tlg");
+        canvas.addEventListener("wheel", function (e) {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                canvas.scrollLeft += e.deltaY;
+                e.preventDefault();
+            }
+        }, { passive: false });
+        canvas.addEventListener("keydown", function (e) {
+            var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+            if (!d) return;
+            e.preventDefault();
+            canvas.scrollLeft += d * 320;
+        });
+        var timer = null;
+        addEventListener("resize", function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                if (!$("timeline-view").hidden && galleryRowCount() !== galleryRows) {
+                    renderGallery();
+                }
+            }, 150);
+        });
+    }
+
+    // ---- Collections index --------------------------------------------------
+    function renderCollectionsIndex() {
+        var byColl = {};
+        photos.forEach(function (p) {
+            if (!p.collection) return;
+            (byColl[p.collection] = byColl[p.collection] || []).push(p);
+        });
+        var names = Object.keys(byColl).sort(function (a, b) {
+            return byColl[a][0].time - byColl[b][0].time;
+        });
+        var view = $("collections-view");
+        var html = "<h1>Collections</h1>";
+        if (!names.length) {
+            html += "<p>No collections yet. A photo joins one when its " +
+                "<code>collection</code> field is filled in.</p>";
+        }
+        html += '<div class="coll-index">' + names.map(function (name) {
+            var list = byColl[name];
+            var slug = slugify(name);
+            var intro = (collectionsMeta[slug] || {}).intro;
+            return '<a href="#collection/' + slug + '">' +
+                thumbImg(list[0], "160") +
+                '<span><span class="t">' + name + "</span><small>" +
+                list.length + " photo" + (list.length === 1 ? "" : "s") + " · " +
+                yearsLabel(list) + "</small>" +
+                (intro ? "<small>" + intro + "</small>" : "") +
+                "</span></a>";
+        }).join("") + "</div>";
+        view.innerHTML = html;
+    }
+
+    // ---- Views + hash routing ----------------------------------------------
+    var VIEWS = ["timeline", "map", "collections", "collection"];
+    var mapShown = false;
+
+    function showView(name) {
+        VIEWS.forEach(function (v) {
+            var el = $(v + "-view");
+            if (el) el.hidden = v !== name;
+        });
+        var current = name === "collection" ? "collections" : name;
+        ["timeline", "map", "collections"].forEach(function (v) {
+            var link = $("v-" + v);
+            if (v === current) link.setAttribute("aria-current", "true");
+            else link.removeAttribute("aria-current");
+        });
+    }
+
     function route() {
         var m = location.hash.match(/^#collection\/(.+)$/);
-        if (m) showCollection(decodeURIComponent(m[1]));
-        else showMapView();
+        if (m) {
+            showView("collection");
+            showCollection(decodeURIComponent(m[1]));
+        } else if (location.hash === "#map") {
+            showView("map");
+            document.title = "Photos | Greg Gottlieb";
+            if (mapReady) {
+                map.invalidateSize();
+                if (!mapShown) { fitToPhotos(photos); mapShown = true; }
+                drawMap();
+            }
+        } else if (location.hash === "#collections") {
+            showView("collections");
+            renderCollectionsIndex();
+            document.title = "Collections | Greg Gottlieb";
+            scrollTo(0, 0);
+        } else {
+            showView("timeline");
+            document.title = "Photos | Greg Gottlieb";
+            if (!$("tlg").childElementCount) renderGallery();
+        }
     }
     addEventListener("hashchange", route);
-
-    function showMapView() {
-        $("map-view").hidden = false;
-        $("collection-view").hidden = true;
-        document.title = "Photos | Greg Gottlieb";
-        if (mapReady) map.invalidateSize();
-    }
 
     function showCollection(slug) {
         var list = photos.filter(function (p) {
@@ -512,8 +669,6 @@
                 "<figcaption>" + cap.join(" ") + "</figcaption></figure>";
         }).join("");
         view.innerHTML = html;
-        $("map-view").hidden = true;
-        view.hidden = false;
         document.title = title + " | Greg Gottlieb";
         scrollTo(0, 0);
     }
@@ -526,7 +681,6 @@
         count: function () { return visible().length; },
     };
 
-    var fitted = false;
     function update() {
         var pts = visible();
         drawTimeline();
@@ -535,7 +689,6 @@
         drawCollections(pts);
         drawStrip();
         rebuildIndex();
-        if (!fitted && mapReady) { fitToPhotos(photos); fitted = true; }
         drawMap();
     }
 })();

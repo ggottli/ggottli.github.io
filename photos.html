@@ -21,7 +21,26 @@
             </nav>
         </header>
         <main>
-            <div id="map-view">
+            <nav class="views" aria-label="Photo views">
+                <div class="views-links">
+                    <a href="#" id="v-timeline">Timeline</a>
+                    <a href="#map" id="v-map">Map &amp; filters</a>
+                    <a href="#collections" id="v-collections">Collections</a>
+                </div>
+                <span class="views-facts" id="views-facts"></span>
+            </nav>
+
+            <div id="timeline-view" hidden>
+                <div
+                    class="tlg"
+                    id="tlg"
+                    tabindex="0"
+                    aria-label="Photo timeline. Scrolls horizontally; use arrow keys."
+                ></div>
+                <nav class="tlg-years" id="tlg-years" aria-label="Jump to a year"></nav>
+            </div>
+
+            <div id="map-view" hidden>
                 <div class="layout">
                     <aside class="side">
                         <div>
@@ -78,6 +97,7 @@
                 </div>
             </div>
 
+            <section class="collection" id="collections-view" hidden></section>
             <section class="collection" id="collection-view" hidden></section>
         </main>
         <footer>

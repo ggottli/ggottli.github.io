@@ -42,6 +42,188 @@ button {
     outline-offset: 2px;
 }
 
+/* ===== View switcher ===== */
+
+.views {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1em;
+    padding: 0.6em 1.25em;
+    border-bottom: 1px solid #ddd;
+}
+
+.views-links {
+    display: flex;
+    gap: 1.4em;
+}
+
+.views a {
+    text-decoration: none;
+    font-size: 0.9em;
+    color: #555;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .views-facts {
+        display: none;
+    }
+
+    .views-links {
+        gap: 1em;
+    }
+}
+
+.views a:hover {
+    text-decoration: underline;
+    text-decoration-color: #f0563f;
+}
+
+.views a[aria-current="true"] {
+    color: #222;
+    font-weight: bold;
+    border-bottom: 2px solid #f0563f;
+    padding-bottom: 1px;
+}
+
+.views-facts {
+    font-size: 0.78em;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== Timeline canvas ===== */
+
+.tlg {
+    display: flex;
+    align-items: stretch;
+    gap: 2.2em;
+    height: calc(100vh - 210px);
+    height: calc(100dvh - 210px);
+    min-height: 380px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 1em 1.25em;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.tlg-year {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+}
+
+.tlg-year h3 {
+    font-size: 0.78em;
+    font-weight: normal;
+    color: #888;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.2em;
+    font-variant-numeric: tabular-nums;
+}
+
+.tlg-row {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 4px;
+}
+
+.tlg-row button {
+    flex: none;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: #eee;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.tlg-row img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tlg-empty {
+    align-self: center;
+    color: #555;
+    font-size: 0.9em;
+    margin: 0 auto;
+}
+
+.tlg-years {
+    display: flex;
+    gap: 0.4em;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 0.55em 1.25em 0.7em;
+    border-top: 1px solid #ddd;
+}
+
+.tlg-years button {
+    flex: none;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    padding: 0.15em 0.6em;
+    font-size: 0.78em;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+}
+
+.tlg-years button:hover {
+    border-color: #f0563f;
+}
+
+/* ===== Collections index ===== */
+
+.coll-index a {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    padding: 0.8em 0;
+    border-bottom: 1px solid #eee;
+    text-decoration: none;
+}
+
+.coll-index a:last-child {
+    border-bottom: 0;
+}
+
+.coll-index img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #eee;
+    flex: none;
+}
+
+.coll-index .t {
+    font-weight: bold;
+}
+
+.coll-index a:hover .t {
+    text-decoration: underline;
+    text-decoration-color: #f0563f;
+}
+
+.coll-index small {
+    display: block;
+    color: #888;
+    font-size: 0.8em;
+    font-variant-numeric: tabular-nums;
+}
+
 /* ===== Map view layout ===== */
 
 .layout {
