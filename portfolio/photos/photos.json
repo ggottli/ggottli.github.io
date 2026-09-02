@@ -1,0 +1,66 @@
+{
+ "generated": "2026-09-02T04:35:17+00:00",
+ "photos": [
+  {
+   "file": "sample-purdue.jpg",
+   "thumbs": {
+    "160": "_thumbs/sample-purdue-160.webp",
+    "800": "_thumbs/sample-purdue-800.webp",
+    "1600": "_thumbs/sample-purdue-1600.webp"
+   },
+   "date": "2023-04-14T12:00:00",
+   "date_source": "exif",
+   "lat": null,
+   "lng": null,
+   "width": 2400,
+   "height": 1600,
+   "title": "",
+   "caption": "",
+   "who": [],
+   "collection": "",
+   "place": ""
+  },
+  {
+   "file": "sample-lake.jpg",
+   "thumbs": {
+    "160": "_thumbs/sample-lake-160.webp",
+    "800": "_thumbs/sample-lake-800.webp",
+    "1600": "_thumbs/sample-lake-1600.webp"
+   },
+   "date": "2024-07-19T18:42:03",
+   "date_source": "exif",
+   "lat": 41.3751,
+   "lng": -85.6803,
+   "width": 2400,
+   "height": 1600,
+   "title": "Sunset from the boat",
+   "caption": "Test caption.",
+   "who": [
+    "family",
+    "Dad"
+   ],
+   "collection": "Lake summers",
+   "place": "Northern Indiana"
+  },
+  {
+   "file": "sample-boat.heic",
+   "thumbs": {
+    "160": "_thumbs/sample-boat-160.webp",
+    "800": "_thumbs/sample-boat-800.webp",
+    "1600": "_thumbs/sample-boat-1600.webp",
+    "jpg": "_thumbs/sample-boat.jpg"
+   },
+   "date": "2025-07-05T15:30:00",
+   "date_source": "exif",
+   "lat": 41.376,
+   "lng": -85.679,
+   "width": 2400,
+   "height": 1600,
+   "title": "",
+   "caption": "",
+   "who": [],
+   "collection": "",
+   "place": ""
+  }
+ ]
+}

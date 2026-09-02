@@ -9,3 +9,5 @@ permalink: /writing/:year/:title.html
 exclude:
   - new-post.sh
   - README.md
+  - scripts/
+  - docs/

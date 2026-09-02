@@ -1,0 +1,4 @@
+file,date,date_source,lat,lng,title,caption,who,collection,place
+sample-purdue.jpg,2023-04-14T12:00:00,exif,,,,,,,
+sample-lake.jpg,2024-07-19T18:42:03,exif,41.3751,-85.6803,Sunset from the boat,Test caption.,"family, Dad",Lake summers,Northern Indiana
+sample-boat.heic,2025-07-05T15:30:00,exif,41.376,-85.679,,,,,

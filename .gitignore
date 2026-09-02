@@ -7,3 +7,6 @@ HOW-TO-POST.md
 # Local Jekyll build output (if you ever build locally)
 _site/
 .jekyll-cache/
+
+# Python venv for scripts/
+.venv/
