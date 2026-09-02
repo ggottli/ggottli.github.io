@@ -41,6 +41,10 @@ header .site-title {
     font-weight: bold;
 }
 
+header nav a + a {
+    margin-left: 1em;
+}
+
 /* Writing index */
 .writing-photo {
     display: block;
