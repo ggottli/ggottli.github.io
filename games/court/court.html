@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Court: a poker deckbuilder for the gaps between tasks.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' rx='2' fill='%236e6e69'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fbfbf9;
+  --fg: #1e1e1c;
+  --muted: #6e6e69;
+  --line: #dcdcd6;
+  --line-strong: #b9b9b2;
+  --card: #ffffff;
+  --sel: #2c5a9c;
+  --sel-bg: #edf2fa;
+  --red: #a63d3d;
+  --good: #2f7a52;
+  --bar-bg: #e6e6e1;
+  --bar: #1e1e1c;
+  --bar-low: #a63d3d;
+  --dur: 180ms;
+  --dur-long: 420ms;
+  --mono: 'IBM Plex Mono', 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16171a; --fg: #e7e7e2; --muted: #8d8d87; --line: #2c2d31; --line-strong: #45464c;
+    --card: #1e1f23; --sel: #7fa7de; --sel-bg: #1c2432; --red: #d97b7b; --good: #6cbf8c;
+    --bar-bg: #2c2d31; --bar: #e7e7e2; --bar-low: #d97b7b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16171a; --fg: #e7e7e2; --muted: #8d8d87; --line: #2c2d31; --line-strong: #45464c;
+  --card: #1e1f23; --sel: #7fa7de; --sel-bg: #1c2432; --red: #d97b7b; --good: #6cbf8c;
+  --bar-bg: #2c2d31; --bar: #e7e7e2; --bar-low: #d97b7b;
+}
+html.quiet, html.quiet * { transition-duration: 0s !important; animation-duration: 0s !important; animation-delay: 0s !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-delay: 0s !important; } }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+kbd { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-left: 6px; vertical-align: 1px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.warn { color: var(--red); }
+.good { color: var(--good); }
+h1, h2, h3 { font-weight: 600; margin: 0; line-height: 1.25; }
+h1 { font-size: 24px; }
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+p { margin: 0; }
+
+.wrap { max-width: 660px; margin: 0 auto; padding: 18px 20px 48px; }
+header.bar {
+  display: flex; align-items: baseline; gap: 16px;
+  padding-bottom: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+header .brand { font-weight: 600; font-size: 14px; }
+header .stat { color: var(--muted); }
+header .vit { margin-left: auto; color: var(--muted); font-size: 13px; }
+header .vit b { color: var(--fg); font-weight: 600; transition: color var(--dur); }
+header .vit b.low { color: var(--red); }
+header .vit b.hit { color: var(--red); }
+header .vit b.up { color: var(--good); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; font-size: 13px; }
+.linkbtn:hover { color: var(--fg); }
+
+.notice { font-family: var(--mono); font-size: 13px; color: var(--good); margin-bottom: 16px; }
+
+/* royals */
+.royals { margin-bottom: 26px; }
+.royal { padding: 0 0 14px; }
+.royal + .royal { border-top: 1px solid var(--line); padding-top: 14px; }
+.royals.boss .royal { cursor: pointer; padding-left: 12px; border-left: 2px solid transparent; }
+.royals.boss .royal.target { border-left-color: var(--fg); }
+.royals.boss .royal.dead { cursor: default; }
+.royal.dead { opacity: .45; }
+.royal .rhead { display: flex; align-items: baseline; gap: 12px; }
+.royal .atk { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.royal .trait { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.hprow { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.hpbar { flex: 1; height: 4px; background: var(--bar-bg); border-radius: 2px; overflow: hidden; }
+.hpbar i { display: block; height: 100%; background: var(--bar); border-radius: 2px; transition: width var(--dur-long) cubic-bezier(.2,.7,.2,1); }
+.hpnum { font-size: 13px; color: var(--muted); min-width: 92px; text-align: right; }
+.hpnum.hit { color: var(--fg); }
+.royal .tgt { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
+.royal .status { font-family: var(--mono); font-size: 13px; margin-top: 8px; min-height: 0; }
+.royal .status div { animation: rise var(--dur) both; }
+
+/* hand */
+.hand { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; padding-top: 8px; min-height: 84px; }
+.card {
+  position: relative; width: 48px; height: 68px; padding: 6px 7px;
+  display: inline-flex; flex-direction: column; justify-content: space-between; align-items: flex-start;
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 5px;
+  font-family: var(--mono); font-size: 16px; line-height: 1; cursor: pointer; user-select: none;
+  transition: transform var(--dur) cubic-bezier(.2,.7,.2,1), border-color var(--dur), box-shadow var(--dur), opacity var(--dur);
+}
+.card:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
+.card .r { font-weight: 600; }
+.card .s { align-self: flex-end; }
+.card.red { color: var(--red); }
+.card.sel { transform: translateY(-8px); border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel); background: var(--sel-bg); }
+.card.out { opacity: 0; transform: translateY(-16px); }
+.card.dim { opacity: .35; }
+.card .e {
+  position: absolute; left: 0; right: 0; bottom: -17px; text-align: center;
+  font-size: 10px; color: var(--muted); letter-spacing: 0;
+}
+.card .k { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--muted); }
+html.nohints .card .k, .card.static .k { display: none; }
+@media (hover: none) { .card .k { display: none; } }
+.card.static { cursor: default; }
+.hand .card { margin-top: 10px; }
+.hand.has-enh { margin-bottom: 26px; }
+@keyframes deal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.card.deal { animation: deal var(--dur) cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--i) * 40ms); }
+
+/* cascade / preview */
+.cascade { font-family: var(--mono); font-size: 14px; min-height: 52px; margin-bottom: 14px; line-height: 1.7; }
+.cascade .tok { display: inline-block; margin-right: 10px; }
+.cascade .tok.name { font-weight: 600; }
+.cascade .tok.note { color: var(--muted); }
+.cascade .tok.total { font-weight: 600; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 3px; }
+.cascade .side { color: var(--muted); }
+.cascade .fin { display: block; font-size: 13px; }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.cascade .tok.pop, .cascade .line.pop { animation: rise var(--dur) cubic-bezier(.2,.7,.2,1) both; }
+.cascade .line { display: block; }
+
+/* actions */
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 22px; }
+.actions.col { flex-direction: column; align-items: stretch; max-width: 300px; }
+.btn {
+  background: var(--bg); border: 1px solid var(--line-strong); border-radius: 4px;
+  padding: 7px 12px; font-family: var(--mono); font-size: 13px; cursor: pointer;
+  transition: background var(--dur), border-color var(--dur), opacity var(--dur);
+}
+.btn:hover:not(:disabled) { border-color: var(--fg); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.primary kbd { color: var(--bg); border-color: transparent; opacity: .7; }
+.btn.wide { width: 100%; text-align: left; white-space: normal; line-height: 1.4; padding: 10px 12px; font-family: var(--sans); font-size: 14px; }
+.btn.wide b { font-weight: 600; margin-right: 6px; }
+.btn .cnt { color: var(--muted); }
+.actions .turn { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+
+/* edicts */
+.edicts { font-size: 13px; margin-bottom: 20px; line-height: 1.9; }
+.edicts .chip { display: inline-block; font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; margin-left: 6px; cursor: help; }
+.edict-list { margin: 6px 0 0; padding: 0 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.edict-list li { margin: 2px 0; }
+.edict-list b { color: var(--fg); font-weight: 600; }
+
+/* log */
+.log { font-family: var(--mono); font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; max-height: 190px; overflow-y: auto; line-height: 1.6; }
+.log .lt { display: inline-block; min-width: 52px; color: var(--line-strong); }
+.log div:last-child { color: var(--fg); }
+
+/* choose / reward / pick / end / title */
+.choose h2, .reward h2, .pick h2, .end h2, .title h1 { margin-bottom: 6px; }
+.choose .lede, .reward .lede, .pick .lede, .title .lede { color: var(--muted); margin-bottom: 20px; }
+.rrow, .opt { display: flex; gap: 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+.rrow:last-of-type, .opt:last-of-type { border-bottom: 1px solid var(--line); }
+.rrow .rmain, .opt > div { flex: 1; }
+.rrow .trait, .opt p { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.rrow .nums { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 6px; }
+.opt .kind { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.opt .card { margin-top: 8px; }
+.rrow .btn, .opt .btn { white-space: nowrap; }
+.deckgrid { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 4px; margin-bottom: 30px; }
+.deckgrid .card { margin-top: 6px; margin-bottom: 14px; }
+.optlist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.stats { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; font-size: 14px; margin: 18px 0 24px; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; }
+.title .actions { margin: 22px 0 18px; }
+.title .asc { font-size: 13px; color: var(--muted); margin-bottom: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+select { font: inherit; font-family: var(--mono); font-size: 13px; background: var(--bg); color: var(--fg); border: 1px solid var(--line-strong); border-radius: 4px; padding: 4px 8px; }
+.rules { color: var(--muted); font-size: 14px; margin-top: 12px; padding-left: 18px; line-height: 1.55; }
+.rules li { margin: 4px 0; }
+.rules b { color: var(--fg); font-weight: 600; }
+.end .sub { color: var(--muted); margin-bottom: 4px; }
+.unlock { color: var(--good); font-size: 14px; margin-bottom: 14px; }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10; overflow-y: auto; }
+.overlay[hidden] { display: none; }
+.overlay .inner { max-width: 660px; margin: 0 auto; padding: 18px 20px 48px; }
+.overlay .top { display: flex; align-items: baseline; gap: 16px; padding-bottom: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.overlay .top .brand { font-weight: 600; font-size: 14px; }
+.overlay .top .linkbtn { margin-left: auto; }
+#notesText { width: 100%; min-height: 60vh; border: 0; background: transparent; color: var(--fg); font: inherit; font-size: 15px; line-height: 1.6; resize: vertical; outline: none; padding: 0; }
+.panel h3 { margin: 22px 0 8px; font-size: 14px; }
+.panel h3:first-child { margin-top: 0; }
+.panel label { display: flex; gap: 10px; align-items: center; font-size: 14px; margin: 8px 0; }
+.panel textarea { width: 100%; min-height: 72px; font-family: var(--mono); font-size: 12px; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 8px; }
+.panel .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.panel .shortcuts { font-size: 14px; color: var(--muted); }
+.panel .shortcuts div { margin: 4px 0; }
+.panel .shortcuts kbd { margin: 0 6px 0 0; }
+.panel .msg { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+@media (max-width: 480px) {
+  .wrap, .overlay .inner { padding: 14px 14px 40px; }
+  header.bar { flex-wrap: wrap; gap: 8px 14px; }
+  header .vit { margin-left: 0; width: 100%; order: 3; }
+  .rrow, .opt { flex-direction: column; align-items: flex-start; }
+  .actions .turn { margin-left: 0; width: 100%; }
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar" id="hdr"></header>
+  <main id="app"></main>
+</div>
+
+<div id="menu" class="overlay" hidden>
+  <div class="inner">
+    <div class="top"><span class="brand">Notes</span><button class="linkbtn" data-action="close-menu">Back</button></div>
+    <div class="panel">
+      <h3>Display</h3>
+      <label><input type="checkbox" id="optQuiet"> Quiet motion: no animations</label>
+      <label><input type="checkbox" id="optHints"> Show key hints above cards</label>
+      <label>Theme <select id="optTheme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <h3>Save</h3>
+      <p class="muted" style="font-size:14px">Progress saves in this browser on its own. Copy this text to carry a run to another device.</p>
+      <textarea id="exportBox" readonly></textarea>
+      <div class="row"><button class="btn" data-action="copy-export">Copy save</button></div>
+      <textarea id="importBox" placeholder="Paste a save here"></textarea>
+      <div class="row"><button class="btn" data-action="import">Load save</button></div>
+      <p class="msg" id="menuMsg"></p>
+      <h3>Run</h3>
+      <div class="row"><button class="btn" id="abandonBtn" data-action="abandon">Abandon run</button><button class="btn" data-action="title">Title screen</button><button class="btn" data-action="reset">Erase all data</button></div>
+      <h3>Keys</h3>
+      <div class="shortcuts">
+        <div><kbd>1</kbd>to<kbd>0</kbd>select cards</div>
+        <div><kbd>Enter</kbd>play the selected cards</div>
+        <div><kbd>D</kbd>discard the selected cards</div>
+        <div><kbd>B</kbd>select the strongest hand</div>
+        <div><kbd>S</kbd>sort by rank or suit</div>
+        <div><kbd>Esc</kbd>switch to the notes page and back</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="notes" class="overlay" hidden>
+  <div class="inner">
+    <div class="top"><span class="brand">Notes</span><button class="linkbtn" data-action="notes">Back</button></div>
+    <textarea id="notesText" placeholder="Anything you type here stays on this device."></textarea>
+  </div>
+</div>
+
+<script>
+// Court — engine. Pure game logic, no DOM. Exposed as global `Court`.
+var Court = (function () {
+  'use strict';
+
+  // ---------- constants ----------
+  const SUITS = ['S', 'H', 'D', 'C'];
+  const SUIT_CHAR = { S: '\u2660', H: '\u2665', D: '\u2666', C: '\u2663' };
+  const SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
+  const RED = { H: true, D: true };
+  const ACE = 11;
+  const WILD_RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  const HANDS = [
+    { key: 'high', name: 'High Card', base: 0, mult: 1 },
+    { key: 'pair', name: 'Pair', base: 5, mult: 1 },
+    { key: 'twopair', name: 'Two Pair', base: 10, mult: 1 },
+    { key: 'trips', name: 'Three of a Kind', base: 15, mult: 2 },
+    { key: 'straight', name: 'Straight', base: 20, mult: 2 },
+    { key: 'flush', name: 'Flush', base: 20, mult: 2 },
+    { key: 'full', name: 'Full House', base: 25, mult: 3 },
+    { key: 'quads', name: 'Four of a Kind', base: 40, mult: 4 },
+    { key: 'sflush', name: 'Straight Flush', base: 60, mult: 6 },
+    { key: 'five', name: 'Five of a Kind', base: 80, mult: 8 },
+  ];
+  const HAND_BY_KEY = {}, HAND_RANK = {};
+  HANDS.forEach((h, i) => { HAND_BY_KEY[h.key] = h; HAND_RANK[h.key] = i; });
+
+  const EDICTS = {
+    steady:        { name: 'Steady Hand',   text: 'One extra discard each turn.' },
+    twin:          { name: 'Twin Crowns',   text: 'Pairs count as Three of a Kind.' },
+    tempered:      { name: 'Tempered Steel',text: 'Shield gained from a hand is also dealt as damage.' },
+    second_wind:   { name: 'Second Wind',   text: 'Heal 1 for every card you discard.' },
+    ace_favor:     { name: "Ace's Favor",   text: 'Aces score 20 instead of 11.' },
+    wild_aces:     { name: 'Wild Court',    text: 'Aces count as any rank.' },
+    long_table:    { name: 'Long Table',    text: 'Your hand holds one more card.' },
+    spare_change:  { name: 'Spare Change',  text: 'Every hand gets +10 base.' },
+    sharpshooter:  { name: 'Sharpshooter',  text: 'Hands that score 1 or 2 cards deal double.' },
+    grand_design:  { name: 'Grand Design',  text: 'Playing all 5 cards gives +1 mult.' },
+    ironclad:      { name: 'Ironclad',      text: 'Unused shield carries over to the next turn.' },
+    knight:        { name: "Knight's Oath", text: 'The first hand of every fight deals double.' },
+    royal_tax:     { name: 'Royal Tax',     text: 'Whenever a royal would heal, it takes that much damage instead.' },
+    suited:        { name: 'Suited Court',  text: 'Flushes get +2 mult.' },
+    straight_road: { name: 'Straight Road', text: 'Four cards in a row count as a Straight.' },
+    bloodletting:  { name: 'Bloodletting',  text: 'Hands with no hearts get +15 base.' },
+    momentum:      { name: 'Momentum',      text: 'Repeating the same hand type in a row gives +1 mult per repeat, up to +3.' },
+    coup:          { name: 'Coup de Grâce', text: "Hands containing the royal's suit get +1 mult." },
+    veteran:       { name: 'Veteran',       text: '+15 max health. Heal 15 now.' },
+    windfall:      { name: 'Windfall',      text: 'Draw 2 extra cards on the first turn of each fight.' },
+  };
+
+  const ENH = {
+    sharp:    { name: 'Sharp',    short: '+3',   text: '+3 to this card\u2019s rank when it scores.' },
+    heavy:    { name: 'Heavy',    short: '+10',  text: '+10 base when this card scores.' },
+    mirror:   { name: 'Mirrored', short: 'any',  text: 'Counts as any suit.' },
+    gilded:   { name: 'Gilded',   short: '+1\u00d7', text: '+1 mult when this card scores.' },
+    volatile: { name: 'Volatile', short: '\u00d72', text: 'Doubles the hand when it scores, then the card is destroyed.' },
+  };
+
+  const TRAITS = {
+    guarded:  { name: 'Guarded',  text: 'Takes half damage from hands of 2 cards or fewer.' },
+    regent:   { name: 'Regent',   text: 'Heals 6 at the end of each turn.' },
+    cutpurse: { name: 'Cutpurse', text: 'Your hand holds one fewer card.' },
+    brawler:  { name: 'Brawler',  text: 'Attacks twice each turn.' },
+    armored:  { name: 'Armored',  text: 'Ignores hands below Three of a Kind.' },
+    vampiric: { name: 'Vampiric', text: 'Heals half the damage she deals to you.' },
+    greedy:   { name: 'Greedy',   text: 'Takes half damage from hands of 4 cards or more.' },
+    enraged:  { name: 'Enraged',  text: 'Attack grows by 2 every turn.' },
+    sealed:   { name: 'Sealed',   text: 'Only hands containing a spade can hurt him.' },
+    bulwark:  { name: 'Bulwark',  text: 'Absorbs the first 25 damage of every hand.' },
+    miser:    { name: 'Miser',    text: 'You get no discards.' },
+    reaver:   { name: 'Reaver',   text: 'Each attack also destroys a random card in your hand.' },
+  };
+
+  const ROYALS = {
+    JS: { rank: 'J', suit: 'S', trait: 'guarded' },
+    JH: { rank: 'J', suit: 'H', trait: 'regent' },
+    JD: { rank: 'J', suit: 'D', trait: 'cutpurse' },
+    JC: { rank: 'J', suit: 'C', trait: 'brawler' },
+    QS: { rank: 'Q', suit: 'S', trait: 'armored' },
+    QH: { rank: 'Q', suit: 'H', trait: 'vampiric' },
+    QD: { rank: 'Q', suit: 'D', trait: 'greedy' },
+    QC: { rank: 'Q', suit: 'C', trait: 'enraged' },
+    KS: { rank: 'K', suit: 'S', trait: 'sealed' },
+    KH: { rank: 'K', suit: 'H', trait: 'bulwark' },
+    KD: { rank: 'K', suit: 'D', trait: 'miser' },
+    KC: { rank: 'K', suit: 'C', trait: 'reaver' },
+  };
+  const TIER = {
+    J: { name: 'Jack', hp: 300, atk: 4 },
+    Q: { name: 'Queen', hp: 450, atk: 6 },
+    K: { name: 'King', hp: 650, atk: 8 },
+  };
+  const ACTS = [['JS', 'JH', 'JD', 'JC'], ['QS', 'QH', 'QD', 'QC'], ['KS', 'KH', 'KD', 'KC']];
+  const ACT_NAME = ['I', 'II', 'III'];
+
+  const MOODS = {
+    none:     { name: '', text: '' },
+    hardy:    { name: 'Hardy', text: '20% more health', hp: 1.2 },
+    restless: { name: 'Restless', text: '+2 attack', atk: 2 },
+    weary:    { name: 'Weary', text: '\u22121 attack', atk: -1 },
+    frail:    { name: 'Frail', text: '15% less health', hp: 0.85 },
+  };
+
+  const ASCENSION = [
+    'Standard rules.',
+    'Royals have 15% more health.',
+    'Royals have 15% more health and +1 attack.',
+    'Royals have 15% more health and +1 attack. You start with 40 health.',
+  ];
+
+  const CFG = {
+    playerHp: 50,
+    handSize: 8,
+    discards: 2,
+    edictSlots: 5,
+    bossAtk: 0.5,
+    bossHp: 0.75,
+    minDeck: 12,
+    restHeal: 15,
+    downtimeMinutesPerHp: 2,
+    downtimeCap: 10,
+    logCap: 80,
+  };
+
+  // ---------- rng ----------
+  function seedFromString(s) {
+    let h = 1779033703 ^ s.length;
+    for (let i = 0; i < s.length; i++) {
+      h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+  function rnd(state) {
+    let a = (state.rng.s + 0x6D2B79F5) | 0;
+    state.rng.s = a;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function rInt(state, n) { return Math.floor(rnd(state) * n); }
+  function pick(state, arr) { return arr[rInt(state, arr.length)]; }
+  function shuffle(state, arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = rInt(state, i + 1);
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+  function weightedPick(state, entries) {
+    let total = 0;
+    for (const e of entries) total += e.w;
+    let r = rnd(state) * total;
+    for (const e of entries) { r -= e.w; if (r < 0) return e.v; }
+    return entries[entries.length - 1].v;
+  }
+
+  // ---------- helpers ----------
+  function has(state, key) { return state.player.edicts.indexOf(key) >= 0; }
+  function getCard(state, id) {
+    for (const c of state.player.deck) if (c.id === id) return c;
+    return null;
+  }
+  function cardLabel(c) {
+    return (c.rank === ACE ? 'A' : String(c.rank)) + SUIT_CHAR[c.suit];
+  }
+  function royalName(id) {
+    const r = ROYALS[id];
+    return TIER[r.rank].name + ' of ' + SUIT_NAME[r.suit];
+  }
+  function log(state, msg) {
+    const f = state.fight;
+    const t = f && !f.over ? 't' + f.turn : (state.act < 3 ? 'act ' + ACT_NAME[state.act] : 'court');
+    state.log.push({ t: t, m: msg });
+    if (state.log.length > CFG.logCap) state.log.splice(0, state.log.length - CFG.logCap);
+  }
+  function anyAlive(f, trait) {
+    return f.royals.some(r => r.alive && r.trait === trait);
+  }
+  function firstAlive(f) {
+    for (let i = 0; i < f.royals.length; i++) if (f.royals[i].alive) return i;
+    return -1;
+  }
+  function popcount(m) { let c = 0; while (m) { m &= m - 1; c++; } return c; }
+
+  function handSize(state) {
+    const f = state.fight;
+    let n = CFG.handSize;
+    if (has(state, 'long_table')) n++;
+    if (f) {
+      if (anyAlive(f, 'cutpurse')) n--;
+      n += f.drawBonus || 0;
+      if (has(state, 'windfall') && f.turn === 1) n += 2;
+    }
+    return Math.max(3, Math.min(12, n));
+  }
+  function discardsPerTurn(state) {
+    const f = state.fight;
+    if (f && anyAlive(f, 'miser')) return 0;
+    return CFG.discards + (has(state, 'steady') ? 1 : 0);
+  }
+  function royalAtk(state, r) {
+    let a = r.atk;
+    if (r.trait === 'enraged' && state.fight) a += 2 * (state.fight.turn - 1);
+    return Math.max(0, a);
+  }
+
+  // ---------- hand evaluation ----------
+  function scoreVal(state, card) {
+    if (card.rank === ACE) return has(state, 'ace_favor') ? 20 : 11;
+    return card.rank + (card.enh === 'sharp' ? 3 : 0);
+  }
+
+  function classify(state, as, fourStraight) {
+    const n = as.length;
+    const counts = new Map();
+    for (const a of as) counts.set(a.rank, (counts.get(a.rank) || 0) + 1);
+    const ranks = Array.from(counts.keys()).sort((x, y) => x - y);
+    const cnt = Array.from(counts.values()).sort((x, y) => y - x);
+    const flush = n >= 5 && as.every(a => a.suit === as[0].suit);
+    const distinct = ranks.length === n;
+    const straight = distinct && (ranks[n - 1] - ranks[0] === n - 1) && (n >= 5 || (n === 4 && fourStraight));
+    let key;
+    if (n === 5 && cnt[0] === 5) key = 'five';
+    else if (straight && flush) key = 'sflush';
+    else if (cnt[0] === 4) key = 'quads';
+    else if (cnt[0] === 3 && cnt[1] === 2) key = 'full';
+    else if (flush) key = 'flush';
+    else if (straight) key = 'straight';
+    else if (cnt[0] === 3) key = 'trips';
+    else if (cnt[0] === 2 && cnt[1] === 2) key = 'twopair';
+    else if (cnt[0] === 2) key = 'pair';
+    else key = 'high';
+    let scoring;
+    if (key === 'five' || key === 'sflush' || key === 'full' || key === 'flush' || key === 'straight') scoring = as.slice();
+    else if (key === 'high') {
+      let best = as[0];
+      for (const a of as) if (scoreVal(state, a.card) > scoreVal(state, best.card)) best = a;
+      scoring = [best];
+    } else scoring = as.filter(a => counts.get(a.rank) >= 2);
+    return { key: key, scoring: scoring };
+  }
+
+  // Evaluate a set of card objects against an optional target royal.
+  // Wild ranks (aces) and wild suits (mirrored) are assigned to maximise effective damage.
+  function evaluate(state, cards, royal) {
+    const f = state.fight;
+    const E = key => has(state, key);
+    const fourStraight = E('straight_road');
+
+    const wild = E('wild_aces');
+    const rankOpts = cards.map(c => (c.rank === ACE && wild ? WILD_RANKS : [c.rank]));
+    let suitOpts = cards.map(c => (c.enh === 'mirror' ? SUITS : [c.suit]));
+    let combos = 1;
+    for (let i = 0; i < cards.length; i++) combos *= rankOpts[i].length * suitOpts[i].length;
+    if (combos > 40000) {
+      // Too many: pin mirrored cards to the most common fixed suit (or the royal's suit).
+      const tally = {};
+      cards.forEach(c => { if (c.enh !== 'mirror') tally[c.suit] = (tally[c.suit] || 0) + 1; });
+      let top = royal ? royal.suit : 'S', best = -1;
+      for (const s of SUITS) if ((tally[s] || 0) > best) { best = tally[s] || 0; top = s; }
+      suitOpts = cards.map(c => (c.enh === 'mirror' ? [top] : [c.suit]));
+    }
+
+    let best = null;
+    const assigned = [];
+    function score(as) {
+      const cl = classify(state, as, fourStraight);
+      let key = cl.key;
+      if (key === 'pair' && E('twin')) key = 'trips';
+      const H = HAND_BY_KEY[key];
+      let base = H.base, ranks = 0, mult = H.mult, x = 1;
+      let shield = 0, heal = 0, draw = 0;
+      const volatile = [];
+      const suitLv = state.player.suitLevels;
+      for (const a of cl.scoring) {
+        ranks += scoreVal(state, a.card);
+        if (a.card.enh === 'heavy') base += 10;
+        if (a.card.enh === 'gilded') mult += 1;
+        if (a.card.enh === 'volatile') { x *= 2; volatile.push(a.card.id); }
+        const lv = suitLv[a.suit] || 1;
+        if (a.suit === 'S') shield += 1 + lv;
+        else if (a.suit === 'H') heal += 1 + lv;
+        else if (a.suit === 'D') draw += lv;
+        else if (a.suit === 'C') base += 5 * lv;
+      }
+      if (E('spare_change')) base += 10;
+      if (E('bloodletting') && !as.some(a => a.card.suit === 'H')) base += 15;
+      if (E('grand_design') && as.length === 5) mult += 1;
+      if (E('suited') && (key === 'flush' || key === 'sflush')) mult += 2;
+      if (royal && E('coup') && as.some(a => a.suit === royal.suit)) mult += 1;
+      if (E('momentum') && f && f.lastHandKey === key) mult += Math.min(3, f.streak);
+      const extras = [];
+      if (E('sharpshooter') && cl.scoring.length <= 2) { x *= 2; extras.push('Sharpshooter'); }
+      if (E('knight') && f && !f.firstHandDone) { x *= 2; extras.push("Knight's Oath"); }
+      if (volatile.length) extras.push('Volatile');
+      let damage = Math.floor((base + ranks) * mult * x);
+      let temperedBonus = 0;
+      if (E('tempered') && shield > 0) { temperedBonus = shield; damage += shield; }
+      const notes = [];
+      if (royal) {
+        const t = royal.trait;
+        if (t === 'guarded' && as.length <= 2) { damage = Math.floor(damage / 2); notes.push('Guarded halves it'); }
+        if (t === 'greedy' && as.length >= 4) { damage = Math.floor(damage / 2); notes.push('Greedy halves it'); }
+        if (t === 'armored' && HAND_RANK[key] < HAND_RANK.trips) { damage = 0; notes.push('Armored ignores it'); }
+        if (t === 'sealed' && !as.some(a => a.suit === 'S')) { damage = 0; notes.push('Sealed: no spade'); }
+        if (t === 'bulwark') { const abs = Math.min(25, damage); damage -= abs; if (abs) notes.push('Bulwark absorbs ' + abs); }
+      }
+      const canFinish = royal ? as.some(a => a.suit === royal.suit) : true;
+      let effective = damage;
+      if (royal) {
+        if (damage >= royal.hp && !canFinish) effective = royal.hp - 1;
+        else effective = Math.min(damage, royal.hp);
+      }
+      return {
+        key: key, name: H.name, handRank: HAND_RANK[key],
+        scoring: cl.scoring.map(a => a.card.id),
+        played: as.map(a => a.card.id),
+        assigned: as.map(a => ({ id: a.card.id, rank: a.rank, suit: a.suit })),
+        base: base, ranks: ranks, mult: mult, x: x, extras: extras,
+        temperedBonus: temperedBonus,
+        damage: damage, effective: effective,
+        shield: shield, heal: heal, draw: draw,
+        volatile: volatile, notes: notes, canFinish: canFinish,
+        kills: royal ? damage >= royal.hp : false,
+      };
+    }
+    function better(a, b) {
+      if (!b) return true;
+      if (a.effective !== b.effective) return a.effective > b.effective;
+      if (a.damage !== b.damage) return a.damage > b.damage;
+      if (a.shield + a.heal !== b.shield + b.heal) return a.shield + a.heal > b.shield + b.heal;
+      return a.handRank > b.handRank;
+    }
+    function rec(i) {
+      if (i === cards.length) { const r = score(assigned); if (better(r, best)) best = r; return; }
+      for (const rk of rankOpts[i]) for (const su of suitOpts[i]) {
+        assigned.push({ card: cards[i], rank: rk, suit: su });
+        rec(i + 1);
+        assigned.pop();
+      }
+    }
+    rec(0);
+    return best;
+  }
+
+  function bestHand(state) {
+    const f = state.fight;
+    const hand = f.hand;
+    const target = f.royals[f.target];
+    let best = null;
+    const n = hand.length;
+    for (let m = 1; m < (1 << n); m++) {
+      if (popcount(m) > 5) continue;
+      const ids = [];
+      for (let i = 0; i < n; i++) if (m & (1 << i)) ids.push(hand[i]);
+      const ev = evaluate(state, ids.map(id => getCard(state, id)), target);
+      if (!best || ev.effective > best.ev.effective ||
+        (ev.effective === best.ev.effective && (ev.shield + ev.heal) > (best.ev.shield + best.ev.heal)) ||
+        (ev.effective === best.ev.effective && (ev.shield + ev.heal) === (best.ev.shield + best.ev.heal) && ids.length < best.ids.length)) {
+        best = { ids: ids, ev: ev };
+      }
+    }
+    return best;
+  }
+
+  // ---------- run setup ----------
+  function makeDeck(state) {
+    const deck = [];
+    for (const s of SUITS) {
+      for (let r = 2; r <= 10; r++) deck.push({ id: 'c' + (state.nextId++), rank: r, suit: s, enh: null });
+      deck.push({ id: 'c' + (state.nextId++), rank: ACE, suit: s, enh: null });
+    }
+    return deck;
+  }
+
+  function newRun(opts) {
+    opts = opts || {};
+    const seedStr = opts.seed || ('r' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36));
+    const asc = Math.max(0, Math.min(3, opts.ascension || 0));
+    const state = {
+      version: 1,
+      seed: seedStr,
+      mode: opts.mode || 'random',
+      ascension: asc,
+      rng: { s: seedFromString(seedStr) },
+      nextId: 1,
+      screen: 'choose',
+      act: 0,
+      fightsDoneInAct: 0,
+      fightsDone: 0,
+      remaining: ACTS.map(a => a.slice()),
+      skipped: [],
+      moods: {},
+      player: null,
+      fight: null,
+      reward: null,
+      pick: null,
+      log: [],
+      stats: { damage: 0, hands: 0, turns: 0, bestHand: 0, bestHandName: '', royals: 0 },
+      result: null,
+      lastSeen: Date.now(),
+      startedAt: Date.now(),
+    };
+    const hp = asc >= 3 ? 40 : CFG.playerHp;
+    state.player = { hp: hp, maxHp: hp, edicts: [], suitLevels: { S: 1, H: 1, D: 1, C: 1 }, deck: [] };
+    state.player.deck = makeDeck(state);
+    const moodPool = [{ v: 'none', w: 40 }, { v: 'hardy', w: 15 }, { v: 'restless', w: 15 }, { v: 'weary', w: 15 }, { v: 'frail', w: 15 }];
+    for (const id in ROYALS) state.moods[id] = weightedPick(state, moodPool);
+    log(state, 'A new court convenes. Twelve royals, ten fights.');
+    return state;
+  }
+
+  function buildRoyal(state, id, boss) {
+    const r = ROYALS[id], t = TIER[r.rank], mood = MOODS[state.moods[id] || 'none'];
+    let hp = t.hp * (mood.hp || 1);
+    if (state.ascension >= 1) hp *= 1.15;
+    if (boss) hp *= CFG.bossHp;
+    hp = Math.round(hp);
+    let atk = t.atk + (mood.atk || 0) + (state.ascension >= 2 ? 1 : 0);
+    if (boss) atk = Math.ceil(atk * CFG.bossAtk);
+    atk = Math.max(1, atk);
+    return {
+      id: id, name: royalName(id), rank: r.rank, suit: r.suit, trait: r.trait,
+      hp: hp, maxHp: hp, atk: atk, mood: state.moods[id] || 'none', alive: true,
+    };
+  }
+
+  function isBossNext(state) { return state.act >= 3; }
+
+  function choices(state) {
+    if (isBossNext(state)) return state.skipped.map(id => buildRoyal(state, id, true));
+    return state.remaining[state.act].map(id => buildRoyal(state, id, false));
+  }
+
+  function startFight(state, ids, boss) {
+    const f = {
+      royals: ids.map(id => buildRoyal(state, id, boss)),
+      boss: !!boss, target: 0, turn: 1,
+      draw: [], hand: [], disc: [], discardsLeft: 0,
+      shield: 0, drawBonus: 0, drawBonusNext: 0,
+      firstHandDone: false, lastHandKey: null, streak: 0, over: false,
+    };
+    state.fight = f;
+    state.screen = 'fight';
+    state.reward = null; state.pick = null;
+    f.draw = shuffle(state, state.player.deck.map(c => c.id));
+    f.discardsLeft = discardsPerTurn(state);
+    drawTo(state, handSize(state));
+    if (boss) log(state, 'The court assembles: ' + f.royals.map(r => r.name).join(', ') + '.');
+    else {
+      const r = f.royals[0];
+      log(state, r.name + ' takes the field. ' + TRAITS[r.trait].name + '.');
+    }
+  }
+
+  function chooseRoyal(state, id) {
+    if (state.screen !== 'choose') return false;
+    if (isBossNext(state)) { startFight(state, state.skipped.slice(), true); return true; }
+    if (state.remaining[state.act].indexOf(id) < 0) return false;
+    startFight(state, [id], false);
+    return true;
+  }
+
+  function drawTo(state, n) {
+    const f = state.fight;
+    const drawn = [];
+    while (f.hand.length < n) {
+      if (!f.draw.length) {
+        if (!f.disc.length) break;
+        f.draw = shuffle(state, f.disc.splice(0));
+      }
+      const id = f.draw.pop();
+      f.hand.push(id);
+      drawn.push(id);
+    }
+    return drawn;
+  }
+
+  function healPlayer(state, n) {
+    const p = state.player;
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + n);
+    return p.hp - before;
+  }
+
+  // ---------- fight actions ----------
+  function setTarget(state, idx) {
+    const f = state.fight;
+    if (!f || !f.royals[idx] || !f.royals[idx].alive) return false;
+    f.target = idx;
+    return true;
+  }
+
+  function discard(state, ids) {
+    const f = state.fight;
+    if (!f || f.over || f.discardsLeft <= 0) return null;
+    if (!ids.length || ids.length > 5) return null;
+    if (!ids.every(id => f.hand.indexOf(id) >= 0)) return null;
+    f.hand = f.hand.filter(id => ids.indexOf(id) < 0);
+    f.disc.push.apply(f.disc, ids);
+    f.discardsLeft--;
+    let healed = 0;
+    if (has(state, 'second_wind')) healed = healPlayer(state, ids.length);
+    const drawn = drawTo(state, handSize(state));
+    log(state, 'You discard ' + ids.length + (healed ? ' and recover ' + healed : '') + '.');
+    return { discarded: ids, drawn: drawn, healed: healed };
+  }
+
+  function playHand(state, ids) {
+    const f = state.fight;
+    if (!f || f.over) return null;
+    if (!ids.length || ids.length > 5) return null;
+    if (!ids.every(id => f.hand.indexOf(id) >= 0)) return null;
+    if (!f.royals[f.target].alive) f.target = firstAlive(f);
+    const target = f.royals[f.target];
+    const cards = ids.map(id => getCard(state, id));
+    const ev = evaluate(state, cards, target);
+    const events = {
+      ev: ev, played: ids, targetId: target.id, targetIdx: f.target,
+      damage: 0, blocked: false, killed: false,
+      attacks: [], destroyed: ev.volatile.slice(), reaverLost: [], regent: [],
+      won: false, lost: false, drawn: [], turn: f.turn,
+    };
+
+    // damage
+    let dmg = ev.damage;
+    if (dmg >= target.hp && !ev.canFinish) { dmg = Math.max(0, target.hp - 1); events.blocked = true; }
+    target.hp -= dmg;
+    events.damage = dmg;
+    state.stats.damage += dmg;
+    state.stats.hands++;
+    if (ev.damage > state.stats.bestHand) { state.stats.bestHand = ev.damage; state.stats.bestHandName = ev.name; }
+    if (target.hp <= 0) { target.hp = 0; target.alive = false; events.killed = true; state.stats.royals++; }
+
+    // suit effects
+    f.shield += ev.shield;
+    events.healed = ev.heal ? healPlayer(state, ev.heal) : 0;
+    if (ev.draw) f.drawBonusNext = Math.min(3, f.drawBonusNext + ev.draw);
+
+    // volatile cards are destroyed
+    if (ev.volatile.length) {
+      state.player.deck = state.player.deck.filter(c => ev.volatile.indexOf(c.id) < 0);
+    }
+    f.hand = f.hand.filter(id => ids.indexOf(id) < 0);
+    f.disc.push.apply(f.disc, ids.filter(id => ev.volatile.indexOf(id) < 0));
+
+    f.firstHandDone = true;
+    if (f.lastHandKey === ev.key) f.streak++; else f.streak = 1;
+    f.lastHandKey = ev.key;
+
+    let msg = 'You play ' + ev.name + ' for ' + dmg + (events.blocked ? ' (needs ' + SUIT_CHAR[target.suit] + ' to finish)' : '') + '.';
+    if (events.killed) msg += ' ' + target.name + ' falls.';
+    log(state, msg);
+
+    if (f.royals.every(r => !r.alive)) {
+      events.won = true;
+      onFightWon(state);
+      return events;
+    }
+    if (events.killed) f.target = firstAlive(f);
+
+    // enemy phase
+    for (const r of f.royals) {
+      if (!r.alive) continue;
+      const hits = r.trait === 'brawler' ? 2 : 1;
+      const atk = royalAtk(state, r);
+      for (let h = 0; h < hits; h++) {
+        const absorbed = Math.min(f.shield, atk);
+        f.shield -= absorbed;
+        const taken = atk - absorbed;
+        state.player.hp -= taken;
+        const a = { royalId: r.id, name: r.name, atk: atk, absorbed: absorbed, taken: taken, vamp: 0, lost: null };
+        if (r.trait === 'vampiric' && taken > 0) {
+          const hh = Math.floor(taken / 2);
+          if (hh > 0) {
+            if (has(state, 'royal_tax')) { r.hp = Math.max(0, r.hp - hh); a.vamp = -hh; }
+            else { r.hp = Math.min(r.maxHp, r.hp + hh); a.vamp = hh; }
+          }
+        }
+        if (r.trait === 'reaver' && f.hand.length) {
+          const idx = rInt(state, f.hand.length);
+          const lost = f.hand.splice(idx, 1)[0];
+          f.disc.push(lost);
+          a.lost = lost;
+          events.reaverLost.push(lost);
+        }
+        events.attacks.push(a);
+        log(state, r.name + ' attacks for ' + atk + (absorbed ? ', ' + absorbed + ' shielded' : '') + (taken ? ', you take ' + taken : ', nothing gets through') + '.');
+        if (state.player.hp <= 0) {
+          state.player.hp = 0;
+          f.over = true;
+          events.lost = true;
+          state.screen = 'end';
+          state.result = 'loss';
+          log(state, 'You fall to ' + r.name + '.');
+          return events;
+        }
+      }
+    }
+    // end-of-turn royal effects
+    for (const r of f.royals) {
+      if (!r.alive || r.trait !== 'regent') continue;
+      if (has(state, 'royal_tax')) {
+        r.hp = Math.max(0, r.hp - 6);
+        events.regent.push({ royalId: r.id, amount: -6 });
+        log(state, r.name + ' pays the Royal Tax: 6 damage.');
+        if (r.hp <= 0) { r.alive = false; state.stats.royals++; log(state, r.name + ' falls.'); }
+      } else {
+        const before = r.hp;
+        r.hp = Math.min(r.maxHp, r.hp + 6);
+        events.regent.push({ royalId: r.id, amount: r.hp - before });
+      }
+    }
+    if (f.royals.every(r => !r.alive)) {
+      events.won = true;
+      onFightWon(state);
+      return events;
+    }
+    if (!f.royals[f.target].alive) f.target = firstAlive(f);
+
+    // next turn
+    f.turn++;
+    state.stats.turns++;
+    if (!has(state, 'ironclad')) f.shield = 0;
+    f.discardsLeft = discardsPerTurn(state);
+    f.drawBonus = f.drawBonusNext;
+    f.drawBonusNext = 0;
+    events.drawn = drawTo(state, handSize(state));
+    f.drawBonus = 0;
+    return events;
+  }
+
+  function onFightWon(state) {
+    const f = state.fight;
+    f.over = true;
+    state.fightsDone++;
+    state.stats.turns++;
+    if (f.boss) {
+      state.screen = 'end';
+      state.result = 'win';
+      log(state, 'The court is yours.');
+      return;
+    }
+    const id = f.royals[0].id;
+    state.fightsDoneInAct++;
+    state.remaining[state.act] = state.remaining[state.act].filter(x => x !== id);
+    generateRewards(state);
+    state.screen = 'reward';
+  }
+
+  // ---------- rewards ----------
+  function generateRewards(state) {
+    const p = state.player;
+    const available = Object.keys(EDICTS).filter(k => p.edicts.indexOf(k) < 0);
+    const upgradable = SUITS.filter(s => p.suitLevels[s] < 3);
+    let pool = [];
+    if (available.length) pool.push({ v: 'edict', w: 34 });
+    pool.push({ v: 'enhance', w: 26 }, { v: 'add', w: 14 });
+    if (p.deck.length > CFG.minDeck) pool.push({ v: 'remove', w: 12 });
+    if (upgradable.length) pool.push({ v: 'suit', w: 10 });
+    pool.push({ v: 'rest', w: p.hp < p.maxHp * 0.5 ? 24 : 8 });
+    const options = [];
+    const usedEnh = [];
+    for (let i = 0; i < 3 && pool.length; i++) {
+      const t = (i === 0 && available.length) ? 'edict' : weightedPick(state, pool);
+      if (t !== 'enhance' || usedEnh.length >= 2) pool = pool.filter(e => e.v !== t);
+      if (t === 'edict') {
+        const key = pick(state, available);
+        available.splice(available.indexOf(key), 1);
+        if (!available.length) pool = pool.filter(e => e.v !== 'edict');
+        options.push({ type: 'edict', key: key, replace: p.edicts.length >= CFG.edictSlots });
+      } else if (t === 'enhance') {
+        const keys = Object.keys(ENH).filter(k => usedEnh.indexOf(k) < 0);
+        const enh = pick(state, keys);
+        usedEnh.push(enh);
+        options.push({ type: 'enhance', enh: enh });
+      } else if (t === 'add') {
+        const card = { id: 'c' + (state.nextId++), rank: 2 + rInt(state, 9), suit: pick(state, SUITS), enh: null };
+        if (rnd(state) < 0.35) card.enh = pick(state, Object.keys(ENH));
+        options.push({ type: 'add', card: card });
+      } else if (t === 'remove') {
+        options.push({ type: 'remove' });
+      } else if (t === 'suit') {
+        options.push({ type: 'suit', suit: pick(state, upgradable) });
+      } else if (t === 'rest') {
+        options.push({ type: 'rest', amount: CFG.restHeal });
+      }
+    }
+    state.reward = { options: options };
+  }
+
+  function rewardText(state, o) {
+    const p = state.player;
+    switch (o.type) {
+      case 'edict': return { title: EDICTS[o.key].name, text: EDICTS[o.key].text + (o.replace ? ' Replaces one of your edicts.' : ''), kind: 'Edict' };
+      case 'enhance': return { title: ENH[o.enh].name, text: ENH[o.enh].text + ' Choose a card.', kind: 'Enhance a card' };
+      case 'add': return { title: 'Add ' + cardLabel(o.card) + (o.card.enh ? ', ' + ENH[o.card.enh].name.toLowerCase() : ''), text: o.card.enh ? ENH[o.card.enh].text : 'A new card for your deck.', kind: 'Add a card' };
+      case 'remove': return { title: 'Thin the deck', text: 'Remove one card permanently.', kind: 'Remove a card' };
+      case 'suit': {
+        const lv = p.suitLevels[o.suit];
+        const eff = { S: 'shield ' + (1 + lv) + ' \u2192 ' + (2 + lv) + ' per spade', H: 'heal ' + (1 + lv) + ' \u2192 ' + (2 + lv) + ' per heart', D: 'draw ' + lv + ' \u2192 ' + (lv + 1) + ' per diamond', C: 'base +' + (5 * lv) + ' \u2192 +' + (5 * lv + 5) + ' per club' }[o.suit];
+        return { title: 'Favor ' + SUIT_NAME[o.suit] + ' ' + SUIT_CHAR[o.suit], text: 'Scoring ' + SUIT_NAME[o.suit].toLowerCase() + ': ' + eff + '.', kind: 'Suit favor' };
+      }
+      case 'rest': return { title: 'Rest', text: 'Recover ' + o.amount + ' health.', kind: 'Rest' };
+    }
+    return { title: '?', text: '', kind: '' };
+  }
+
+  function applyReward(state, i) {
+    if (state.screen !== 'reward' || !state.reward) return false;
+    const o = state.reward.options[i];
+    if (!o) return false;
+    const p = state.player;
+    switch (o.type) {
+      case 'edict':
+        if (p.edicts.length < CFG.edictSlots) {
+          p.edicts.push(o.key);
+          if (o.key === 'veteran') { p.maxHp += 15; healPlayer(state, 15); }
+          log(state, 'Edict: ' + EDICTS[o.key].name + '.');
+          advance(state);
+        } else {
+          state.pick = { kind: 'replace', key: o.key };
+          state.screen = 'pick';
+        }
+        return true;
+      case 'enhance':
+        state.pick = { kind: 'enhance', enh: o.enh };
+        state.screen = 'pick';
+        return true;
+      case 'add':
+        p.deck.push(o.card);
+        log(state, 'Added ' + cardLabel(o.card) + ' to the deck.');
+        advance(state);
+        return true;
+      case 'remove':
+        state.pick = { kind: 'remove' };
+        state.screen = 'pick';
+        return true;
+      case 'suit':
+        p.suitLevels[o.suit] = Math.min(3, p.suitLevels[o.suit] + 1);
+        log(state, 'You favor ' + SUIT_NAME[o.suit].toLowerCase() + '.');
+        advance(state);
+        return true;
+      case 'rest': {
+        const h = healPlayer(state, o.amount);
+        log(state, 'You rest and recover ' + h + '.');
+        advance(state);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function skipReward(state) {
+    if (state.screen !== 'reward') return false;
+    log(state, 'You take nothing.');
+    advance(state);
+    return true;
+  }
+
+  function applyPick(state, id) {
+    if (state.screen !== 'pick' || !state.pick) return false;
+    const p = state.player, k = state.pick;
+    if (k.kind === 'enhance') {
+      const c = getCard(state, id);
+      if (!c) return false;
+      c.enh = k.enh;
+      log(state, cardLabel(c) + ' is now ' + ENH[k.enh].name.toLowerCase() + '.');
+    } else if (k.kind === 'remove') {
+      const c = getCard(state, id);
+      if (!c || p.deck.length <= CFG.minDeck) return false;
+      p.deck = p.deck.filter(x => x.id !== id);
+      log(state, 'Removed ' + cardLabel(c) + ' from the deck.');
+    } else if (k.kind === 'replace') {
+      const idx = p.edicts.indexOf(id);
+      if (idx < 0) return false;
+      const old = p.edicts[idx];
+      p.edicts[idx] = k.key;
+      if (old === 'veteran') { p.maxHp -= 15; p.hp = Math.min(p.hp, p.maxHp); }
+      if (k.key === 'veteran') { p.maxHp += 15; healPlayer(state, 15); }
+      log(state, EDICTS[old].name + ' gives way to ' + EDICTS[k.key].name + '.');
+    }
+    advance(state);
+    return true;
+  }
+
+  function cancelPick(state) {
+    if (state.screen !== 'pick') return false;
+    state.pick = null;
+    state.screen = 'reward';
+    return true;
+  }
+
+  function advance(state) {
+    state.reward = null;
+    state.pick = null;
+    state.fight = null;
+    if (state.fightsDoneInAct >= 3) {
+      const left = state.remaining[state.act];
+      state.skipped.push.apply(state.skipped, left);
+      if (left.length) log(state, royalName(left[0]) + ' withdraws to the court.');
+      state.act++;
+      state.fightsDoneInAct = 0;
+    }
+    state.screen = 'choose';
+  }
+
+  // ---------- downtime ----------
+  function applyDowntime(state, now) {
+    if (!state || !state.lastSeen || state.screen === 'end') return 0;
+    const mins = (now - state.lastSeen) / 60000;
+    const heal = Math.min(CFG.downtimeCap, Math.floor(mins / CFG.downtimeMinutesPerHp));
+    if (heal <= 0 || state.player.hp >= state.player.maxHp) return 0;
+    const h = healPlayer(state, heal);
+    if (h > 0) log(state, 'You recovered ' + h + ' health while away.');
+    return h;
+  }
+
+  // ---------- persistence ----------
+  function serialize(state) { return JSON.stringify(state); }
+  function deserialize(str) {
+    const s = JSON.parse(str);
+    if (!s || s.version !== 1 || !s.player || !s.rng) throw new Error('Not a Court save.');
+    return s;
+  }
+
+  return {
+    SUITS, SUIT_CHAR, SUIT_NAME, RED, ACE, HANDS, HAND_BY_KEY, EDICTS, ENH, TRAITS, ROYALS, TIER, ACTS, ACT_NAME, MOODS, ASCENSION, CFG,
+    seedFromString, newRun, choices, isBossNext, chooseRoyal, buildRoyal, royalName,
+    evaluate, bestHand, playHand, discard, setTarget, handSize, discardsPerTurn, royalAtk,
+    generateRewards, rewardText, applyReward, skipReward, applyPick, cancelPick,
+    applyDowntime, serialize, deserialize, getCard, cardLabel, has,
+  };
+})();
+if (typeof module !== 'undefined') module.exports = Court;
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const C = Court;
+  const KEY_SAVE = 'court.save', KEY_META = 'court.meta', KEY_NOTES = 'court.notes';
+
+  let S = null;
+  const meta = { runs: 0, wins: 0, ascUnlocked: 0, bestFights: 0, quiet: false, theme: 'system', hints: true };
+  const ui = { sel: new Set(), sort: 'rank', busy: false, expandEdicts: false, expandRules: false, notice: null, asc: 0, status: {} };
+
+  const $ = s => document.querySelector(s);
+  const app = $('#app');
+  const hdr = $('#hdr');
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function reduced() { return meta.quiet || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function D(ms) { return reduced() ? 0 : ms; }
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } }
+  function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function remove(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
+
+  function save() { if (!S) return; S.lastSeen = Date.now(); store(KEY_SAVE, C.serialize(S)); }
+  function saveMeta() { store(KEY_META, JSON.stringify(meta)); }
+  function loadMeta() { try { Object.assign(meta, JSON.parse(read(KEY_META) || '{}')); } catch (e) { /* fresh */ } }
+  function loadSave() { const raw = read(KEY_SAVE); if (!raw) return null; try { return C.deserialize(raw); } catch (e) { return null; } }
+  function applyPrefs() {
+    const root = document.documentElement;
+    if (meta.theme === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', meta.theme);
+    root.classList.toggle('quiet', !!meta.quiet);
+    root.classList.toggle('nohints', !meta.hints);
+  }
+
+  // ---------- pieces ----------
+  function cardHTML(c, o) {
+    o = o || {};
+    const cls = ['card', C.RED[c.suit] ? 'red' : '', o.sel ? 'sel' : '', o.deal ? 'deal' : '', o.static ? 'static' : ''].filter(Boolean).join(' ');
+    const enh = c.enh ? '<span class="e" title="' + esc(C.ENH[c.enh].name + ': ' + C.ENH[c.enh].text) + '">' + esc(C.ENH[c.enh].short) + '</span>' : '';
+    const key = o.key !== undefined && o.key !== '' ? '<span class="k">' + o.key + '</span>' : '';
+    const tag = o.static ? 'span' : 'button';
+    const act = o.static ? '' : ' data-action="' + (o.action || 'toggle') + '"';
+    return '<' + tag + ' class="' + cls + '"' + act + ' data-id="' + c.id + '" style="--i:' + (o.i || 0) + '" aria-pressed="' + (o.sel ? 'true' : 'false') + '" aria-label="' + esc(C.cardLabel(c)) + (c.enh ? ', ' + esc(C.ENH[c.enh].name) : '') + '">' +
+      key + '<span class="r">' + (c.rank === C.ACE ? 'A' : c.rank) + '</span><span class="s">' + C.SUIT_CHAR[c.suit] + '</span>' + enh + '</' + tag + '>';
+  }
+  function suitOrder(s) { return C.SUITS.indexOf(s); }
+  function sortCards(cards, mode) {
+    const a = cards.slice();
+    if (mode === 'suit') a.sort((x, y) => suitOrder(x.suit) - suitOrder(y.suit) || y.rank - x.rank);
+    else a.sort((x, y) => y.rank - x.rank || suitOrder(x.suit) - suitOrder(y.suit));
+    return a;
+  }
+  function displayHand() { return sortCards(S.fight.hand.map(id => C.getCard(S, id)).filter(Boolean), ui.sort); }
+
+  function statusText() {
+    if (!S) return '';
+    if (S.screen === 'end') return S.result === 'win' ? 'Run complete' : 'Run over';
+    if (S.fight && S.fight.boss) return 'Fight 10 of 10, the court';
+    if (C.isBossNext(S)) return 'Fight 10 of 10, the court';
+    return 'Act ' + C.ACT_NAME[S.act] + ', fight ' + Math.min(10, S.fightsDone + 1) + ' of 10';
+  }
+  function renderHeader() {
+    if (!S) { hdr.innerHTML = '<span class="brand">Notes</span><span class="stat"></span><span class="vit"></span><button class="linkbtn" data-action="menu">Menu</button>'; return; }
+    const p = S.player;
+    hdr.innerHTML = '<span class="brand">Notes</span><span class="stat mono">' + esc(statusText()) + '</span>' +
+      '<span class="vit mono">Health <b id="php" class="' + (p.hp <= p.maxHp * 0.3 ? 'low' : '') + '">' + p.hp + '</b>/' + p.maxHp + ' &nbsp; Deck ' + p.deck.length + '</span>' +
+      '<button class="linkbtn" data-action="menu">Menu</button>';
+  }
+  function noticeHTML() {
+    if (!ui.notice) return '';
+    const n = ui.notice; ui.notice = null;
+    return '<p class="notice">' + esc(n) + '</p>';
+  }
+  function edictsHTML() {
+    const p = S.player;
+    const chips = p.edicts.map(k => '<span class="chip" title="' + esc(C.EDICTS[k].text) + '">' + esc(C.EDICTS[k].name) + '</span>').join('');
+    const fav = C.SUITS.filter(s => p.suitLevels[s] > 1).map(s => '<span class="chip" title="' + esc(C.SUIT_NAME[s]) + ' favor, level ' + p.suitLevels[s] + '">' + C.SUIT_CHAR[s] + ' ' + p.suitLevels[s] + '</span>').join('');
+    const list = ui.expandEdicts ? '<ul class="edict-list">' + (p.edicts.map(k => '<li><b>' + esc(C.EDICTS[k].name) + '</b> ' + esc(C.EDICTS[k].text) + '</li>').join('') || '<li>No edicts yet. They come from fight rewards.</li>') +
+      C.SUITS.filter(s => p.suitLevels[s] > 1).map(s => '<li><b>' + esc(C.SUIT_NAME[s]) + ' favor ' + p.suitLevels[s] + '</b> ' + suitFavorText(s) + '</li>').join('') + '</ul>' : '';
+    return '<section class="edicts"><button class="linkbtn" data-action="toggle-edicts">Edicts ' + p.edicts.length + ' of ' + C.CFG.edictSlots + '</button>' + chips + fav + list + '</section>';
+  }
+  function suitFavorText(s) {
+    const lv = S.player.suitLevels[s];
+    return { S: 'shield ' + (1 + lv) + ' per scoring spade', H: 'heal ' + (1 + lv) + ' per scoring heart', D: 'draw ' + lv + ' per scoring diamond', C: '+' + (5 * lv) + ' base per scoring club' }[s];
+  }
+  function logHTML() {
+    return '<section class="log" id="log">' + S.log.slice(-40).map(l => '<div><span class="lt">' + esc(l.t) + '</span>' + esc(l.m) + '</div>').join('') + '</section>';
+  }
+  function scrollLog() { const l = $('#log'); if (l) l.scrollTop = l.scrollHeight; }
+
+  function tokens(ev, target) {
+    const t = [{ c: 'name', v: ev.name }, { c: 'n', v: '(' + ev.base, title: 'base' }, { c: 'n', v: '+ ' + ev.ranks + ')', title: 'ranks' }, { c: 'n', v: '\u00d7 ' + ev.mult, title: 'mult' }];
+    if (ev.x > 1) t.push({ c: 'n', v: '\u00d7 ' + ev.x, title: ev.extras.join(', ') });
+    if (ev.temperedBonus) t.push({ c: 'n', v: '+ ' + ev.temperedBonus + ' shield' });
+    ev.notes.forEach(n => t.push({ c: 'note', v: n }));
+    t.push({ c: 'total', v: '= ' + ev.damage });
+    const side = [];
+    if (ev.shield) side.push(C.SUIT_CHAR.S + ' shield ' + ev.shield);
+    if (ev.heal) side.push(C.SUIT_CHAR.H + ' heal ' + ev.heal);
+    if (ev.draw) side.push(C.SUIT_CHAR.D + ' draw ' + ev.draw);
+    let fin = null, finCls = 'muted';
+    if (target && ev.kills && !ev.canFinish) { fin = 'Needs a ' + C.SUIT_CHAR[target.suit] + ' to finish. ' + target.name.split(' ')[0] + ' would hold at 1.'; finCls = 'warn'; }
+    else if (target && ev.kills) { fin = 'Finishes ' + target.name + '.'; finCls = 'good'; }
+    return { t: t, side: side, fin: fin, finCls: finCls };
+  }
+  function tokHTML(tk, pop) { return '<span class="tok ' + tk.c + (pop ? ' pop' : '') + '"' + (tk.title ? ' title="' + esc(tk.title) + '"' : '') + '>' + esc(tk.v) + '</span>'; }
+  function previewHTML() {
+    const f = S.fight, target = f.royals[f.target];
+    if (!ui.sel.size) return '<span class="muted">Select 1 to 5 cards. The killing blow needs a ' + C.SUIT_CHAR[target.suit] + '.</span>';
+    if (ui.sel.size > 5) return '<span class="warn">Five cards at most.</span>';
+    const ev = C.evaluate(S, Array.from(ui.sel).map(id => C.getCard(S, id)), target);
+    const k = tokens(ev, target);
+    return k.t.map(tk => tokHTML(tk, false)).join('') + (k.side.length ? '<span class="side">' + esc(k.side.join(', ')) + '</span>' : '') + (k.fin ? '<span class="fin ' + k.finCls + '">' + esc(k.fin) + '</span>' : '');
+  }
+  function royalHTML(r, i) {
+    const f = S.fight, T = C.TRAITS[r.trait], m = C.MOODS[r.mood];
+    const pct = Math.max(0, r.hp / r.maxHp * 100);
+    const isT = f.target === i;
+    return '<article class="royal' + (r.alive ? '' : ' dead') + (f.boss && isT && r.alive ? ' target' : '') + '"' + (f.boss && r.alive ? ' data-action="target"' : '') + ' data-idx="' + i + '">' +
+      '<div class="rhead"><h2>' + esc(r.name) + '</h2><span class="atk mono">' + (r.alive ? 'hits for ' + C.royalAtk(S, r) + (r.trait === 'brawler' ? ', twice' : '') : 'fallen') + '</span></div>' +
+      '<p class="trait">' + esc(T.name) + '. ' + esc(T.text) + (m.name ? ' ' + esc(m.name) + ': ' + esc(m.text) + '.' : '') + '</p>' +
+      '<div class="hprow"><div class="hpbar"><i id="rhp-' + i + '" style="width:' + pct + '%"></i></div><span class="mono hpnum" id="rhpn-' + i + '">' + r.hp + ' / ' + r.maxHp + '</span></div>' +
+      (f.boss && r.alive ? '<div class="tgt">' + (isT ? 'Targeted' : 'Select to target') + '</div>' : '') +
+      '<div class="status" id="rstat-' + i + '">' + (ui.status[i] || []).map(x => '<div class="' + x.cls + '">' + esc(x.text) + '</div>').join('') + '</div></article>';
+  }
+
+  // ---------- screens ----------
+  function render(dealIds) {
+    renderHeader();
+    if (!S) return renderTitle();
+    switch (S.screen) {
+      case 'choose': return renderChoose();
+      case 'fight': return renderFight(dealIds);
+      case 'reward': return renderReward();
+      case 'pick': return renderPick();
+      case 'end': return renderEnd();
+      default: return renderTitle();
+    }
+  }
+
+  function renderFight(dealIds) {
+    const f = S.fight;
+    const hand = displayHand();
+    const hasEnh = hand.some(c => c.enh);
+    const handHTML = hand.map((c, i) => cardHTML(c, { sel: ui.sel.has(c.id), deal: dealIds && dealIds.has(c.id), i: i, key: i < 10 ? String((i + 1) % 10) : '' })).join('');
+    const canDiscard = ui.sel.size > 0 && ui.sel.size <= 5 && f.discardsLeft > 0;
+    const canPlay = ui.sel.size > 0 && ui.sel.size <= 5;
+    app.innerHTML = noticeHTML() +
+      '<section class="royals' + (f.boss ? ' boss' : '') + '" id="royals">' + f.royals.map(royalHTML).join('') + '</section>' +
+      '<section class="hand' + (hasEnh ? ' has-enh' : '') + '" id="hand">' + handHTML + '</section>' +
+      '<div class="cascade" id="cascade">' + previewHTML() + '</div>' +
+      '<div class="actions" id="actions">' +
+      '<button class="btn primary" data-action="play"' + (canPlay ? '' : ' disabled') + '>Play<kbd>\u21b5</kbd></button>' +
+      '<button class="btn" data-action="discard"' + (canDiscard ? '' : ' disabled') + '>Discard <span class="cnt">' + f.discardsLeft + ' left</span><kbd>D</kbd></button>' +
+      '<button class="btn" data-action="best">Best hand<kbd>B</kbd></button>' +
+      '<button class="btn" data-action="sort">Sort by ' + (ui.sort === 'rank' ? 'suit' : 'rank') + '<kbd>S</kbd></button>' +
+      '<span class="turn">Turn ' + f.turn + (f.shield ? ', shield ' + f.shield : '') + '</span>' +
+      '</div>' + edictsHTML() + logHTML();
+    scrollLog();
+  }
+  function refreshFightControls() {
+    const f = S.fight;
+    $('#cascade').innerHTML = previewHTML();
+    const canPlay = ui.sel.size > 0 && ui.sel.size <= 5;
+    $('[data-action="play"]').disabled = !canPlay;
+    $('[data-action="discard"]').disabled = !(canPlay && f.discardsLeft > 0);
+    document.querySelectorAll('#hand .card').forEach(el => {
+      const on = ui.sel.has(el.dataset.id);
+      el.classList.toggle('sel', on);
+      el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function royalRow(r, key) {
+    const T = C.TRAITS[r.trait], m = C.MOODS[r.mood];
+    return '<article class="rrow"><div class="rmain"><h3>' + esc(r.name) + '</h3><p class="trait">' + esc(T.name) + '. ' + esc(T.text) + (m.name ? ' ' + esc(m.name) + ': ' + esc(m.text) + '.' : '') + '</p>' +
+      '<p class="nums">' + r.hp + ' health, hits for ' + r.atk + (r.trait === 'brawler' ? ', twice' : '') + '</p></div>' +
+      (key ? '<button class="btn" data-action="fight" data-id="' + r.id + '">Fight<kbd>' + key + '</kbd></button>' : '') + '</article>';
+  }
+  function renderChoose() {
+    const ch = C.choices(S);
+    if (C.isBossNext(S)) {
+      app.innerHTML = noticeHTML() + '<section class="choose"><h2>The court assembles</h2><p class="lede">The three royals you passed over return together, at reduced strength. This is the last fight.</p>' +
+        ch.map(r => royalRow(r, null)).join('') +
+        '<div class="actions" style="margin-top:20px"><button class="btn primary" data-action="fight" data-id="' + ch[0].id + '">Face the court<kbd>\u21b5</kbd></button></div>' + edictsHTML() + logHTML() + '</section>';
+      return;
+    }
+    const left = 3 - S.fightsDoneInAct;
+    const tier = C.TIER[C.ACTS[S.act][0][0]].name + 's';
+    app.innerHTML = noticeHTML() + '<section class="choose"><h2>Act ' + C.ACT_NAME[S.act] + ': the ' + tier + '</h2>' +
+      '<p class="lede">' + (left === 1 ? 'One more in this act. The royal you skip joins the court in the final fight.' : left + ' fights left in this act. The royal you never face joins the court in the final fight.') + '</p>' +
+      ch.map((r, i) => royalRow(r, i + 1)).join('') + '<div style="height:20px"></div>' + edictsHTML() + logHTML() + '</section>';
+    scrollLog();
+  }
+  function renderReward() {
+    const opts = S.reward.options;
+    const fallen = S.fight && S.fight.royals[0] ? S.fight.royals[0].name : 'The royal';
+    app.innerHTML = noticeHTML() + '<section class="reward"><h2>' + esc(fallen) + ' falls</h2><p class="lede">Take one.</p>' +
+      opts.map((o, i) => {
+        const t = C.rewardText(S, o);
+        return '<article class="opt"><div><span class="kind">' + esc(t.kind) + '</span><h3>' + esc(t.title) + '</h3><p>' + esc(t.text) + '</p>' + (o.type === 'add' ? cardHTML(o.card, { static: true }) : '') + '</div>' +
+          '<button class="btn" data-action="reward" data-i="' + i + '">Take<kbd>' + (i + 1) + '</kbd></button></article>';
+      }).join('') +
+      '<div class="actions" style="margin-top:16px"><button class="btn" data-action="skip">Take nothing</button></div>' + edictsHTML() + '</section>';
+  }
+  function renderPick() {
+    const k = S.pick;
+    let title, sub, body;
+    if (k.kind === 'replace') {
+      title = 'Replace an edict';
+      sub = C.EDICTS[k.key].name + ' takes its place: ' + C.EDICTS[k.key].text;
+      body = '<div class="optlist">' + S.player.edicts.map(e => '<button class="btn wide" data-action="pick" data-id="' + e + '"><b>' + esc(C.EDICTS[e].name) + '</b>' + esc(C.EDICTS[e].text) + '</button>').join('') + '</div>';
+    } else {
+      const enh = k.kind === 'enhance' ? C.ENH[k.enh] : null;
+      title = enh ? 'Make a card ' + enh.name.toLowerCase() : 'Remove a card';
+      sub = enh ? enh.text : 'It leaves the deck for good.';
+      const deck = sortCards(S.player.deck, 'suit');
+      body = '<div class="deckgrid">' + deck.map(c => cardHTML(c, { action: 'pick' })).join('') + '</div>';
+    }
+    app.innerHTML = '<section class="pick"><h2>' + esc(title) + '</h2><p class="lede">' + esc(sub) + '</p>' + body + '<div class="actions"><button class="btn" data-action="cancel-pick">Back</button></div></section>';
+  }
+  function renderEnd() {
+    finishRun();
+    const win = S.result === 'win', st = S.stats;
+    const asc = C.ASCENSION;
+    app.innerHTML = '<section class="end"><h2>' + (win ? 'The court is yours.' : 'You fall in fight ' + Math.min(10, S.fightsDone + 1) + '.') + '</h2>' +
+      '<p class="sub">' + (S.mode === 'daily' ? 'Daily run' : 'Run') + (S.ascension ? ', ascension ' + S.ascension : '') + '.</p>' +
+      (S.unlockedNow ? '<p class="unlock">Ascension ' + S.unlockedNow + ' unlocked: ' + esc(asc[S.unlockedNow]) + '</p>' : '') +
+      '<dl class="stats"><dt>Royals defeated</dt><dd>' + st.royals + '</dd><dt>Hands played</dt><dd>' + st.hands + '</dd><dt>Best hand</dt><dd>' + (st.bestHandName ? esc(st.bestHandName) + ' for ' + st.bestHand : '\u2014') + '</dd><dt>Damage dealt</dt><dd>' + st.damage + '</dd>' +
+      '<dt>Edicts</dt><dd>' + (S.player.edicts.map(k => esc(C.EDICTS[k].name)).join(', ') || 'none') + '</dd><dt>Seed</dt><dd class="mono">' + esc(S.seed) + '</dd></dl>' +
+      titleButtons(false) + '</section>';
+  }
+  function finishRun() {
+    if (S.metaApplied) return;
+    S.metaApplied = true;
+    meta.runs++;
+    if (S.result === 'win') {
+      meta.wins++;
+      if (S.ascension === meta.ascUnlocked && meta.ascUnlocked < 3) { meta.ascUnlocked++; S.unlockedNow = meta.ascUnlocked; }
+    }
+    meta.bestFights = Math.max(meta.bestFights || 0, S.fightsDone);
+    saveMeta(); save();
+  }
+  function dailySeed() {
+    const d = new Date();
+    return 'daily-' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function titleButtons(showContinue) {
+    const saved = showContinue ? loadSave() : null;
+    const canCont = saved && saved.screen !== 'end';
+    const opts = [];
+    for (let i = 0; i <= meta.ascUnlocked; i++) opts.push('<option value="' + i + '"' + (i === ui.asc ? ' selected' : '') + '>' + i + '</option>');
+    return '<div class="actions col">' +
+      (canCont ? '<button class="btn primary" data-action="continue">Continue<kbd>\u21b5</kbd></button>' : '') +
+      '<button class="btn' + (canCont ? '' : ' primary') + '" data-action="new">New run' + (canCont ? '' : '<kbd>\u21b5</kbd>') + '</button>' +
+      '<button class="btn" data-action="daily">Daily run, ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</button></div>' +
+      '<div class="asc mono">Ascension <select id="asc" data-action="asc">' + opts.join('') + '</select><span>' + esc(C.ASCENSION[ui.asc]) + '</span></div>' +
+      '<p class="mono muted" style="font-size:13px">' + meta.runs + (meta.runs === 1 ? ' run, ' : ' runs, ') + meta.wins + (meta.wins === 1 ? ' win.' : ' wins.') + '</p>';
+  }
+  function rulesHTML() {
+    return '<ul class="rules">' +
+      '<li>Each turn, play <b>1 to 5 cards</b> as a poker hand. Damage is <b>(base + ranks) \u00d7 mult</b>. Only the cards that make the hand score.</li>' +
+      '<li>Scoring suits do things: <b>\u2660 shield</b> against this turn\u2019s attack, <b>\u2665 heal</b>, <b>\u2666 draw</b> extra next turn, <b>\u2663 add base</b>.</li>' +
+      '<li>The killing blow must include a card of the royal\u2019s suit, or it holds at 1.</li>' +
+      '<li>Two discards per turn, any number of cards each. Aces are rank 11 and can top a straight.</li>' +
+      '<li>Each act, fight 3 of the 4 royals. The one you skip returns in the final fight with the others you skipped.</li>' +
+      '<li>After every fight, take one reward: an edict, a card upgrade, a new card, a removal, a suit favor, or rest.</li>' +
+      '<li>Time away counts as rest: 1 health per 2 minutes, up to 10 per return.</li>' +
+      '<li>Keys: <b>1\u20130</b> select cards, <b>Enter</b> plays, <b>D</b> discards, <b>B</b> picks the best hand, <b>S</b> sorts, <b>Esc</b> opens a notes page.</li>' +
+      '</ul>';
+  }
+  function renderTitle() {
+    app.innerHTML = '<section class="title"><h1>Court</h1><p class="lede">Fight the twelve royals of a deck with poker hands. A couple of minutes a fight, ten fights a run.</p>' +
+      titleButtons(true) + '<button class="linkbtn" data-action="toggle-rules">' + (ui.expandRules ? 'Hide rules' : 'How to play') + '</button>' + (ui.expandRules ? rulesHTML() : '') + '</section>';
+  }
+
+  // ---------- fight actions ----------
+  function toggleCard(id) {
+    if (ui.busy) return;
+    if (ui.sel.has(id)) ui.sel.delete(id);
+    else { if (ui.sel.size >= 5) return; ui.sel.add(id); }
+    refreshFightControls();
+  }
+  function setPlayerHp(cls) {
+    const el = $('#php');
+    if (!el) return;
+    el.textContent = S.player.hp;
+    el.classList.toggle('low', S.player.hp <= S.player.maxHp * 0.3);
+    if (cls) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), D(600)); }
+  }
+  function updateRoyal(i) {
+    const r = S.fight.royals[i];
+    const bar = $('#rhp-' + i), num = $('#rhpn-' + i);
+    if (bar) bar.style.width = Math.max(0, r.hp / r.maxHp * 100) + '%';
+    if (num) { num.textContent = r.hp + ' / ' + r.maxHp; num.classList.add('hit'); setTimeout(() => num.classList.remove('hit'), D(700)); }
+  }
+  function statusLine(i, text, cls) {
+    (ui.status[i] = ui.status[i] || []).push({ text: text, cls: cls || 'muted' });
+    const el = $('#rstat-' + i);
+    if (!el) return;
+    el.insertAdjacentHTML('beforeend', '<div class="' + (cls || 'muted') + '">' + esc(text) + '</div>');
+  }
+
+  async function doPlay() {
+    if (ui.busy || !S.fight || S.fight.over) return;
+    const ids = Array.from(ui.sel);
+    if (!ids.length || ids.length > 5) return;
+    const f = S.fight;
+    const targetIdx = f.target;
+    const res = C.playHand(S, ids);
+    if (!res) return;
+    ui.busy = true;
+    ui.sel.clear();
+    ui.status = {};
+    document.querySelectorAll('#royals .status').forEach(el => { el.innerHTML = ''; });
+    $('[data-action="play"]').disabled = true;
+    $('[data-action="discard"]').disabled = true;
+
+    // cards leave
+    ids.forEach(id => { const el = document.querySelector('#hand .card[data-id="' + id + '"]'); if (el) el.classList.add('out'); });
+    await wait(D(200));
+
+    // cascade
+    const target = f.royals[res.targetIdx];
+    const k = tokens(res.ev, null);
+    const cas = $('#cascade');
+    cas.innerHTML = '';
+    for (const tk of k.t) { cas.insertAdjacentHTML('beforeend', tokHTML(tk, true)); await wait(D(150)); }
+    if (k.side.length) { cas.insertAdjacentHTML('beforeend', '<span class="side line pop">' + esc(k.side.join(', ')) + '</span>'); }
+    if (res.blocked) cas.insertAdjacentHTML('beforeend', '<span class="fin warn line pop">' + esc(target.name.split(' ')[0] + ' holds at 1. The killing blow needs a ' + C.SUIT_CHAR[target.suit] + '.') + '</span>');
+    if (res.destroyed.length) cas.insertAdjacentHTML('beforeend', '<span class="fin muted line pop">' + esc(res.destroyed.length === 1 ? 'A volatile card burns away.' : res.destroyed.length + ' volatile cards burn away.') + '</span>');
+    await wait(D(120));
+    updateRoyal(res.targetIdx);
+    if (res.healed) setPlayerHp('up');
+    await wait(D(380));
+    if (res.killed) {
+      const art = document.querySelector('#royals .royal[data-idx="' + res.targetIdx + '"]');
+      if (art) { art.classList.add('dead'); const a = art.querySelector('.atk'); if (a) a.textContent = 'fallen'; }
+      await wait(D(420));
+    }
+    if (res.won) {
+      ui.busy = false; save();
+      await wait(D(300));
+      render();
+      return;
+    }
+    // royal attacks
+    for (const a of res.attacks) {
+      const i = f.royals.findIndex(r => r.id === a.royalId);
+      let text = 'Hits for ' + a.atk;
+      if (a.absorbed) text += ', ' + a.absorbed + ' shielded';
+      text += a.taken ? ', you take ' + a.taken : ', nothing gets through';
+      if (a.vamp > 0) text += ', heals ' + a.vamp;
+      if (a.vamp < 0) text += ', Royal Tax ' + (-a.vamp);
+      if (a.lost) { const c = C.getCard(S, a.lost); text += ', destroys ' + (c ? C.cardLabel(c) : 'a card'); }
+      statusLine(i, text, a.taken ? 'warn' : 'muted');
+      if (a.taken) setPlayerHp('hit'); else setPlayerHp();
+      if (a.vamp) updateRoyal(i);
+      await wait(D(a.taken ? 520 : 380));
+    }
+    for (const g of res.regent) {
+      const i = f.royals.findIndex(r => r.id === g.royalId);
+      statusLine(i, g.amount > 0 ? 'Regent heals ' + g.amount : 'Pays the Royal Tax, ' + (-g.amount) + ' damage', 'muted');
+      updateRoyal(i);
+      await wait(D(380));
+    }
+    if (res.lost) {
+      ui.busy = false; save();
+      await wait(D(500));
+      render();
+      return;
+    }
+    if (res.won) { ui.busy = false; save(); await wait(D(300)); render(); return; }
+    await wait(D(260));
+    ui.busy = false;
+    save();
+    render(new Set(res.drawn));
+  }
+
+  async function doDiscard() {
+    if (ui.busy || !S.fight || S.fight.over) return;
+    const ids = Array.from(ui.sel);
+    if (!ids.length || ids.length > 5 || S.fight.discardsLeft <= 0) return;
+    const res = C.discard(S, ids);
+    if (!res) return;
+    ui.busy = true;
+    ui.sel.clear();
+    ids.forEach(id => { const el = document.querySelector('#hand .card[data-id="' + id + '"]'); if (el) el.classList.add('out'); });
+    if (res.healed) setPlayerHp('up');
+    await wait(D(180));
+    ui.busy = false;
+    save();
+    render(new Set(res.drawn));
+  }
+  function doBest() {
+    if (ui.busy || !S.fight || S.fight.over) return;
+    const b = C.bestHand(S);
+    ui.sel = new Set(b.ids);
+    refreshFightControls();
+  }
+
+  // ---------- run control ----------
+  function startRun(mode) {
+    const asc = ui.asc;
+    S = C.newRun({ mode: mode, seed: mode === 'daily' ? dailySeed() : undefined, ascension: asc });
+    ui.sel.clear(); ui.expandEdicts = false;
+    save();
+    render();
+  }
+  function continueRun() {
+    const s = loadSave();
+    if (!s) return render();
+    S = s;
+    const healed = C.applyDowntime(S, Date.now());
+    if (healed > 0) ui.notice = 'You recovered ' + healed + ' health while away.';
+    ui.sel.clear();
+    save();
+    render();
+  }
+  function abandonRun() {
+    if (!S) return;
+    if (S.screen !== 'end') {
+      S.result = 'loss'; S.screen = 'end';
+      finishRun();
+    }
+    S = null;
+    remove(KEY_SAVE);
+    closeMenu();
+    render();
+  }
+
+  // ---------- overlays ----------
+  function openMenu() {
+    const m = $('#menu');
+    $('#optQuiet').checked = !!meta.quiet;
+    $('#optHints').checked = !!meta.hints;
+    $('#optTheme').value = meta.theme;
+    $('#exportBox').value = S ? C.serialize(S) : '';
+    $('#importBox').value = '';
+    $('#menuMsg').textContent = '';
+    $('#abandonBtn').disabled = !S || S.screen === 'end';
+    m.hidden = false;
+  }
+  function closeMenu() { $('#menu').hidden = true; }
+  function toggleNotes() {
+    const n = $('#notes');
+    n.hidden = !n.hidden;
+    if (!n.hidden) { const t = $('#notesText'); t.value = read(KEY_NOTES) || ''; t.focus(); }
+  }
+
+  // ---------- events ----------
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const a = el.dataset.action;
+    if (el.tagName === 'SELECT') return;
+    switch (a) {
+      case 'menu': openMenu(); break;
+      case 'close-menu': closeMenu(); break;
+      case 'notes': toggleNotes(); break;
+      case 'toggle': if (S && S.screen === 'fight') toggleCard(el.dataset.id); break;
+      case 'play': doPlay(); break;
+      case 'discard': doDiscard(); break;
+      case 'best': doBest(); break;
+      case 'sort': ui.sort = ui.sort === 'rank' ? 'suit' : 'rank'; render(); break;
+      case 'target': if (!ui.busy && C.setTarget(S, +el.dataset.idx)) { save(); render(); } break;
+      case 'toggle-edicts': ui.expandEdicts = !ui.expandEdicts; render(); break;
+      case 'toggle-rules': ui.expandRules = !ui.expandRules; render(); break;
+      case 'fight': if (S && C.chooseRoyal(S, el.dataset.id)) { ui.sel.clear(); ui.status = {}; save(); render(new Set(S.fight.hand)); } break;
+      case 'reward': if (S && C.applyReward(S, +el.dataset.i)) { save(); render(); } break;
+      case 'skip': if (S && C.skipReward(S)) { save(); render(); } break;
+      case 'pick': if (S && C.applyPick(S, el.dataset.id)) { save(); render(); } break;
+      case 'cancel-pick': if (S && C.cancelPick(S)) { save(); render(); } break;
+      case 'continue': continueRun(); break;
+      case 'new': startRun('random'); break;
+      case 'daily': startRun('daily'); break;
+      case 'title': closeMenu(); S = null; render(); break;
+      case 'abandon': if (confirm('Abandon this run? It counts as a loss.')) abandonRun(); break;
+      case 'reset': if (confirm('Erase all Court data on this device, including runs, unlocks and notes?')) { remove(KEY_SAVE); remove(KEY_META); remove(KEY_NOTES); location.reload(); } break;
+      case 'copy-export': {
+        const box = $('#exportBox'); box.select();
+        try { navigator.clipboard.writeText(box.value).then(() => { $('#menuMsg').textContent = 'Copied.'; }); } catch (err) { document.execCommand('copy'); $('#menuMsg').textContent = 'Copied.'; }
+        break;
+      }
+      case 'import': {
+        try {
+          const s = C.deserialize($('#importBox').value.trim());
+          S = s; save(); closeMenu(); ui.sel.clear(); render();
+        } catch (err) { $('#menuMsg').textContent = 'That is not a Court save.'; }
+        break;
+      }
+    }
+  });
+  document.addEventListener('change', e => {
+    const el = e.target;
+    if (el.id === 'asc') { ui.asc = +el.value; render(); }
+    if (el.id === 'optQuiet') { meta.quiet = el.checked; saveMeta(); applyPrefs(); }
+    if (el.id === 'optHints') { meta.hints = el.checked; saveMeta(); applyPrefs(); }
+    if (el.id === 'optTheme') { meta.theme = el.value; saveMeta(); applyPrefs(); }
+  });
+  $('#notesText').addEventListener('input', e => store(KEY_NOTES, e.target.value));
+
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (e.key === 'Escape') { e.preventDefault(); if (!$('#menu').hidden) closeMenu(); else toggleNotes(); return; }
+    if (tag === 'textarea' || tag === 'input' || tag === 'select') return;
+    if (!$('#notes').hidden || !$('#menu').hidden) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (!S) { if (k === 'Enter') { const saved = loadSave(); if (saved && saved.screen !== 'end') continueRun(); else startRun('random'); } return; }
+    if (S.screen === 'fight') {
+      if (ui.busy) return;
+      if (/^[0-9]$/.test(k)) {
+        const idx = k === '0' ? 9 : +k - 1;
+        const hand = displayHand();
+        if (hand[idx]) toggleCard(hand[idx].id);
+        e.preventDefault();
+      } else if (k === 'Enter') { e.preventDefault(); doPlay(); }
+      else if (k === 'd' || k === 'D') { doDiscard(); }
+      else if (k === 'b' || k === 'B') { doBest(); }
+      else if (k === 's' || k === 'S') { ui.sort = ui.sort === 'rank' ? 'suit' : 'rank'; render(); }
+    } else if (S.screen === 'choose') {
+      if (C.isBossNext(S)) { if (k === 'Enter') { C.chooseRoyal(S, null); ui.status = {}; save(); render(new Set(S.fight.hand)); } return; }
+      if (/^[1-4]$/.test(k)) { const ch = C.choices(S); const r = ch[+k - 1]; if (r && C.chooseRoyal(S, r.id)) { ui.sel.clear(); ui.status = {}; save(); render(new Set(S.fight.hand)); } }
+    } else if (S.screen === 'reward') {
+      if (/^[1-3]$/.test(k)) { if (C.applyReward(S, +k - 1)) { save(); render(); } }
+    } else if (S.screen === 'end') {
+      if (k === 'Enter') startRun('random');
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { save(); }
+    else if (S && S.screen !== 'end') {
+      const healed = C.applyDowntime(S, Date.now());
+      if (healed > 0) { ui.notice = 'You recovered ' + healed + ' health while away.'; save(); setPlayerHp('up'); render(); }
+      else save();
+    }
+  });
+  window.addEventListener('beforeunload', save);
+
+  // ---------- boot ----------
+  loadMeta();
+  applyPrefs();
+  ui.asc = Math.min(meta.ascUnlocked, 0);
+  const saved = loadSave();
+  if (saved && saved.screen !== 'end') continueRun(); else render();
+})();
+
+</script>
+</body>
+</html>

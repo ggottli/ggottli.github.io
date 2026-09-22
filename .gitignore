@@ -10,3 +10,6 @@ _site/
 
 # Python venv for scripts/
 .venv/
+
+# osxphotos export staging (rebuilt from Photos, never committed)
+portfolio/photos/export/

@@ -1,137 +1,280 @@
 #!/usr/bin/env python3
-"""Build photos.json, photos.csv, and WebP thumbnails for /portfolio/photos.
+"""Build photos.json, photos.csv, and WebP thumbnails from the Apple Photos library.
 
-Automatic fields (file, thumbs, date, date_source, lat, lng, width, height)
-are recomputed on every run. Manual fields (title, caption, who, collection,
-place) are preserved across runs and only changed by --from-csv or by hand.
+Source of truth is the Photos app:
+
+  * Album "Website"            -> which photos are on the site
+  * Folder "Collections"       -> each album inside it is a collection;
+                                  photos in those albums are exported too
+  * Faces (People)             -> who
+  * Title / Description        -> title / caption
+  * Location + Photos' place   -> lat, lng, place
+  * Capture date               -> date
+
+Flow: select photos with osxphotos, export edited-or-original JPEGs to
+portfolio/photos/export/ (gitignored), then write thumbs + photos.json.
+
+Manual fixes go in overrides.json (edit by hand, or via photos.csv with
+--from-csv). Overrides win over Photos data and survive re-runs.
 
 Usage:
-    python scripts/build_photos.py            # scan, thumb, write json + csv
-    python scripts/build_photos.py --from-csv # import manual fields from
-                                              # photos.csv first, then build
+    python scripts/build_photos.py                # export from Photos, build
+    python scripts/build_photos.py --skip-export  # rebuild from last export
+    python scripts/build_photos.py --from-csv     # fold CSV edits into overrides, then build
 """
 
 import argparse
 import csv
 import json
+import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image, ImageOps
-from pillow_heif import register_heif_opener
-
-register_heif_opener()
 
 ROOT = Path(__file__).resolve().parent.parent
-PHOTOS_DIR = ROOT / "portfolio" / "photos"
-THUMBS_DIR = PHOTOS_DIR / "thumbs"
-JSON_PATH = PHOTOS_DIR / "photos.json"
-CSV_PATH = PHOTOS_DIR / "photos.csv"
+OSXPHOTOS = Path(sys.executable).with_name("osxphotos")
+
+ALBUM = "Website"
+COLLECTIONS_FOLDER = "Collections"
 
 WIDTHS = (160, 800, 1600)
 WEBP_QUALITY = 80
-EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic"}
+JPEG_QUALITY = 0.85
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 MANUAL_FIELDS = ("title", "caption", "who", "collection", "place")
 
-EXIF_IFD = 0x8769
-GPS_IFD = 0x8825
-TAG_DATETIME_ORIGINAL = 0x9003
-TAG_DATETIME = 0x0132
 
+# ---------------------------------------------------------------- Photos ---
 
-def parse_exif_date(value):
-    """EXIF 'YYYY:MM:DD HH:MM:SS' -> ISO string, or None."""
-    if not value:
-        return None
+def open_library():
     try:
-        return datetime.strptime(str(value).strip(), "%Y:%m:%d %H:%M:%S").isoformat()
-    except ValueError:
-        return None
+        import osxphotos
+    except ImportError:
+        sys.exit("osxphotos is not installed: .venv/bin/pip install -r scripts/requirements.txt")
+    print("Reading Photos library…")
+    return osxphotos.PhotosDB()
 
 
-def read_exif_date(img):
-    exif = img.getexif()
-    date = parse_exif_date(exif.get_ifd(EXIF_IFD).get(TAG_DATETIME_ORIGINAL))
-    if date is None:
-        date = parse_exif_date(exif.get(TAG_DATETIME))
-    return date
+def select_photos(db, album_name, folder_name):
+    """Photos in the album plus photos in any album inside the folder.
+    Returns (photos, {uuid: [collection names]})."""
+    albums = {a.title: a for a in db.album_info if not a.folder_names}
+    if album_name not in albums:
+        sys.exit(f'No album named "{album_name}" in Photos. Create it and add photos.')
 
+    collections = {}
+    for a in db.album_info:
+        if a.folder_names and a.folder_names[0] == folder_name:
+            for p in a.photos:
+                collections.setdefault(p.uuid, []).append(a.title)
 
-def dms_to_degrees(dms, ref):
-    try:
-        deg = float(dms[0]) + float(dms[1]) / 60 + float(dms[2]) / 3600
-    except (TypeError, IndexError, ValueError, ZeroDivisionError):
-        return None
-    if ref in ("S", "W"):
-        deg = -deg
-    return round(deg, 6)
+    by_uuid = {p.uuid: p for p in albums[album_name].photos}
+    for a in db.album_info:
+        if a.folder_names and a.folder_names[0] == folder_name:
+            for p in a.photos:
+                by_uuid.setdefault(p.uuid, p)
 
-
-def read_exif_gps(img):
-    gps = img.getexif().get_ifd(GPS_IFD)
-    if not gps:
-        return None, None
-    lat = dms_to_degrees(gps.get(2), gps.get(1))
-    lng = dms_to_degrees(gps.get(4), gps.get(3))
-    if lat is None or lng is None:
-        return None, None
-    return lat, lng
-
-
-def find_sources():
-    files = []
-    for p in sorted(PHOTOS_DIR.rglob("*")):
-        if THUMBS_DIR in p.parents:
+    photos, skipped = [], []
+    for p in by_uuid.values():
+        if p.intrash or p.hidden or not p.isphoto:
+            skipped.append(p)
             continue
-        if p.is_file() and p.suffix.lower() in EXTENSIONS:
-            files.append(p)
-    return files
+        photos.append(p)
+    if skipped:
+        print(f"Skipping {len(skipped)} items (videos, hidden, or in trash).")
+    return photos, collections
 
+
+def run_export(photos, export_dir, dry_run=False):
+    export_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+        f.write("\n".join(p.uuid for p in photos) + "\n")
+        uuid_file = f.name
+    cmd = [
+        str(OSXPHOTOS), "export", str(export_dir),
+        "--uuid-from-file", uuid_file,
+        "--filename", "{uuid}",
+        "--update", "--cleanup",
+        "--skip-original-if-edited", "--edited-suffix", "",
+        "--convert-to-jpeg", "--jpeg-quality", str(JPEG_QUALITY),
+        "--skip-live", "--skip-bursts", "--skip-raw",
+        "--download-missing", "--use-photokit",
+        "--retry", "2",
+        "--no-progress",
+    ]
+    if dry_run:
+        cmd.append("--dry-run")
+    print(f"Exporting {len(photos)} photos to {rel(export_dir)}…")
+    result = subprocess.run(cmd)
+    Path(uuid_file).unlink(missing_ok=True)
+    if result.returncode != 0:
+        sys.exit(f"osxphotos export failed (exit {result.returncode}).")
+
+
+def rel(path):
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def find_export(export_dir, uuid):
+    for p in export_dir.glob(f"{uuid}.*"):
+        if p.suffix.lower() in IMAGE_EXTENSIONS:
+            return p
+    return None
+
+
+# -------------------------------------------------------------- metadata ---
+
+US_STATES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
+    "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", "FL": "Florida", "GA": "Georgia",
+    "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa",
+    "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire",
+    "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York", "NC": "North Carolina",
+    "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania",
+    "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota", "TN": "Tennessee",
+    "TX": "Texas", "UT": "Utah", "VT": "Vermont", "VA": "Virginia", "WA": "Washington",
+    "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming", "DC": "Washington, D.C.",
+}
+US_STATE_NAMES = set(US_STATES.values())
+
+
+def format_place(place):
+    """'City, State' in the US, 'City, Country' elsewhere. Photos' state list
+    mixes in regions like 'Wabash Valley', so prefer a real state name."""
+    if place is None:
+        return ""
+    names = place.names
+    country = (names.country or [""])[0]
+    city = (names.city or names.additional_city_info or names.area_of_interest or [""])[0]
+    if country == "United States":
+        region = next((r for r in names.state_province if r in US_STATE_NAMES), None)
+        if region is None:
+            abbr = place.address.state_province if place.address else None
+            region = US_STATES.get(abbr or "", (names.state_province or [""])[0])
+        parts = [city, region]
+    else:
+        parts = [city, country]
+    return ", ".join(p for p in parts if p)
+
+
+def photo_who(p):
+    seen, out = set(), []
+    for name in p.persons:
+        if name == "_UNKNOWN_" or name in seen:
+            continue
+        seen.add(name)
+        out.append(name)
+    return out
+
+
+def photo_date(p):
+    d = p.date
+    if d is None:
+        return None
+    return d.replace(tzinfo=None).isoformat(timespec="seconds")
+
+
+def derive_entry(p, src, collections):
+    rel = src.name
+    lat, lng = p.location
+    colls = sorted(set(collections.get(p.uuid, [])))
+    return {
+        "file": rel,
+        "thumbs": {},
+        "date": photo_date(p),
+        "date_source": "photos",
+        "lat": round(lat, 6) if lat is not None else None,
+        "lng": round(lng, 6) if lng is not None else None,
+        "width": None,
+        "height": None,
+        "title": p.title or "",
+        "caption": p.description or "",
+        "who": photo_who(p),
+        "collection": colls[0] if colls else "",
+        "place": format_place(p.place),
+        "_collections": colls,
+    }
+
+
+# ----------------------------------------------------------------- thumbs ---
 
 def thumb_name(rel, width):
-    return rel.with_name(f"{rel.stem}-{width}.webp")
+    return Path(rel).with_name(f"{Path(rel).stem}-{width}.webp")
 
 
 def is_stale(out, src_mtime):
     return not out.exists() or out.stat().st_mtime < src_mtime
 
 
-def build_outputs(src, rel, img):
-    """Write missing/outdated thumbs (and a JPG copy for HEIC). Returns thumbs dict."""
+def build_thumbs(src, thumbs_dir):
+    """Write missing/outdated thumbs. Returns (thumbs dict, width, height)."""
     src_mtime = src.stat().st_mtime
     thumbs = {}
-    loaded = None  # transpose lazily, only if something needs writing
+    loaded = None
 
-    def full_image():
-        nonlocal loaded
-        if loaded is None:
-            loaded = ImageOps.exif_transpose(img)
-            if loaded.mode not in ("RGB", "RGBA"):
-                loaded = loaded.convert("RGB")
-        return loaded
+    with Image.open(src) as img:
+        orientation = img.getexif().get(0x0112, 1)
+        width, height = img.size
+        if orientation in (5, 6, 7, 8):
+            width, height = height, width
 
-    for width in WIDTHS:
-        out_rel = thumb_name(rel, width)
-        out = THUMBS_DIR / out_rel
-        thumbs[str(width)] = f"thumbs/{out_rel.as_posix()}"
-        if not is_stale(out, src_mtime):
-            continue
-        out.parent.mkdir(parents=True, exist_ok=True)
-        im = full_image()
-        copy = im.copy()
-        copy.thumbnail((min(width, im.width), im.height * 4), Image.LANCZOS)
-        copy.save(out, "WEBP", quality=WEBP_QUALITY)
+        def full_image():
+            nonlocal loaded
+            if loaded is None:
+                loaded = ImageOps.exif_transpose(img)
+                if loaded.mode not in ("RGB", "RGBA"):
+                    loaded = loaded.convert("RGB")
+            return loaded
 
-    if src.suffix.lower() == ".heic":
-        out_rel = rel.with_name(f"{rel.stem}.jpg")
-        out = THUMBS_DIR / out_rel
-        thumbs["jpg"] = f"thumbs/{out_rel.as_posix()}"
-        if is_stale(out, src_mtime):
+        for w in WIDTHS:
+            out_rel = thumb_name(src.name, w)
+            out = thumbs_dir / out_rel
+            thumbs[str(w)] = f"thumbs/{out_rel.as_posix()}"
+            if not is_stale(out, src_mtime):
+                continue
             out.parent.mkdir(parents=True, exist_ok=True)
-            full_image().convert("RGB").save(out, "JPEG", quality=85)
+            im = full_image()
+            copy = im.copy()
+            copy.thumbnail((min(w, im.width), im.height * 4), Image.LANCZOS)
+            copy.save(out, "WEBP", quality=WEBP_QUALITY)
 
-    return thumbs
+    return thumbs, width, height
+
+
+def prune_thumbs(thumbs_dir, keep):
+    removed = 0
+    for f in thumbs_dir.rglob("*"):
+        if f.is_file() and f.name != ".gitkeep":
+            rel = f"thumbs/{f.relative_to(thumbs_dir).as_posix()}"
+            if rel not in keep:
+                f.unlink()
+                removed += 1
+    if removed:
+        print(f"Removed {removed} stale thumbnails.")
+
+
+# -------------------------------------------------------------- overrides ---
+
+def load_overrides(path):
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        return json.load(f)
+
+
+def save_overrides(path, overrides):
+    overrides = {k: v for k, v in sorted(overrides.items()) if v}
+    with open(path, "w") as f:
+        json.dump(overrides, f, indent=1, ensure_ascii=False)
+        f.write("\n")
 
 
 def normalize_who(value):
@@ -142,22 +285,16 @@ def normalize_who(value):
     return []
 
 
-def load_existing():
-    if not JSON_PATH.exists():
-        return {}
-    with open(JSON_PATH) as f:
-        data = json.load(f)
-    return {p["file"]: p for p in data.get("photos", [])}
-
-
-def apply_csv(existing, csv_path):
-    """Read manual columns back from the CSV. Blank cell = keep current value,
-    a literal '-' = clear it."""
-    updated = 0
+def import_csv(csv_path, derived, overrides):
+    """Non-blank CSV cell that differs from Photos data becomes an override.
+    Blank = leave alone. '-' = force the field empty."""
+    changed = 0
     with open(csv_path, newline="") as f:
         for row in csv.DictReader(f):
-            entry = existing.setdefault(row.get("file", ""), {})
-            changed = False
+            file = row.get("file", "")
+            if file not in derived:
+                continue
+            ov = overrides.setdefault(file, {})
             for field in MANUAL_FIELDS:
                 cell = (row.get(field) or "").strip()
                 if not cell:
@@ -165,17 +302,27 @@ def apply_csv(existing, csv_path):
                 value = "" if cell == "-" else cell
                 if field == "who":
                     value = normalize_who(value)
-                if entry.get(field) != value:
-                    entry[field] = value
-                    changed = True
-            if changed:
-                updated += 1
-    print(f"Imported manual fields from {csv_path.name}: {updated} photos updated.")
+                if value == derived[file][field]:
+                    if field in ov:
+                        del ov[field]
+                        changed += 1
+                elif ov.get(field) != value:
+                    ov[field] = value
+                    changed += 1
+    print(f"Imported {csv_path.name}: {changed} override(s) changed.")
 
 
-def write_csv(photos):
-    fields = ["file", "date", "date_source", "lat", "lng", *MANUAL_FIELDS]
-    with open(CSV_PATH, "w", newline="") as f:
+def apply_overrides(entry, ov):
+    for field, value in ov.items():
+        if field in MANUAL_FIELDS:
+            entry[field] = normalize_who(value) if field == "who" else value
+
+
+# ---------------------------------------------------------------- outputs ---
+
+def write_csv(csv_path, photos):
+    fields = ["file", "date", "lat", "lng", *MANUAL_FIELDS]
+    with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         for p in photos:
@@ -187,99 +334,115 @@ def write_csv(photos):
             writer.writerow(row)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--from-csv",
-        nargs="?",
-        const=str(CSV_PATH),
-        default=None,
-        metavar="CSV",
-        help="import title/caption/who/collection/place from the CSV before building",
-    )
-    args = parser.parse_args()
-
-    if not PHOTOS_DIR.is_dir():
-        sys.exit(f"No photos directory at {PHOTOS_DIR}")
-
-    existing = load_existing()
-    if args.from_csv:
-        apply_csv(existing, Path(args.from_csv))
-
-    sources = find_sources()
-    seen_thumbs = set()
-    photos = []
-    for src in sources:
-        rel = src.relative_to(PHOTOS_DIR)
-        base = thumb_name(rel, WIDTHS[0])
-        if base in seen_thumbs:
-            sys.exit(f"Thumbnail name clash for {rel} — rename one of the files.")
-        seen_thumbs.add(base)
-
-        with Image.open(src) as img:
-            date = read_exif_date(img)
-            lat, lng = read_exif_gps(img)
-            orientation = img.getexif().get(0x0112, 1)
-            width, height = img.size
-            if orientation in (5, 6, 7, 8):  # rotated 90/270
-                width, height = height, width
-            thumbs = build_outputs(src, rel, img)
-
-        date_source = "exif"
-        if date is None:
-            date = datetime.fromtimestamp(src.stat().st_mtime).isoformat(timespec="seconds")
-            date_source = "file"
-
-        old = existing.get(rel.as_posix(), {})
-        entry = {
-            "file": rel.as_posix(),
-            "thumbs": thumbs,
-            "date": date,
-            "date_source": date_source,
-            "lat": lat,
-            "lng": lng,
-            "width": width,
-            "height": height,
-        }
-        for field in MANUAL_FIELDS:
-            entry[field] = old.get(field, "")
-        entry["who"] = normalize_who(entry["who"])
-        photos.append(entry)
-
-    photos.sort(key=lambda p: (p["date"], p["file"]))
-
-    removed = sorted(set(existing) - {p["file"] for p in photos})
-    for name in removed:
-        print(f"note: {name} is in photos.json but no longer on disk — dropped.")
-
-    # Only rewrite outputs when something real changed, so the CI job
-    # doesn't commit a timestamp-only diff on every run.
+def write_json(json_path, photos):
     unchanged = False
-    if JSON_PATH.exists():
-        with open(JSON_PATH) as f:
-            old_data = json.load(f)
-        unchanged = old_data.get("photos") == photos
+    if json_path.exists():
+        with open(json_path) as f:
+            unchanged = json.load(f).get("photos") == photos
     if unchanged:
         print("photos.json unchanged — not rewritten.")
-    else:
-        data = {
-            "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "photos": photos,
-        }
-        with open(JSON_PATH, "w") as f:
-            json.dump(data, f, indent=1)
-            f.write("\n")
-        write_csv(photos)
+        return
+    data = {
+        "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "photos": photos,
+    }
+    with open(json_path, "w") as f:
+        json.dump(data, f, indent=1, ensure_ascii=False)
+        f.write("\n")
+
+
+def summary(photos, json_path, multi_coll, missing):
+    def lst(items, key=lambda p: p["file"], n=5):
+        if not items:
+            return ""
+        return f"  ({', '.join(key(p) for p in items[:n])}{'…' if len(items) > n else ''})"
 
     no_gps = [p for p in photos if p["lat"] is None]
-    no_date = [p for p in photos if p["date_source"] == "file"]
     no_who = [p for p in photos if not p["who"]]
     no_coll = [p for p in photos if not p["collection"]]
-    print(f"{len(photos)} photos -> {JSON_PATH.relative_to(ROOT)}")
-    print(f"  missing GPS:         {len(no_gps)}")
-    print(f"  missing a real date: {len(no_date)}" + (f"  ({', '.join(p['file'] for p in no_date[:5])}{'…' if len(no_date) > 5 else ''})" if no_date else ""))
-    print(f"  missing who:         {len(no_who)}")
-    print(f"  missing collection:  {len(no_coll)}")
+    no_place = [p for p in photos if not p["place"]]
+    no_title = [p for p in photos if not p["title"]]
+    print(f"{len(photos)} photos -> {rel(json_path)}")
+    print(f"  missing GPS:        {len(no_gps)}")
+    print(f"  missing place:      {len(no_place)}")
+    print(f"  missing who:        {len(no_who)}")
+    print(f"  missing collection: {len(no_coll)}")
+    print(f"  missing title:      {len(no_title)}")
+    if multi_coll:
+        print(f"  in several collections (first used): {len(multi_coll)}" + lst(multi_coll))
+    if missing:
+        print(f"  NOT exported (not downloaded from iCloud?): {len(missing)}" +
+              lst(missing, key=lambda p: p.original_filename))
+
+
+# ------------------------------------------------------------------- main ---
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--album", default=ALBUM, help=f'Photos album to publish (default "{ALBUM}")')
+    parser.add_argument("--collections-folder", default=COLLECTIONS_FOLDER,
+                        help=f'Photos folder whose albums are collections (default "{COLLECTIONS_FOLDER}")')
+    parser.add_argument("--photos-dir", default=str(ROOT / "portfolio" / "photos"),
+                        help="output directory (default portfolio/photos)")
+    parser.add_argument("--skip-export", action="store_true",
+                        help="don't run osxphotos export; reuse files already in export/")
+    parser.add_argument("--from-csv", nargs="?", const=True, default=None, metavar="CSV",
+                        help="fold manual edits from photos.csv into overrides.json before building")
+    parser.add_argument("--dry-run", action="store_true", help="show what export would do, write nothing")
+    args = parser.parse_args()
+
+    photos_dir = Path(args.photos_dir).resolve()
+    export_dir = photos_dir / "export"
+    thumbs_dir = photos_dir / "thumbs"
+    json_path = photos_dir / "photos.json"
+    csv_path = photos_dir / "photos.csv"
+    overrides_path = photos_dir / "overrides.json"
+    photos_dir.mkdir(parents=True, exist_ok=True)
+
+    db = open_library()
+    selected, collections = select_photos(db, args.album, args.collections_folder)
+    print(f'"{args.album}": {len(selected)} photos'
+          + (f", {sum(1 for p in selected if p.uuid in collections)} in collections" if collections else ""))
+
+    if not args.skip_export:
+        run_export(selected, export_dir, dry_run=args.dry_run)
+    if args.dry_run:
+        return
+
+    derived, missing, multi_coll = {}, [], []
+    for p in selected:
+        src = find_export(export_dir, p.uuid)
+        if src is None:
+            missing.append(p)
+            continue
+        entry = derive_entry(p, src, collections)
+        if len(entry["_collections"]) > 1:
+            multi_coll.append(entry)
+        derived[entry["file"]] = entry
+
+    overrides = load_overrides(overrides_path)
+    if args.from_csv:
+        src_csv = csv_path if args.from_csv is True else Path(args.from_csv)
+        import_csv(src_csv, derived, overrides)
+        save_overrides(overrides_path, overrides)
+    dropped = sorted(set(overrides) - set(derived))
+    for name in dropped:
+        print(f"note: override for {name} no longer matches an exported photo.")
+
+    photos, keep = [], set()
+    for file, entry in derived.items():
+        thumbs, w, h = build_thumbs(export_dir / file, thumbs_dir)
+        entry["thumbs"], entry["width"], entry["height"] = thumbs, w, h
+        keep.update(thumbs.values())
+        apply_overrides(entry, overrides.get(file, {}))
+        del entry["_collections"]
+        photos.append(entry)
+    photos.sort(key=lambda p: (p["date"] or "", p["file"]))
+
+    prune_thumbs(thumbs_dir, keep)
+    write_json(json_path, photos)
+    write_csv(csv_path, photos)
+    summary(photos, json_path, multi_coll, missing)
 
 
 if __name__ == "__main__":

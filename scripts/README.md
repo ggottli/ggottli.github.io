@@ -1,10 +1,27 @@
 # Photo pipeline
 
-`build_photos.py` turns the images in `/portfolio/photos/` into
-`photos.json`, `photos.csv`, and WebP thumbnails in `/portfolio/photos/thumbs/`.
-Originals are never modified.
+`build_photos.py` reads the Apple Photos library on this Mac and turns it
+into `portfolio/photos/photos.json`, `photos.csv`, and WebP thumbnails in
+`portfolio/photos/thumbs/`. Nothing in Photos is ever modified.
 
-## Setup
+Photos is the source of truth. Tag and date things there, then rebuild.
+
+| On the site   | Comes from Photos                                        |
+|---------------|----------------------------------------------------------|
+| which photos  | the album **Website**                                    |
+| collection    | albums inside a folder named **Collections** (optional)  |
+| who           | named faces (People)                                     |
+| title         | Title                                                    |
+| caption       | Description                                              |
+| date          | capture date                                             |
+| lat / lng     | location                                                 |
+| place         | Photos' reverse-geocoded place, as "City, State"         |
+
+Photos in a Collections album are published even if they aren't in
+Website, so you can sort straight into collections. Edited photos export
+as edited. Videos, hidden, and trashed items are skipped.
+
+## Setup (once)
 
 ```
 python3 -m venv .venv
@@ -13,43 +30,50 @@ python3 -m venv .venv
 
 ## Everyday use
 
-Drop images (jpg, jpeg, png, heic) into `/portfolio/photos/`, then:
+Add photos to the Website album (or a Collections album), then:
 
 ```
 .venv/bin/python scripts/build_photos.py
 ```
 
-This reads EXIF for date and GPS, writes thumbnails at 160/800/1600px
-(skipping ones that are already up to date), and rewrites `photos.json`
-and `photos.csv`. HEIC files also get a full-size JPG copy in `thumbs/`.
+The first run exports every photo as a full-size JPEG into
+`portfolio/photos/export/` (gitignored, rebuilt from Photos, safe to
+delete) and writes thumbnails at 160/800/1600px. Later runs only touch
+what changed, and remove thumbnails for photos you took out of the album.
+Then commit `photos.json`, `photos.csv`, `overrides.json`, and `thumbs/`
+and push. The site only serves the thumbnails, so originals never enter git.
 
-A photo with no GPS gets `lat`/`lng` of null. A photo with no EXIF date
-falls back to the file's modified time and is flagged `"date_source": "file"`
-so you know to fix it. The summary at the end lists what's missing.
+The summary at the end lists how many photos lack GPS, a place, a named
+person, a collection, or a title, and any that couldn't be downloaded
+from iCloud (open Photos and let it finish syncing, then rerun).
 
-## Filling in titles, captions, who, collection, place
+Useful flags:
 
-Those five fields are yours; the script never overwrites them on a
-normal run. Edit them in `photos.csv` with a spreadsheet, then import:
+- `--skip-export` rebuilds JSON and thumbs from the last export without
+  touching Photos.
+- `--dry-run` shows what the export would do.
+- `--album NAME` / `--collections-folder NAME` change the Photos names.
+
+## Overriding what Photos says
+
+Sometimes you want the site to differ from Photos (a nicer collection
+name, a person who has no face tag). Those live in
+`portfolio/photos/overrides.json` and win over Photos on every run.
+
+Easiest way to edit them: open `photos.csv` in a spreadsheet, change
+title/caption/who/collection/place cells, then:
 
 ```
 .venv/bin/python scripts/build_photos.py --from-csv
 ```
 
-CSV rules:
-
+- Blank cell: leave alone. A cell that matches Photos removes any
+  override. A cell containing just `-` forces the field empty.
 - `who` is comma-separated: `Mom, Dad, friends`.
-- A blank cell means "leave whatever is there" — safe to import a
-  partially filled sheet.
-- A cell containing just `-` clears the field.
+- The CSV is regenerated every run, so import edits right after making them.
 
-The CSV is regenerated from `photos.json` on every run, so treat the
-JSON as the source of truth and the CSV as the editing surface: edit,
-import, done. Don't leave unimported edits sitting in the CSV.
+## Collection intros
 
-## GitHub Actions
-
-`.github/workflows/photos.yml` runs the script (with `--from-csv` when
-the CSV exists) on any push that touches `/portfolio/photos/` and
-commits the regenerated `photos.json`, `photos.csv`, and thumbnails.
-So pushing new images — or an edited `photos.csv` — is enough.
+`portfolio/photos/collections.json` holds an optional title and intro
+paragraph per collection, keyed by slug. It is hand-written and not
+touched by the script.
