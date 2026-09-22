@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Regicide (solo)</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --fg: #000000;
+  --muted: #6a6a6a;
+  --line: #bfbfbf;
+  --red: #a11a1a;
+  --disabled: #a8a8a8;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161616; --fg: #e4e4e4; --muted: #9a9a9a; --line: #4a4a4a; --red: #ff7a7a; --disabled: #666666;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161616; --fg: #e4e4e4; --muted: #9a9a9a; --line: #4a4a4a; --red: #ff7a7a; --disabled: #666666;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--bg); color: var(--fg); font-size: 15px; line-height: 1.45; }
+main { max-width: 680px; padding: 14px 14px 48px; }
+h1 { font-size: 1.2em; font-weight: normal; margin: 0; }
+header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; }
+header nav { display: flex; gap: 12px; }
+button { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 2px 9px; cursor: pointer; border-radius: 0; }
+button:disabled { color: var(--disabled); cursor: default; }
+button.linkish { border: none; padding: 0; background: none; text-decoration: underline; }
+button.card { margin: 3px 5px 3px 0; padding: 5px 8px; min-width: 2.7em; font-size: 1.05em; }
+button.card[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--fg); font-weight: bold; }
+.red { color: var(--red); }
+button:disabled .red { color: var(--disabled); }
+.muted { color: var(--muted); }
+section { margin-bottom: 16px; }
+table.st { border-collapse: collapse; }
+table.st td { padding: 1px 14px 1px 0; vertical-align: top; }
+table.st td:first-child { color: var(--muted); white-space: nowrap; }
+.actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.preview { margin-top: 6px; }
+.log { border-top: 1px solid var(--line); padding-top: 8px; max-height: 280px; overflow: auto; font-size: 0.94em; }
+.log div { margin-bottom: 5px; }
+.log .t { color: var(--muted); }
+details { margin: 10px 0; }
+summary { cursor: pointer; }
+details p, details li { margin: 5px 0; }
+footer { color: var(--muted); font-size: 0.88em; margin-top: 30px; }
+a { color: inherit; }
+.warn { margin-top: 6px; }
+.over { font-size: 1.1em; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Regicide (solo)</h1>
+  <nav>
+    <button class="linkish" id="btnNew">new game</button>
+    <button class="linkish" id="btnRules">rules</button>
+    <button class="linkish" id="btnStats">record</button>
+  </nav>
+</header>
+
+<section id="status"></section>
+<section id="hand"></section>
+<section id="action"></section>
+<section id="logwrap"><div class="log" id="log"></div></section>
+
+<details id="rules">
+<summary>How to play</summary>
+<p><b>Goal.</b> Defeat all 12 royals in order: four Jacks (10 attack, 20 health), then four Queens (15 / 30), then four Kings (20 / 40). You lose if you can't cover an enemy's attack with discards, or if you begin a turn with no cards and no Jesters.</p>
+<p><b>Each turn.</b></p>
+<ol>
+<li><b>Play.</b> One card, an Ace with one other card (any card, even another Ace or a royal), or a set of same-number cards from 2 to 5 whose total is 10 or less (2-2, 2-2-2, 2-2-2-2, 3-3, 3-3-3, 4-4, 5-5). Aces can't join sets. Solo has no yielding: if you hold cards, you must play.</li>
+<li><b>Suit powers</b> fire at the total value played. ♥ heal: that many cards from the discard go, shuffled, under the Tavern deck. ♦ draw: draw that many (hand max 8). ♣ double: damage counts twice. ♠ shield: the enemy's attack drops by that much, cumulative until it's defeated. Mixed suits all fire at the full total; a matching pair of suits fires once. ♥ resolves before ♦. <b>The enemy ignores the power of its own suit</b> (the number still counts as damage).</li>
+<li><b>Damage.</b> If total damage reaches the enemy's health it dies: played cards go to the discard, and you skip its attack and start a fresh turn against the next royal. <b>Exact damage</b> puts the royal face down on top of the Tavern deck instead of the discard; draw it and it fights for you (Jack = 10, Queen = 15, King = 20, normal suit power).</li>
+<li><b>Suffer.</b> Otherwise the enemy hits for its attack minus shields. Discard cards worth at least that much (Ace = 1). An empty hand is allowed.</li>
+</ol>
+<p><b>Jesters.</b> You have two. At the start of step 1 (before playing) or step 4 (before discarding), flip one: discard your whole hand and draw 8. Win with 0 / 1 / 2 flipped for a Gold / Silver / Bronze victory.</p>
+<p><b>Card values.</b> 2–10 face value, Ace 1, Jack 10, Queen 15, King 20 — the same whether attacking or discarding.</p>
+</details>
+
+<details id="stats">
+<summary>Record</summary>
+<div id="statsBody"></div>
+</details>
+
+<footer>
+Fan-made solo table for Regicide, a card game by Paul Abrahams, Luke Badger and Andy Richdale (Badgers From Mars). Official rules and the real deck at <a href="https://www.regicidegame.com" target="_blank" rel="noopener">regicidegame.com</a>. Progress saves in this browser.
+</footer>
+</main>
+
+<script>
+(function () {
+'use strict';
+
+var SUITS = ['S', 'H', 'D', 'C'];
+var SYM = { S: '\u2660', H: '\u2665', D: '\u2666', C: '\u2663' };
+var SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
+var RANK_NAME = { A: 'Ace', J: 'Jack', Q: 'Queen', K: 'King' };
+var ROYAL = { J: { attack: 10, health: 20 }, Q: { attack: 15, health: 30 }, K: { attack: 20, health: 40 } };
+var IMMUNE_NOTE = { S: 'spades won\u2019t shield', H: 'hearts won\u2019t heal', D: 'diamonds won\u2019t draw', C: 'clubs won\u2019t double' };
+var HAND_MAX = 8;
+var SAVE_KEY = 'regicide-solo-save-v1';
+var STATS_KEY = 'regicide-solo-stats-v1';
+
+var S = null;
+
+function $(id) { return document.getElementById(id); }
+function val(c) { return c.rank === 'A' ? 1 : c.rank === 'J' ? 10 : c.rank === 'Q' ? 15 : c.rank === 'K' ? 20 : +c.rank; }
+function card(rank, suit) { return { rank: rank, suit: suit, id: rank + suit }; }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function isRed(c) { return c.suit === 'H' || c.suit === 'D'; }
+function isRoyal(c) { return !!ROYAL[c.rank]; }
+function plainLabel(c) { return c.rank + SYM[c.suit]; }
+function longName(c) { return (RANK_NAME[c.rank] || c.rank) + ' of ' + SUIT_NAME[c.suit]; }
+function cardHTML(c) { return c.rank + '<span class="' + (isRed(c) ? 'red' : '') + '">' + SYM[c.suit] + '</span>'; }
+function cardsHTML(cards) { return cards.map(cardHTML).join(' '); }
+function suitHTML(s) { return '<span class="' + (s === 'H' || s === 'D' ? 'red' : '') + '">' + SYM[s] + '</span>'; }
+function sum(cards) { return cards.reduce(function (t, c) { return t + val(c); }, 0); }
+function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+function health() { return ROYAL[S.enemy.rank].health; }
+function baseAttack() { return ROYAL[S.enemy.rank].attack; }
+function effAttack(extra) { return Math.max(0, baseAttack() - S.shield - (extra || 0)); }
+function byId(id) { for (var i = 0; i < S.hand.length; i++) if (S.hand[i].id === id) return S.hand[i]; return null; }
+function selectedCards() { return S.sel.map(byId).filter(Boolean); }
+function log(msg) { S.log.unshift({ t: S.turn, msg: msg }); if (S.log.length > 200) S.log.length = 200; }
+
+function sortedHand() {
+  var h = S.hand.slice();
+  var so = { S: 0, H: 1, C: 2, D: 3 };
+  if (S.sort === 'suit') h.sort(function (a, b) { return so[a.suit] - so[b.suit] || val(a) - val(b) || a.rank.localeCompare(b.rank); });
+  else h.sort(function (a, b) { return val(a) - val(b) || a.rank.localeCompare(b.rank) || so[a.suit] - so[b.suit]; });
+  return h;
+}
+
+/* ---------- rules ---------- */
+
+function isValidPlay(cards) {
+  if (cards.length === 0) return false;
+  if (cards.length === 1) return true;
+  var aces = cards.filter(function (c) { return c.rank === 'A'; }).length;
+  if (cards.length === 2 && aces >= 1) return true;
+  if (cards.length > 4) return false;
+  var r = cards[0].rank;
+  if (['2', '3', '4', '5'].indexOf(r) < 0) return false;
+  for (var i = 0; i < cards.length; i++) if (cards[i].rank !== r) return false;
+  return sum(cards) <= 10;
+}
+
+function drawCards(n) {
+  var d = 0;
+  while (d < n && S.hand.length < HAND_MAX && S.tavern.length) {
+    var c = S.tavern.pop();
+    if (S.knownTop === c.id) S.knownTop = null;
+    S.hand.push(c); d++;
+  }
+  return d;
+}
+
+function heal(n) {
+  shuffle(S.discard);
+  var taken = S.discard.splice(0, Math.min(n, S.discard.length));
+  S.tavern = taken.concat(S.tavern);
+  return taken.length;
+}
+
+function newGame() {
+  var castle = [];
+  ['J', 'Q', 'K'].forEach(function (r) { castle = castle.concat(shuffle(SUITS.map(function (s) { return card(r, s); }))); });
+  var tavern = [];
+  SUITS.forEach(function (s) { tavern.push(card('A', s)); for (var r = 2; r <= 10; r++) tavern.push(card(String(r), s)); });
+  shuffle(tavern);
+  S = { castle: castle, tavern: tavern, discard: [], hand: [], played: [], enemy: null, dmg: 0, shield: 0,
+        jesters: 2, phase: 'play', turn: 0, attackPending: 0, log: [], sel: [], sort: (S && S.sort) || 'rank', over: null, knownTop: null };
+  drawCards(HAND_MAX);
+  log('A new castle. Twelve royals stand between you and the throne.');
+  nextEnemy();
+  startTurn();
+}
+
+function nextEnemy() {
+  S.enemy = S.castle.shift();
+  S.dmg = 0; S.shield = 0;
+  log(cardHTML(S.enemy) + ' ' + longName(S.enemy) + ' steps forward: ' + health() + ' health, ' + baseAttack() + ' attack, immune to ' + suitHTML(S.enemy.suit) + '.');
+}
+
+function startTurn() {
+  S.turn++;
+  S.phase = 'play'; S.sel = []; S.attackPending = 0;
+  if (S.hand.length === 0) {
+    if (S.jesters > 0) log('Your hand is empty. Flip a Jester to draw a new one.');
+    else { lose('You began a turn with an empty hand and no Jesters left.'); return; }
+  }
+  finish();
+}
+
+function previewPlay(cards) {
+  var X = sum(cards);
+  var suits = {}; cards.forEach(function (c) { suits[c.suit] = true; });
+  var imm = S.enemy.suit;
+  function act(s) { return suits[s] && s !== imm; }
+  var handAfter = S.hand.length - cards.length;
+  var healN = act('H') ? Math.min(X, S.discard.length) : 0;
+  var drawN = act('D') ? Math.min(X, HAND_MAX - handAfter, S.tavern.length + healN) : 0;
+  return { X: X, immuneHit: !!suits[imm], heal: healN, wantHeal: act('H'), draw: drawN, wantDraw: act('D'),
+           dbl: !!act('C'), shield: act('S') ? X : 0, dmg: act('C') ? 2 * X : X };
+}
+
+function playSelected() {
+  var cards = selectedCards();
+  if (S.phase !== 'play' || !isValidPlay(cards)) return;
+  var ids = S.sel.slice();
+  S.hand = S.hand.filter(function (c) { return ids.indexOf(c.id) < 0; });
+  S.sel = [];
+  S.played = S.played.concat(cards);
+  var X = sum(cards);
+  var suits = {}; cards.forEach(function (c) { suits[c.suit] = true; });
+  var imm = S.enemy.suit;
+  function act(s) { return suits[s] && s !== imm; }
+  var parts = [];
+  if (act('H')) { var hn = heal(X); parts.push(suitHTML('H') + ' healed ' + hn + ' into the Tavern'); }
+  if (act('D')) { var dn = drawCards(X); parts.push(suitHTML('D') + ' drew ' + dn); }
+  var dmg = act('C') ? X * 2 : X;
+  if (act('C')) parts.push(suitHTML('C') + ' doubled');
+  if (act('S')) { S.shield += X; parts.push(suitHTML('S') + ' shield now ' + S.shield); }
+  if (suits[imm]) parts.push(suitHTML(imm) + ' ignored, enemy is immune');
+  S.dmg += dmg;
+  log('Played ' + cardsHTML(cards) + ' for ' + dmg + ' damage' + (parts.length ? ' \u2014 ' + parts.join(', ') : '') +
+      '. ' + cardHTML(S.enemy) + ' at ' + Math.max(0, health() - S.dmg) + '/' + health() + '.');
+  if (S.dmg >= health()) defeatEnemy(); else enemyAttacks();
+}
+
+function defeatEnemy() {
+  var e = S.enemy;
+  var exact = S.dmg === health();
+  if (exact) { S.tavern.push(e); S.knownTop = e.id; } else S.discard.push(e);
+  S.discard = S.discard.concat(S.played);
+  S.played = [];
+  log(exact
+    ? cardHTML(e) + ' falls to exact damage. It goes face down on top of the Tavern deck; draw it and it fights for you.'
+    : cardHTML(e) + ' is defeated.');
+  if (S.castle.length === 0) { win(); return; }
+  nextEnemy();
+  startTurn();
+}
+
+function enemyAttacks() {
+  var atk = effAttack();
+  if (atk === 0) { log(cardHTML(S.enemy) + ' attacks for 0. Fully shielded.'); startTurn(); return; }
+  S.phase = 'discard'; S.attackPending = atk; S.sel = [];
+  var total = sum(S.hand);
+  if (total < atk && S.jesters === 0) { lose(plainLabel(S.enemy) + ' attacked for ' + atk + ' and your hand was worth only ' + total + '.'); return; }
+  log(cardHTML(S.enemy) + ' attacks for ' + atk + '. Discard cards worth at least ' + atk + '.');
+  finish();
+}
+
+function discardSelected() {
+  if (S.phase !== 'discard') return;
+  var cards = selectedCards();
+  var t = sum(cards);
+  if (t < S.attackPending) return;
+  var ids = S.sel.slice();
+  S.hand = S.hand.filter(function (c) { return ids.indexOf(c.id) < 0; });
+  S.discard = S.discard.concat(cards);
+  log('Discarded ' + cardsHTML(cards) + ' (' + t + ') to cover ' + S.attackPending + '.');
+  startTurn();
+}
+
+function flipJester() {
+  if (!S || S.jesters <= 0 || S.phase === 'over') return;
+  S.jesters--;
+  S.discard = S.discard.concat(S.hand);
+  S.hand = []; S.sel = [];
+  var n = drawCards(HAND_MAX);
+  log('Flipped a Jester: discarded your hand and drew ' + n + '. ' + plural(S.jesters, 'Jester') + ' left.');
+  if (S.phase === 'discard') {
+    var total = sum(S.hand);
+    if (total < S.attackPending && S.jesters === 0) { lose('Even after the Jester your hand (' + total + ') can\u2019t cover ' + S.attackPending + '.'); return; }
+  } else if (S.phase === 'play' && S.hand.length === 0) {
+    if (S.jesters === 0) { lose('The Tavern deck is empty and you have no cards left.'); return; }
+  }
+  finish();
+}
+
+function suggestDiscard() {
+  if (S.phase !== 'discard') return;
+  var h = S.hand, n = h.length, need = S.attackPending, best = null;
+  for (var m = 1; m < (1 << n); m++) {
+    var t = 0, cnt = 0;
+    for (var i = 0; i < n; i++) if (m & (1 << i)) { t += val(h[i]); cnt++; }
+    if (t < need) continue;
+    if (!best || t < best.t || (t === best.t && cnt < best.cnt)) best = { m: m, t: t, cnt: cnt };
+  }
+  if (!best) return;
+  S.sel = h.filter(function (c, i) { return best.m & (1 << i); }).map(function (c) { return c.id; });
+  render();
+}
+
+function win() {
+  var used = 2 - S.jesters;
+  var tier = ['Gold', 'Silver', 'Bronze'][used];
+  S.phase = 'over'; S.over = { result: 'win', tier: tier, used: used };
+  log('The last King falls. ' + tier + ' victory, ' + plural(used, 'Jester') + ' used.');
+  bumpStats(tier.toLowerCase());
+  finish();
+}
+
+function lose(reason) {
+  S.phase = 'over'; S.over = { result: 'loss', reason: reason };
+  log('Defeat. ' + reason);
+  bumpStats('loss');
+  finish();
+}
+
+/* ---------- persistence ---------- */
+
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function loadSave() {
+  try {
+    var s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (s && s.enemy && Array.isArray(s.hand) && Array.isArray(s.tavern) && Array.isArray(s.castle)) return s;
+  } catch (e) {}
+  return null;
+}
+function loadStats() {
+  var base = { games: 0, gold: 0, silver: 0, bronze: 0, loss: 0, streak: 0, best: 0 };
+  try { var st = JSON.parse(localStorage.getItem(STATS_KEY)); if (st) for (var k in base) if (typeof st[k] === 'number') base[k] = st[k]; } catch (e) {}
+  return base;
+}
+function bumpStats(kind) {
+  var st = loadStats();
+  st.games++; st[kind]++;
+  if (kind === 'loss') st.streak = 0; else { st.streak++; st.best = Math.max(st.best, st.streak); }
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) {}
+}
+function finish() { render(); save(); }
+
+/* ---------- ui ---------- */
+
+function toggle(id) {
+  if (S.phase === 'over') return;
+  var i = S.sel.indexOf(id);
+  if (i >= 0) { S.sel.splice(i, 1); }
+  else {
+    var c = byId(id); if (!c) return;
+    if (S.phase === 'play' && !isValidPlay(selectedCards().concat([c]))) return;
+    S.sel.push(id);
+  }
+  render();
+}
+
+function renderStatus() {
+  var e = S.enemy;
+  var castleCounts = { J: 0, Q: 0, K: 0 };
+  S.castle.forEach(function (c) { castleCounts[c.rank]++; });
+  var castleTxt = S.castle.length + ' left' + (S.castle.length ? ' (' + [castleCounts.J && plural(castleCounts.J, 'Jack'), castleCounts.Q && plural(castleCounts.Q, 'Queen'), castleCounts.K && plural(castleCounts.K, 'King')].filter(Boolean).join(', ') + ')' : '');
+  var atkTxt = S.shield ? baseAttack() + ' \u2212 ' + S.shield + ' shield = ' + effAttack() : String(baseAttack());
+  var tavernTxt = S.tavern.length + (S.knownTop ? ' <span class="muted">(' + S.knownTop.replace(/[SHDC]$/, function (s) { return SYM[s]; }) + ' face down on top)</span>' : '');
+  var discardSorted = S.discard.slice().sort(function (a, b) { return val(a) - val(b) || a.suit.localeCompare(b.suit); });
+  var html = '<table class="st">' +
+    '<tr><td>Enemy</td><td>' + cardHTML(e) + ' ' + longName(e) + ' <span class="muted">(' + (12 - S.castle.length) + ' of 12)</span></td></tr>' +
+    '<tr><td>Health</td><td>' + Math.max(0, health() - S.dmg) + ' / ' + health() + (S.dmg ? ' <span class="muted">(' + S.dmg + ' dealt)</span>' : '') + '</td></tr>' +
+    '<tr><td>Attack</td><td>' + atkTxt + '</td></tr>' +
+    '<tr><td>Immune</td><td>' + suitHTML(e.suit) + ' <span class="muted">' + IMMUNE_NOTE[e.suit] + ' against this enemy</span></td></tr>' +
+    (S.played.length ? '<tr><td>On table</td><td>' + cardsHTML(S.played) + '</td></tr>' : '') +
+    '<tr><td>Castle</td><td>' + castleTxt + '</td></tr>' +
+    '<tr><td>Tavern</td><td>' + tavernTxt + '</td></tr>' +
+    '<tr><td>Discard</td><td>' + S.discard.length + (S.discard.length ? ' <details style="display:inline-block;margin:0"><summary class="muted" style="display:inline">show</summary><div>' + cardsHTML(discardSorted) + '</div></details>' : '') + '</td></tr>' +
+    '<tr><td>Jesters</td><td>' + S.jesters + ' of 2</td></tr>' +
+    '</table>';
+  $('status').innerHTML = html;
+}
+
+function renderHand() {
+  var h = sortedHand();
+  var html = '<div>Hand (' + S.hand.length + '/' + HAND_MAX + ') <span class="muted">sort by</span> ' +
+    (S.sort === 'suit' ? '<button class="linkish" id="sortRank">rank</button> <span class="muted">/ suit</span>' : '<span class="muted">rank /</span> <button class="linkish" id="sortSuit">suit</button>') +
+    '</div><div>';
+  if (!h.length) html += '<span class="muted">no cards</span>';
+  h.forEach(function (c) {
+    var selected = S.sel.indexOf(c.id) >= 0;
+    var enabled = S.phase === 'discard' || (S.phase === 'play' && (selected || isValidPlay(selectedCards().concat([c]))));
+    html += '<button class="card" data-id="' + c.id + '" aria-pressed="' + selected + '"' + (enabled ? '' : ' disabled') +
+      ' title="' + longName(c) + ', value ' + val(c) + '">' + cardHTML(c) + (isRoyal(c) ? ' <span class="muted">' + val(c) + '</span>' : '') + '</button>';
+  });
+  html += '</div>';
+  $('hand').innerHTML = html;
+  var btns = $('hand').querySelectorAll('button.card');
+  for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', function (ev) { toggle(ev.currentTarget.getAttribute('data-id')); });
+  var sr = $('sortRank'), ss = $('sortSuit');
+  if (sr) sr.addEventListener('click', function () { S.sort = 'rank'; finish(); });
+  if (ss) ss.addEventListener('click', function () { S.sort = 'suit'; finish(); });
+}
+
+function jesterButton() {
+  return '<button id="btnJester"' + (S.jesters > 0 ? '' : ' disabled') + '>Flip Jester (' + S.jesters + ' left)</button>';
+}
+
+function renderAction() {
+  var html = '';
+  var e = S.enemy;
+  if (S.phase === 'over') {
+    if (S.over.result === 'win') html += '<div class="over">' + S.over.tier + ' victory. The corrupted monarchy is overthrown with ' + plural(S.over.used, 'Jester') + ' used.</div>';
+    else html += '<div class="over">Defeat. ' + S.over.reason + ' You reached royal ' + (12 - S.castle.length) + ' of 12.</div>';
+    html += '<div class="actions"><button id="btnAgain">New game</button></div>';
+  } else if (S.phase === 'play') {
+    html += '<div>Turn ' + S.turn + '. ';
+    if (S.hand.length === 0) html += 'Your hand is empty; flip a Jester to draw a new one.</div>';
+    else html += 'Choose cards to play against ' + cardHTML(e) + '.</div>';
+    var cards = selectedCards();
+    if (cards.length) {
+      var p = previewPlay(cards);
+      var bits = [];
+      bits.push(p.X + ' attack');
+      if (p.wantHeal) bits.push(suitHTML('H') + ' heal ' + p.heal + (p.heal < p.X ? ' <span class="muted">(only ' + p.heal + ' in discard)</span>' : ''));
+      if (p.wantDraw) bits.push(suitHTML('D') + ' draw ' + p.draw + (p.draw < p.X ? ' <span class="muted">(hand or Tavern limit)</span>' : ''));
+      if (p.dbl) bits.push(suitHTML('C') + ' doubled');
+      if (p.shield) bits.push(suitHTML('S') + ' shield +' + p.shield + ' <span class="muted">(attack ' + effAttack() + ' \u2192 ' + effAttack(p.shield) + ')</span>');
+      if (p.immuneHit) bits.push('<span class="muted">' + SYM[e.suit] + ' power ignored, enemy is immune</span>');
+      var remaining = health() - S.dmg - p.dmg;
+      var outcome;
+      if (remaining <= 0) outcome = remaining === 0
+        ? '<b>Exact kill.</b> ' + cardHTML(e) + ' goes face down on top of the Tavern deck.'
+        : '<b>Defeats ' + plainLabel(e) + '.</b> No counterattack; a fresh turn begins against the next royal.';
+      else {
+        var atkAfter = effAttack(p.shield);
+        outcome = plainLabel(e) + ' drops to ' + remaining + '/' + health() + ', then hits back for ' + atkAfter + '.';
+        var handAfter = S.hand.length - cards.length + p.draw;
+        if (atkAfter > 0 && handAfter === 0) outcome += ' <span class="muted">You\u2019d have no cards to discard.</span>';
+      }
+      html += '<div class="preview">' + cardsHTML(cards) + ' \u2192 <b>' + p.dmg + ' damage</b>' + (bits.length ? ' <span class="muted">(</span>' + bits.join('<span class="muted">, </span>') + '<span class="muted">)</span>' : '') + '<br>' + outcome + '</div>';
+    }
+    html += '<div class="actions">' +
+      '<button id="btnPlay"' + (isValidPlay(cards) ? '' : ' disabled') + '>Play' + (cards.length ? ' ' + cards.length + (cards.length === 1 ? ' card' : ' cards') : '') + '</button>' +
+      '<button id="btnClear"' + (cards.length ? '' : ' disabled') + '>Clear</button>' +
+      jesterButton() + '</div>';
+  } else if (S.phase === 'discard') {
+    var sel = selectedCards(), t = sum(sel), total = sum(S.hand);
+    html += '<div>' + cardHTML(e) + ' attacks for <b>' + S.attackPending + '</b>. Discard cards worth at least ' + S.attackPending + '.</div>';
+    html += '<div class="preview">Selected: ' + (sel.length ? cardsHTML(sel) + ' = ' : '') + '<b>' + t + '</b> of ' + S.attackPending +
+      (t > S.attackPending ? ' <span class="muted">(' + (t - S.attackPending) + ' over)</span>' : '') + '</div>';
+    if (total < S.attackPending) html += '<div class="warn">Your whole hand is worth ' + total + '. Flip a Jester for a new hand or the enemy wins.</div>';
+    html += '<div class="actions">' +
+      '<button id="btnDiscard"' + (t >= S.attackPending ? '' : ' disabled') + '>Discard selected</button>' +
+      '<button id="btnSuggest"' + (total >= S.attackPending ? '' : ' disabled') + '>Suggest</button>' +
+      '<button id="btnClear"' + (sel.length ? '' : ' disabled') + '>Clear</button>' +
+      jesterButton() + '</div>';
+  }
+  $('action').innerHTML = html;
+  var b;
+  if ((b = $('btnPlay'))) b.addEventListener('click', playSelected);
+  if ((b = $('btnDiscard'))) b.addEventListener('click', discardSelected);
+  if ((b = $('btnSuggest'))) b.addEventListener('click', suggestDiscard);
+  if ((b = $('btnClear'))) b.addEventListener('click', function () { S.sel = []; render(); });
+  if ((b = $('btnJester'))) b.addEventListener('click', flipJester);
+  if ((b = $('btnAgain'))) b.addEventListener('click', newGame);
+}
+
+function renderLog() {
+  var html = '';
+  S.log.slice(0, 80).forEach(function (l) { html += '<div><span class="t">T' + l.t + '</span> ' + l.msg + '</div>'; });
+  $('log').innerHTML = html;
+}
+
+function renderStats() {
+  var st = loadStats();
+  var wins = st.gold + st.silver + st.bronze;
+  $('statsBody').innerHTML = '<table class="st">' +
+    '<tr><td>Games</td><td>' + st.games + '</td></tr>' +
+    '<tr><td>Wins</td><td>' + wins + (st.games ? ' <span class="muted">(' + Math.round(100 * wins / st.games) + '%)</span>' : '') + '</td></tr>' +
+    '<tr><td>Gold / Silver / Bronze</td><td>' + st.gold + ' / ' + st.silver + ' / ' + st.bronze + '</td></tr>' +
+    '<tr><td>Losses</td><td>' + st.loss + '</td></tr>' +
+    '<tr><td>Streak</td><td>' + st.streak + ' <span class="muted">(best ' + st.best + ')</span></td></tr>' +
+    '</table><div style="margin-top:6px"><button class="linkish" id="btnResetStats">reset record</button></div>';
+  $('btnResetStats').addEventListener('click', function () {
+    if (confirm('Reset your win/loss record?')) { try { localStorage.removeItem(STATS_KEY); } catch (e) {} renderStats(); }
+  });
+}
+
+function render() {
+  renderStatus(); renderHand(); renderAction(); renderLog(); renderStats();
+}
+
+$('btnNew').addEventListener('click', function () {
+  if (S && S.phase !== 'over' && S.turn > 1 && !confirm('Abandon the current game and start over?')) return;
+  newGame();
+});
+$('btnRules').addEventListener('click', function () { var d = $('rules'); d.open = !d.open; if (d.open) d.scrollIntoView({ block: 'start' }); });
+$('btnStats').addEventListener('click', function () { var d = $('stats'); d.open = !d.open; if (d.open) d.scrollIntoView({ block: 'start' }); });
+
+var saved = loadSave();
+if (saved) { S = saved; render(); } else newGame();
+})();
+</script>
+</body>
+</html>
