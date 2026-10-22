@@ -1,80 +1,642 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Minesweeper</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="game-shell">
-      <section class="topbar" aria-label="Game setup">
-        <div class="title-block">
-          <p class="eyebrow">Field Command</p>
-          <h1>Minesweeper</h1>
-          <p id="status" class="status-message" aria-live="polite">
-            Choose a field and make the first sweep.
-          </p>
-        </div>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Minesweeper</title>
+<meta name="description" content="Minesweeper with no-guess boards, hints, stats and best times. Runs entirely in your browser.">
+<style>
+:root{
+  --bg:#141518; --panel:#1d1f24; --panel-2:#24272e; --line:#33363f; --fg:#e9e7e1; --muted:#9a9890; --accent:#5aa9ff;
+  --cell-hidden:#3a3e48; --cell-hidden-hi:#4a4f5b; --cell-hidden-lo:#2c2f37; --cell-open:#20232a; --cell-line:#15171b;
+  --n1:#6ea8ff; --n2:#5fcf7a; --n3:#ff6b6b; --n4:#b39dff; --n5:#ff9f5a; --n6:#4dd0e1; --n7:#f0f0f0; --n8:#b0b0b0;
+  --flag:#ff5c5c; --hit:#c62828; --good:#3fbf6f; --warn:#f0b64a; --why:rgba(255,214,74,.55);
+  --cell:34px; --radius:10px;
+}
+:root[data-theme="light"]{
+  --bg:#f3f1ec; --panel:#ffffff; --panel-2:#f6f4ef; --line:#dcd8cf; --fg:#1d1d1b; --muted:#6b6a64; --accent:#1f6fd0;
+  --cell-hidden:#c9c6bd; --cell-hidden-hi:#e7e4dc; --cell-hidden-lo:#a8a59c; --cell-open:#e9e6df; --cell-line:#cfcbc2;
+  --n1:#1b5fd1; --n2:#2d8f45; --n3:#d32f2f; --n4:#4b2fb3; --n5:#b35a12; --n6:#0d8a99; --n7:#222; --n8:#777;
+  --flag:#d8322e; --hit:#d32f2f; --good:#2e8b57; --warn:#c48a12; --why:rgba(255,196,0,.6);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; }
+body{
+  background:var(--bg); color:var(--fg);
+  font:15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust:100%; min-height:100vh;
+}
+button,input,select{ font:inherit; color:inherit; }
+button{ background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:6px 12px; cursor:pointer; }
+button:hover{ border-color:var(--fg); }
+button:focus-visible, .cell:focus-visible, input:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+button.on{ background:var(--fg); color:var(--bg); border-color:var(--fg); }
+button:disabled{ opacity:.45; cursor:default; border-color:var(--line); }
+.wrap{ max-width:1100px; margin:0 auto; padding:18px 16px 48px; }
+header{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+h1{ font-size:1.5em; margin:0; letter-spacing:-.01em; }
+.sub{ color:var(--muted); font-size:.92em; margin:0; }
+.row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.chips{ display:flex; gap:6px; flex-wrap:wrap; }
+.chips button{ padding:6px 12px; }
+.custom{ display:none; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+.custom.show{ display:flex; }
+.custom label{ display:flex; gap:6px; align-items:center; font-size:.9em; color:var(--muted); }
+.custom input{ width:64px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel); }
+.hud{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px; margin:14px 0 10px;
+}
+.hud .stat{ display:flex; flex-direction:column; min-width:0; }
+.hud .stat .l{ font-size:.72em; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.hud .stat .v{ font-size:1.35em; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1; }
+.hud .right{ text-align:right; align-items:flex-end; }
+.hud .pair{ display:flex; gap:22px; }
+.hud .right .pair{ justify-content:flex-end; }
+#face{ font-size:30px; line-height:1; width:54px; height:54px; padding:0; border-radius:12px; display:flex; align-items:center; justify-content:center; }
+.statusline{ min-height:1.5em; color:var(--muted); font-size:.95em; margin:0 0 10px; }
+.statusline.win{ color:var(--good); } .statusline.loss{ color:var(--flag); } .statusline.note{ color:var(--warn); }
+.boardwrap{ overflow-x:auto; padding:4px 0 10px; -webkit-overflow-scrolling:touch; }
+.board{
+  display:grid; gap:0; width:max-content; margin:0 auto; border:3px solid var(--line); border-radius:8px; overflow:hidden;
+  user-select:none; -webkit-user-select:none; touch-action:manipulation; -webkit-touch-callout:none;
+  grid-template-columns:repeat(var(--cols), var(--cell));
+}
+.board.shake{ animation:shake .45s; }
+@keyframes shake{ 10%,90%{ transform:translateX(-2px); } 20%,80%{ transform:translateX(4px); } 30%,50%,70%{ transform:translateX(-6px); } 40%,60%{ transform:translateX(6px); } }
+.cell{
+  width:var(--cell); height:var(--cell); display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:calc(var(--cell) * .55); line-height:1; cursor:pointer; position:relative;
+  background:var(--cell-hidden); color:transparent;
+  box-shadow:inset 2px 2px 0 var(--cell-hidden-hi), inset -2px -2px 0 var(--cell-hidden-lo);
+  border:0; padding:0; border-radius:0; font-family:inherit;
+}
+.cell:hover{ filter:brightness(1.08); }
+.cell.open{ background:var(--cell-open); box-shadow:inset 0 0 0 1px var(--cell-line); cursor:default; color:var(--fg); }
+.cell.open:hover{ filter:none; }
+.cell.open.n1{ color:var(--n1); } .cell.open.n2{ color:var(--n2); } .cell.open.n3{ color:var(--n3); } .cell.open.n4{ color:var(--n4); }
+.cell.open.n5{ color:var(--n5); } .cell.open.n6{ color:var(--n6); } .cell.open.n7{ color:var(--n7); } .cell.open.n8{ color:var(--n8); }
+.cell.flag, .cell.q{ color:var(--fg); font-size:calc(var(--cell) * .5); }
+.cell.flag::after{ content:"⚑"; color:var(--flag); font-size:calc(var(--cell) * .6); }
+.cell.q::after{ content:"?"; color:var(--warn); }
+.cell.mine{ background:var(--cell-open); box-shadow:inset 0 0 0 1px var(--cell-line); }
+.cell.mine::after{ content:""; width:46%; height:46%; border-radius:50%; background:var(--fg); box-shadow:0 0 0 3px var(--cell-open), 0 0 0 4px var(--fg); }
+.cell.hit{ background:var(--hit); }
+.cell.hit::after{ background:#fff; box-shadow:0 0 0 3px var(--hit), 0 0 0 4px #fff; }
+.cell.wrong::after{ content:"✕"; color:var(--flag); font-size:calc(var(--cell) * .6); width:auto; height:auto; border-radius:0; background:none; box-shadow:none; }
+.cell.pop{ animation:pop .18s both; animation-delay:var(--d, 0ms); }
+@keyframes pop{ 0%{ background:var(--cell-hidden); transform:scale(.92); } 100%{ transform:scale(1); } }
+.cell.flagin{ animation:flagin .35s both; animation-delay:var(--d, 0ms); }
+@keyframes flagin{ 0%{ transform:scale(.4); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
+.cell.why{ box-shadow:inset 0 0 0 3px var(--why) !important; }
+.cell.hinted{ outline:3px solid var(--accent); outline-offset:-3px; z-index:1; }
+.cell.press{ filter:brightness(.85); }
+.controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin:6px 0 14px; }
+#modeBtn.flagmode{ background:var(--flag); color:#fff; border-color:var(--flag); }
+.panels{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:720px){ .panels{ grid-template-columns:1fr; } .hud .pair{ gap:14px; } .hud .stat .v{ font-size:1.15em; } }
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; }
+.panel h2{ font-size:.8em; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; }
+.opt{ display:flex; align-items:flex-start; gap:10px; padding:6px 0; }
+.opt input[type=checkbox]{ margin-top:4px; width:16px; height:16px; accent-color:var(--accent); }
+.opt .d{ font-size:.85em; color:var(--muted); }
+.opt label{ cursor:pointer; }
+.slider{ display:flex; align-items:center; gap:10px; padding:6px 0; }
+.slider input{ flex:1; accent-color:var(--accent); }
+table.stats{ width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.stats td{ padding:4px 0; border-bottom:1px solid var(--line); }
+.stats td:last-child{ text-align:right; font-weight:600; }
+.stats tr:last-child td{ border-bottom:none; }
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+.spin{ display:inline-block; width:12px; height:12px; border:2px solid var(--muted); border-top-color:transparent; border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; margin-right:6px; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce){ .cell.pop, .cell.flagin, .board.shake{ animation:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Minesweeper</h1>
+      <p class="sub" id="help">Left click to dig, right click to flag, click a number to clear around it.</p>
+    </div>
+    <div class="row">
+      <button id="themeBtn" aria-label="Switch theme">Light</button>
+      <button id="statsBtn" aria-expanded="false">Stats</button>
+      <button id="settingsBtn" aria-expanded="false">Settings</button>
+    </div>
+  </header>
 
-        <form id="settings" class="settings">
-          <label>
-            Preset
-            <select id="preset">
-              <option value="beginner">Beginner 9 x 9</option>
-              <option value="intermediate">Intermediate 16 x 16</option>
-              <option value="expert">Expert 16 x 30</option>
-              <option value="custom">Custom</option>
-            </select>
-          </label>
+  <div class="chips" id="chips" role="group" aria-label="Difficulty">
+    <button data-p="beginner">Beginner</button>
+    <button data-p="intermediate">Intermediate</button>
+    <button data-p="expert">Expert</button>
+    <button data-p="custom">Custom</button>
+  </div>
+  <div class="custom" id="custom">
+    <label>Rows <input id="cRows" type="number" min="5" max="40" value="12"></label>
+    <label>Columns <input id="cCols" type="number" min="5" max="60" value="20"></label>
+    <label>Mines <input id="cMines" type="number" min="1" value="40"></label>
+    <button id="cGo">Start</button>
+  </div>
 
-          <label>
-            Rows
-            <input id="rows" type="number" min="5" max="40" value="9" />
-          </label>
+  <div class="hud">
+    <div class="pair">
+      <div class="stat"><span class="l">Mines left</span><span class="v" id="minesLeft">10</span></div>
+      <div class="stat"><span class="l">Time</span><span class="v" id="time">0</span></div>
+    </div>
+    <button id="face" aria-label="New game" title="New game">🙂</button>
+    <div class="pair right">
+      <div class="stat right"><span class="l">Cleared</span><span class="v" id="cleared">0%</span></div>
+      <div class="stat right"><span class="l">Best</span><span class="v" id="best">–</span></div>
+    </div>
+  </div>
+  <p class="statusline" id="status" aria-live="polite">Click any square to start.</p>
 
-          <label>
-            Columns
-            <input id="cols" type="number" min="5" max="50" value="9" />
-          </label>
+  <div class="boardwrap"><div class="board" id="board" role="grid" aria-label="Minefield"></div></div>
 
-          <label>
-            Mines
-            <input id="mines" type="number" min="1" value="10" />
-          </label>
+  <div class="controls">
+    <button id="hintBtn">Hint</button>
+    <button id="modeBtn" aria-pressed="false">Flag mode: off</button>
+    <button id="newBtn">New game</button>
+  </div>
 
-          <button id="new-game" class="primary-button" type="submit">
-            New Game
-          </button>
-        </form>
-      </section>
+  <div class="panels">
+    <div class="panel" id="settings" hidden>
+      <h2>Settings</h2>
+      <div class="opt"><input type="checkbox" id="optNoGuess"><label for="optNoGuess">No guessing<div class="d">Boards are checked so they can be solved by logic alone. If one can't be found in time, you'll get a normal board and a note.</div></label></div>
+      <div class="opt"><input type="checkbox" id="optSecond"><label for="optSecond">Second chance<div class="d">The first mine you hit turns into a flag and costs 10 seconds.</div></label></div>
+      <div class="opt"><input type="checkbox" id="optMarks"><label for="optMarks">Question marks<div class="d">Right click cycles flag, question mark, blank.</div></label></div>
+      <div class="opt"><input type="checkbox" id="optSound"><label for="optSound">Sound<div class="d">Small clicks and a thud.</div></label></div>
+      <div class="slider"><label for="cellSize">Cell size</label><input type="range" id="cellSize" min="24" max="44" step="2" value="34"><span id="cellSizeV">34</span></div>
+    </div>
+    <div class="panel" id="stats" hidden>
+      <h2 id="statsTitle">Stats</h2>
+      <table class="stats">
+        <tr><td>Played</td><td id="sPlayed">0</td></tr>
+        <tr><td>Won</td><td id="sWon">0</td></tr>
+        <tr><td>Win rate</td><td id="sRate">–</td></tr>
+        <tr><td>Current streak</td><td id="sStreak">0</td></tr>
+        <tr><td>Best streak</td><td id="sBest">0</td></tr>
+        <tr><td>Best time</td><td id="sTime">–</td></tr>
+      </table>
+      <div class="row" style="margin-top:10px"><button id="resetStats" class="small">Reset these stats</button></div>
+    </div>
+  </div>
+</div>
 
-      <section class="hud" aria-label="Current game status">
-        <div class="meter">
-          <span class="meter-label">Mines left</span>
-          <strong id="mines-left">10</strong>
-        </div>
-        <div class="meter">
-          <span class="meter-label">Time</span>
-          <strong id="timer">0</strong>
-        </div>
-        <div class="meter">
-          <span class="meter-label">Cleared</span>
-          <strong id="cleared">0%</strong>
-        </div>
-        <div class="meter">
-          <span class="meter-label">Best</span>
-          <strong id="best-time">--</strong>
-        </div>
-      </section>
+<script>
+(function(){
+"use strict";
+var $=function(id){ return document.getElementById(id); };
+var PRESETS={ beginner:{rows:9,cols:9,mines:10,name:"Beginner"}, intermediate:{rows:16,cols:16,mines:40,name:"Intermediate"}, expert:{rows:16,cols:30,mines:99,name:"Expert"} };
+var FACES={ idle:"🙂", worried:"😮", dead:"😵", win:"😎" };
+var now=function(){ return performance.now(); };
+var touch=window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
 
-      <section class="board-panel" aria-label="Minefield">
-        <div class="board-frame">
-          <div id="board" class="board" role="grid" aria-label="Minesweeper board"></div>
-        </div>
-      </section>
-    </main>
+// ---------- settings / stats storage ----------
+var settings={ noGuess:true, second:false, marks:false, sound:false, theme:null, cell:34, preset:"beginner", custom:{rows:12,cols:20,mines:40} };
+try{ var ss=JSON.parse(localStorage.getItem("ms:settings")||"null"); if(ss) settings=Object.assign(settings, ss); }catch(e){}
+function saveSettings(){ try{ localStorage.setItem("ms:settings", JSON.stringify(settings)); }catch(e){} }
+var stats={};
+try{ stats=JSON.parse(localStorage.getItem("ms:stats")||"{}")||{}; }catch(e){}
+function saveStats(){ try{ localStorage.setItem("ms:stats", JSON.stringify(stats)); }catch(e){} }
+function statKey(){ return G.rows+"x"+G.cols+"-"+G.mines; }
+function statRec(){ var k=statKey(); if(!stats[k]) stats[k]={played:0,won:0,streak:0,bestStreak:0,best:null}; return stats[k]; }
 
-    <script src="script.js"></script>
-  </body>
+// ---------- game state ----------
+var G={ rows:9, cols:9, mines:10, n:81, mine:null, cnt:null, st:null, NB:null, started:false, ended:false, won:false,
+  elapsed:0, timer:null, assisted:false, secondUsed:false, flags:0, revealed:0, presetName:"Beginner", note:"" };
+var flagMode=false, focusIdx=0, cells=[], boardGen=0;
+
+function buildNB(rows,cols){
+  var NB=new Array(rows*cols);
+  for(var r=0;r<rows;r++) for(var c=0;c<cols;c++){
+    var a=[]; for(var dr=-1;dr<=1;dr++) for(var dc=-1;dc<=1;dc++){ if(!dr&&!dc) continue; var rr=r+dr, cc=c+dc; if(rr>=0&&rr<rows&&cc>=0&&cc<cols) a.push(rr*cols+cc); }
+    NB[r*cols+c]=a;
+  }
+  return NB;
+}
+
+// ---------- solver ----------
+// view: { n, mines, st (0 hidden, 1 open, 2 known mine), cnt, NB }
+function constraintsOf(V){
+  var out=[];
+  for(var i=0;i<V.n;i++){
+    if(V.st[i]!==1) continue;
+    var nb=V.NB[i], hidden=[], flags=0;
+    for(var k=0;k<nb.length;k++){ var s=V.st[nb[k]]; if(s===0) hidden.push(nb[k]); else if(s===2) flags++; }
+    if(hidden.length) out.push({ cell:i, set:hidden, rem:V.cnt[i]-flags });
+  }
+  return out;
+}
+function basicDeductions(V, cons){
+  var out=[], seen={};
+  for(var j=0;j<cons.length;j++){
+    var c=cons[j];
+    if(c.rem===0){ for(var k=0;k<c.set.length;k++) if(!seen[c.set[k]]){ seen[c.set[k]]=1; out.push({i:c.set[k],mine:false,why:c.cell}); } }
+    else if(c.rem===c.set.length){ for(var q=0;q<c.set.length;q++) if(!seen[c.set[q]]){ seen[c.set[q]]=1; out.push({i:c.set[q],mine:true,why:c.cell}); } }
+  }
+  return out;
+}
+function subsetDeductions(V, cons){
+  var out=[], seen={}, byCell={};
+  cons.forEach(function(c){ byCell[c.cell]=c; });
+  function isSub(a,b){ if(a.set.length>=b.set.length) return false; for(var k=0;k<a.set.length;k++) if(b.set.indexOf(a.set[k])<0) return false; return true; }
+  for(var j=0;j<cons.length;j++){
+    var A=cons[j];
+    // candidates: constraints within 2 squares
+    for(var q=0;q<cons.length;q++){
+      if(q===j) continue; var B=cons[q];
+      var dr=Math.abs(((A.cell/V.cols)|0)-((B.cell/V.cols)|0)), dc=Math.abs((A.cell%V.cols)-(B.cell%V.cols));
+      if(dr>2||dc>2) continue;
+      if(!isSub(A,B)) continue;
+      var diff=B.set.filter(function(x){ return A.set.indexOf(x)<0; });
+      var d=B.rem-A.rem;
+      if(d===0){ diff.forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push({i:x,mine:false,why:B.cell}); } }); }
+      else if(d===diff.length){ diff.forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push({i:x,mine:true,why:B.cell}); } }); }
+    }
+  }
+  return out;
+}
+function enumDeductions(V, cons, knownMines){
+  var out=[], seen={};
+  var hiddenAll=[], front={}, frontList=[];
+  for(var i=0;i<V.n;i++) if(V.st[i]===0) hiddenAll.push(i);
+  cons.forEach(function(c){ c.set.forEach(function(x){ if(!front[x]){ front[x]=1; frontList.push(x); } }); });
+  var remaining=V.mines-knownMines;
+  var nonFront=hiddenAll.filter(function(x){ return !front[x]; });
+  if(remaining===0 && hiddenAll.length){ hiddenAll.forEach(function(x){ out.push({i:x,mine:false,why:-1}); }); return out; }
+  if(remaining===hiddenAll.length && hiddenAll.length){ hiddenAll.forEach(function(x){ out.push({i:x,mine:true,why:-1}); }); return out; }
+  if(!frontList.length) return out;
+  // components via union-find over constraints
+  var parent={}; function find(x){ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; }
+  frontList.forEach(function(x){ parent[x]=x; });
+  cons.forEach(function(c){ for(var k=1;k<c.set.length;k++){ var a=find(c.set[0]), b=find(c.set[k]); if(a!==b) parent[a]=b; } });
+  var comps={}; frontList.forEach(function(x){ var r=find(x); (comps[r]=comps[r]||[]).push(x); });
+  var allEnumerated=true, sumMin=0, sumMax=0;
+  Object.keys(comps).forEach(function(key){
+    var cellsC=comps[key];
+    if(cellsC.length>22){ allEnumerated=false; return; }
+    var idx={}; cellsC.forEach(function(x,k){ idx[x]=k; });
+    var cc=cons.filter(function(c){ return idx[c.set[0]]!==undefined; }).map(function(c){ return { rem:c.rem, cells:c.set.map(function(x){ return idx[x]; }), cell:c.cell }; });
+    // constraints touching each cell
+    var touching=cellsC.map(function(){ return []; });
+    cc.forEach(function(c,ci){ c.cells.forEach(function(k){ touching[k].push(ci); }); });
+    // order cells by most constrained
+    var order=cellsC.map(function(_,k){ return k; }).sort(function(a,b){ return touching[b].length-touching[a].length; });
+    var assign=new Int8Array(cellsC.length).fill(-1), minesIn=new Int16Array(cc.length), assigned=new Int16Array(cc.length);
+    var everMine=new Uint8Array(cellsC.length), everSafe=new Uint8Array(cellsC.length), sols=0, nodes=0, minM=1e9, maxM=-1, aborted=false, curM=0;
+    function ok(ci){ var c=cc[ci]; var unassigned=c.cells.length-assigned[ci]; return minesIn[ci]<=c.rem && minesIn[ci]+unassigned>=c.rem; }
+    function rec(p){
+      if(aborted) return;
+      if(++nodes>60000){ aborted=true; return; }
+      if(p===order.length){ sols++; for(var k=0;k<assign.length;k++){ if(assign[k]) everMine[k]=1; else everSafe[k]=1; } if(curM<minM) minM=curM; if(curM>maxM) maxM=curM; return; }
+      var k=order[p];
+      for(var v=1;v>=0;v--){
+        if(v===1 && curM+1>remaining) continue;
+        assign[k]=v; curM+=v; var good=true;
+        for(var t=0;t<touching[k].length;t++){ var ci=touching[k][t]; assigned[ci]++; minesIn[ci]+=v; if(!ok(ci)) good=false; }
+        if(good) rec(p+1);
+        for(var t2=0;t2<touching[k].length;t2++){ var ci2=touching[k][t2]; assigned[ci2]--; minesIn[ci2]-=v; }
+        curM-=v; assign[k]=-1;
+      }
+    }
+    rec(0);
+    if(aborted||!sols){ allEnumerated=false; return; }
+    sumMin+=minM; sumMax+=maxM;
+    cellsC.forEach(function(x,k){
+      var why=cc.filter(function(c){ return c.cells.indexOf(k)>=0; })[0]; why=why?why.cell:-1;
+      if(!everMine[k] && !seen[x]){ seen[x]=1; out.push({i:x,mine:false,why:why}); }
+      else if(!everSafe[k] && !seen[x]){ seen[x]=1; out.push({i:x,mine:true,why:why}); }
+    });
+  });
+  if(!out.length && allEnumerated && nonFront.length){
+    if(remaining-sumMin===0) nonFront.forEach(function(x){ out.push({i:x,mine:false,why:-1}); });
+    else if(remaining-sumMax===nonFront.length) nonFront.forEach(function(x){ out.push({i:x,mine:true,why:-1}); });
+  }
+  return out;
+}
+function deduce(V, knownMines){
+  var cons=constraintsOf(V);
+  var d=basicDeductions(V,cons); if(d.length) return d;
+  d=subsetDeductions(V,cons); if(d.length) return d;
+  return enumDeductions(V,cons,knownMines);
+}
+function floodOpen(V, start){ // reveal start and cascade zeros; returns list of opened cells with distance
+  var opened=[], queue=[[start,0]], head=0;
+  if(V.st[start]!==0) return opened;
+  V.st[start]=1;
+  while(head<queue.length){
+    var it=queue[head++], i=it[0], dist=it[1]; opened.push({i:i,d:dist});
+    if(V.cnt[i]===0){ var nb=V.NB[i]; for(var k=0;k<nb.length;k++){ var j=nb[k]; if(V.st[j]===0){ V.st[j]=1; queue.push([j,dist+1]); } } }
+  }
+  return opened;
+}
+function solvable(rows,cols,mines,mine,cnt,NB,first,deadline){
+  var n=rows*cols, V={ n:n, cols:cols, mines:mines, st:new Uint8Array(n), cnt:cnt, NB:NB };
+  var safe=n-mines, revealed=floodOpen(V,first).length, known=0;
+  while(revealed<safe){
+    if(now()>deadline) return null;
+    var d=deduce(V,known); if(!d.length) return false;
+    for(var k=0;k<d.length;k++){ var x=d[k]; if(x.mine){ if(V.st[x.i]===0){ V.st[x.i]=2; known++; } } else { revealed+=floodOpen(V,x.i).length; } }
+  }
+  return true;
+}
+function placeMines(rows,cols,mines,NB,first){
+  var n=rows*cols, mine=new Uint8Array(n), banned={}; banned[first]=1; NB[first].forEach(function(j){ banned[j]=1; });
+  var cand=[]; for(var i=0;i<n;i++) if(!banned[i]) cand.push(i);
+  if(cand.length<mines){ cand=[]; for(var q=0;q<n;q++) if(q!==first) cand.push(q); }
+  for(var i2=cand.length-1;i2>0;i2--){ var j=Math.floor(Math.random()*(i2+1)); var t=cand[i2]; cand[i2]=cand[j]; cand[j]=t; }
+  for(var m=0;m<mines;m++) mine[cand[m]]=1;
+  var cnt=new Uint8Array(n);
+  for(var c=0;c<n;c++){ if(mine[c]) continue; var s=0, nb=NB[c]; for(var k=0;k<nb.length;k++) s+=mine[nb[k]]; cnt[c]=s; }
+  return {mine:mine,cnt:cnt};
+}
+function generate(first){
+  var deadline=now()+1500, tries=0, best=null;
+  while(true){
+    var b=placeMines(G.rows,G.cols,G.mines,G.NB,first); tries++;
+    if(!settings.noGuess){ return {board:b,noGuess:false,tries:tries}; }
+    if(!best) best=b;
+    var r=solvable(G.rows,G.cols,G.mines,b.mine,b.cnt,G.NB,first,deadline);
+    if(r===true) return {board:b,noGuess:true,tries:tries};
+    if(r===null || now()>deadline || tries>400) return {board:best,noGuess:false,fallback:true,tries:tries};
+  }
+}
+
+// ---------- board setup ----------
+function newBoard(rows,cols,mines,presetName){
+  stopTimer();
+  G.rows=rows; G.cols=cols; G.mines=mines; G.n=rows*cols; G.NB=buildNB(rows,cols);
+  G.mine=new Uint8Array(G.n); G.cnt=new Uint8Array(G.n); G.st=new Uint8Array(G.n); // st: 0 hidden,1 open,2 flag,3 question
+  G.started=false; G.ended=false; G.won=false; G.elapsed=0; G.assisted=false; G.secondUsed=false; G.flags=0; G.revealed=0; G.presetName=presetName; G.note="";
+  focusIdx=0;
+  buildCells();
+  setFace("idle");
+  setStatus(touch?"Tap any square to start.":"Click any square to start.");
+  updateHud(); renderStats(); saveGame();
+}
+function buildCells(){
+  var board=$("board"); board.innerHTML=""; cells=[]; boardGen++;
+  board.style.setProperty("--cols", G.cols);
+  fitCells();
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<G.n;i++){
+    var d=document.createElement("button"); d.className="cell"; d.type="button"; d.dataset.i=i; d.tabIndex=i===focusIdx?0:-1; d.setAttribute("role","gridcell");
+    frag.appendChild(d); cells.push(d);
+  }
+  board.appendChild(frag);
+  for(var j=0;j<G.n;j++) paint(j);
+}
+function fitCells(){
+  var avail=Math.max(200, document.querySelector(".wrap").clientWidth-6);
+  var size=settings.cell;
+  if(G.cols*size>avail) size=Math.max(22, Math.floor(avail/G.cols));
+  document.documentElement.style.setProperty("--cell", size+"px");
+}
+function paint(i){
+  var el=cells[i], s=G.st[i], cls="cell";
+  var label="";
+  if(s===1){ cls+=" open"; if(G.mine[i]) cls+=" mine"; else if(G.cnt[i]) cls+=" n"+G.cnt[i]; el.textContent=(G.mine[i]||!G.cnt[i])?"":String(G.cnt[i]); label=G.mine[i]?"mine":(G.cnt[i]?G.cnt[i]+" nearby":"empty"); }
+  else { el.textContent=""; if(s===2) cls+=" flag"; else if(s===3) cls+=" q"; label=s===2?"flagged":(s===3?"question mark":"hidden"); }
+  if(el.dataset.extra) cls+=" "+el.dataset.extra;
+  el.className=cls;
+  el.setAttribute("aria-label", "Row "+(((i/G.cols)|0)+1)+", column "+((i%G.cols)+1)+", "+label);
+}
+function setFace(k){ $("face").textContent=FACES[k]; }
+function setStatus(msg, cls){ var el=$("status"); el.textContent=msg; el.className="statusline"+(cls?" "+cls:""); }
+function updateHud(){
+  $("minesLeft").textContent=G.mines-G.flags;
+  $("time").textContent=G.elapsed;
+  var safe=G.n-G.mines; $("cleared").textContent=Math.floor(G.revealed/safe*100)+"%";
+  var rec=statRec(); $("best").textContent=rec.best!=null?rec.best+"s":"–";
+}
+function renderStats(){
+  var rec=statRec();
+  $("statsTitle").textContent="Stats · "+G.presetName+" ("+G.rows+"×"+G.cols+", "+G.mines+" mines)";
+  $("sPlayed").textContent=rec.played; $("sWon").textContent=rec.won;
+  $("sRate").textContent=rec.played?Math.round(rec.won/rec.played*100)+"%":"–";
+  $("sStreak").textContent=rec.streak; $("sBest").textContent=rec.bestStreak; $("sTime").textContent=rec.best!=null?rec.best+" s":"–";
+}
+
+// ---------- timer ----------
+function startTimer(){ if(G.timer) return; G.timer=setInterval(function(){ G.elapsed++; $("time").textContent=G.elapsed; if(G.elapsed%5===0) saveGame(); },1000); }
+function stopTimer(){ clearInterval(G.timer); G.timer=null; }
+
+// ---------- sound ----------
+var ac=null;
+function beep(freq,dur,type,vol){
+  if(!settings.sound) return;
+  try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); var o=ac.createOscillator(), g=ac.createGain(); o.type=type||"square"; o.frequency.value=freq; g.gain.value=vol||.05; o.connect(g); g.connect(ac.destination); o.start(); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime+dur); o.stop(ac.currentTime+dur); }catch(e){}
+}
+
+// ---------- play ----------
+function startGame(first){
+  var g=generate(first);
+  G.mine=g.board.mine; G.cnt=g.board.cnt; G.started=true;
+  if(settings.noGuess && g.fallback){ G.note="Couldn't find a no-guess layout in time, so this one may need a guess."; }
+  startTimer();
+}
+function reveal(i, opts){
+  opts=opts||{};
+  if(G.ended) return;
+  if(G.st[i]===2 || G.st[i]===3) return;
+  if(G.st[i]===1){ chord(i); return; }
+  if(!G.started){ startGame(i); setStatus(G.note || "Good luck.", G.note?"note":""); }
+  if(G.mine[i]){
+    if(settings.second && !G.secondUsed){
+      G.secondUsed=true; G.st[i]=2; G.flags++; G.elapsed+=10; paint(i); updateHud(); beep(160,.25,"sawtooth",.06);
+      setStatus("That was a mine. Second chance used, plus 10 seconds.", "note"); saveGame(); return;
+    }
+    G.st[i]=1; paint(i); lose(i); return;
+  }
+  var V={ n:G.n, cols:G.cols, mines:G.mines, st:G.st, cnt:G.cnt, NB:G.NB };
+  // floodOpen treats 2/3 as not-hidden, which is right: flags block cascades
+  var opened=floodOpen(V,i);
+  G.revealed+=opened.length;
+  opened.forEach(function(o){ var el=cells[o.i]; paint(o.i); if(!opts.quiet){ el.style.setProperty("--d", Math.min(o.d*14,420)+"ms"); el.classList.add("pop"); } });
+  beep(opened.length>3?520:440,.05,"square",.03);
+  updateHud(); saveGame();
+  if(G.revealed===G.n-G.mines) win();
+}
+function toggleFlag(i){
+  if(G.ended || G.st[i]===1) return;
+  if(!G.started){ setStatus("Dig somewhere first; the first square is always safe."); return; }
+  var s=G.st[i];
+  if(s===0){ G.st[i]=2; G.flags++; }
+  else if(s===2){ G.flags--; G.st[i]=settings.marks?3:0; }
+  else G.st[i]=0;
+  paint(i); updateHud(); beep(G.st[i]===2?700:300,.04,"triangle",.03); saveGame();
+}
+function chord(i){
+  if(G.ended || G.st[i]!==1 || !G.cnt[i]) return;
+  var nb=G.NB[i], flags=0, hidden=[];
+  for(var k=0;k<nb.length;k++){ if(G.st[nb[k]]===2) flags++; else if(G.st[nb[k]]===0) hidden.push(nb[k]); }
+  if(flags!==G.cnt[i] || !hidden.length){ hidden.forEach(function(j){ var el=cells[j]; el.classList.add("press"); setTimeout(function(){ el.classList.remove("press"); },140); }); return; }
+  for(var q=0;q<hidden.length;q++){ if(G.ended) break; reveal(hidden[q]); }
+}
+function lose(hit){
+  G.ended=true; G.won=false; stopTimer(); setFace("dead"); beep(90,.5,"sawtooth",.08);
+  var board=$("board"); board.classList.add("shake"); setTimeout(function(){ board.classList.remove("shake"); },500);
+  var order=[]; for(var i=0;i<G.n;i++){ if(G.mine[i] && G.st[i]!==2 && i!==hit) order.push(i); if(!G.mine[i] && G.st[i]===2) order.push(i); }
+  cells[hit].dataset.extra="hit"; G.st[hit]=1; paint(hit);
+  var g=boardGen;
+  order.forEach(function(i,k){ setTimeout(function(){ if(g!==boardGen) return; if(G.mine[i]){ G.st[i]=1; paint(i); } else { cells[i].dataset.extra="wrong"; paint(i); } }, 40+Math.min(k*25,900)); });
+  var rec=statRec(); rec.played++; rec.streak=0; saveStats(); renderStats();
+  setStatus("Boom. That one was a mine. Press the face or New game to try again.", "loss");
+  clearGame();
+}
+function win(){
+  G.ended=true; G.won=true; stopTimer(); setFace("win"); beep(660,.12,"square",.04); setTimeout(function(){ beep(880,.18,"square",.04); },120);
+  var k=0; for(var i=0;i<G.n;i++) if(G.mine[i] && G.st[i]!==2){ G.st[i]=2; G.flags++; paint(i); cells[i].style.setProperty("--d",(k++*40)+"ms"); cells[i].classList.add("flagin"); }
+  var rec=statRec(); rec.played++; rec.won++; rec.streak++; if(rec.streak>rec.bestStreak) rec.bestStreak=rec.streak;
+  var msg="Cleared in "+G.elapsed+" s.";
+  if(!G.assisted){ if(rec.best==null || G.elapsed<rec.best){ rec.best=G.elapsed; msg+=" New best time!"; } }
+  else msg+=" (Hints were used, so no best time.)";
+  if(G.secondUsed) msg+=" Second chance included.";
+  saveStats(); renderStats(); updateHud();
+  setStatus(msg, "win");
+  clearGame();
+}
+
+// ---------- hint ----------
+var hintTimer=null;
+function hint(){
+  if(G.ended) return;
+  if(!G.started){ setStatus("Dig anywhere first; the first square is always safe."); return; }
+  // wrong flags first
+  for(var i=0;i<G.n;i++) if(G.st[i]===2 && !G.mine[i]){ G.assisted=true; showWhy(i,-1); setStatus("That flag is not on a mine.", "note"); return; }
+  var st=new Uint8Array(G.n), known=0;
+  for(var j=0;j<G.n;j++){ if(G.st[j]===1) st[j]=1; else if(G.st[j]===2){ st[j]=2; known++; } }
+  var V={ n:G.n, cols:G.cols, mines:G.mines, st:st, cnt:G.cnt, NB:G.NB };
+  var d=deduce(V,known);
+  if(!d.length){ setStatus("No square can be worked out for certain right now.", "note"); return; }
+  var x=d[0]; G.assisted=true;
+  if(x.mine){ G.st[x.i]=2; G.flags++; paint(x.i); updateHud(); saveGame(); setStatus(x.why>=0?"That square must be a mine, because of the highlighted number.":"That square must be a mine (mine count).", "note"); }
+  else { setStatus(x.why>=0?"That square is safe, because of the highlighted number.":"That square is safe (mine count).", "note"); reveal(x.i); }
+  showWhy(x.i, x.why);
+}
+function showWhy(target, why){
+  clearTimeout(hintTimer);
+  document.querySelectorAll(".cell.why,.cell.hinted").forEach(function(el){ el.classList.remove("why","hinted"); });
+  cells[target].classList.add("hinted"); if(why>=0) cells[why].classList.add("why");
+  var hg=boardGen;
+  hintTimer=setTimeout(function(){ if(hg!==boardGen) return; cells[target].classList.remove("hinted"); if(why>=0) cells[why].classList.remove("why"); },1800);
+}
+
+// ---------- persistence ----------
+var saveT=null;
+function saveGame(){
+  clearTimeout(saveT);
+  saveT=setTimeout(function(){
+    if(!G.started || G.ended){ return; }
+    try{ localStorage.setItem("ms:game", JSON.stringify({ rows:G.rows, cols:G.cols, mines:G.mines, presetName:G.presetName, mine:Array.from(G.mine).join(""), st:Array.from(G.st).join(""), elapsed:G.elapsed, assisted:G.assisted, secondUsed:G.secondUsed, note:G.note })); }catch(e){}
+  },80);
+}
+function clearGame(){ clearTimeout(saveT); try{ localStorage.removeItem("ms:game"); }catch(e){} }
+function restoreGame(){
+  var d; try{ d=JSON.parse(localStorage.getItem("ms:game")||"null"); }catch(e){ return false; }
+  if(!d || !d.rows || d.mine.length!==d.rows*d.cols) return false;
+  newBoard(d.rows,d.cols,d.mines,d.presetName||"Custom");
+  for(var i=0;i<G.n;i++){ G.mine[i]=+d.mine[i]; G.st[i]=+d.st[i]; }
+  for(var c=0;c<G.n;c++){ if(G.mine[c]) continue; var s=0, nb=G.NB[c]; for(var k=0;k<nb.length;k++) s+=G.mine[nb[k]]; G.cnt[c]=s; }
+  G.flags=0; G.revealed=0; for(var j=0;j<G.n;j++){ if(G.st[j]===2) G.flags++; if(G.st[j]===1) G.revealed++; }
+  G.started=true; G.elapsed=d.elapsed||0; G.assisted=!!d.assisted; G.secondUsed=!!d.secondUsed; G.note=d.note||"";
+  for(var q=0;q<G.n;q++) paint(q);
+  updateHud(); startTimer(); setStatus("Picked up where you left off.");
+  return true;
+}
+
+// ---------- input ----------
+var longPress=null, suppressClick=false, downIdx=-1;
+var board=$("board");
+function cellOf(ev){ var el=ev.target.closest(".cell"); return el?+el.dataset.i:-1; }
+board.addEventListener("contextmenu", function(ev){ ev.preventDefault(); var i=cellOf(ev); if(i>=0 && !suppressClick) toggleFlag(i); });
+board.addEventListener("pointerdown", function(ev){
+  var i=cellOf(ev); if(i<0) return; downIdx=i; suppressClick=false;
+  if(ev.button===1){ ev.preventDefault(); chord(i); return; }
+  if(ev.button!==0) return;
+  if(!G.ended && G.st[i]===0) setFace("worried");
+  if(ev.pointerType!=="mouse"){ clearTimeout(longPress); longPress=setTimeout(function(){ suppressClick=true; toggleFlag(i); longPress=null; },420); }
+});
+function endPress(){ clearTimeout(longPress); longPress=null; if(!G.ended) setFace("idle"); }
+board.addEventListener("pointerup", endPress); board.addEventListener("pointercancel", endPress); board.addEventListener("pointerleave", endPress);
+board.addEventListener("pointermove", function(ev){ if(longPress && cellOf(ev)!==downIdx){ clearTimeout(longPress); longPress=null; } });
+board.addEventListener("click", function(ev){
+  var i=cellOf(ev); if(i<0) return;
+  setFocus(i);
+  if(suppressClick){ suppressClick=false; return; }
+  if(flagMode && G.st[i]!==1){ toggleFlag(i); return; }
+  reveal(i);
+});
+board.addEventListener("dblclick", function(ev){ var i=cellOf(ev); if(i>=0) chord(i); });
+board.addEventListener("auxclick", function(ev){ if(ev.button===1) ev.preventDefault(); });
+function setFocus(i){ if(cells[focusIdx]) cells[focusIdx].tabIndex=-1; focusIdx=i; cells[i].tabIndex=0; cells[i].focus({preventScroll:false}); }
+board.addEventListener("keydown", function(ev){
+  var i=cellOf(ev); if(i<0) return; var r=(i/G.cols)|0, c=i%G.cols, k=ev.key;
+  if(k==="ArrowLeft"&&c>0) setFocus(i-1); else if(k==="ArrowRight"&&c<G.cols-1) setFocus(i+1);
+  else if(k==="ArrowUp"&&r>0) setFocus(i-G.cols); else if(k==="ArrowDown"&&r<G.rows-1) setFocus(i+G.cols);
+  else if(k==="f"||k==="F") toggleFlag(i);
+  else if(k===" "||k==="Enter"){ if(G.st[i]===1) chord(i); else reveal(i); }
+  else if(k==="c"||k==="C") chord(i);
+  else return;
+  ev.preventDefault();
+});
+
+// ---------- controls ----------
+function startPreset(p){
+  settings.preset=p; saveSettings();
+  document.querySelectorAll("#chips button").forEach(function(b){ b.classList.toggle("on", b.dataset.p===p); });
+  $("custom").classList.toggle("show", p==="custom");
+  if(p==="custom"){ var cu=readCustom(); newBoard(cu.rows,cu.cols,cu.mines,"Custom"); }
+  else { var pr=PRESETS[p]; newBoard(pr.rows,pr.cols,pr.mines,pr.name); }
+}
+function readCustom(){
+  var rows=Math.min(40,Math.max(5,parseInt($("cRows").value,10)||12)), cols=Math.min(60,Math.max(5,parseInt($("cCols").value,10)||20));
+  var maxM=rows*cols-10, mines=Math.min(maxM,Math.max(1,parseInt($("cMines").value,10)||10));
+  $("cRows").value=rows; $("cCols").value=cols; $("cMines").value=mines; $("cMines").max=maxM;
+  settings.custom={rows:rows,cols:cols,mines:mines}; saveSettings();
+  return settings.custom;
+}
+document.querySelectorAll("#chips button").forEach(function(b){ b.onclick=function(){ if(b.dataset.p==="custom" && settings.preset==="custom"){ $("custom").classList.toggle("show"); return; } startPreset(b.dataset.p); }; });
+$("cGo").onclick=function(){ startPreset("custom"); };
+$("face").onclick=function(){ startPreset(settings.preset); };
+$("newBtn").onclick=function(){ startPreset(settings.preset); };
+$("hintBtn").onclick=hint;
+$("modeBtn").onclick=function(){ flagMode=!flagMode; $("modeBtn").textContent="Flag mode: "+(flagMode?"on":"off"); $("modeBtn").classList.toggle("flagmode",flagMode); $("modeBtn").setAttribute("aria-pressed",String(flagMode)); };
+$("settingsBtn").onclick=function(){ var p=$("settings"); p.hidden=!p.hidden; $("settingsBtn").setAttribute("aria-expanded",String(!p.hidden)); $("settingsBtn").classList.toggle("on",!p.hidden); };
+$("statsBtn").onclick=function(){ var p=$("stats"); p.hidden=!p.hidden; $("statsBtn").setAttribute("aria-expanded",String(!p.hidden)); $("statsBtn").classList.toggle("on",!p.hidden); renderStats(); };
+$("resetStats").onclick=function(){ delete stats[statKey()]; saveStats(); renderStats(); updateHud(); };
+["noGuess","second","marks","sound"].forEach(function(k){
+  var el=$("opt"+k.charAt(0).toUpperCase()+k.slice(1)); el.checked=!!settings[k];
+  el.onchange=function(){ settings[k]=el.checked; saveSettings(); if(k==="marks" && !el.checked){ for(var i=0;i<G.n;i++) if(G.st[i]===3){ G.st[i]=0; paint(i); } } };
+});
+$("cellSize").value=settings.cell; $("cellSizeV").textContent=settings.cell;
+$("cellSize").oninput=function(){ settings.cell=+$("cellSize").value; $("cellSizeV").textContent=settings.cell; saveSettings(); fitCells(); };
+window.addEventListener("resize", fitCells);
+function applyTheme(){
+  var t=settings.theme || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  document.documentElement.setAttribute("data-theme", t); $("themeBtn").textContent=t==="dark"?"Light":"Dark";
+}
+$("themeBtn").onclick=function(){ var cur=document.documentElement.getAttribute("data-theme"); settings.theme=cur==="dark"?"light":"dark"; saveSettings(); applyTheme(); };
+applyTheme();
+if(touch){ $("help").textContent="Tap to dig, long-press to flag, tap a number to clear around it."; }
+$("cRows").value=settings.custom.rows; $("cCols").value=settings.custom.cols; $("cMines").value=settings.custom.mines;
+document.addEventListener("keydown", function(ev){ if(ev.target.tagName==="INPUT") return; if(ev.key==="n"||ev.key==="N") startPreset(settings.preset); else if(ev.key==="h"||ev.key==="H") hint(); else if(ev.key==="m"||ev.key==="M") $("modeBtn").click(); });
+
+// ---------- boot ----------
+document.querySelectorAll("#chips button").forEach(function(b){ b.classList.toggle("on", b.dataset.p===settings.preset); });
+$("custom").classList.toggle("show", settings.preset==="custom");
+if(!restoreGame()) startPreset(settings.preset);
+
+// debug / test hook
+window.__ms={ get state(){ return G; }, reveal:reveal, flag:toggleFlag, hint:hint,
+  step:function(){ // apply one solver deduction batch (returns count)
+    if(G.ended||!G.started) return 0; var st=new Uint8Array(G.n), known=0; for(var j=0;j<G.n;j++){ if(G.st[j]===1) st[j]=1; else if(G.st[j]===2){ st[j]=2; known++; } }
+    var d=deduce({ n:G.n, cols:G.cols, mines:G.mines, st:st, cnt:G.cnt, NB:G.NB }, known);
+    d.forEach(function(x){ if(G.ended) return; if(x.mine){ if(G.st[x.i]===0) toggleFlag(x.i); } else reveal(x.i,{quiet:true}); }); return d.length; } };
+})();
+</script>
+</body>
 </html>

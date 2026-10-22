@@ -102,6 +102,30 @@ button.linkish { border: none; background: none; padding: 0; text-decoration: un
 .sq.dragging .piece { opacity: 0.3; }
 .ghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -50%); }
 .ghost .piece { font-size: calc(var(--bsz) / 9.5); }
+.fly { position: absolute; z-index: 6; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: transform 0.17s ease-out; }
+@media (prefers-reduced-motion: reduce) { .fly { transition: none; } }
+.boardbox.shake { animation: shake 0.3s; }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.clockrow { display: flex; justify-content: flex-end; align-items: center; gap: 8px; width: calc(var(--bsz) + 34px); margin: 0 0 6px; }
+.clockrow.bot { margin: 6px 0 0; }
+.clock {
+  font-variant-numeric: tabular-nums; font-size: 1.2em; font-weight: 600; padding: 3px 12px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--panel); min-width: 6.4em; text-align: right; display: flex; justify-content: space-between; gap: 10px; opacity: 0.6;
+}
+.clock.active { border-color: var(--fg); opacity: 1; }
+.clock.low { color: var(--bad); }
+.clock .who { font-size: 0.72em; font-weight: 400; color: var(--muted); align-self: center; }
+.puz { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 9px 11px; margin: 8px 0; }
+.puz.good { border-left-color: var(--good); } .puz.warn { border-left-color: var(--warn); } .puz.bad { border-left-color: var(--bad); }
+.puz .kind { font-size: 0.82em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.puz .big { font-weight: 600; margin: 2px 0 4px; }
+.puz .row { margin-top: 8px; }
+.record { font-size: 0.92em; }
+.record .lv { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; border-bottom: 1px dashed var(--line); }
+.record .lv:last-of-type { border-bottom: none; }
+.record .lv b { font-variant-numeric: tabular-nums; font-weight: 500; }
+.seg button.sw { display: inline-flex; align-items: center; gap: 6px; }
+.seg button.sw i { display: inline-block; width: 14px; height: 14px; border-radius: 2px; background: linear-gradient(135deg, var(--l) 50%, var(--d) 50%); border: 1px solid rgba(0,0,0,0.25); }
 .overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
 .overlay line, .overlay polygon { opacity: 0.8; }
 .evalbar {
@@ -199,6 +223,7 @@ kbd { font: 0.85em ui-monospace, Menlo, monospace; border: 1px solid var(--line)
 <body>
 <div class="app">
   <div class="boardcol">
+    <div class="clockrow top" id="clockTop" hidden></div>
     <div class="boardwrap">
       <div class="evalbar" id="evalbar"><div class="fill" id="evalfill"></div><div class="txt top" id="evaltop"></div><div class="txt bot" id="evalbot"></div></div>
       <div class="boardbox" id="boardbox">
@@ -215,6 +240,7 @@ kbd { font: 0.85em ui-monospace, Menlo, monospace; border: 1px solid var(--line)
         <div class="banner" id="banner" hidden></div>
       </div>
     </div>
+    <div class="clockrow bot" id="clockBot" hidden></div>
     <div class="under"><span id="evalline" class="pv"></span><span id="nodes"></span></div>
   </div>
 
@@ -230,10 +256,11 @@ kbd { font: 0.85em ui-monospace, Menlo, monospace; border: 1px solid var(--line)
       <button id="btnUndo">Undo</button>
       <button id="btnHint">Hint</button>
       <button id="btnFlip">Flip</button>
-      <button id="btnResign" class="small" style="display:none">Resign</button>
+      <button id="btnResign" hidden>Resign</button>
     </div>
     <div class="tabs">
       <button data-tab="game" class="on">Game</button>
+      <button data-tab="puz">Tactics</button>
       <button data-tab="train">Training</button>
       <button data-tab="open">Openings</button>
       <button data-tab="setup">Set up</button>
@@ -250,6 +277,15 @@ kbd { font: 0.85em ui-monospace, Menlo, monospace; border: 1px solid var(--line)
         <div class="lbl">CPU level</div>
         <div class="levels" id="levelSeg"></div>
         <div class="hint-note" id="levelDesc"></div>
+      </div>
+      <div class="field">
+        <div class="lbl">Clock</div>
+        <div class="seg" id="tcSeg"></div>
+        <div class="hint-note">Takes effect on the next new game. The clock stops while this tab is in the background.</div>
+      </div>
+      <div class="field">
+        <div class="lbl">Board</div>
+        <div class="seg" id="themeSeg"></div>
       </div>
       <div class="field">
         <div class="lbl">Moves</div>
@@ -272,6 +308,28 @@ kbd { font: 0.85em ui-monospace, Menlo, monospace; border: 1px solid var(--line)
         <button class="small" id="btnFen">Copy FEN</button>
         <label style="font-size:0.9em"><input type="checkbox" id="optSound"> sound</label>
         <label style="font-size:0.9em"><input type="checkbox" id="optAutoQueen"> always promote to queen</label>
+        <label style="font-size:0.9em"><input type="checkbox" id="optAnim"> animate moves</label>
+      </div>
+      <div class="field">
+        <div class="lbl">Record vs CPU</div>
+        <div class="record" id="recordBox"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-puz">
+      <div class="field">
+        <div class="lbl">Puzzle type</div>
+        <div class="seg" id="puzKind"><button data-v="any">Mixed</button><button data-v="mate1">Mate in 1</button><button data-v="mate2">Mate in 2</button><button data-v="material">Win material</button></div>
+        <div class="hint-note">The engine plays itself into a messy position and checks that there is exactly one winning idea. Find the best move for the side to play. Your game is kept and comes back when you leave.</div>
+      </div>
+      <div class="row">
+        <button id="btnPuzNew">New puzzle</button>
+        <button id="btnPuzBack" hidden>Back to my game</button>
+      </div>
+      <div class="puz" id="puzBox" hidden></div>
+      <div class="field">
+        <div class="lbl">Puzzle record</div>
+        <div class="record" id="puzStats"></div>
       </div>
     </section>
 
@@ -1049,7 +1107,7 @@ var Chess = (function () {
     var rootMoves = legalMoves(s);
     if (!rootMoves.length) return null;
     var maxDepth = opts.depth || 4;
-    var best = rootMoves[0], bestScore = 0, reached = 0, pv = [best], rootScores = null;
+    var best = rootMoves[0], bestScore = 0, reached = 0, pv = [best], rootScores = null, rootOrder = null;
     if (rootMoves.length === 1) {
       return { move: best, score: evaluate(s), depth: 0, pv: [best], nodes: 0, ms: 0 };
     }
@@ -1077,7 +1135,7 @@ var Chess = (function () {
       }
       if (aborted) break;
       best = iterBest; bestScore = iterScore; reached = d;
-      if (opts.exact) rootScores = scores.slice();
+      if (opts.exact) { rootScores = scores.slice(); rootOrder = rootMoves.slice(); }
       ttStore(s, d, TT_EXACT, bestScore, best, 0);
       pv = extractPV(s, d + 4);
       if (!pv.length) pv = [best];
@@ -1089,11 +1147,112 @@ var Chess = (function () {
       for (var k = 0; k < rootScores.length; k++) {
         var g = (Math.random() + Math.random() + Math.random() - 1.5) * opts.noise;
         var v = rootScores[k] + g;
-        if (v > pickBest) { pickBest = v; pick = rootMoves[k]; }
+        if (v > pickBest) { pickBest = v; pick = rootOrder[k]; }
       }
-      if (pick !== best) { best = pick; bestScore = rootScores[rootMoves.indexOf(pick)]; pv = [pick]; }
+      if (pick !== best) { best = pick; bestScore = rootScores[rootOrder.indexOf(pick)]; pv = [pick]; }
     }
-    return { move: best, score: bestScore, depth: reached, pv: pv, nodes: nodes, ms: now() - start };
+    return { move: best, score: bestScore, depth: reached, pv: pv, nodes: nodes, ms: now() - start, rootMoves: rootOrder, rootScores: rootScores };
+  }
+
+  // ---- puzzle generator: play a quick, slightly random game, then look for a tactic ----
+  function makePuzzle(opts) {
+    var deadline = now() + (opts.time || 5000);
+    var want = opts.kind || "any", tries = 0;
+    var constructedShare = want === "material" ? 0 : want === "any" ? 0.5 : 0.75;
+    while (now() < deadline) {
+      tries++;
+      var s = Math.random() < constructedShare ? constructedPosition() : playedPosition();
+      if (!s) continue;
+      var found = examinePuzzle(s, want);
+      if (found) { found.tries = tries; return found; }
+    }
+    return null;
+  }
+  // A quick, slightly random game from the start position.
+  function playedPosition() {
+    var s = fromFen(START_FEN);
+    var plies = 12 + Math.floor(Math.random() * 30);
+    for (var i = 0; i < plies; i++) {
+      var ms = legalMoves(s); if (!ms.length) return null;
+      var m;
+      if (i < 4 || Math.random() < 0.3) m = ms[Math.floor(Math.random() * ms.length)];
+      else { var r0 = think(s, { depth: 2, time: 25, noise: 150, exact: true }); m = r0 ? r0.move : ms[0]; }
+      make(s, m);
+      if (gameStatus(s).over) return null;
+    }
+    return s;
+  }
+  // A sparse random position: attacker with a few pieces against a king with a little cover. Mating nets are common here.
+  function constructedPosition() {
+    var grid = [], used = {};
+    for (var i = 0; i < 64; i++) grid.push("");
+    function put(ch, pawn) {
+      for (var t = 0; t < 60; t++) {
+        var sq = Math.floor(Math.random() * 64), r = sq >> 3;
+        if (used[sq] || (pawn && (r === 0 || r === 7))) continue;
+        used[sq] = 1; grid[sq] = ch; return sq;
+      }
+      return -1;
+    }
+    var atkWhite = Math.random() < 0.5;
+    var A = function (c) { return atkWhite ? c.toUpperCase() : c.toLowerCase(); }, D = function (c) { return atkWhite ? c.toLowerCase() : c.toUpperCase(); };
+    var ak = put(A("k")), dk = -1;
+    for (var t = 0; t < 40 && dk < 0; t++) {
+      var sq = Math.floor(Math.random() * 64);
+      if (used[sq]) continue;
+      if (Math.abs((sq >> 3) - (ak >> 3)) <= 1 && Math.abs((sq & 7) - (ak & 7)) <= 1) continue;
+      used[sq] = 1; grid[sq] = D("k"); dk = sq;
+    }
+    if (dk < 0) return null;
+    var pool = ["q", "r", "r", "b", "n", "q", "b"], n = 2 + Math.floor(Math.random() * 2);
+    for (var a = 0; a < n; a++) put(A(pool[Math.floor(Math.random() * pool.length)]));
+    var dpool = ["p", "p", "p", "n", "b", "r", "q"], dn = Math.floor(Math.random() * 4);
+    for (var d = 0; d < dn; d++) { var pc = dpool[Math.floor(Math.random() * dpool.length)]; put(D(pc), pc === "p"); }
+    var rows = [];
+    for (var r = 7; r >= 0; r--) {
+      var row = "", empty = 0;
+      for (var f = 0; f < 8; f++) { var ch = grid[r * 8 + f]; if (!ch) empty++; else { if (empty) { row += empty; empty = 0; } row += ch; } }
+      if (empty) row += empty;
+      rows.push(row);
+    }
+    var fen = rows.join("/") + " " + (atkWhite ? "w" : "b") + " - - 0 1";
+    var s;
+    try { s = fromFen(fen); } catch (e) { return null; }
+    if (attacked(s, s.king[s.side ^ 1], s.side) || attacked(s, s.king[s.side], s.side ^ 1)) return null;
+    if (gameStatus(s).over) return null;
+    return s;
+  }
+  function examinePuzzle(s, want) {
+    clearTT();
+    var r = think(s, { depth: 4, time: 300, noise: 0, exact: true });
+    if (!r || !r.rootScores || r.rootScores.length < 2) return null;
+    var order = r.rootMoves, sc = r.rootScores, idx = [];
+    for (var i = 0; i < sc.length; i++) idx.push(i);
+    idx.sort(function (a, b) { return sc[b] - sc[a]; });
+    var best = sc[idx[0]], second = sc[idx[1]], bestMove = order[idx[0]];
+    var mates = 0; for (var k = 0; k < sc.length; k++) if (sc[k] > MATE - 1000) mates++;
+    var kind = null, mateIn = 0;
+    if (best === MATE - 1 && mates === 1 && (want === "any" || want === "mate1")) { kind = "mate1"; mateIn = 1; }
+    else if (best === MATE - 3 && mates === 1 && (want === "any" || want === "mate2")) { kind = "mate2"; mateIn = 2; }
+    else if (mates === 0 && best >= 180 && best < 2500 && best - second >= 200 && (want === "any" || want === "material")) {
+      if (evaluate(s) > 450) return null; // already winning big: not much of a puzzle
+      // A capture of a piece that is simply hanging is too easy most of the time.
+      if ((mFlags(bestMove) & F_CAP) && Math.random() < 0.75) {
+        var hang = attackedPieces(s, s.side ^ 1).some(function (a) { return a.hanging && a.sq === mTo(bestMove); });
+        if (hang) return null;
+      }
+      clearTT();
+      var v = think(s, { depth: 7, time: 500, noise: 0, exact: false });
+      if (!v || v.move !== bestMove || v.score < 150) return null;
+      kind = "material";
+    }
+    if (!kind) return null;
+    var accept = [];
+    for (var j = 0; j < sc.length; j++) if (sc[j] >= best - 25) accept.push(uci(order[j]));
+    clearTT();
+    var line = think(s, { depth: kind === "material" ? 7 : 5, time: 400, noise: 0, exact: false });
+    var pv = (line && line.pv && line.pv.length && line.move === bestMove) ? line.pv.map(uci) : (r.pv || [bestMove]).map(uci);
+    return { fen: toFen(s), key: uci(bestMove), kind: kind, mateIn: mateIn, accept: accept, pv: pv, score: best };
   }
 
   function perft(s, depth) {
@@ -1202,7 +1361,7 @@ var Chess = (function () {
     newState: newState, fromFen: fromFen, toFen: toFen, clone: clone, attacked: attacked, attackers: attackers, inCheck: inCheck,
     gen: gen, make: make, unmake: unmake, legalMoves: legalMoves, repetitions: repetitions, insufficientMaterial: insufficientMaterial,
     gameStatus: gameStatus, uci: uci, fromUci: fromUci, san: san, parseSan: parseSan, pieceCounts: pieceCounts, evaluate: evaluate,
-    think: think, perft: perft, clearTT: clearTT, attackedPieces: attackedPieces, pins: pins, forks: forks, threatSquares: threatSquares,
+    think: think, perft: perft, clearTT: clearTT, makePuzzle: makePuzzle, attackedPieces: attackedPieces, pins: pins, forks: forks, threatSquares: threatSquares,
     computeHash: computeHash
   };
 })();
@@ -1212,6 +1371,12 @@ if (typeof module !== "undefined" && module.exports) module.exports = Chess;
 // ---- Worker entry (appended to the engine source when the worker is built) ----
 self.onmessage = function (ev) {
   var msg = ev.data;
+  if (msg.cmd === "puzzle") {
+    var pz = null;
+    try { pz = Chess.makePuzzle({ kind: msg.kind, time: msg.time }); } catch (e) { pz = null; }
+    self.postMessage({ id: msg.id, cmd: "result", puzzle: pz });
+    return;
+  }
   if (msg.cmd !== "search") return;
   var s;
   try {
@@ -1239,7 +1404,15 @@ self.onmessage = function (ev) {
   var $ = function (id) { return document.getElementById(id); };
   var GLYPH = ["", "♟︎", "♞︎", "♝︎", "♜︎", "♛︎", "♚︎"];
   var PNAME = ["", "pawn", "knight", "bishop", "rook", "queen", "king"];
-  var SAVE_KEY = "chess-casual-v2";
+  var SAVE_KEY = "chess-casual-v2", STATS_KEY = "chess-stats-v1", PREFS_KEY = "chess-prefs-v1";
+  var TCS = [
+    { k: "none", name: "None" }, { k: "1+0", name: "1 min", base: 1, inc: 0 }, { k: "3+2", name: "3 + 2", base: 3, inc: 2 },
+    { k: "5+0", name: "5 min", base: 5, inc: 0 }, { k: "10+0", name: "10 min", base: 10, inc: 0 }, { k: "15+10", name: "15 + 10", base: 15, inc: 10 }
+  ];
+  var THEMES = [
+    { k: "wood", name: "Wood", l: "#efdab4", d: "#b48662" }, { k: "green", name: "Green", l: "#eeeed2", d: "#769656" },
+    { k: "blue", name: "Blue", l: "#dee3e6", d: "#8ca2ad" }, { k: "grey", name: "Grey", l: "#e9e9e9", d: "#9d9d9d" }, { k: "rose", name: "Rose", l: "#f3e4e0", d: "#b58077" }
+  ];
 
   var LEVELS = [
     { name: "Random", desc: "Mostly random moves. Fine for a very first game.", depth: 1, time: 60, noise: 0, exact: true, random: 0.7 },
@@ -1292,7 +1465,8 @@ self.onmessage = function (ev) {
     humanPref: "w", human: "w", level: 2, flipped: false,
     mode: "play", drill: null, autoplay: null, setup: null,
     settings: {}, sound: false, autoQueen: false,
-    analysis: {}, selected: -1, hintArrow: null, bookArrow: null, result: null, over: false
+    analysis: {}, selected: -1, hintArrow: null, bookArrow: null, result: null, over: false,
+    clock: null, tcPref: "none", theme: "wood", anim: true, recorded: false, stats: null, puzzle: null, puzzleKind: "any"
   };
   TRAIN.forEach(function (t) { G.settings[t.key] = t.def; });
 
@@ -1312,12 +1486,13 @@ self.onmessage = function (ev) {
       return wk;
     } catch (e) { return null; }
   }
-  var cpuW = makeWorker(), anaW = makeWorker();
+  var cpuW = makeWorker(), anaW = makeWorker(), puzW = makeWorker();
   function runSearch(which, params) {
     return new Promise(function (resolve) {
-      var wk = which === "cpu" ? cpuW : anaW;
+      var wk = which === "cpu" ? cpuW : which === "puz" ? puzW : anaW;
       if (!wk) {
         setTimeout(function () {
+          if (params.cmd === "puzzle") { var pz = null; try { pz = C.makePuzzle(params); } catch (e) {} resolve({ puzzle: pz }); return; }
           var s = C.fromFen(params.fen);
           params.moves.forEach(function (u) { var m = C.fromUci(s, u); if (m) C.make(s, m); });
           var r = C.think(s, params);
@@ -1334,13 +1509,13 @@ self.onmessage = function (ev) {
     });
   }
   function cancelWorker(which) {
-    var wk = which === "cpu" ? cpuW : anaW;
+    var wk = which === "cpu" ? cpuW : which === "puz" ? puzW : anaW;
     if (!wk) return;
     Object.keys(wk.pending).forEach(function (k) { wk.pending[k](null); });
     wk.pending = {};
     try { wk.w.terminate(); } catch (e) {}
     var nw = makeWorker();
-    if (which === "cpu") cpuW = nw; else anaW = nw;
+    if (which === "cpu") cpuW = nw; else if (which === "puz") puzW = nw; else anaW = nw;
   }
 
   // ---------- helpers ----------
@@ -1375,12 +1550,59 @@ self.onmessage = function (ev) {
 
   // ---------- persistence ----------
   function save() {
+    if (G.mode === "puzzle") return; // the real game stays saved underneath a puzzle
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         start: G.start, moves: G.moves.map(function (m) { return m.uci; }), humanPref: G.humanPref, human: G.human, level: G.level, flipped: G.flipped,
-        settings: G.settings, sound: G.sound, autoQueen: G.autoQueen, drill: G.drill, result: G.result, qualities: G.moves.map(function (m) { return m.q || null; })
+        settings: G.settings, sound: G.sound, autoQueen: G.autoQueen, drill: G.drill, result: G.result, qualities: G.moves.map(function (m) { return m.q || null; }),
+        clock: G.clock, recorded: G.recorded
       }));
     } catch (e) {}
+  }
+  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: G.theme, anim: G.anim, tcPref: G.tcPref, puzzleKind: G.puzzleKind })); } catch (e) {} }
+  function loadPrefs() {
+    try {
+      var d = JSON.parse(localStorage.getItem(PREFS_KEY) || "null") || {};
+      if (THEMES.some(function (t) { return t.k === d.theme; })) G.theme = d.theme;
+      if (typeof d.anim === "boolean") G.anim = d.anim;
+      if (TCS.some(function (t) { return t.k === d.tcPref; })) G.tcPref = d.tcPref;
+      if (["any", "mate1", "mate2", "material"].indexOf(d.puzzleKind) >= 0) G.puzzleKind = d.puzzleKind;
+    } catch (e) {}
+  }
+  function loadStats() {
+    try { G.stats = JSON.parse(localStorage.getItem(STATS_KEY) || "null") || {}; } catch (e) { G.stats = {}; }
+    if (!G.stats.levels) G.stats.levels = {};
+    if (typeof G.stats.streak !== "number") G.stats.streak = 0;
+    if (typeof G.stats.bestStreak !== "number") G.stats.bestStreak = 0;
+    if (!G.stats.puzzles) G.stats.puzzles = { solved: 0, failed: 0, streak: 0, best: 0 };
+  }
+  function saveStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(G.stats)); } catch (e) {} }
+  function recordResult(st) {
+    if (G.recorded || G.human === "both" || G.mode !== "play" || G.moves.length < 2) return;
+    G.recorded = true;
+    var lv = G.stats.levels[G.level] || (G.stats.levels[G.level] = { w: 0, l: 0, d: 0 });
+    var out = st.result === "1/2-1/2" ? "d" : ((st.result === "1-0") === (G.human === "w") ? "w" : "l");
+    lv[out]++;
+    if (out === "w") { G.stats.streak = Math.max(0, G.stats.streak) + 1; G.stats.bestStreak = Math.max(G.stats.bestStreak, G.stats.streak); }
+    else if (out === "l") G.stats.streak = Math.min(0, G.stats.streak) - 1;
+    saveStats(); renderStats();
+  }
+  function renderStats() {
+    var box = $("recordBox"), html = "", any = false;
+    LEVELS.forEach(function (lv, i) {
+      var r = G.stats.levels[i]; if (!r || !(r.w + r.l + r.d)) return;
+      any = true;
+      html += '<div class="lv"><span>' + lv.name + '</span><b>' + r.w + " W · " + r.l + " L · " + r.d + " D</b></div>";
+    });
+    if (!any) html = '<div class="muted">No finished games yet. Wins, losses and draws against the CPU land here.</div>';
+    else {
+      var st = G.stats.streak;
+      html += '<div class="muted" style="margin-top:4px">' + (st > 0 ? "On a " + st + "-game winning streak" : st < 0 ? (-st) + " loss" + (st < -1 ? "es" : "") + " in a row" : "No streak going") + (G.stats.bestStreak ? " · best streak " + G.stats.bestStreak : "") + ' · <button class="linkish" id="btnStatsReset">reset</button></div>';
+    }
+    box.innerHTML = html;
+    var rb = $("btnStatsReset"); if (rb) rb.onclick = function () { if (confirm("Clear your record?")) { G.stats.levels = {}; G.stats.streak = 0; G.stats.bestStreak = 0; saveStats(); renderStats(); } };
+    var pz = G.stats.puzzles, pb = $("puzStats");
+    if (pb) pb.innerHTML = (pz.solved + pz.failed) ? '<div class="lv"><span>Solved</span><b>' + pz.solved + "</b></div>" + '<div class="lv"><span>Missed</span><b>' + pz.failed + "</b></div>" + '<div class="lv"><span>Streak</span><b>' + pz.streak + (pz.best ? " (best " + pz.best + ")" : "") + "</b></div>" : '<div class="muted">Nothing solved yet.</div>';
   }
   function load() {
     try {
@@ -1404,6 +1626,8 @@ self.onmessage = function (ev) {
       });
       G.drill = d.drill || null;
       G.result = d.result || null;
+      G.clock = (d.clock && typeof d.clock.w === "number") ? d.clock : null;
+      G.recorded = !!d.recorded;
       return true;
     } catch (e) { return false; }
   }
@@ -1422,13 +1646,14 @@ self.onmessage = function (ev) {
     G.start = fen || C.START_FEN;
     G.s = C.fromFen(G.start);
     G.moves = []; G.view = null; G.analysis = {}; G.selected = -1; G.hintArrow = null; G.bookArrow = null; G.result = null; G.over = false;
-    G.drill = opts.drill || null; G.autoplay = null; G.mode = "play";
+    G.drill = opts.drill || null; G.autoplay = null; G.mode = "play"; G.puzzle = null; G.recorded = false;
+    G.clock = (opts.clock === false) ? null : clockFor(G.tcPref);
     var pref = opts.human || G.humanPref;
     G.human = pref === "r" ? (Math.random() < 0.5 ? "w" : "b") : pref;
     G.flipped = G.human === "b";
     hideBanner(); hideCoach();
     if (opts.coachMsg) { showCoach(opts.coachMsg, ""); coach.keep = true; }
-    render(); save();
+    render(); renderClocks(); renderPuzzle(); save();
     afterPositionChange();
   }
 
@@ -1441,16 +1666,26 @@ self.onmessage = function (ev) {
     coach.buttons = null;
     if (by === "human") { coach.verdict = ""; coach.verdictPly = G.moves.length; }
     G.selected = -1; G.hintArrow = null; G.bookArrow = null; G.view = null;
+    if (G.clock && G.mode === "play") {
+      var mover = G.s.side === C.WHITE ? "b" : "w";
+      if (G.moves.length > 1) G.clock[mover] += G.clock.inc;
+      clockLast = Date.now();
+    }
     playSound(cap ? "capture" : "move");
+    var skipAnim = dragMove; dragMove = false;
     render();
+    if (!skipAnim) animateMove(m);
+    renderClocks();
     save();
     afterPositionChange(by);
   }
 
   function afterPositionChange(by) {
+    if (G.mode === "puzzle") { renderStatus(); return; }
     var st = C.gameStatus(G.s);
     if (st.over) {
       G.over = true; G.result = st;
+      recordResult(st);
       save();
       showResult(st);
       renderStatus();
@@ -1498,7 +1733,9 @@ self.onmessage = function (ev) {
     }
     setThinking(true);
     var ply = G.moves.length;
-    runSearch("cpu", { fen: G.start, moves: G.moves.map(function (x) { return x.uci; }), depth: lv.depth, time: lv.time, noise: lv.noise, exact: lv.exact }).then(function (r) {
+    var budget = lv.time;
+    if (G.clock) { var rem = G.clock[sideChar(G.s.side)]; budget = Math.max(40, Math.min(budget, rem / 12)); }
+    runSearch("cpu", { fen: G.start, moves: G.moves.map(function (x) { return x.uci; }), depth: lv.depth, time: budget, noise: lv.noise, exact: lv.exact }).then(function (r) {
       setThinking(false);
       if (!r || !r.best || G.moves.length !== ply || G.over || humanTurn() || G.mode !== "play") return;
       var m = C.fromUci(G.s, r.best);
@@ -1510,7 +1747,7 @@ self.onmessage = function (ev) {
   function setThinking(on) { $("thinking").textContent = on ? "CPU is thinking" : ""; $("thinking").className = on ? "muted thinking" : "muted"; }
 
   function undo() {
-    if (G.mode === "setup" || !G.moves.length) return;
+    if (G.mode === "setup" || G.mode === "puzzle" || !G.moves.length) return;
     if (G.autoplay) return;
     cancelWorker("cpu"); setThinking(false);
     var n = 1;
@@ -1527,6 +1764,7 @@ self.onmessage = function (ev) {
 
   // ---------- analysis / eval bar / coach ----------
   function requestAnalysis() {
+    if (G.mode === "puzzle") return;
     if (!(G.settings.evalbar || G.settings.coach || G.settings.engineline)) return;
     var ply = G.moves.length;
     if (G.analysis[ply]) { renderEval(); return; }
@@ -1563,7 +1801,7 @@ self.onmessage = function (ev) {
   }
   function renderEval() {
     var bar = $("evalbar");
-    bar.classList.toggle("hidden", !G.settings.evalbar);
+    bar.classList.toggle("hidden", !G.settings.evalbar || G.mode === "puzzle");
     bar.classList.toggle("flip", G.flipped);
     var ply = G.view === null ? G.moves.length : G.view;
     var a = G.analysis[ply];
@@ -1711,6 +1949,7 @@ self.onmessage = function (ev) {
   }
 
   function hint() {
+    if (G.mode === "puzzle") { puzzleHint(); return; }
     if (!isLive() || G.over || !humanTurn()) return;
     var ply = G.moves.length;
     var give = function (a) {
@@ -1781,10 +2020,10 @@ self.onmessage = function (ev) {
   // ---------- result ----------
   function showResult(st) {
     var title, sub = "";
-    if (st.reason === "checkmate") {
+    if (st.result !== "1/2-1/2") {
       var winner = st.result === "1-0" ? "w" : "b";
       title = G.human === "both" ? colorName(winner === "w" ? C.WHITE : C.BLACK) + " wins" : (winner === G.human ? "You won" : "You lost");
-      sub = "Checkmate.";
+      sub = st.reason === "checkmate" ? "Checkmate." : st.reason === "time" ? "On time." : st.reason === "resignation" ? (winner === G.human ? "The CPU resigned." : "You resigned.") : st.reason + ".";
     } else { title = "Draw"; sub = st.reason[0].toUpperCase() + st.reason.slice(1) + "."; }
     var b = $("banner");
     b.hidden = false;
@@ -1822,6 +2061,7 @@ self.onmessage = function (ev) {
 
   function render() {
     var s = curState();
+    $("boardbox").querySelectorAll(".fly").forEach(function (f) { f.remove(); });
     var legalFrom = (G.selected >= 0 && G.settings.legal) ? C.legalMoves(s).filter(function (m) { return C.mFrom(m) === G.selected; }) : [];
     var last = null;
     if (G.mode !== "setup") {
@@ -1858,14 +2098,256 @@ self.onmessage = function (ev) {
     renderCaptured();
     renderEval();
     renderStatus();
-    $("btnUndo").disabled = G.mode === "setup" || !G.moves.length || !!G.autoplay;
-    $("btnHint").disabled = !isLive() || G.over || !humanTurn();
-    $("modeline").textContent = G.mode === "setup" ? "setting up a position" : (G.human === "both" ? "two players, one screen" : "you are " + (G.human === "w" ? "White" : "Black") + " · CPU " + LEVELS[G.level].name + (G.drill && !G.drill.done ? " · drill" : ""));
+    $("btnUndo").disabled = G.mode === "setup" || G.mode === "puzzle" || !G.moves.length || !!G.autoplay;
+    $("btnHint").disabled = G.mode === "puzzle" ? !!(G.puzzle && G.puzzle.solved) : (!isLive() || G.over || !humanTurn());
+    $("btnResign").hidden = !(G.mode === "play" && G.human !== "both" && !G.over && G.moves.length >= 2 && !G.autoplay);
+    $("modeline").textContent = G.mode === "setup" ? "setting up a position" : G.mode === "puzzle" ? "puzzle · " + puzzleLabel() : (G.human === "both" ? "two players, one screen" : "you are " + (G.human === "w" ? "White" : "Black") + " · CPU " + LEVELS[G.level].name + (G.drill && !G.drill.done ? " · drill" : "") + (G.clock ? " · " + G.clock.k.replace("+", " + ") : ""));
+  }
+
+  // ---------- move animation ----------
+  var dragMove = false;
+  function animateMove(m) {
+    if (!G.anim || G.view !== null) return;
+    var box = $("boardbox"), sz = box.clientWidth / 8;
+    if (!sz) return;
+    var legs = [[C.mFrom(m), C.mTo(m)]];
+    if (C.mFlags(m) & C.F_CASTLE) { var kf = C.mFrom(m), kt = C.mTo(m); legs.push(kt > kf ? [kf + 3, kt - 1] : [kf - 4, kt + 1]); }
+    legs.forEach(function (leg) {
+      var df = sqToDisp(leg[0]), dt = sqToDisp(leg[1]);
+      var pieceEl = squares[dt.row * 8 + dt.col].querySelector(".piece");
+      if (!pieceEl) return;
+      var fly = document.createElement("div"); fly.className = "fly"; fly.appendChild(pieceEl.cloneNode(true));
+      fly.style.left = (df.col * sz) + "px"; fly.style.top = (df.row * sz) + "px"; fly.style.width = sz + "px"; fly.style.height = sz + "px";
+      pieceEl.style.visibility = "hidden";
+      box.appendChild(fly);
+      var dx = (dt.col - df.col) * sz, dy = (dt.row - df.row) * sz, done = false;
+      function finish() { if (done) return; done = true; fly.remove(); pieceEl.style.visibility = ""; }
+      requestAnimationFrame(function () { requestAnimationFrame(function () { fly.style.transform = "translate(" + dx + "px," + dy + "px)"; }); });
+      fly.addEventListener("transitionend", finish);
+      setTimeout(finish, 280);
+    });
+  }
+  function shakeBoard() { var b = $("boardbox"); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); }
+
+  // ---------- clock ----------
+  var clockTimer = null, clockLast = 0;
+  function clockFor(pref) {
+    var t = TCS.filter(function (x) { return x.k === pref; })[0];
+    if (!t || !t.base) return null;
+    return { w: t.base * 60000, b: t.base * 60000, inc: (t.inc || 0) * 1000, k: t.k };
+  }
+  function clockRunning() { return !!G.clock && !G.over && G.mode === "play" && !G.autoplay && G.moves.length >= 1 && !document.hidden; }
+  function tickClock() {
+    var t = Date.now();
+    if (clockRunning()) {
+      var side = sideChar(G.s.side);
+      G.clock[side] = Math.max(0, G.clock[side] - (t - clockLast));
+      if (G.clock[side] === 0) { clockLast = t; renderClocks(); flagFall(side); return; }
+    }
+    clockLast = t;
+    renderClocks();
+  }
+  function fmtClock(ms) {
+    if (ms < 10000) return (ms / 1000).toFixed(1);
+    var s = Math.ceil(ms / 1000), m = Math.floor(s / 60);
+    return m + ":" + String(s % 60).padStart(2, "0");
+  }
+  function renderClocks() {
+    var top = $("clockTop"), bot = $("clockBot");
+    if (!G.clock || G.mode !== "play") { top.hidden = true; bot.hidden = true; return; }
+    var topSide = G.flipped ? "w" : "b", botSide = G.flipped ? "b" : "w";
+    var toMove = sideChar(G.s.side), running = clockRunning();
+    function one(el, side) {
+      el.hidden = false;
+      var who = G.human === "both" ? colorName(side === "w" ? C.WHITE : C.BLACK) : (side === G.human ? "You" : "CPU");
+      el.innerHTML = '<div class="clock' + (toMove === side && (running || !G.over) ? " active" : "") + (G.clock[side] < 10000 ? " low" : "") + '"><span class="who">' + who + "</span><span>" + fmtClock(G.clock[side]) + "</span></div>";
+    }
+    one(top, topSide); one(bot, botSide);
+  }
+  function flagFall(side) {
+    var res = side === "w" ? "0-1" : "1-0";
+    endGameWith({ over: true, result: res, reason: "time", check: false });
+  }
+  function endGameWith(st) {
+    cancelWorker("cpu"); setThinking(false);
+    G.over = true; G.result = st;
+    recordResult(st); save();
+    render(); renderStatus(); showResult(st); playSound("move");
+  }
+  function resign() {
+    if (G.mode !== "play" || G.human === "both" || G.over) return;
+    if (!confirm("Resign this game?")) return;
+    endGameWith({ over: true, result: G.human === "w" ? "0-1" : "1-0", reason: "resignation", check: false });
+  }
+  function applyTheme() {
+    var t = THEMES.filter(function (x) { return x.k === G.theme; })[0] || THEMES[0];
+    document.documentElement.style.setProperty("--light", t.l);
+    document.documentElement.style.setProperty("--dark", t.d);
+  }
+
+  // ---------- tactics puzzles ----------
+  var puzzleQueue = [], puzzleFetching = false, puzzleWanted = null, puzzleRetries = 0;
+  function puzzleLabel() {
+    var p = G.puzzle && G.puzzle.p; if (!p) return "";
+    return p.kind === "mate1" ? "mate in 1" : p.kind === "mate2" ? "mate in 2" : "win material";
+  }
+  function takeQueued(want) {
+    for (var i = 0; i < puzzleQueue.length; i++) if (want === "any" || puzzleQueue[i].kind === want) return puzzleQueue.splice(i, 1)[0];
+    return null;
+  }
+  function requestPuzzle() {
+    var q = takeQueued(G.puzzleKind);
+    if (q) { startPuzzle(q); return; }
+    puzzleWanted = G.puzzleKind; puzzleRetries = 0;
+    $("btnPuzNew").disabled = true;
+    $("puzBox").hidden = false; $("puzBox").className = "puz";
+    $("puzBox").innerHTML = '<div class="kind">Tactics</div><div class="big">Setting up a puzzle…</div><div class="muted">The engine is playing a quick game to find one. Mate in 2 can take a few seconds.</div>';
+    fetchPuzzle();
+  }
+  function fetchPuzzle() {
+    if (puzzleFetching) return;
+    puzzleFetching = true;
+    var want = puzzleWanted || G.puzzleKind;
+    var kind = want === "any" ? ["mate1", "mate2", "material", "material"][Math.floor(Math.random() * 4)] : want;
+    runSearch("puz", { cmd: "puzzle", kind: kind, time: kind === "mate2" ? 9000 : 6000 }).then(function (r) {
+      puzzleFetching = false;
+      var p = r && r.puzzle;
+      if (p) {
+        if (puzzleWanted && (puzzleWanted === "any" || puzzleWanted === p.kind)) { puzzleWanted = null; startPuzzle(p); }
+        else if (puzzleQueue.length < 3) puzzleQueue.push(p);
+      } else if (puzzleWanted) {
+        if (++puzzleRetries >= 4) {
+          puzzleWanted = null; $("btnPuzNew").disabled = false;
+          $("puzBox").innerHTML = '<div class="kind">Tactics</div><div class="big">Couldn\'t find one this time.</div><div class="muted">Press New puzzle to try again.</div>';
+          return;
+        }
+      }
+      if (puzzleWanted || (G.mode === "puzzle" && !takeQueuedPeek(G.puzzleKind))) fetchPuzzle();
+    });
+  }
+  function takeQueuedPeek(want) { return puzzleQueue.some(function (p) { return want === "any" || p.kind === want; }); }
+  function startPuzzle(p) {
+    if (G.mode !== "puzzle") save();
+    cancelWorker("cpu"); cancelWorker("ana"); setThinking(false);
+    G.puzzle = { p: p, step: 0, tries: 0, solved: false, failed: false, hints: 0 };
+    G.mode = "puzzle";
+    G.start = p.fen; G.s = C.fromFen(p.fen); G.moves = []; G.view = null; G.analysis = {}; G.selected = -1; G.hintArrow = null; G.bookArrow = null;
+    G.result = null; G.over = false; G.drill = null; G.autoplay = null; G.clock = null;
+    G.human = G.s.side === C.WHITE ? "w" : "b"; G.flipped = G.human === "b";
+    hideBanner(); hideCoach();
+    $("btnPuzNew").disabled = false;
+    render(); renderClocks(); renderPuzzle();
+    setTab("puz");
+    if (!takeQueuedPeek(G.puzzleKind)) fetchPuzzle();
+  }
+  function exitPuzzle() {
+    if (G.mode !== "puzzle") return;
+    G.mode = "play"; G.puzzle = null;
+    cancelWorker("ana");
+    if (load()) {
+      var st = C.gameStatus(G.s);
+      G.over = st.over; if (st.over) G.result = st;
+      hideBanner(); hideCoach(); render(); renderClocks(); renderPuzzle();
+      if (G.over) showResult(st); else { requestAnalysis(); if (!humanTurn()) scheduleCpu(); }
+    } else newGame();
+    setTab("game");
+  }
+  function puzzleSan(ucis) {
+    var t = C.fromFen(G.puzzle.p.fen), out = [];
+    for (var i = 0; i < ucis.length; i++) { var m = C.fromUci(t, ucis[i]); if (!m) break; out.push(C.san(t, m)); C.make(t, m); }
+    return out.join(" ");
+  }
+  function renderPuzzle(msg, cls) {
+    var box = $("puzBox"), pz = G.puzzle;
+    $("btnPuzBack").hidden = G.mode !== "puzzle";
+    if (G.mode !== "puzzle" || !pz) { if (!puzzleWanted) box.hidden = true; return; }
+    box.hidden = false;
+    box.className = "puz" + (cls ? " " + cls : "");
+    var side = colorName(C.fromFen(pz.p.fen).side);
+    var head = pz.solved ? "Solved" : (side + " to play");
+    var body = msg || (pz.p.kind === "mate1" ? "Find the checkmate." : pz.p.kind === "mate2" ? "Find the move that forces mate next turn." : "One move wins material. Find it.");
+    var html = '<div class="kind">' + puzzleLabel() + "</div><div class=\"big\">" + head + "</div><div>" + body + "</div>";
+    var btns = "";
+    if (pz.solved) btns = '<button id="pzNext">Next puzzle</button>';
+    else { btns = '<button class="small" id="pzHint">Hint</button>'; if (pz.tries >= 1 || pz.hints >= 1) btns += '<button class="small" id="pzShow">Show the move</button>'; }
+    html += '<div class="row">' + btns + "</div>";
+    box.innerHTML = html;
+    var b;
+    if ((b = $("pzNext"))) b.onclick = requestPuzzle;
+    if ((b = $("pzHint"))) b.onclick = puzzleHint;
+    if ((b = $("pzShow"))) b.onclick = function () { puzzleShow(); };
+  }
+  function puzzleHint() {
+    var pz = G.puzzle; if (!pz || pz.solved) return;
+    pz.hints++;
+    if (pz.hints === 1 && pz.step === 0) {
+      var m = C.fromUci(G.s, pz.p.key);
+      if (m) { G.selected = C.mFrom(m); render(); renderPuzzle("Start with the " + pieceWord(G.s.b[C.mFrom(m)]) + " on " + C.sqName(C.mFrom(m)) + ".", "warn"); }
+    } else puzzleShow();
+  }
+  function puzzleShow() {
+    var pz = G.puzzle; if (!pz || pz.solved) return;
+    pz.failed = true;
+    var m = pz.step === 0 ? C.fromUci(G.s, pz.p.key) : bestMateMove();
+    if (!m) return;
+    G.hintArrow = m; G.selected = -1; render(); renderOverlay(computeMarks(curState()));
+    renderPuzzle("The move is " + C.san(G.s, m) + ". Play it to continue.", "warn");
+  }
+  function bestMateMove() {
+    var legal = C.legalMoves(G.s);
+    for (var i = 0; i < legal.length; i++) { var t = C.clone(G.s); C.make(t, legal[i]); if (C.gameStatus(t).reason === "checkmate") return legal[i]; }
+    return null;
+  }
+  function puzzleMove(m) {
+    var pz = G.puzzle, u = C.uci(m);
+    if (!pz || pz.solved) return;
+    var ok;
+    if (pz.step === 0) ok = pz.p.accept.indexOf(u) >= 0;
+    else { var t = C.clone(G.s); C.make(t, m); ok = C.gameStatus(t).reason === "checkmate"; }
+    if (!ok) {
+      pz.tries++; pz.failed = true; G.selected = -1; shakeBoard(); playSound("move");
+      render();
+      renderPuzzle("Not " + C.san(G.s, m) + ". " + (pz.tries >= 2 ? "Take a hint, or have the move shown." : "Try again."), "bad");
+      return;
+    }
+    G.hintArrow = null;
+    playMove(m, "human");
+    if (pz.p.kind === "mate2" && pz.step === 0) {
+      pz.step = 1;
+      renderPuzzle("Right. Now finish it.", "good");
+      var reply = pz.p.pv && pz.p.pv.length > 1 ? C.fromUci(G.s, pz.p.pv[1]) : null;
+      var go = function (rm) {
+        if (G.mode !== "puzzle" || G.puzzle !== pz) return;
+        if (!rm) { var lm = C.legalMoves(G.s); rm = lm.length ? lm[0] : null; }
+        if (!rm) { finishPuzzle(); return; }
+        playMove(rm, "cpu");
+        renderPuzzle("Now mate.", "good");
+      };
+      if (reply) setTimeout(function () { go(reply); }, 350);
+      else runSearch("ana", { fen: G.start, moves: G.moves.map(function (x) { return x.uci; }), depth: 6, time: 400, noise: 0, exact: false }).then(function (r) { go(r && r.best ? C.fromUci(G.s, r.best) : null); });
+      return;
+    }
+    finishPuzzle();
+  }
+  function finishPuzzle() {
+    var pz = G.puzzle; if (!pz || pz.solved) return;
+    pz.solved = true;
+    var st = C.gameStatus(G.s);
+    if (st.over) { G.over = true; G.result = st; }
+    var ps = G.stats.puzzles;
+    if (pz.failed) { ps.failed++; ps.streak = 0; } else { ps.solved++; ps.streak++; ps.best = Math.max(ps.best, ps.streak); }
+    saveStats(); renderStats();
+    var line = pz.p.kind === "material" ? " The idea: " + puzzleSan(pz.p.pv.slice(0, 5)) + "." : "";
+    renderPuzzle((pz.failed ? "Done, with help." : "Nice.") + line + " Press Next puzzle for another.", pz.failed ? "warn" : "good");
+    render(); renderStatus();
   }
 
   function computeMarks(s) {
     var ring = {}, tag = {}, threat = {}, lines = [];
-    if (G.mode === "setup") return { ring: ring, tag: tag, threat: threat, lines: lines };
+    if (G.mode === "setup" || G.mode === "puzzle") {
+      if (G.mode === "puzzle" && G.hintArrow) lines.push({ m: G.hintArrow, color: "#2f6fb0", marker: "ah-hint" });
+      return { ring: ring, tag: tag, threat: threat, lines: lines };
+    }
     var st = G.settings, us = s.side, them = us ^ 1;
     if (st.attacked) {
       C.attackedPieces(s, us).forEach(function (a) { ring[a.sq] = a.hanging ? "hang" : "atk"; });
@@ -1918,6 +2400,11 @@ self.onmessage = function (ev) {
     var el = $("status");
     if (G.mode === "setup") { el.textContent = "Set up the position, then press Play from here."; return; }
     if (G.autoplay) { el.textContent = "Playing through the line"; return; }
+    if (G.mode === "puzzle") {
+      var pst = C.gameStatus(G.s);
+      el.textContent = pst.reason === "checkmate" ? "Checkmate." : (G.puzzle && G.puzzle.solved) ? "Solved" : colorName(G.s.side) + " to play" + (C.inCheck(G.s) ? " · check" : "");
+      return;
+    }
     if (G.view !== null) { el.textContent = "Viewing move " + G.view + " of " + G.moves.length + " (press > to return)"; return; }
     if (G.over && G.result) {
       var r = G.result;
@@ -1981,7 +2468,7 @@ self.onmessage = function (ev) {
     if (col < 0 || col > 7 || row < 0 || row > 7) return -1;
     return dispToSq(col, row);
   }
-  function canMoveNow() { return G.mode === "play" && isLive() && !G.over && humanTurn(); }
+  function canMoveNow() { return (G.mode === "play" || (G.mode === "puzzle" && G.puzzle && !G.puzzle.solved)) && isLive() && !G.over && humanTurn(); }
 
   function onPointerDown(ev) {
     if (ev.button === 2) return;
@@ -2021,8 +2508,10 @@ self.onmessage = function (ev) {
     var dd = sqToDisp(d.from); squares[dd.row * 8 + dd.col].classList.remove("dragging");
     if (!d.moved) return; // plain click: keep selection
     var sq = squareAt(ev.clientX, ev.clientY);
+    dragMove = true;
     if (sq >= 0 && sq !== d.from) { if (!tryMove(d.from, sq)) { G.selected = -1; render(); } }
     else if (sq !== d.from) { G.selected = -1; render(); }
+    dragMove = false;
   }
 
   function tryMove(from, to) {
@@ -2050,6 +2539,7 @@ self.onmessage = function (ev) {
     box.appendChild(cancel);
   }
   function commitHumanMove(m) {
+    if (G.mode === "puzzle") { puzzleMove(m); return; }
     // Opening drill: must match the book.
     var bm = bookMoveFor(G.s);
     if (bm && bm !== m) {
@@ -2185,7 +2675,9 @@ self.onmessage = function (ev) {
     if (v === null && !G.over && !humanTurn() && !G.autoplay) scheduleCpu();
   }
 
+  function startClockTimer() { if (clockTimer) return; clockLast = Date.now(); clockTimer = setInterval(tickClock, 100); }
   function init() {
+    loadPrefs(); loadStats(); applyTheme();
     buildBoard();
     // Level buttons
     LEVELS.forEach(function (lv, i) {
@@ -2248,10 +2740,22 @@ self.onmessage = function (ev) {
     seg("colorSeg", function () { return G.humanPref; }, function (v) { G.humanPref = v; save(); });
     // Toolbar
     $("btnNew").onclick = function () {
-      if (G.moves.length > 1 && !G.over && !confirm("Start a new game? The current one will be lost.")) return;
-      if (G.mode === "setup") setTab("game");
+      if (G.mode !== "puzzle" && G.moves.length > 1 && !G.over && !confirm("Start a new game? The current one will be lost.")) return;
+      if (G.mode === "setup" || G.mode === "puzzle") setTab("game");
       newGame();
     };
+    $("btnResign").onclick = resign;
+    // Clock presets, board themes, animation, puzzle type
+    TCS.forEach(function (t) { var b = document.createElement("button"); b.textContent = t.name; b.dataset.v = t.k; $("tcSeg").appendChild(b); });
+    seg("tcSeg", function () { return G.tcPref; }, function (v) { G.tcPref = v; savePrefs(); });
+    THEMES.forEach(function (t) { var b = document.createElement("button"); b.className = "sw"; b.innerHTML = '<i style="--l:' + t.l + ';--d:' + t.d + '"></i>' + t.name; b.dataset.v = t.k; $("themeSeg").appendChild(b); });
+    seg("themeSeg", function () { return G.theme; }, function (v) { G.theme = v; savePrefs(); applyTheme(); });
+    $("optAnim").checked = G.anim; $("optAnim").onchange = function () { G.anim = $("optAnim").checked; savePrefs(); };
+    seg("puzKind", function () { return G.puzzleKind; }, function (v) { G.puzzleKind = v; savePrefs(); });
+    $("btnPuzNew").onclick = requestPuzzle;
+    $("btnPuzBack").onclick = exitPuzzle;
+    document.addEventListener("visibilitychange", function () { clockLast = Date.now(); renderClocks(); });
+    startClockTimer();
     $("btnUndo").onclick = undo;
     $("btnHint").onclick = hint;
     $("btnFlip").onclick = function () { G.flipped = !G.flipped; save(); render(); };
@@ -2290,16 +2794,20 @@ self.onmessage = function (ev) {
     $("levelSeg").querySelectorAll("button").forEach(function (x, k) { x.classList.toggle("on", k === G.level); });
     $("levelDesc").textContent = LEVELS[G.level].desc;
     $("colorSeg").querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === G.humanPref); });
+    $("optAnim").checked = G.anim;
+    renderStats();
     if (restored && G.s) {
       var st = C.gameStatus(G.s);
       if (st.over) { G.over = true; G.result = st; }
-      render();
+      else if (G.result && G.result.over && (G.result.reason === "time" || G.result.reason === "resignation")) { G.over = true; st = G.result; }
+      render(); renderClocks();
       if (G.over) showResult(st);
       else { requestAnalysis(); if (!humanTurn()) scheduleCpu(); }
     } else newGame();
   }
 
   init();
+  window.__chess = { G: G, C: C, playMove: playMove, requestPuzzle: requestPuzzle, newGame: newGame, tryMove: tryMove };
 })();
 </script>
 </body>
