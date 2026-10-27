@@ -190,8 +190,7 @@ body.drawing .hit{pointer-events:none}
 .pill{position:absolute;top:-10px;left:8px;font-size:10.5px;line-height:16px;padding:0 6px;border-radius:999px;
   background:var(--panel);border:1px solid var(--panel-border);color:var(--muted);cursor:pointer;opacity:0;
   transition:opacity .12s;white-space:nowrap;transform:none}
-.card:hover .pill,.card.selected .pill,.card.editing .pill,.card.thinking .pill{opacity:1}
-.card.thinking .pill{color:var(--accent);animation:pulse 1s infinite}
+.card:hover .pill,.card.selected .pill,.card.editing .pill{opacity:1}
 @keyframes pulse{50%{opacity:.45}}
 .handle{position:absolute;right:-7px;top:50%;width:13px;height:13px;margin-top:-6.5px;border-radius:50%;
   background:var(--card);border:2px solid var(--line);cursor:crosshair;opacity:0;transition:opacity .12s}

@@ -34,7 +34,7 @@
 </header>
 <button id="zenExit" class="ui btn" title="Exit focus mode (.)">◐</button>
 <div class="ui zoom"><button id="zOut" title="Zoom out"><i data-i="minus"></i></button><button id="zReset" title="Reset zoom">100%</button><button id="zIn" title="Zoom in"><i data-i="plus"></i></button><button id="zFit" title="Zoom to fit (F)"><i data-i="fit"></i></button><span id="engine" title="Card engine — click for settings"></span></div>
-<div class="ui hint" id="hint">Click anywhere and type<small>“25 min focus” · “dinner friday 8pm” · “split 120 between 4” — or type / for every shape. Drop images & links anywhere.</small></div>
+<div class="ui hint" id="hint">Click anywhere and type<small>“20 min stretch” · “coffee with maya thursday 10am” · “split 86 between 3” — or type / for every shape. Drop images & links anywhere.</small></div>
 <div class="ui selbar" id="selbar" hidden></div>
 <div class="ui" id="drawbar" hidden></div>
 <div class="ui" id="presbar" hidden></div>
@@ -58,12 +58,10 @@
 <div class="ui panel" id="settings" hidden>
   <div class="ph"><b>Settings</b><button data-close title="Close">✕</button></div>
   <h4>Card engine — what decides a card's shape</h4>
-  <label><input type="radio" name="ai" value="rules"> Rules — instant, offline, private</label>
-  <label><input type="radio" name="ai" value="chrome"> Chrome’s built-in model (Gemini Nano — on-device, free, no server)</label>
-  <p class="small muted" style="margin:2px 0 0 24px">Works in desktop Chrome with built-in AI enabled; otherwise Sprawl quietly uses rules.</p>
-  <div class="row"><button class="btn small" id="aiTest">Test engine</button><span class="small muted" id="aiStatus"></span></div>
+  <p class="small muted" style="margin:0 0 6px">A tiny model that lives in this page (about 110 KB, trained on example phrases) votes together with hand-written rules. It only picks the shape; dates, math, units and money are always computed by code. Nothing you type leaves your device.</p>
+  <div class="row"><input type="text" id="probeIn" placeholder="Type something to see how it would be read…" autocomplete="off"></div>
+  <div class="row" id="probeOut" style="min-height:22px"></div>
   <label class="small"><input type="checkbox" id="optLive"> Live preview while typing (ghost card + shape chips)</label>
-  <p class="small muted" style="margin:4px 0 0">Nothing you type leaves your device. The engine only picks the shape — dates, math, units and money are always computed by code.</p>
   <h4>Your card shapes<span class="n" id="typeCount"></span></h4>
   <p class="small muted" style="margin:0 0 6px">Untick any you don’t want — they’ll never be auto-detected or suggested. Existing cards keep their shape.</p>
   <div class="row" style="margin:0 0 6px"><button class="btn small" id="typesAll">All</button><button class="btn small" id="typesBasic">Basics only</button></div>
@@ -117,6 +115,8 @@
   </div>
 </div>
 
+<script src="sprawl-features.js"></script>
+<script src="sprawl-model.js"></script>
 <script src="sprawl.js"></script>
 </body>
 </html>

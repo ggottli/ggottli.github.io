@@ -6,26 +6,26 @@
 const LS = 'sprawl.v1';
 const TYPE_META = {
   note:{i:'¶',l:'Note',ex:'any thought at all',d:'A thought, fact, idea, or anything that fits no other card.'},
-  todo:{i:'☑',l:'Checklist',ex:'buy milk, eggs, bread and coffee',d:'A task, errand, or list of things to do.'},
+  todo:{i:'☑',l:'Checklist',ex:'pack charger, passport and headphones',d:'A task, errand, or list of things to do.'},
   heading:{i:'H',l:'Heading',ex:'# Q4 PLAN',d:'A short title or section label.'},
   link:{i:'↗',l:'Link',ex:'https://… read later',d:'Mainly a URL or bookmark to save.'},
-  question:{i:'?',l:'Question',ex:'what would make this 10x easier?',d:'An open question to think about (not a vote between options).'},
-  quote:{i:'❝',l:'Quote',ex:'"ship it" — someone wise',d:'A quotation or something someone said.'},
-  event:{i:'📅',l:'Event',ex:'dinner with priya friday 8pm',d:'A plan, meeting, meal, call or trip happening at a date or time.'},
-  reminder:{i:'🔔',l:'Reminder',ex:'remind me to pay rent tomorrow urgent',d:'An explicit "remind me" or "don\'t forget" nudge.'},
-  timer:{i:'⏱',l:'Timer',ex:'25 min focus',d:'A countdown timer for some minutes or seconds.'},
-  habit:{i:'🔁',l:'Habit',ex:'gym 3x a week',d:'A recurring habit with a frequency like daily or 3x a week.'},
-  goal:{i:'🎯',l:'Goal',ex:'read 12 books this year, 4 done',d:'A numeric target to track progress toward.'},
-  color:{i:'🎨',l:'Color',ex:'#ff6b35 · tiffany blue',d:'A color as hex, rgb, or a color name.'},
-  calc:{i:'🧮',l:'Calculate',ex:'18% of 3450',d:'A math expression or percentage to compute.'},
-  convert:{i:'⇄',l:'Convert',ex:'5 miles in km · 72f to c',d:'A unit conversion.'},
-  split:{i:'➗',l:'Split',ex:'split 2400 between 3',d:'Splitting a bill or amount between people.'},
-  expense:{i:'💸',l:'Expense',ex:'spent 450 on uber',d:'Money spent on something.'},
-  countdown:{i:'⏳',l:'Countdown',ex:'days until christmas',d:'How long until a date or holiday.'},
-  timezone:{i:'🌐',l:'Time zone',ex:'3pm pst in ist · time in tokyo',d:'A time zone conversion or the current time in a city.'},
-  random:{i:'🎲',l:'Random',ex:'roll 2d6 · flip a coin · pick one: a, b or c',d:'Dice, a coin flip, or a random pick.'},
-  poll:{i:'📊',l:'Poll',ex:'pizza or burgers for friday?',d:'A choice between two or more options to vote on.'},
-  contact:{i:'👤',l:'Contact',ex:'rahul 98200 12345 rahul@mail.com',d:'A person with a phone number and/or email.'},
+  question:{i:'?',l:'Question',ex:'what would make this easier?',d:'An open question to think about (not a vote between options).'},
+  quote:{i:'❝',l:'Quote',ex:'"less, but better" — dieter rams',d:'A quotation or something someone said.'},
+  event:{i:'📅',l:'Event',ex:'coffee with maya thursday 10am',d:'A plan, meeting, meal, call or trip happening at a date or time.'},
+  reminder:{i:'🔔',l:'Reminder',ex:'remind me to renew the passport tomorrow',d:'An explicit "remind me" or "don\'t forget" nudge.'},
+  timer:{i:'⏱',l:'Timer',ex:'20 min stretch',d:'A countdown timer for some minutes or seconds.'},
+  habit:{i:'🔁',l:'Habit',ex:'run 3x a week',d:'A recurring habit with a frequency like daily or 3x a week.'},
+  goal:{i:'🎯',l:'Goal',ex:'walk 500 miles this year, 120 done',d:'A numeric target to track progress toward.'},
+  color:{i:'🎨',l:'Color',ex:'#3a7bd5 · sky blue',d:'A color as hex, rgb, or a color name.'},
+  calc:{i:'🧮',l:'Calculate',ex:'15% of 240',d:'A math expression or percentage to compute.'},
+  convert:{i:'⇄',l:'Convert',ex:'4 miles in km · 68f to c',d:'A unit conversion.'},
+  split:{i:'➗',l:'Split',ex:'split 86 between 3',d:'Splitting a bill or amount between people.'},
+  expense:{i:'💸',l:'Expense',ex:'spent 14 on lunch',d:'Money spent on something.'},
+  countdown:{i:'⏳',l:'Countdown',ex:'days until new year',d:'How long until a date or holiday.'},
+  timezone:{i:'🌐',l:'Time zone',ex:'9am est in london · time in sydney',d:'A time zone conversion or the current time in a city.'},
+  random:{i:'🎲',l:'Random',ex:'flip a coin · roll 2d6 · pick one: beach, hike or museum',d:'Dice, a coin flip, or a random pick.'},
+  poll:{i:'📊',l:'Poll',ex:'tacos, ramen or pizza tonight?',d:'A choice between two or more options to vote on.'},
+  contact:{i:'👤',l:'Contact',ex:'maya chen 555 201 8890 maya@example.com',d:'A person with a phone number and/or email.'},
 };
 const TYPES = Object.keys(TYPE_META);
 const BASIC = ['note','todo','heading','link','question','quote'];
@@ -41,7 +41,7 @@ const PROMPTS = ["What would make today great?","What's on my mind right now?","
   "What am I avoiding?","What's one thing I'm grateful for?","What's the one thing that matters most today?","What drained me lately, and what energized me?"];
 const DOW = {sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,weds:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6};
 const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
-const DEFAULTS = {ai:'rules', live:true, disabled:[],
+const DEFAULTS = {live:true, disabled:[],
   theme:'auto', snap:false, minimap:innerWidth>600, legend:true, gist:{token:'', id:'', auto:false, last:''}};
 const DEBUG = /[?&]debug=1/.test(location.search);
 const ICONS={
@@ -127,7 +127,6 @@ let editingId=null, editOrig='', editSnapshot=null, tagFilter=null, legendFilter
 let drawMode=false; const drawTool={color:'', w:3, erase:false};
 let undoStack=[], redoStack=[], lastNudge=0, pres=null;
 let pred=null;            // live shapeshift state while editing
-const thinking = new Set();
 
 function S(){ return db.spaces[db.current]; }
 function V(){ const s=S(); if(!s.view) s.view={x:Math.round(innerWidth/2-320), y:110, z:1}; return s.view; }
@@ -161,8 +160,7 @@ function seed(){
 function migrate(d){
   d.settings = Object.assign({}, DEFAULTS, d.settings||{});
   d.settings.gist = Object.assign({}, DEFAULTS.gist, d.settings.gist||{});
-  if(!['rules','chrome'].includes(d.settings.ai)) d.settings.ai='rules';
-  ['ollamaUrl','ollamaModel','jevUrl','jevModel','jevKey'].forEach(k=>delete d.settings[k]);
+  ['ai','ollamaUrl','ollamaModel','jevUrl','jevModel','jevKey'].forEach(k=>delete d.settings[k]);
   if(!Array.isArray(d.settings.disabled)) d.settings.disabled=[];
   d.templates = d.templates || [];
   d.order = (d.order||[]).filter(id=>d.spaces[id]);
@@ -286,7 +284,7 @@ function evalExpr(src){
   try{ const v=expr(); return i===toks.length && Number.isFinite(v) ? v : null; }catch(e){ return null; }
 }
 function parseCalc(text){
-  let s=text.toLowerCase().trim().replace(/^(what(?:'s| is)|calc(?:ulate)?|compute|=)\s*/,'').replace(/[?=]\s*$/,'').replace(/,(?=\d{3})/g,'').replace(/[$€£₹¥]/g,'').trim();
+  let s=text.toLowerCase().trim().replace(/^(what(?:'s| is)|calc(?:ulate)?|compute|=)\s*/,'').replace(/[?=]\s*$/,'').replace(/\s*\b(tip|tax|gratuity|total|discount)\s*$/,'').replace(/,(?=\d{3})/g,'').replace(/[$€£₹¥]/g,'').trim();
   if(!s || !/\d/.test(s)) return null;
   s=s.replace(/(\d+(?:\.\d+)?)\s*%\s*(?:of|on|tip on|tax on)\s*(\d+(?:\.\d+)?)/g,(m,a,b)=>`(${a}/100*${b})`)
      .replace(/(\d+(?:\.\d+)?)\s*%\s*off\s*(\d+(?:\.\d+)?)/g,(m,a,b)=>`(${b}*(1-${a}/100))`)
@@ -380,7 +378,7 @@ function holiday(name,now=new Date()){
 function parseCountdown(text,ref){
   const t=text.toLowerCase().trim().replace(/\?$/,'');
   const m=t.match(/^(?:how\s+(?:many|long)\s+)?(?:days?|weeks?|sleeps?|hours?|time)?\s*(?:left\s+)?(?:until|till|til|before)\s+(.+)$/) || t.match(/^countdown(?:\s+to)?\s*:?\s+(.+)$/) || t.match(/^(.+?)\s+countdown$/);
-  if(!m || t.split(/\s+/).length>8) return null;
+  if(!m || t.split(/\s+/).length>12) return null;
   const target=m[1].trim(); let d=holiday(target), label=target;
   if(!d){ const w=parseWhen(target,ref); if(!w.date) return null; d=fromIso(w.date); label=stripHits(target,w.hits)||fromIso(w.date).toLocaleDateString(undefined,{month:'long',day:'numeric'}); }
   return {date:iso(d), label:cap(label)};
@@ -404,22 +402,27 @@ function parseHabit(text){
   else if(/\b(daily|every ?day|each day|every morning|every night|every evening|nightly)\b/.test(t)) per=7;
   else if(/\b(weekdays|every weekday)\b/.test(t)) per=5;
   else if(/\b(weekly|every week|once a week)\b/.test(t)) per=1;
+  const DAYS='(?:mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat|sun)(?:day|nesday|sday|urday|rsday)?s?';
+  const dl=t.match(new RegExp('\\b'+DAYS+'(?:\\s*(?:,|/|&|and|\\+)\\s*'+DAYS+')+\\b'));
+  if(!per && dl && !/\d/.test(t)) per=dl[0].split(/\s*(?:,|\/|&|and|\+)\s*/).length;
   if(!per) return null;
-  const name=text.replace(/\s*(\d+|once|twice|three times)\s*(?:x|times)?\s*(?:a|per|\/|each|every)\s*(week|wk|day)\b/i,' ').replace(/\b(daily|every ?day|each day|every (?:morning|night|evening|weekday)|weekdays|weekly|every week|once a week|nightly)\b/i,' ').replace(/\s+/g,' ').trim();
+  const name=text.replace(/\s*(\d+|once|twice|three times)\s*(?:x|times)?\s*(?:a|per|\/|each|every)\s*(week|wk|day)\b/i,' ').replace(dl?new RegExp('\\s*(?:on\\s+)?'+dl[0].replace(/[+/]/g,'\\$&'),'i'):/$^/,' ').replace(/\b(daily|every ?day|each day|every (?:morning|night|evening|weekday)|weekdays|weekly|every week|once a week|nightly)\b/i,' ').replace(/\s+/g,' ').trim();
   return {per:clamp(per,1,7), name:cap(name)||'Habit'};
 }
 
 // goal
 function parseGoal(text){
   const t=text.trim(); const low=t.toLowerCase().replace(/[$€£₹¥]/g,'');
-  const m=low.match(/^(?:goal:?\s*)?([a-z][a-z ]*?)\s+(\d[\d,]*(?:\.\d+)?)\s*(k|km|mi|miles|lbs?|kg)?\s*([a-z][a-z ]*?)?(?:\s+(this year|this month|this week|this quarter|by [a-z0-9 /]+?|in [a-z0-9]+))?\s*(?:[,;—–-]\s*|\s+)?(?:(\d[\d,]*(?:\.\d+)?)\s*(?:done|so far|completed|finished|down|in|read|logged))?$/);
+  const m=low.match(/^(?:goal:?\s*)?([a-z][a-z ]*?)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|km|mi|miles|lbs?|kg)?\s*([a-z][a-z ]*?)?(?:\s+(this year|this month|this week|this quarter|by [a-z0-9 /]+?|in [a-z0-9]+))?\s*(?:[,;—–-]\s*|\s+)?(?:(\d[\d,]*(?:\.\d+)?)\s*(?:done|so far|completed|finished|down|in|read|logged))?$/);
   if(!m) return null;
-  if(!(/^goal/.test(low) || m[5] || m[6])) return null;
+  let unitTxt=m[4]||'', period=m[5]||'';                       // the lazy unit group can swallow "by december"; hand it back
+  const pm=!period && unitTxt.match(/^(.*?)\s*\b(this (?:year|month|week|quarter)|by [a-z0-9 \/]+|in [a-z0-9]+)$/); if(pm){ unitTxt=pm[1]; period=pm[2]; }
+  if(!(/^goal/.test(low) || period || m[6])) return null;
   const target=parseFloat(m[2].replace(/,/g,'')), done=m[6]?parseFloat(m[6].replace(/,/g,'')):0;
   if(!(target>0)) return null;
-  const unit=((m[3]||'')+(m[4]?' '+m[4]:'')).trim();
+  const unit=((m[3]||'')+(unitTxt?' '+unitTxt:'')).trim();
   const title=cap(t.replace(/[,;—–-]?\s*\d[\d,.]*\s*(done|so far|completed|finished|down|in|read|logged)\s*$/i,'').replace(/^goal:?\s*/i,''));
-  return {target, done, unit, period:m[5]||'', title};
+  return {target, done, unit, period, title};
 }
 function periodFrac(period){
   const n=new Date(); let a,b;
@@ -607,11 +610,8 @@ function ruleRank(raw){
   }
   return Object.entries(S).filter(([type])=>isOn(type)).map(([type,score])=>({type,score})).sort((a,b)=>b.score-a.score);
 }
-const ruleClassify = raw => ruleRank(raw)[0].type;
 function enabledTypes(){ const off=new Set((db&&db.settings.disabled)||[]); return TYPES.filter(t=>t==='note'||!off.has(t)); }
 const isOn = t => t==='note' || !((db&&db.settings.disabled)||[]).includes(t);
-const obvious = raw => ruleRank(raw)[0].score>=.94 || !SMART_ON();
-const SMART_ON = () => enabledTypes().length>1;
 
 function transform(type,text){
   if(type==='todo'){
@@ -630,51 +630,36 @@ function transform(type,text){
 }
 
 // =====================================================================
-// AI ENGINES — they only pick the shape
+// SHAPE MODEL — a tiny on-device classifier (sprawl-model.js, trained by model/train.js) blended with the rules.
+// The model only ever picks among shapes the parsers can actually render; code still computes every value.
 // =====================================================================
-const AI_PROMPT = t => `You sort quick notes on a personal whiteboard into card types.
-${enabledTypes().map(k=>`${k} = ${TYPE_META[k].d}`).join('\n')}
-
-Note: """${t.slice(0,800)}"""
-
-Answer with exactly one word from: ${enabledTypes().join(', ')}.`;
-let lmBase=null, aiWarned=false, lastEngine={label:'rules', ms:0, live:true};
-async function chromePrompt(p){
-  const LM = self.LanguageModel || (self.ai && self.ai.languageModel);
-  if(!LM) throw new Error('Chrome built-in AI isn’t available in this browser');
-  if(LM.availability){ const a=await LM.availability(); if(a==='unavailable') throw new Error('On-device model unavailable here'); }
-  if(!lmBase) lmBase = await LM.create();
-  const s = lmBase.clone ? await lmBase.clone() : lmBase;
-  try{ return await s.prompt(p); } finally { if(s!==lmBase && s.destroy) s.destroy(); }
+let MODEL=null;
+(function loadModel(){
+  const M=window.SPRAWL_MODEL, F=window.SprawlFeatures; if(!M||!F||M.buckets!==F.BUCKETS) return;
+  try{ const bin=atob(M.w), w=new Int8Array(bin.length); for(let i=0;i<bin.length;i++) w[i]=(bin.charCodeAt(i)<<24)>>24; MODEL={types:M.types, C:M.types.length, w, scale:M.scale, bias:M.bias}; }catch(e){ MODEL=null; }
+})();
+function modelProbs(text){
+  if(!MODEL) return null;
+  const x=window.SprawlFeatures.featurize(text), C=MODEL.C, z=MODEL.bias.slice(), k=MODEL.scale/Math.sqrt(x.length||1);
+  for(const i of x){ const o=i*C; for(let c=0;c<C;c++) z[c]+=MODEL.w[o+c]*k; }
+  const m=Math.max(...z); let sum=0; const e=z.map(v=>{ const t=Math.exp(v-m); sum+=t; return t; });
+  return Object.fromEntries(MODEL.types.map((t,i)=>[t,e[i]/sum]));
 }
-async function aiRank(text){
-  const t0=performance.now(), allowed=enabledTypes();
-  const out = await chromePrompt(AI_PROMPT(text));
-  const m = String(out).toLowerCase().match(new RegExp('\\b('+allowed.join('|')+')\\b'));
-  if(!m) throw new Error('Unclear answer: '+String(out).slice(0,40));
-  lastEngine={label:'gemini-nano', ms:Math.round(performance.now()-t0), live:true}; showEngine();
-  return {list:[{type:m[1],score:.9},...ruleRank(text).filter(x=>x.type!==m[1])]};
+// final ranking: parser-backed rules when they are certain, otherwise rules and model share the vote
+function rank(raw){
+  const rules=ruleRank(raw); if(!raw.trim() || rules[0].score>=.94) return rules;
+  const p=modelProbs(raw); if(!p) return rules;
+  const feasible=new Set(rules.map(r=>r.type)); BASIC.forEach(t=>{ if(isOn(t)) feasible.add(t); });
+  let sum=0; feasible.forEach(t=>{ sum+=p[t]||0; });
+  const rs=Object.fromEntries(rules.map(r=>[r.type,r.score]));
+  return [...feasible].map(t=>({type:t, score:Math.min(.99, .5*(rs[t]??(t==='note'?.2:.12)) + .5*((p[t]||0)/(sum||1)))})).sort((a,b)=>b.score-a.score);
 }
-function engineFail(err){ lastEngine={label:'nano-offline', ms:0, live:false}; showEngine();
-  if(!aiWarned){ aiWarned=true; toast('Card engine unreachable — using rules ('+err.message+')'); } }
-function showEngine(){
-  if(db.settings.ai==='rules'){ engineEl.className='live'; engineEl.textContent='rules'; return; }
-  engineEl.className=lastEngine.live?'live':'off';
-  engineEl.textContent=lastEngine.ms?`${lastEngine.label} · ${lastEngine.ms}ms`:lastEngine.label||db.settings.ai;
-}
-async function classifyCard(c, sp=S()){
-  if(!c.text.trim()) return;
-  const text=c.text, here=()=>sp===S();
-  let type = ruleClassify(text);
-  if(db.settings.ai!=='rules' && !obvious(text)){
-    thinking.add(c.id); if(here()) refreshCard(c.id);
-    try{ type=(await aiRank(text)).list[0].type; } catch(err){ engineFail(err); }
-    thinking.delete(c.id);
-  }
-  if(!sp.cards.includes(c)) return;
-  if(c.text!==text || c.manual){ if(here()) refreshCard(c.id); return; }
-  const prev=c.type; applyType(c,type,false);
-  if(here()){ refreshCard(c.id); if(prev!==type) morph(c.id); } save();
+const classify = raw => rank(raw)[0].type;
+function showEngine(){ engineEl.className='live'; engineEl.textContent=MODEL?'model + rules':'rules'; }
+function classifyCard(c, sp=S()){
+  if(!c.text.trim() || c.manual) return;
+  const prev=c.type; applyType(c,classify(c.text),false);
+  if(sp===S()){ refreshCard(c.id); if(prev!==c.type) morph(c.id); } save();
 }
 function applyType(c,type,manual){
   const prev=c.type; c.type=type; c.text=transform(type,c.text);
@@ -845,7 +830,6 @@ function contentHTML(c){
   return out + linesHTML(ls);
 }
 function pillText(c){
-  if(thinking.has(c.id)) return '✨ thinking…';
   if(c.img && !c.text.trim()) return (c.locked?'🔒 ':'')+'🖼 image';
   let p = `${c.locked?'🔒 ':''}${c.auto?'✨ ':''}${ICON[c.type]} ${TYPE_META[c.type].l.toLowerCase()}`;
   if(c.type==='todo'){ const all=c.text.match(/^\s*\[( |x)\]/gim)||[]; const done=all.filter(x=>/x/i.test(x)).length; if(all.length) p+=` ${done}/${all.length}`; }
@@ -868,7 +852,7 @@ function icsFor(e){ const s=evStamp(e); const k=s.allday?';VALUE=DATE':'';
 function cardNode(c){
   const el = document.createElement('div');
   el.className = `card t-${c.type}` + (SMART.has(c.type)?' smart':'') + (c.color?` c-${c.color}`:'') + (c.frame?` f-${c.frame}`:'') + (c.img?' has-img':'') + (c.locked?' locked':'') +
-    (sel.has(c.id)?' selected':'') + (editingId===c.id?' editing':'') + (thinking.has(c.id)?' thinking':'') +
+    (sel.has(c.id)?' selected':'') + (editingId===c.id?' editing':'') +
     (tagFilter && !hasTag(c,tagFilter)?' dim':'');
   el.dataset.id = c.id;
   el.style.left = c.x+'px'; el.style.top = c.y+'px'; el.style.width = (c.w||220)+'px';
@@ -1039,18 +1023,12 @@ legendEl.addEventListener('click',e=>{ const b=e.target.closest('[data-key]'); i
 // =====================================================================
 // LIVE SHAPESHIFT (ghost preview, shape chips, slash menu)
 // =====================================================================
-let liveT=null, aiT=null, aiCtl=null;
+let liveT=null;
 function startPred(c){
-  pred={list:ruleRank(c.text), pick:0, manual:!!c.manual, slash:null, stable:null, challenger:null, aiFor:''};
+  pred={list:rank(c.text), pick:0, manual:!!c.manual, slash:null};
   if(c.manual) pred.list=[{type:c.type,score:1},...pred.list.filter(x=>x.type!==c.type)];
 }
 function chosenType(){ return pred && pred.list[pred.pick] ? pred.list[pred.pick].type : 'note'; }
-function mergeAI(rules,stable,ai){
-  const order=[{type:stable,score:((ai||[]).find(x=>x.type===stable)||{score:.9}).score}];
-  (ai||[]).forEach(x=>{ if(!order.some(o=>o.type===x.type)) order.push(x); });
-  rules.forEach(x=>{ if(!order.some(o=>o.type===x.type)) order.push(x); });
-  return order;
-}
 function onLiveInput(c){
   const v=c.text;
   if(/^\/[\w ]*$/.test(v)){ const q=v.slice(1).toLowerCase().trim();
@@ -1059,17 +1037,7 @@ function onLiveInput(c){
   pred.slash=null;
   if(pred.manual){ renderLive(c); return; }
   clearTimeout(liveT);
-  liveT=setTimeout(()=>{ if(editingId!==c.id||!pred) return; pred.list=ruleRank(c.text); if(pred.stable && pred.aiFor===c.text) pred.list=mergeAI(pred.list,pred.stable); pred.pick=0; renderLive(c); },60);
-  if(db.settings.ai!=='rules' && db.settings.live && c.text.trim().length>2 && !obvious(c.text)){
-    clearTimeout(aiT); aiT=setTimeout(async()=>{
-      if(editingId!==c.id||!pred) return; const text=c.text; if(aiCtl) aiCtl.abort(); aiCtl=new AbortController();
-      try{ const r=await aiRank(text); if(editingId!==c.id || !pred || c.text!==text || pred.manual) return;
-        const top=r.list[0]; // hysteresis: switch only when a challenger wins twice or is very confident
-        if(!pred.stable || top.type===pred.stable || top.score>.8 || top.type===pred.challenger){ pred.stable=top.type; pred.challenger=null; } else pred.challenger=top.type;
-        pred.aiFor=text; pred.list=mergeAI(ruleRank(text),pred.stable,r.list); pred.pick=0; renderLive(c);
-      }catch(err){ if(err.name!=='AbortError') engineFail(err); }
-    },320);
-  }
+  liveT=setTimeout(()=>{ if(editingId!==c.id||!pred) return; pred.list=rank(c.text); pred.pick=0; renderLive(c); },60);
 }
 function renderLive(c){
   if(!c || editingId!==c.id || !pred) return; const el=cEl(c.id); if(!el) return; const box=el.querySelector('.live'); if(!box) return;
@@ -1098,7 +1066,7 @@ function renderLive(c){
   queueLines();
 }
 function pickShape(c,type){
-  if(type==='__auto'){ pred.manual=false; c.manual=false; pred.list=ruleRank(c.text); pred.pick=0; renderLive(c); return; }
+  if(type==='__auto'){ pred.manual=false; c.manual=false; pred.list=rank(c.text); pred.pick=0; renderLive(c); return; }
   if(!pred.list.some(x=>x.type===type)) pred.list.push({type,score:0});
   pred.pick=pred.list.findIndex(x=>x.type===type); pred.manual=true; renderLive(c);
 }
@@ -1126,7 +1094,7 @@ function startEdit(id,keepSnap){
 }
 function commitEdit(){
   if(!editingId) return;
-  const id=editingId; editingId=null; clearTimeout(liveT); clearTimeout(aiT); if(aiCtl) aiCtl.abort();
+  const id=editingId; editingId=null; clearTimeout(liveT);
   const c=find(id); const p=pred; pred=null;
   if(!c){ render(); return; }
   if(p && p.slash) c.text='';
@@ -1141,9 +1109,7 @@ function commitEdit(){
   if(typeChanged){ applyType(c,want,true); render(); morph(id); save(); return; }
   if(changed && c.manual && c.type==='todo') c.text=transform('todo',c.text);
   if(changed && !c.manual){
-    const known = db.settings.ai==='rules' ? ruleClassify(c.text) : (p && p.aiFor===c.text && p.stable) ? p.stable : null;
-    if(known){ const prev=c.type; applyType(c,known,false); render(); if(prev!==known||SMART.has(known)) morph(id); save(); return; }
-    render(); save(); classifyCard(c); return;
+    const known=classify(c.text), prev=c.type; applyType(c,known,false); render(); if(prev!==known||SMART.has(known)) morph(id); save(); return;
   }
   render(); save();
 }
@@ -1264,7 +1230,7 @@ function inbox(){ let id=db.order.find(i=>db.spaces[i].kind==='inbox'); if(!id){
 function captureToInbox(text){
   const ib=inbox(); const y=ib.cards.length?Math.max(...ib.cards.map(c=>c.y))+130:0;
   const c=newCard(0,y,normDueText(text)); ib.cards.push(c); classifyCard(c,ib); save();
-  const t=ruleClassify(text); toast(`📥 Captured to Inbox as ${ICON[t]} ${TYPE_META[t].l}`); if(ib===S()) render();
+  const t=classify(text); toast(`📥 Captured to Inbox as ${ICON[t]} ${TYPE_META[t].l}`); if(ib===S()) render();
 }
 function goSpaceByName(name){
   const n=name.trim(); let id=db.order.find(i=>db.spaces[i].name.toLowerCase()===n.toLowerCase());
@@ -1311,7 +1277,7 @@ function mergeInfo(target, src, mode){
   // heading on top becomes the bold title of a note
   if(A.type==='heading'){ res.type='note'; res.text='**'+A.text.replace(/^#+\s*/,'').trim()+'**\n'+B.text.trim(); return res; }
   res.text=(A.text.trim()+'\n'+B.text.trim()).trim();
-  const r=ruleClassify(res.text); res.type=['note','todo','event','reminder','link','quote'].includes(r)?r:'note';
+  const r=classify(res.text); res.type=['note','todo','event','reminder','link','quote'].includes(r)?r:'note';
   if(res.type==='todo') res.text=transform('todo',res.text);
   return res;
 }
@@ -1448,7 +1414,7 @@ const TEMPLATES=[
   {name:'Weekly plan', desc:'priorities, habits, focus', make:()=>{ const days=['Mon','Tue','Wed','Thu','Fri'], base=addDays(-((new Date().getDay()+6)%7));
     return {boxes:days.map((d,i)=>({x:i*250,y:70,w:235,h:280,name:d,color:i%2?'':'gray'})),
       cards:[C('h',0,0,`Week of ${weekStart()}`,'heading',{w:420,frame:'plain'}), ...days.map((d,i)=>C('d'+i,i*250+8,116,`[ ] Top priority @${iso(addDays(i,base))}`,'todo',{w:219})),
-        C('g',0,390,'gym 3x a week','habit',{w:240}), C('r',260,390,'read daily','habit',{w:240}), C('f',520,390,'50 min deep work','timer',{w:240}),
+        C('g',0,390,'run 3x a week','habit',{w:240}), C('r',260,390,'read daily','habit',{w:240}), C('f',520,390,'50 min deep work','timer',{w:240}),
         C('w',780,390,'**Wins this week**\n- ','note',{w:240,color:'green'})], connections:[]}; }},
   {name:'Decision', desc:'options, pros, cons, vote', make:()=>({boxes:[],
     cards:[C('q',260,0,'What are we deciding, and by when?','question',{w:260}), C('o',0,150,'**Options**\nA —\nB —','note'),
@@ -1466,7 +1432,7 @@ const TEMPLATES=[
     return {boxes:[],cards,connections}; }},
   {name:'Daily journal', desc:'prompts, top 3, focus timer', make:()=>{ const pick=[...PROMPTS].sort(()=>Math.random()-.5).slice(0,3);
     return {boxes:[], cards:[C('h',0,0,today(),'heading',{w:300,frame:'plain'}), C('t',0,70,`Top 3 today:\n[ ] @${iso(noon())}\n[ ] \n[ ] `,'todo',{color:'yellow'}),
-      C('f',0,240,'25 min focus','timer',{w:240}),
+      C('f',0,240,'20 min stretch','timer',{w:240}),
       ...pick.map((p,i)=>C('p'+i,270,70+i*95,p,'question',{w:260}))], connections:pick.map((p,i)=>K('h','p'+i))}; }},
   {name:'Project one-pager', desc:'goal → next steps', make:()=>({boxes:[],
     cards:[C('h',220,0,'Project name','heading',{w:260,frame:'plain'}), C('g',0,90,'**Goal** — what does done look like?','note'), C('y',240,90,'**Why it matters** (in business terms)','note'),
@@ -1563,7 +1529,7 @@ function fromJsonCanvas(d,name){
     const color=JC_BACK[n.color]||'';
     if(n.type==='group') s.boxes.push({id:n.id||uid(),x:n.x,y:n.y,w:n.width,h:n.height,name:n.label||'Group',color});
     else { const text=n.type==='text'?n.text:n.type==='link'?n.url:n.type==='file'?`[[${n.file}]]`:''; const c={...newCard(n.x,n.y,text||''),id:n.id||uid(),w:n.width||220,color,created:now,updated:now};
-      c.type=ruleClassify(c.text); c.auto=true; c.text=transform(c.type,c.text); s.cards.push(c); }
+      c.type=classify(c.text); c.auto=true; c.text=transform(c.type,c.text); s.cards.push(c); }
   });
   (d.edges||[]).forEach(e=>s.connections.push({id:e.id||uid(),from:e.fromNode,to:e.toNode,label:e.label||'',color:JC_BACK[e.color]||''}));
   return s;
@@ -1593,7 +1559,7 @@ const inkSwatches = (cur, prefix) => ['',...Object.keys(INK)].map(c=>`<button cl
 
 function cardMenu(id,x,y){
   const c=find(id); if(!c) return;
-  const fits=ruleRank(c.text).filter(r=>r.score>=.3).map(r=>r.type);
+  const fits=rank(c.text).filter(r=>r.score>=.3).map(r=>r.type);
   const smartList=[...new Set([...fits.filter(t=>SMART.has(t)), ...enabledTypes().filter(t=>SMART.has(t)), ...(SMART.has(c.type)?[c.type]:[])])];
   openPop(x,y,`<div class="ph">${ICON[c.type]} ${TYPE_META[c.type].l}${c.manual?'':' · auto'}<span class="meta">edited ${ago(c.updated||c.created)}</span></div>
     <div class="row tight">${BASIC.map(t=>`<button class="chip ${c.type===t?'on':''}" data-act="type:${t}" title="${TYPE_META[t].l}">${ICON[t]}</button>`).join('')}<button class="chip ${c.manual?'':'on'}" data-act="auto" title="Auto-detect shape">✨</button></div>
@@ -2157,7 +2123,7 @@ function buildPal(){
   const allCards=[]; db.order.forEach(sid=>db.spaces[sid].cards.forEach(c=>allCards.push({sid,c})));
   let ghost='';
   if(q && !q.startsWith('#')){
-    const top=ruleRank(q)[0].type, lab=`${ICON[top]} ${TYPE_META[top].l}`;
+    const top=rank(q)[0].type, lab=`${ICON[top]} ${TYPE_META[top].l}`;
     groups.push(['Capture',[
       {icon:'📥',label:`Capture as <b>${lab}</b> → Inbox`,html:true,run:()=>captureToInbox(q)},
       {icon:'＋',label:`Add as <b>${lab}</b> to this space`,html:true,run:()=>{ const w=centerWorld(); createCard(w.x-120,w.y-30,q,false); }}]]);
@@ -2360,20 +2326,17 @@ $('#typesAll').onclick=()=>{ db.settings.disabled=[]; save(); renderTypeGrid(); 
 $('#typesBasic').onclick=()=>{ db.settings.disabled=TYPES.filter(t=>SMART.has(t)); save(); renderTypeGrid(); };
 function syncSettings(){
   const st=db.settings, b=S().bg||{};
-  settingsEl.querySelectorAll('input[name=ai]').forEach(r=>r.checked=r.value===st.ai);
-    $('#optLive').checked=st.live;
+  $('#optLive').checked=st.live; probeOut();
   $('#optSnap').checked=st.snap; $('#optMini').checked=st.minimap; $('#optLegend').checked=st.legend;
   $('#ghToken').value=st.gist.token; $('#ghAuto').checked=st.gist.auto; syncStatus(); renderTypeGrid();
 }
-settingsEl.querySelectorAll('input[name=ai]').forEach(r=>r.onchange=()=>{ db.settings.ai=r.value; lmBase=null; aiWarned=false; lastEngine={label:r.value,ms:0,live:true}; $('#aiStatus').textContent=''; save(); syncSettings(); showEngine(); });
 $('#optLive').onchange=e=>{ db.settings.live=e.target.checked; save(); };
-$('#aiTest').onclick=async()=>{
-  const s=$('#aiStatus'), probe='dinner with priya friday 8pm';
-  if(db.settings.ai==='rules'){ const t0=performance.now(); const r=ruleClassify(probe); s.textContent=`✓ “${probe}” → ${r} (${(performance.now()-t0).toFixed(1)} ms)`; return; }
-  s.textContent='Testing…'; const t0=performance.now();
-  try{ const r=await aiRank(probe); s.textContent=`✓ “${probe}” → ${r.list[0].type} (${Math.round(performance.now()-t0)} ms)`; }
-  catch(err){ s.textContent='✕ '+err.message; engineFail(err); }
-};
+function probeOut(){
+  const q=$('#probeIn').value.trim(), out=$('#probeOut'); if(!q){ out.innerHTML=''; return; }
+  const t0=performance.now(), r=rank(q); const ms=(performance.now()-t0).toFixed(1);
+  out.innerHTML=r.slice(0,4).map((x,i)=>`<span class="chipS ${i?'':'on'}">${ICON[x.type]} ${TYPE_META[x.type].l} ${Math.round(x.score*100)}%</span>`).join(' ')+`<span class="small muted" style="margin-left:6px">${ms} ms</span>`;
+}
+$('#probeIn').addEventListener('input',probeOut);
 $('#optSnap').onchange=e=>{ db.settings.snap=e.target.checked; save(); };
 $('#optMini').onchange=e=>{ db.settings.minimap=e.target.checked; save(); drawMinimap(); };
 $('#optLegend').onchange=e=>{ db.settings.legend=e.target.checked; save(); renderLegend(); };
@@ -2412,5 +2375,5 @@ applyTheme();
 render();
 if(freshView) zoomFit(false,1,innerWidth<600?.7:.15);
 showEngine();
-window.__sprawl = { get db(){ return db; }, ruleRank, parseWhen, parseCalc, parseConvert, parseTZ, parseGoal, parsePoll, parseContact, parseExpense, parseSplit, parseCountdown, parseHabit, parseTimer, parseRandom, parseColor };
+window.__sprawl = { get db(){ return db; }, ruleRank, rank, modelProbs, parseWhen, parseCalc, parseConvert, parseTZ, parseGoal, parsePoll, parseContact, parseExpense, parseSplit, parseCountdown, parseHabit, parseTimer, parseRandom, parseColor };
 })();
