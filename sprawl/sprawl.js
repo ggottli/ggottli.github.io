@@ -41,7 +41,7 @@ const PROMPTS = ["What would make today great?","What's on my mind right now?","
   "What am I avoiding?","What's one thing I'm grateful for?","What's the one thing that matters most today?","What drained me lately, and what energized me?"];
 const DOW = {sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,weds:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6};
 const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
-const DEFAULTS = {live:true, disabled:[],
+const DEFAULTS = {live:true, disabled:[], introSeen:false,
   theme:'auto', snap:false, minimap:innerWidth>600, legend:true, gist:{token:'', id:'', auto:false, last:''}};
 const DEBUG = /[?&]debug=1/.test(location.search);
 const ICONS={
@@ -140,22 +140,36 @@ const sn = v => db.settings.snap ? Math.round(v/12)*12 : Math.round(v);
 function newSpace(name,kind){ return {id:uid(), name, kind:kind||'', pinned:false, cards:[], connections:[], boxes:[], strokes:[], trash:[], bg:{dots:true}, view:null}; }
 function newCard(x,y,text=''){ const t=Date.now(); return {id:uid(), x:Math.round(x), y:Math.round(y), w:220, text, type:'note', color:'', frame:'', locked:false, img:'', auto:false, manual:false, data:{}, created:t, updated:t}; }
 
-function seed(){
-  const s = newSpace('Scratch');
-  const C=(id,x,y,text,type,extra={})=>Object.assign(newCard(x,y,text),{id,w:240,type,auto:true},extra);
-  s.cards = [
-    C('w1',0,0,'Click anywhere and type','heading',{w:320,frame:'plain'}),
-    C('w2',0,62,'Every card shapeshifts into what you mean. Type on the canvas and watch the ghost preview. ↵ finishes, ⇧↵ adds a line, Tab picks a different shape, / chooses one.','note',{w:300}),
-    C('w3',340,62,'25 min focus','timer',{w:220}),
-    C('w4',590,62,'pizza or burgers for friday?','poll',{w:230}),
-    C('w5',340,232,'dinner with priya friday 8pm','event',{w:250}),
-    C('w6',0,240,'split 120 between 4 tip 20%','split',{w:240}),
-    C('w7',610,262,'gym 3x a week','habit',{w:230}),
-    C('w8',0,400,'[ ] Drag the ● on a card to connect it\n[ ] ⌘K captures anything, from anywhere\n[ ] ☀ Today gathers events, todos & habits','todo',{color:'yellow',w:300}),
-    C('w9',350,410,'Drop a card just under another to combine them · drag the ◢ corner to resize (double-click resets) · 🎨 Style changes the background. #tips','note',{frame:'sticky',color:'pink',w:240}),
+function welcomeSpace(){
+  const s=newSpace('Welcome'); s.bg={pattern:'dots'};
+  const C=(id,x,y,text,type,extra={})=>Object.assign(newCard(x,y,text),{id,w:220,type,auto:true},extra);
+  const B=(id,x,y,w,h,name,emoji,color)=>({id,x,y,w,h,name,emoji,color,style:'soft'});
+  s.boxes=[B('b1',0,0,980,650,'Type anything. It becomes the right card.','✨','yellow'), B('b2',1040,0,640,650,'Arrange it yourself','🧩','blue'), B('b3',0,710,980,330,'Capture, plan, keep','🗓','green')];
+  const row=(y,items)=>items.map(([id,text,type,w],i)=>C(id,20+i*240,y,text,type,{w:w||220}));
+  s.cards=[
+    C('h1',20,44,'No menus. Every card in this box was typed as plain text and shaped itself. Press Enter to finish a card.','note',{w:940,frame:'plain'}),
+    ...row(118,[['e1','coffee with maya thursday 10am','event',230],['e2','20 min stretch','timer'],['e3','tacos, ramen or pizza tonight?','poll'],['e4','remind me to renew the passport tomorrow','reminder']]),
+    ...row(300,[['e5','Pack:\n[ ] charger\n[ ] passport\n[ ] headphones','todo'],['e6','split 86 between 3','split'],['e7','water the plants every morning','habit'],['e8','walk 500 miles this year, 120 done','goal']]),
+    ...row(460,[['e9','4 miles in km','convert'],['e10','days until new year','countdown'],['e11','sky blue','color'],['e12','time in sydney','timezone']]),
+    C('a1',1060,50,'Sprawl never moves your cards. Where things sit, and what connects to what, is yours. That\u2019s what makes it stick in memory.','note',{w:290}),
+    C('a2',1060,180,'Try it:\n[ ] Drag this card somewhere else\n[ ] Drag the \u25cf on its edge onto another card\n[ ] Drop a card right under another to combine them\n[ ] Drop one a little further down to snap it into a list\n[ ] Drag the \u25e2 corner to resize','todo',{w:290,color:'yellow'}),
+    C('a3',1390,50,'Boxes group cards. Each box is also a slide: press P to present them.','note',{w:260,frame:'sticky',color:'pink'}),
+    C('a4',1390,210,'Right-click anything (long-press on a phone) for colors, frames, locks and more.','note',{w:260}),
+    C('a5',1390,340,'"less, but better" \u2014 dieter rams','quote',{w:260}),
+    C('c1',20,762,'**\u2318K** captures a thought from anywhere. It lands in the Inbox, already shaped.','note',{w:300}),
+    C('c2',340,762,'**\u2600 Today** gathers every event, reminder, task and habit with a date, across all your spaces.','note',{w:300}),
+    C('c3',660,762,'Type **/** at the start of a card to pick any of the 21 shapes yourself. **Tab** cycles the suggestion.','note',{w:300}),
+    C('c4',20,910,'It all stays in this browser. No account, no server. Export JSON or Markdown, or sync a private GitHub Gist, from \u2699 Settings.','note',{w:460}),
+    C('c5',500,910,'Done looking? Spaces \u25be \u2192 New space, or delete this one. The intro is always in Settings. #welcome','note',{w:460,color:'green'}),
   ];
-  s.connections = [{id:uid(),from:'w1',to:'w2',label:'',color:''},{id:uid(),from:'w2',to:'w3',label:'try',color:'blue'},{id:uid(),from:'w4',to:'w5',label:'decides',color:'green'}];
-  return {spaces:{[s.id]:s}, order:[s.id], current:s.id, settings:{}, templates:[]};
+  s.connections=[{id:uid(),from:'a1',to:'a2',label:'then',color:'blue'},{id:uid(),from:'a2',to:'a3',label:'and',color:''}];
+  return s;
+}
+function seed(){ const s=welcomeSpace(); return {spaces:{[s.id]:s}, order:[s.id], current:s.id, settings:{}, templates:[]}; }
+function ensureWelcome(){
+  let id=db.order.find(i=>db.spaces[i].name==='Welcome' && db.spaces[i].cards.some(c=>/#welcome/.test(c.text)));
+  if(!id){ const s=welcomeSpace(); db.spaces[s.id]=s; db.order.push(s.id); id=s.id; }
+  return id;
 }
 function migrate(d){
   d.settings = Object.assign({}, DEFAULTS, d.settings||{});
@@ -2108,6 +2122,7 @@ addEventListener('keydown',e=>{
   const mod=e.metaKey||e.ctrlKey, k=e.key.toLowerCase();
   if(mod && k==='k'){ e.preventDefault(); palette.hidden?openPalette():closePalette(); return; }
   if(inField) return;
+  if(!introEl.hidden){ if(e.key==='Escape') closeIntro(); return; }
   if(pres){ if(['arrowright','pagedown',' ','enter'].includes(k)){ e.preventDefault(); goSlide(pres.i+1); } else if(['arrowleft','pageup','backspace'].includes(k)){ e.preventDefault(); goSlide(pres.i-1); } else if(k==='escape'||k==='p'){ endPresent(); } return; }
   if(mod && k==='z'){ e.preventDefault(); e.shiftKey?redo():undo(); return; }
   if(mod && k==='y'){ e.preventDefault(); redo(); return; }
@@ -2115,7 +2130,7 @@ addEventListener('keydown',e=>{
   if(mod && k==='a'){ e.preventDefault(); S().cards.forEach(c=>{ if(!c.locked) sel.add(c.id); }); render(); return; }
   if(mod && k==='c' && sel.size){ copyMd([...sel]); return; }
   if(mod || e.altKey) return;
-  if(e.key==='Escape'){ closePop(); closePanels(); if(drawMode) toggleDraw(false); sel.clear(); tagFilter=null; legendFilter=null; if(selectMode) toggleSelectMode(); render(); return; }
+  if(e.key==='Escape'){ if(!introEl.hidden) return closeIntro(); closePop(); closePanels(); if(drawMode) toggleDraw(false); sel.clear(); tagFilter=null; legendFilter=null; if(selectMode) toggleSelectMode(); render(); return; }
   if((e.key==='Delete'||e.key==='Backspace') && sel.size){ e.preventDefault(); delSelected(); return; }
   if(e.key==='Enter' && sel.size===1){ e.preventDefault(); startEdit([...sel][0]); return; }
   if(e.key.startsWith('Arrow') && sel.size){ e.preventDefault(); const st=e.shiftKey?24:2; const d={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
@@ -2174,6 +2189,7 @@ function commands(){
     {icon:'🎨',label:'Style — background, colors, fonts',run:openStyle},
     {icon:'🖼',label:'Change background image…',run:()=>$('#bgFile').click()},
     {icon:'⚙',label:'Settings',run:openSettings},
+    {icon:'👋',label:'Intro & welcome tour',run:openIntro},
     ...enabledTypes().filter(t=>SMART.has(t)).map(t=>({icon:ICON[t],label:`New ${TYPE_META[t].l} card`,sub:TYPE_META[t].ex,run:()=>{ const w=centerWorld(); const c=createCard(w.x-120,w.y-30); slashChoose(c,t); }})),
     ...TEMPLATES.map(t=>({icon:'▦',label:'Template: '+t.name,sub:t.desc,run:()=>insertTemplate(t)})),
     ...db.templates.map(t=>({icon:'★',label:'Template: '+t.name,run:()=>insertTemplate(t)})),
@@ -2363,6 +2379,35 @@ async function syncPull(){
 function syncStatus(){ const g=db.settings.gist, el=$('#ghStatus'); if(el) el.textContent = g.last ? 'Last sync '+ago(Date.parse(g.last)) : ''; const gi=$('#ghGist'); if(gi && document.activeElement!==gi) gi.value=g.id||''; }
 
 // =====================================================================
+// INTRO — first visit: what this is, a live demo of a card shaping itself, and two ways in
+// =====================================================================
+const introEl=$('#intro'); let demoT=null;
+const DEMO=['coffee with maya thursday 10am','20 min stretch','tacos, ramen or pizza tonight?','split 86 between 3','remind me to renew the passport tomorrow','4 miles in km'];
+function demoLoop(){
+  const txt=introEl.querySelector('.demo-text'), out=introEl.querySelector('.demo-out'), chip=introEl.querySelector('.demo-chip');
+  let i=0;
+  const run=()=>{ const phrase=DEMO[i%DEMO.length]; i++; let n=0; out.innerHTML=''; chip.textContent='';
+    const tick=()=>{ n++; txt.innerHTML=esc(phrase.slice(0,n))+'<span class="caret"></span>';
+      if(n<phrase.length){ demoT=setTimeout(tick,38+Math.random()*40); return; }
+      const type=rank(phrase)[0].type, tmp={...newCard(0,0,phrase),type,text:type==='todo'?transform('todo',phrase):phrase};
+      chip.textContent=`becomes ${ICON[type]} ${TYPE_META[type].l}`;
+      demoT=setTimeout(()=>{ let h=''; try{ h=contentHTML(tmp); }catch(e){} out.innerHTML=h; out.classList.remove('morph'); void out.offsetWidth; out.classList.add('morph');
+        demoT=setTimeout(run,2600); },500); };
+    demoT=setTimeout(tick,500); };
+  run();
+}
+function openIntro(){ if(editingId) commitEdit(); closePop(); closePanels(); introEl.hidden=false; clearTimeout(demoT); demoLoop(); }
+function closeIntro(){ introEl.hidden=true; clearTimeout(demoT); if(!db.settings.introSeen){ db.settings.introSeen=true; save(); } }
+introEl.addEventListener('click',e=>{
+  if(e.target===introEl) return closeIntro();
+  const b=e.target.closest('[data-act]'); if(!b) return; const a=b.dataset.act; closeIntro();
+  if(a==='tour'){ const id=ensureWelcome(); if(id!==db.current) switchSpace(id); zoomFit(false,1,innerWidth<600?.7:.15); return; }
+  if(a==='try'){ let id=db.order.find(i=>db.spaces[i].name==='Scratch'); if(!id){ const sp=newSpace('Scratch'); db.spaces[sp.id]=sp; db.order.push(sp.id); id=sp.id; }
+    if(id!==db.current) switchSpace(id); const w=centerWorld(); createCard(w.x-110,w.y-20); }
+});
+introEl.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); closeIntro(); } });
+
+// =====================================================================
 // TOOLBAR + SETTINGS
 // =====================================================================
 $('#spaceBtn').onclick=spaceMenu;
@@ -2404,6 +2449,7 @@ function probeOut(){
   out.innerHTML=r.slice(0,4).map((x,i)=>`<span class="chipS ${i?'':'on'}">${ICON[x.type]} ${TYPE_META[x.type].l} ${Math.round(x.score*100)}%</span>`).join(' ')+`<span class="small muted" style="margin-left:6px">${ms} ms</span>`;
 }
 $('#probeIn').addEventListener('input',probeOut);
+$('#introBtn').onclick=openIntro;
 $('#optSnap').onchange=e=>{ db.settings.snap=e.target.checked; save(); };
 $('#optMini').onchange=e=>{ db.settings.minimap=e.target.checked; save(); drawMinimap(); };
 $('#optLegend').onchange=e=>{ db.settings.legend=e.target.checked; save(); renderLegend(); };
@@ -2444,6 +2490,7 @@ document.querySelectorAll('i[data-i]').forEach(el=>{ el.outerHTML=I(el.dataset.i
   render();
   if(freshView) zoomFit(false,1,innerWidth<600?.7:.15);
   showEngine();
+  if(!db.settings.introSeen) openIntro();
   window.__sprawl = { get db(){ return db; }, ruleRank, rank, modelProbs, parseWhen, parseCalc, parseConvert, parseTZ, parseGoal, parsePoll, parseContact, parseExpense, parseSplit, parseCountdown, parseHabit, parseTimer, parseRandom, parseColor, storeImage, imgSrc };
 })();
 })();

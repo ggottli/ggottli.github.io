@@ -2,9 +2,9 @@
 
 **A messy, spatial thinking canvas where every card shapeshifts into what you mean.**
 
-Sprawl is three plain files (`index.html`, `sprawl.css` and `sprawl.js`, ~2,900 lines in all, no build step, no dependencies, no server) that run on any static host, such as GitHub Pages. Click anywhere and type. Your text becomes a card on an infinite canvas, and the card turns into the right shape automatically: a checklist, an event with a calendar button, a running timer, a poll, a bill split, a unit conversion, and more. You stay in charge of *where* things go and *how* they connect.
+Sprawl is a handful of plain files (`index.html`, `sprawl.css`, `sprawl.js`, a shared featurizer and a 113 KB on-device shape model; no build step, no dependencies, no server) that run on any static host, such as GitHub Pages. Click anywhere and type. Your text becomes a card on an infinite canvas, and the card turns into the right shape automatically: a checklist, an event with a calendar button, a running timer, a poll, a bill split, a unit conversion, and more. You stay in charge of *where* things go and *how* they connect.
 
-> **TL;DR for agents:** Markup is in `index.html`, styles in `sprawl.css`, and all logic in `sprawl.js`. State is one JSON object in `localStorage['sprawl.v1']`. Card text is the source of truth, and every smart widget is re-derived from text by deterministic parsers at render time. Read [Architecture](#architecture) and [Invariants](#invariants--things-not-to-break) before editing.
+> **TL;DR for agents:** Markup is in `index.html`, styles in `sprawl.css`, and all logic in `sprawl.js`. The shape is chosen by `rank()`, which blends hand-written rules with a tiny classifier (`sprawl-model.js`, trained by `node model/train.js`). State is one JSON object in `localStorage['sprawl.v1']`; image bytes live in IndexedDB. Card text is the source of truth, and every smart widget is re-derived from text by deterministic parsers at render time. `python3 -I tests/run.py` runs the regression sweep. Read [Architecture](#architecture) and [Invariants](#invariants--things-not-to-break) before editing.
 
 ---
 
@@ -37,8 +37,8 @@ Most productivity tools force a structure on you before you know what you think:
 Sprawl aims to be the place where that mess lives comfortably, and to quietly do the boring parts for you:
 
 - Typing "call the dentist @tomorrow" should *become* a task with a due date, not stay a note you have to reformat.
-- Typing "25 min focus" should give you a working timer.
-- Typing "pizza or burgers for friday?" should give you a poll you can vote on.
+- Typing "20 min stretch" should give you a working timer.
+- Typing "tacos, ramen or pizza tonight?" should give you a poll you can vote on.
 
 It's a personal tool first: fast, private, and customizable. It's built to be hosted on a personal static website.
 
@@ -62,7 +62,7 @@ Sprawl reproduces much of Kinopio's toolset: cards, connections with labels and 
 > **"Jev decides, code computes."**
 > A classifier only decides *which card* text should become. All dates, money, math and units are computed by deterministic parsers.
 
-ShapeShift originally used TypeSafe AI's hosted **Jev** decision model. Sprawl briefly integrated Jev too (via a proxy), then removed it. The owner wanted **no servers and no API calls**. Sprawl uses a hand-written rules engine instead, with optional on-device Gemini Nano in Chrome.
+ShapeShift originally used TypeSafe AI's hosted **Jev** decision model. Sprawl briefly integrated Jev too (via a proxy), then removed it, and later dropped Chrome's built-in Gemini Nano as well. The owner wanted **no servers and no API calls**. Sprawl now ships its own tiny classifier (a 113 KB logistic-regression model that runs inside the page) and blends it with a hand-written rules engine. Sprawl's example phrases and welcome content are its own; only the concept is borrowed.
 
 ### The synthesis
 Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software should understand what you typed." Sprawl reconciles them:
@@ -73,7 +73,7 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 
 ## Design principles
 
-1. **Zero infrastructure.** Three static files, with no external scripts, fonts, CDNs or analytics. It works offline from `file://`.
+1. **Zero infrastructure.** A few static files, with no external scripts, fonts, CDNs or analytics. The shape model is a same-origin script, not a download from somewhere else. It works offline from `file://`.
 2. **Private by default.** Nothing typed leaves the device. The only network calls are user-initiated: optional GitHub Gist sync, and images/embeds/links the user adds.
 3. **Text is the source of truth.** Widgets are views over text. A card can always fall back to plain text without data loss.
 4. **Deterministic computing.** Engines pick shapes. Parsers compute values.
@@ -85,7 +85,7 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 
 ## Quick start
 
-- **Use it:** open `index.html` in any modern browser (it loads `sprawl.css` and `sprawl.js` from the same folder). That's it.
+- **Use it:** open `index.html` in any modern browser (it loads the CSS, the featurizer, the model and `sprawl.js` from the same folder). That's it. The first visit shows a short intro with a live demo and a **Welcome** space built from boxes; Settings → *Show the intro & welcome tour* brings both back.
 - **Host it:** commit the `sprawl/` folder to a static site (for example GitHub Pages) and link to it. Each visitor gets their own private, browser-local canvas.
 - **Back up:** ⚙ Settings → *Export all (JSON)*, or enable GitHub Gist sync to move between devices.
 - **Debug mode:** append `?debug=1` to the URL to see the classifier's confidence percentages on the shape chips while typing.
@@ -98,19 +98,20 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 - **Connections:** drag the ● handle on a card onto another card. Drag it into empty space to branch a new connected card. Click a line to add a label, recolor it, reverse it or delete it. Labelled connections build a **legend**, and clicking a legend entry spotlights that relationship.
 - **Boxes:** group cards visually. Dragging a box header moves the cards inside it. Each box has a name, an emoji icon (20 choices), a color (9), and a style (Soft, Solid, Outline or Dashed).
 - **Resize from the ◢ corner** on any card or box, in both directions. **Double-click the corner to reset**: cards go back to their default width and natural height, and boxes shrink to fit their cards (or go back to 340×240 if empty).
-- **Combine cards:** drop a card just under (or just over) another and a glowing bar previews the result, for example "Combine → ☑ Checklist · 3 items." Release to merge. Hold **⌥** to skip combining. See [How combining works](#how-combining-works).
+- **Combine cards:** drop a card so it overlaps the bottom (or top) edge of another and a glowing bar previews the result, for example "Combine → ☑ Checklist · 3 items." Release to merge. Hold **⌥** to skip. See [How combining works](#how-combining-works).
+- **Snap into lists:** drop a card a little *below* (or above) another instead and a dashed slot appears; the cards underneath make room and it lands aligned with a 12px gap. Dragging a card out of a list closes the gap, so lists reorder by drag.
 - **Paint select:** Shift+drag (or Select mode on touch). The selection bar can retype, recolor, arrange (align, distribute, stack, row, grid), box, move to another space, lock, duplicate, copy as Markdown, save as a template, or delete.
 - **Card frames:** Card, Sticky note (slightly tilted), Badge, Dashed, and No frame (bare text on the canvas).
 - **Colors:** yellow, orange, red, pink, purple, blue, teal, green and gray, each with light and dark variants.
 - **Lock to background (L):** locked cards behave like the canvas. You can click "through" them to create cards on top.
 - **Drawing (D):** freehand ink in 9 colors and 3 widths, an eraser, and clear-all. Pinch still zooms while drawing.
 - **Rich text:** `**bold**`, `*italic*`, `~~strike~~`, `` `code` ``, fenced ``` code blocks, `[text](url)`, `#tags` (click to spotlight), `[[Space Name]]` links (creates the space if missing), and `@tomorrow` / `@fri` / `@10/30` / `@nextweek` due dates, which become colored chips that turn red when overdue.
-- **Images & media:** drop or paste image files (auto-compressed to ≤1000px), drop images straight from other web pages, paste image URLs, or use the **＋ Add** menu. YouTube links show a thumbnail that plays inline, and Spotify links load an embedded player. The card menu has Add/Replace/Remove image. Broken images show a fallback message.
+- **Images & media:** drop or paste image files (auto-compressed to ≤1000px and stored in IndexedDB, so they don't count against the text storage limit), drop images straight from other web pages, paste image URLs, or use the **＋ Add** menu. YouTube links show a thumbnail that plays inline, and Spotify links load an embedded player. The card menu has Add/Replace/Remove image. Broken images show a fallback message.
 - **Recently removed:** deleted cards go to a per-space trash (last 100) and can be restored.
 
 ### Smart shapes (the ShapeShift layer)
-- There are **21 card shapes** ([full table](#the-21-card-shapes)). Typing is enough, because the rules engine ranks every shape.
-- **Live preview while typing:** shape chips appear under the text ("becomes 📅 Event · ¶ Note") with a faded **ghost** of the finished widget. **Tab / Shift+Tab** cycles shapes, and clicking a chip picks one. A picked shape sticks.
+- There are **21 card shapes** ([full table](#the-21-card-shapes)). Typing is enough, because the rules engine and the on-device model rank every shape together.
+- **Live preview while typing:** shape chips appear under the text ("becomes 📅 Event · ¶ Note") with a faded **ghost** of the finished widget. **Tab / Shift+Tab** cycles shapes, and clicking a chip picks one. A picked shape sticks. Settings has a probe box that shows how any phrase would be read, with percentages.
 - **Slash menu:** type `/` as the first character to list every enabled shape with an example. Arrow keys and Enter pick one, and the placeholder then shows an example to type.
 - **Morph animation** when a card changes shape.
 - **Choose your shapes:** ⚙ Settings → *Your card shapes* has a checkbox per type, plus **All** and **Basics only** buttons.
@@ -154,26 +155,26 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 | Shape | Example input | What it renders / does |
 |---|---|---|
 | ¶ Note | any thought | Formatted text (bullets, code, links, tags) |
-| ☑ Checklist | `buy milk, eggs, bread and coffee` | Splits into checkbox items under a "Buy:" title; done-count in the tag |
+| ☑ Checklist | `pack charger, passport and headphones` | Splits into checkbox items under a "Pack:" title; done-count in the tag |
 | H Heading | `# Q4 PLAN` | Large title text |
 | ↗ Link | `https://vercel.com/blog check later` | Link card (host + path); YouTube/Spotify embeds; image URLs show the image |
 | ? Question | `why do customers churn?` | Accent-bordered prompt |
-| ❝ Quote | `"ship it" — someone wise` | Serif italic quote |
-| 📅 Event | `dinner with priya friday 8pm` | Calendar tile, time, "in 4 days", **.ics download** + **Google Calendar** link; ✈ for trips |
-| 🔔 Reminder | `remind me to pay rent tomorrow urgent` | Checkbox, due chip, time, **URGENT** badge; shows in Today |
-| ⏱ Timer | `25 min focus` | Live countdown, progress bar, start/pause/reset, beep + desktop notification, time in the tab title |
-| 🔁 Habit | `gym 3x a week`, `read daily` | Mon–Sun tick grid for this week, x/target, 🔥 week streak |
-| 🎯 Goal | `read 12 books this year, 4 done` | Progress bar, −/+1 buttons, % and **pace** ("on track" / "behind by 2.1") |
-| 🎨 Color | `#ff6b35`, `tiffany blue`, `coral` | Swatch, HEX/RGB/HSL (click to copy), 6 tints |
-| 🧮 Calculate | `18% of 3450`, `2+2*3`, `sqrt(16)` | Safe math evaluator (no `eval`), copy result |
-| ⇄ Convert | `5 miles in km`, `72f to c`, `100 kg to lbs` | Length, mass, volume, speed, data, time, area, temperature |
-| ➗ Split | `split 120 between 4 tip 20%` | Per-person amount incl. tip |
-| 💸 Expense | `spent 450 on uber` | Amount, auto category icon, this-month total for the space |
-| ⏳ Countdown | `days until christmas`, `countdown to 12/1` | Days left (knows Christmas, Thanksgiving, NYE, Halloween, etc.) |
-| 🌐 Time zone | `3pm pst in ist`, `time in tokyo` | Converted time, or live world clock rows with offsets |
-| 🎲 Random | `roll 2d6`, `flip a coin`, `pick one: a, b or c` | Dice faces / coin / pick, "Again" button |
-| 📊 Poll | `pizza or burgers for friday?` | Tap-to-vote options with bars, leader highlighted, reset |
-| 👤 Contact | `rahul 98200 12345 rahul@mail.com` | Avatar initials, tel:/mailto: links, **vCard download** |
+| ❝ Quote | `"less, but better" — dieter rams` | Serif italic quote |
+| 📅 Event | `coffee with maya thursday 10am` | Calendar tile, time, "in 4 days", **.ics download** + **Google Calendar** link; ✈ for trips |
+| 🔔 Reminder | `remind me to renew the passport tomorrow` | Checkbox, due chip, time, **URGENT** badge; shows in Today |
+| ⏱ Timer | `20 min stretch` | Live countdown, progress bar, start/pause/reset, beep + desktop notification, time in the tab title |
+| 🔁 Habit | `run 3x a week`, `read daily`, `gym tue and thu` | Mon–Sun tick grid for this week, x/target, 🔥 week streak |
+| 🎯 Goal | `walk 500 miles this year, 120 done`, `save $5000 by december` | Progress bar, −/+1 buttons, % and **pace** ("on track" / "behind by 2.1") |
+| 🎨 Color | `#3a7bd5`, `sky blue`, `coral` | Swatch, HEX/RGB/HSL (click to copy), 6 tints |
+| 🧮 Calculate | `15% of 240`, `2+2*3`, `$86 + 20% tip` | Safe math evaluator (no `eval`), copy result |
+| ⇄ Convert | `4 miles in km`, `68f to c`, `100 kg to lbs` | Length, mass, volume, speed, data, time, area, temperature |
+| ➗ Split | `split 86 between 3`, `split 120 between 4 tip 20%` | Per-person amount incl. tip |
+| 💸 Expense | `spent 14 on lunch` | Amount, auto category icon, this-month total for the space |
+| ⏳ Countdown | `days until new year`, `countdown to 12/1` | Days left (knows Christmas, Thanksgiving, NYE, Halloween, etc.) |
+| 🌐 Time zone | `9am est in london`, `time in sydney` | Converted time, or live world clock rows with offsets |
+| 🎲 Random | `flip a coin`, `roll 2d6`, `pick one: beach, hike or museum` | Dice faces / coin / pick, "Again" button |
+| 📊 Poll | `tacos, ramen or pizza tonight?` | Tap-to-vote options with bars, leader highlighted, reset |
+| 👤 Contact | `maya chen 555 201 8890 maya@example.com` | Avatar initials, tel:/mailto: links, **vCard download** |
 
 ## Keyboard & gestures
 
@@ -194,13 +195,26 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 | Shift+drag | Paint select |
 | Drag ● handle | Connect / branch new card |
 | Drag ◢ corner · double-click ◢ | Resize · reset size |
-| Drop card under/over another | Combine (hold ⌥ to skip) |
+| Drop card overlapping another's edge | Combine (hold ⌥ to skip) |
+| Drop card a little under/over another | Snap into a vertical list |
 | Right-click / long-press | Context menu (card, box, connection, canvas) |
 | Pinch | Zoom (touch) |
 
 ## Architecture
 
-The app is three files: `sprawl.css` (all styles), `index.html` (static HTML for the chrome: toolbar, panels, palette) and `sprawl.js` (one IIFE in strict mode, loaded at the end of the body). Search for these section banners (`// ====` comments):
+The app is a few files, all loaded by `index.html`:
+
+| File | What it is |
+|---|---|
+| `index.html` | Static HTML for the chrome: toolbar, panels, palette, intro overlay |
+| `sprawl.css` | All styles |
+| `sprawl-features.js` | The text featurizer (hashed word/char n-grams + shape flags). Shared by the browser and the trainer; no DOM |
+| `sprawl-model.js` | **Generated.** The shape model: int8 weights for 21 classes × 4096 feature buckets, base64, ~113 KB |
+| `sprawl.js` | Everything else: one IIFE in strict mode, loaded at the end of the body |
+| `model/data.js`, `model/train.js`, `model/eval.json` | Synthetic training data, the node trainer, and 131 hand-written eval phrases |
+| `tests/run.py` | Headless-Chromium regression sweep |
+
+Inside `sprawl.js`, search for these section banners (`// ====` comments):
 
 | Section | Responsibility |
 |---|---|
@@ -209,20 +223,21 @@ The app is three files: `sprawl.css` (all styles), `index.html` (static HTML for
 | persistence + undo | `load/save/flush`, `migrate()` (schema upgrades), per-space undo stack of JSON snapshots |
 | **PARSERS** | Pure functions: `parseWhen`, `parseCalc` + `evalExpr`, `parseConvert`, `parseTZ`, `parseCountdown`, `parseTimer`, `parseHabit`, `parseGoal`, `parseColor`, `parseSplit`, `parseExpense`, `parseRandom`, `parsePoll`, `parseContact`, `parseEvent`, `parseReminder` |
 | **RULES ENGINE** | `ruleRank(text)` → `[{type, score}]` sorted; `ruleClassify`; `transform(type, text)` (e.g. checklist conversion); `enabledTypes()` |
-| AI ENGINES | Optional Chrome built-in model (Gemini Nano via `LanguageModel` API); prompt lists only enabled types; falls back to rules on any failure |
+| SHAPE MODEL | Decodes `window.SPRAWL_MODEL`; `modelProbs(text)` → softmax over 21 shapes; `rank(text)` blends rules and model; `classify()` = top of `rank()` |
 | RENDERERS | `contentHTML(card)`, with `SMART_RENDER[type]` per widget, `fmt()` inline markdown, `linesHTML()` blocks, calendar/ICS helpers |
 | RENDER | `cardNode`, `boxNode`, `render()` (full), `refreshCard(id)` (one card), connection curves, ink, view transform, background layers, minimap, legend |
 | LIVE SHAPESHIFT | `startPred`, `onLiveInput` (debounced re-rank, slash menu), `renderLive` (chips + ghost), `pickShape`, `slashChoose` |
 | MUTATIONS | create/edit/commit, remove → trash, setType, duplicate, align/arrange, move between spaces, inbox capture, space switching |
-| COMBINE | `mergeInfo` (pure: what would A+B become), `describeMerge`, `checkMerge` (hit-testing during drag), `doMerge` |
+| COMBINE / SNAP | `mergeInfo` (pure: what would A+B become), `describeMerge`, `checkMerge` (hit-testing during drag for both zones), `doMerge`; `chainBelow`, `closeGap`, `doSnap` for lists |
 | WIDGET ACTIONS + TICKER | `widget(card, action)` for every interactive control; a 1 s `setInterval` ticker for timers, tab title, periodic refresh of clocks/countdowns |
+| IMAGE STORE | IndexedDB (`sprawl-images`): `storeImage`, `imgSrc`, `migrateImages`, `loadImages`, `inlineImages` (for export), `gcImages` |
 | IMAGES / TEMPLATES / EXPORT | Image compression, `addUrl`, template definitions + placement, Markdown & JSON Canvas I/O |
 | POPOVERS / MENUS | `openPop` + card, connection, box, background, space, trash, template, Add, arrange menus; selection bar |
 | DRAWING / PRESENTATION | Freehand strokes (quadratic-smoothed SVG paths), slide mode |
 | POINTER INPUT | Unified Pointer Events: pan, pinch, card drag (+ merge detection), connect, resize, box move/resize, marquee, long-press |
 | KEYBOARD + PASTE | Global shortcuts, paste of images/URLs/text |
-| COMMAND PALETTE / TODAY / STYLE / SYNC / SETTINGS | Panels and their handlers |
-| GO | Boot: render icon placeholders, `migrate(load() \|\| seed())`, render, fit view; exposes `window.__sprawl` for tests |
+| COMMAND PALETTE / TODAY / STYLE / SYNC / INTRO / SETTINGS | Panels and their handlers; the intro's typing demo reuses `rank()` and `contentHTML()` |
+| GO | Async boot: render icon placeholders, `migrate(load() \|\| seed())`, migrate/load images, render, fit view, open the intro on a first visit; exposes `window.__sprawl` for tests |
 
 **Rendering model:** the DOM is rebuilt from state, never the other way around. Cards are absolutely positioned `div`s inside `#world`, which gets a CSS `translate() scale()` for pan/zoom. Connections and ink are SVG layers in the same transformed space. During drags the code mutates `style.left/top` directly for speed and saves on pointer up.
 
@@ -235,8 +250,8 @@ db = {
   current: spaceId,
   templates: [{ id, name, data: { cards, boxes, connections } }],
   settings: {
-    ai: 'rules' | 'chrome',
     live: true,                    // live preview while typing
+    introSeen: true,               // the first-visit intro was dismissed
     disabled: ['timer', ...],      // card shapes turned off
     theme: 'auto'|'light'|'dark', accent: 0..7,
     snap, minimap, legend,
@@ -258,7 +273,8 @@ Card = {
   text,                            // SOURCE OF TRUTH for content
   type,                            // one of the 21 shapes
   auto, manual,                    // manual=true → never auto-reclassified
-  color, frame: ''|'sticky'|'badge'|'dashed'|'plain', locked, img,
+  color, frame: ''|'sticky'|'badge'|'dashed'|'plain', locked,
+  img,                             // '' | http(s) URL | 'idb:<key>' (bytes in IndexedDB; data: URLs are migrated on load)
   data: {                          // widget-only state that text can't hold
     // timer: dur,left,endAt,fin · habit: log{iso:1} · goal: done
     // poll: votes{opt:n} · random: r,rk · reminder: done
@@ -271,27 +287,32 @@ Box   = { id, x, y, w, h, name, color, emoji, style: 'soft'|'solid'|'outline'|'d
 Stroke= { id, pts: [x,y,x,y,...], color, w }
 ```
 
-**Storage key:** `localStorage['sprawl.v1']`. **Schema changes go through `migrate()`**, which fills defaults, drops removed settings (e.g. old Jev/Ollama keys), and repairs unknown types to `note`.
+**Storage key:** `localStorage['sprawl.v1']` for the JSON; IndexedDB database `sprawl-images`, store `img`, for image blobs keyed by the `idb:` reference. **Schema changes go through `migrate()`**, which fills defaults, drops removed settings (e.g. old Jev/Ollama/Chrome-AI keys), and repairs unknown types to `note`. Exports and Gist pushes inline images as data URLs again, so backups stay portable.
 
 ## How classification works
 
-1. **`ruleRank(text)`** scores every shape from 0 to 1 using its parser plus heuristics. Examples:
-   - `split…between N` → Split 0.96.
-   - A date/time plus event words ("lunch", "meeting", "flight"…) → Event 0.88.
-   - An imperative verb first ("call", "email", "buy"…) → Checklist 0.72.
-   - Cross-rules resolve conflicts. "remind me" caps Checklist, a Poll caps Question, and a verb-first line without event words caps Event.
-   - Note is always present at 0.2 as the fallback. Disabled shapes are filtered out.
-2. **While typing**, the top results become chips and the top one renders as a ghost. With the Chrome engine, a debounced on-device call runs with **hysteresis** (ShapeShift's trick): the suggestion only switches when a challenger wins twice in a row or is very confident, so the UI doesn't flicker.
-3. **On commit:**
-   - A shape you picked wins and sets `manual=true`.
-   - Otherwise rules (or the stable AI answer) decide, and `applyType` runs `transform` (for example, comma lists become checkbox items).
-4. **Relative dates** ("friday", "tomorrow") are parsed relative to `card.updated`, so "friday" doesn't drift to next week's Friday when you reopen the app. `@date` tokens in checklists are normalized to ISO when you finish editing.
+Two voters, one rule: **parsers decide what is renderable, the model and the rules decide what it is.**
 
-The rules engine scores **35/35** on the regression set, which includes all of ShapeShift's published examples.
+1. **`ruleRank(text)`** scores every shape from 0 to 1 using its parser plus heuristics (`split…between N` → 0.96, a date plus event words → 0.88, an imperative verb first → Checklist 0.72, Note always 0.2 as the floor). A smart shape only appears in this list if its parser accepted the text, so whatever wins can actually render. Disabled shapes are filtered out.
+2. **`modelProbs(text)`** runs the on-device model: `sprawl-features.js` turns the text into hashed features (words, bigrams, character trigrams, and flags like "has a time", "ends with ?", "starts with a bullet"), and a 21-way logistic regression returns probabilities. It takes about 0.05 ms.
+3. **`rank(text)`** blends them. If the rules are certain (top score ≥ 0.94, which only parser-backed shapes reach) the rules win outright. Otherwise the model's probability mass is restricted to the *feasible* shapes (the six basics plus whatever the parsers accepted) and renormalized, and each shape scores `0.5 × rules + 0.5 × model`. The model can therefore never pick a Timer for text `parseTimer` rejects, but it does settle note-vs-task-vs-question-vs-heading, "15 minute meeting friday 3pm" (event, not timer) and similar calls that rules alone get wrong.
+4. **While typing**, `rank()` runs 60 ms after each keystroke; the results become chips and the top one renders as a ghost.
+5. **On commit:** a shape you picked wins and sets `manual=true`; otherwise `classify()` decides and `applyType` runs `transform` (for example, comma lists become checkbox items).
+6. **Relative dates** ("friday", "tomorrow") are parsed relative to `card.updated`, so "friday" doesn't drift when you reopen the app. `@date` tokens in checklists are normalized to ISO when you finish editing.
+
+### The model
+- **Training:** `node model/train.js` (about 3 seconds). `model/data.js` generates ~21,000 phrases from templates and vocab lists per shape, including the misfires found while testing ("I sat with him", "Q4 2025-2026 plan", "spend 20 min on email"). The trainer fits a multinomial logistic regression with Adagrad, quantizes the weights to int8, and writes `sprawl-model.js`.
+- **Evaluation:** `model/eval.json` holds 131 hand-written inputs that were never used for training. Rules alone get 122 right; the blend gets 129. `tests/run.py` checks both numbers.
+- **Changing it:** add or fix templates in `model/data.js`, add eval phrases, retrain, and look at the `miss:` lines the trainer prints. Never hand-edit `sprawl-model.js`.
 
 ## How combining works
 
-`checkMerge` runs on every pointer move while a **single** unlocked card is dragged and ⌥ isn't held. A merge candidate needs at least 40% horizontal overlap with another card, with the dragged card's top within about 38px of the target's bottom (append) or its bottom within about 38px of the target's top (prepend). `mergeInfo(target, src, mode)` is pure and computes the result used for both the preview label and the real merge:
+`checkMerge` runs on every pointer move while a **single** unlocked card is dragged and ⌥ isn't held. Both drop zones need at least 40% horizontal overlap with another card:
+
+- **Combine** when the dragged card's top is within −19…10px of the target's bottom (append) or its bottom within the same band of the target's top (prepend): the cards overlap or touch.
+- **Snap into a list** when the gap is 10…90px instead: a dashed slot shows where the card will land (`x` of the target, 12px below it), and every card chained directly beneath the target (`chainBelow`, same `x` within 6px and gap ≤ 22px) shifts down in the preview. Dropping a card *above* a list member inserts before it. When a drag starts from inside a list, `closeGap` moves the cards below up. If a snap and a combine both apply, aiming at the top half of the overlapped list member means snap.
+
+`mergeInfo(target, src, mode)` is pure and computes the combine result used for both the preview label and the real merge:
 
 | Situation | Result |
 |---|---|
@@ -299,7 +320,7 @@ The rules engine scores **35/35** on the regression set, which includes all of S
 | Either card is a **checklist** | One checklist: a single title kept on top, everything else becomes `[ ]` items, duplicates dropped; a short note dropped *above* an untitled checklist becomes its title |
 | A **heading** is on top | Note with the heading as a **bold** first line |
 | One card has an **image** | Image kept, texts joined as the caption (two images → merge not offered) |
-| Anything else | Texts joined in reading order, then re-classified (e.g. "dinner fri" + "8pm with priya" → Event) |
+| Anything else | Texts joined in reading order, then re-classified (e.g. "coffee thu" + "10am with maya" → Event) |
 
 `doMerge` writes the result into the target card (keeping its position and id), takes the wider width, resets height, keeps the target's color (or adopts the source's), **rewires the source's connections** to the target (dropping self-loops and duplicates), deletes the source (not to trash, since undo covers it), and plays the morph and flash animations. One ⌘Z undoes it.
 
@@ -311,7 +332,8 @@ The rules engine scores **35/35** on the regression set, which includes all of S
 3. Score it in `ruleRank` inside the `lines.length<=2` block, and add any conflict caps.
 4. Add `SMART_RENDER.x = c => html`, using `W(action, label)` for buttons and `c.data` for state.
 5. If it's interactive, handle the actions in `widget()`.
-6. Optionally:
+6. Teach the model: add a generator and a count in `model/data.js`, add the type to `TYPES` in `model/train.js`, add a few eval phrases, run `node model/train.js`.
+7. Optionally:
    - Add Markdown output in `mdOf`.
    - Include it in Today via `collectAll`.
    - Add a regression case in the test list.
@@ -330,45 +352,36 @@ Add SVG path markup to `ICONS` (24×24 viewBox, stroke-based) and use `I('name')
 - **Card text is the source of truth.** Widgets must render from `parseX(card.text)`. Only store in `card.data` what text *cannot* express (votes, timer state, habit log, goal progress override).
 - **`manual: true` must never be overridden** by auto-classification.
 - **Disabled shapes** must be excluded everywhere: `ruleRank`, slash menu, Add menu, card menu, palette commands and the AI prompt (`enabledTypes()` is the single gate).
+- **The model never overrides a parser.** `rank()` only lets the model choose among shapes whose parser accepted the text, and never beats a rule score ≥ 0.94. Keep it that way, or cards will pick shapes they can't render.
+- **Images go through `storeImage()`** and are read with `imgSrc()`. Never put a data URL straight into `card.img` or `bg.image`; never assume `card.img` is displayable as-is.
 - **No network by default.** Don't add CDNs, fonts, analytics or server calls. Network access must be user-initiated (sync, embeds, images).
 - **Secrets never leave the browser.** `exportData()` strips the Gist token, and new secrets must be stripped there too.
 - **Schema changes go through `migrate()`** so old saves keep loading.
 - **Undo before mutate:** call `pushUndo()` before changing the current space. Drags push once at the first move.
 - **Pointer events:** a new interactive element inside a card needs `data-w="action"` (widget) or explicit handling in `onDown` *before* the generic card-drag branch, or clicks will start drags/edits.
 - **Popover swatches:** `.pop .row button` sets `width:auto`. Swatches rely on the more specific `.pop .row button.sw` rule, so keep it, or swatches collapse to 0 width (a real bug fixed in v4).
-- **Keep it three dependency-free files** (`index.html`, `sprawl.css`, `sprawl.js`). No build step, no bundler, no external scripts. Portability is a feature.
+- **No build step, no bundler, no external scripts.** The only generated file is `sprawl-model.js`, and `node model/train.js` regenerates it. Portability is a feature.
 
 ## Testing
 
-There's no test framework in the repo. Development used **headless Chromium via Playwright (Python)** against `file:///…/sprawl/index.html`. Useful hooks:
+`python3 -I tests/run.py` drives `index.html` in headless Chromium (Python Playwright, `pip install playwright && playwright install chromium`) and checks: the intro and Welcome layout, the 34-phrase classifier regression, the model eval set (blend must stay ≥ 125/131), typing flows (comma lists, Shift+Enter, slash menu, Tab), drag/connect/snap/combine/resize, move-to-space undo, palette capture, Today, templates and presenting, the IndexedDB image store, exports, and the phone layout. It exits non-zero on any failure or console error; `--keep` leaves screenshots in `tests/out/`.
 
-- `window.__sprawl` exposes `db` and the parsers (`ruleRank`, `parseWhen`, `parseCalc`, `parseConvert`, `parseTZ`, `parseGoal`, `parsePoll`, `parseContact`, `parseExpense`, `parseSplit`, `parseCountdown`, `parseHabit`, `parseTimer`, `parseRandom`, `parseColor`).
-- To set up a scenario, mutate `__sprawl.db`, write it to `localStorage['sprawl.v1']`, and reload.
+`node model/train.js` retrains the model and prints held-out accuracy and the misses. `node --check sprawl.js` is the quick syntax check.
 
-Suites used so far, worth recreating:
-1. **Classifier regression:** 35 inputs (ShapeShift's examples + edge cases) → expected type. Must stay 35/35.
-2. **Typing UX:** ghost/chips appear, Tab cycles, the slash menu picks, Enter commits, Shift+Enter continues lists, the comma list becomes a checklist.
-3. **Widgets:** timer runs and updates the title, poll votes, habit ticks, goal +1, ⌘K capture as a reminder, Today sections, Pitch deck + presentation.
-4. **Settings:** old Jev/Ollama saves migrate to rules, and disabling Timer/Calculate removes them from detection and menus.
-5. **v4:** card resize on both axes + double-click reset, box resize + fit-reset, six combine scenarios (checklist, heading, poll option, image caption, prepend under title, ⌥ skip), Style looks/gradient/pattern/accent/font, Add menu URL → image/link, box emoji/color/style/rename.
-6. **Visual:** screenshots at 1400×900 and 390×844 (mobile).
-
-Quick syntax check: `node --check sprawl.js`.
+Useful hooks: `window.__sprawl` exposes `db`, `rank`, `ruleRank`, `modelProbs`, every parser, `storeImage` and `imgSrc`. To set up a scenario, mutate `__sprawl.db`, write it to `localStorage['sprawl.v1']`, and reload. Pitfalls: clicking the same canvas spot twice edits the first card instead of making a second; inserting a template moves the camera; Playwright won't click elements outside the viewport; `innerText` reflects CSS uppercase.
 
 ## Known limitations & ideas
 
 **Limitations**
-- **Browser-local storage (~5 MB).** Many large images can fill it, and Sprawl warns when saving fails. Use Gist sync or JSON export for backup.
+- **Browser-local.** Text lives in localStorage (~5 MB, plenty now that images are in IndexedDB); Sprawl warns when saving fails. Use Gist sync or JSON export for backup. Browsers can evict IndexedDB under storage pressure, so back up images you care about.
 - **Sync is last-write-wins** (whole-state push/pull), not real-time merging.
 - **No real-time collaboration** (Kinopio has it). This is a personal tool by design.
-- **The Chrome built-in model** requires desktop Chrome with built-in AI enabled. Elsewhere, rules are used.
+- **The shape model** is trained on synthetic phrases, so unusual phrasings can still land on Note. Picking a shape with Tab or `/` always works, and sticks.
 - **Card height** from resizing is a *minimum*, so content never gets clipped and cards grow taller than the set height if their content needs the room.
 - **Time zone and city coverage** is a curated list (~70 cities/abbreviations). Holidays are US-centric.
 - **Merging two image cards** isn't supported.
 
 **Ideas for next steps**
-- IndexedDB storage for larger image libraries.
-- Snap cards into vertical lists (Kinopio's list-snapping) and reorder by drag.
 - A backlink graph view across spaces, plus a tag browser.
 - Recurring events and reminders, and an `.ics` feed of all dated items.
 - A PWA manifest + service worker for install-to-home-screen.
@@ -384,6 +397,7 @@ Quick syntax check: `node --check sprawl.js`.
 | **v3** | **ShapeShift fusion:** 15 new smart shapes (21 total) with deterministic parsers; live ghost preview, shape chips, Tab cycling, `/` picker, morph animation; agenda-style Today; presentation mode; JSON Canvas import/export; code blocks; Jev engine + Cloudflare proxy (later removed) |
 | **v3.1** | Enter finishes / Shift+Enter new line with list continuation; removed all server-based engines (Jev, Ollama), keeping rules + on-device Chrome model; **choose your own card shapes** |
 | **v4** | ◢ corner resize on both axes for cards & boxes + double-click reset; **drag-to-combine** with preview bar and smart merge rules; 🎨 Style panel (looks, colors, gradients, patterns, background images, fonts, accents, theme); redesigned ＋ Add menu with URL box and tiles; box emoji/style/inline rename; card image actions; drop overlay; SVG icon set; red/teal colors; dark/light background auto-contrast; fixed zero-width menu swatches |
+| **v5** | **On-device shape model** (113 KB logistic regression, blended with rules; Chrome Gemini removed); **snap into lists** by drag; **images in IndexedDB**; first-visit **intro** with a live typing demo and a **Welcome** space built from boxes; all example phrases are Sprawl's own; parser fixes for goals, tip math, long countdowns and weekday habits; `tests/run.py` regression sweep |
 | **v4.1** | Split into `index.html` + `sprawl.css` + `sprawl.js`. Bug fixes: dates, phone numbers and "9-5" no longer become Calculate cards; a dated meeting with a duration is an Event, not a Timer; "spend 20 min" is not an Expense; year ranges are not Contacts; verb-first text with a phone number stays a task; "breakfast at 7:30" is AM; "thursday march 5" uses the explicit date; bare "sat/sun/wed" only count as weekdays with time context; habit names drop "every morning"; goals accept "$5000"; undo after *Move to space* no longer duplicates the card (multi-space snapshots); redo commits an open edit; one mouse-wheel notch no longer jumps to max zoom; ⌘K works while typing in a card; duplicated timers start fresh; date-sensitive cards re-render at midnight; the hint hides when a space only has boxes |
 
 ## Credits & sources

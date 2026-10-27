@@ -53,6 +53,20 @@
   </div>
 </div>
 
+<div class="ui overlay" id="intro" hidden>
+  <div class="intro" role="dialog" aria-label="Welcome to Sprawl">
+    <div class="intro-head"><b>Sprawl</b><span>a canvas for messy thinking</span><button data-act="close" title="Close" class="x">✕</button></div>
+    <p>Click anywhere and type. A thought becomes a note. <i>20 min stretch</i> becomes a timer. <i>coffee with maya thursday 10am</i> becomes an event with a calendar button. You arrange the rest.</p>
+    <div class="demo"><div class="card demo-card"><div class="demo-text"><span class="caret"></span></div><div class="demo-out content"></div></div><div class="demo-chip"></div></div>
+    <ol class="intro-steps">
+      <li><b>Type.</b> Click the canvas, write, press Enter.</li>
+      <li><b>It shapes itself.</b> 21 kinds of card, picked instantly on your device. Press Tab or type / to choose yourself.</li>
+      <li><b>You arrange.</b> Drag, connect with the ● handle, group in boxes, drop one card onto another to combine or snap into a list.</li>
+    </ol>
+    <p class="small muted">Everything stays in this browser. No account, nothing is sent anywhere.</p>
+    <div class="intro-acts"><button class="btn pri" data-act="try">Start typing</button><button class="btn" data-act="tour">Look around first</button></div>
+  </div>
+</div>
 <div class="ui panel" id="today" hidden></div>
 <div class="ui panel" id="stylePanel" hidden></div>
 
@@ -63,6 +77,7 @@
   <div class="row"><input type="text" id="probeIn" placeholder="Type something to see how it would be read…" autocomplete="off"></div>
   <div class="row" id="probeOut" style="min-height:22px"></div>
   <label class="small"><input type="checkbox" id="optLive"> Live preview while typing (ghost card + shape chips)</label>
+  <div class="row"><button class="btn small" id="introBtn">Show the intro &amp; welcome tour</button></div>
   <h4>Your card shapes<span class="n" id="typeCount"></span></h4>
   <p class="small muted" style="margin:0 0 6px">Untick any you don’t want — they’ll never be auto-detected or suggested. Existing cards keep their shape.</p>
   <div class="row" style="margin:0 0 6px"><button class="btn small" id="typesAll">All</button><button class="btn small" id="typesBasic">Basics only</button></div>
