@@ -72,8 +72,31 @@ const ICONS={
   upload:'<path d="M12 15V3M7 8l5-5 5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
   select2:'<path d="M3 3l7 18 2.5-7.5L20 11Z"/>', inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z"/>',
   resize:'<path d="M21 15v6h-6M21 21l-7-7M3 9V3h6M3 3l7 7"/>', edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  // the 21 shapes
+  't-note':'<path d="M4 6h16M4 12h16M4 18h10"/>',
+  't-todo':'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/>',
+  't-heading':'<path d="M6 4v16M18 4v16M6 12h12"/>',
+  't-link':'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  't-question':'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1 1-1.1 1.8"/><path d="M12 17h.01"/>',
+  't-quote':'<path d="M10 7H7a3 3 0 0 0-3 3v1a2 2 0 0 0 2 2h2v1a3 3 0 0 1-3 3"/><path d="M20 7h-3a3 3 0 0 0-3 3v1a2 2 0 0 0 2 2h2v1a3 3 0 0 1-3 3"/>',
+  't-event':'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  't-reminder':'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4Z"/><path d="M10 21h4"/>',
+  't-timer':'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  't-habit':'<path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  't-goal':'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12h.01"/>',
+  't-color':'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>',
+  't-calc':'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7.5h7M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/>',
+  't-convert':'<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+  't-split':'<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.3"/>',
+  't-expense':'<path d="M12 3v18"/><path d="M16.5 7.5A3.5 3.5 0 0 0 13 5h-2a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-2a3.5 3.5 0 0 1-3.5-2.5"/>',
+  't-countdown':'<path d="M6 3h12M6 21h12"/><path d="M8 3c0 5 4 6 4 9s-4 4-4 9M16 3c0 5-4 6-4 9s4 4 4 9"/>',
+  't-timezone':'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  't-random':'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/>',
+  't-poll':'<path d="M5 20v-9M12 20V4M19 20v-6"/>',
+  't-contact':'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
 };
 const I = (n,cls='') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
+const TI = t => I('t-'+t,'ti');   // shape icon (SVG) for HTML contexts; ICON[t] stays the emoji for plain-text contexts (toasts, markdown)
 const FONTS={sans:['Sans','ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'],serif:['Serif','Georgia, "Iowan Old Style", "Times New Roman", serif'],
   rounded:['Rounded','ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", system-ui, sans-serif'],mono:['Mono','ui-monospace, "SF Mono", Menlo, Consolas, monospace'],
   hand:['Hand','"Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", "Marker Felt", cursive']};
@@ -845,7 +868,7 @@ function contentHTML(c){
 }
 function pillText(c){
   if(c.img && !c.text.trim()) return (c.locked?'🔒 ':'')+'🖼 image';
-  let p = `${c.locked?'🔒 ':''}${c.auto?'✨ ':''}${ICON[c.type]} ${TYPE_META[c.type].l.toLowerCase()}`;
+  let p = `${c.locked?'🔒 ':''}${c.auto?'✨ ':''}${TI(c.type)} ${TYPE_META[c.type].l.toLowerCase()}`;
   if(c.type==='todo'){ const all=c.text.match(/^\s*\[( |x)\]/gim)||[]; const done=all.filter(x=>/x/i.test(x)).length; if(all.length) p+=` ${done}/${all.length}`; }
   return p;
 }
@@ -873,7 +896,7 @@ function cardNode(c){
   if(c.h) el.style.minHeight = c.h+'px';
   if(c.h && c.img && !c.text.trim()) el.style.setProperty('--imgh', (c.h-12)+'px');
   if(c.frame==='sticky') el.style.setProperty('--rot', rotFor(c.id));
-  el.innerHTML = `<div class="pill">${esc(pillText(c))}</div>`;
+  el.innerHTML = `<div class="pill">${pillText(c)}</div>`;
   if(editingId===c.id){
     if(c.img) el.insertAdjacentHTML('beforeend',`<img src="${esc(imgSrc(c.img))}" alt="">`);
     const ta = document.createElement('textarea');
@@ -1058,14 +1081,17 @@ function renderLive(c){
   const pill=el.querySelector('.pill');
   if(pred.slash){
     const s=pred.slash;
-    box.innerHTML=`<div class="slash">${s.items.map((t,i)=>`<div class="sl ${i===s.idx?'on':''}" data-slash="${t}"><span class="ico">${ICON[t]}</span>${TYPE_META[t].l}<span class="ex">${esc(TYPE_META[t].ex)}</span></div>`).join('')||'<div class="sub">No shape matches</div>'}</div>`;
+    el.classList.add('slashing');
+    box.innerHTML=`<div class="slash">${s.items.map((t,i)=>`<div class="sl ${i===s.idx?'on':''}" data-slash="${t}"><span class="ico">${TI(t)}</span><span class="lab">${TYPE_META[t].l}</span><span class="ex">${esc(TYPE_META[t].ex)}</span></div>`).join('')||'<div class="sub">No shape matches</div>'}</div><div class="sl-foot">↑↓ choose · ↵ pick · esc</div>`;
+    const on=box.querySelector('.sl.on'); if(on) on.scrollIntoView({block:'nearest'});
     pill.textContent='/ choose a shape'; queueLines(); return;
   }
+  el.classList.remove('slashing');
   const cur=chosenType();
-  if(!db.settings.live || !c.text.trim()){ box.innerHTML=''; pill.textContent=pred.manual?`${ICON[cur]} ${TYPE_META[cur].l.toLowerCase()} — try “${TYPE_META[cur].ex}”`:pillText(c); queueLines(); return; }
+  if(!db.settings.live || !c.text.trim()){ box.innerHTML=''; pill.innerHTML=pred.manual?`${TI(cur)} ${TYPE_META[cur].l.toLowerCase()} — try “${esc(TYPE_META[cur].ex)}”`:pillText(c); queueLines(); return; }
   const shown=pred.list.filter((x,i)=>x.score>=.3||i===pred.pick).slice(0,Math.max(3,pred.pick+1));
   if(!shown.some(x=>x.type==='note')) shown.push({type:'note',score:(pred.list.find(x=>x.type==='note')||{score:.2}).score});
-  const chips=shown.map(x=>`<span class="chipS ${x.type===cur?'on':''}" data-pick="${x.type}">${ICON[x.type]} ${TYPE_META[x.type].l}${DEBUG?`<span class="pc">${Math.round(x.score*100)}%</span>`:''}</span>`).join('');
+  const chips=shown.map(x=>`<span class="chipS ${x.type===cur?'on':''}" data-pick="${x.type}">${TI(x.type)}${TYPE_META[x.type].l}${DEBUG?`<span class="pc">${Math.round(x.score*100)}%</span>`:''}</span>`).join('');
   let ghost='';
   if(cur!=='note'){
     const text=cur==='todo'?transform('todo',c.text):c.text;
@@ -1076,7 +1102,7 @@ function renderLive(c){
     }
   }
   box.innerHTML=`<div class="sugg"><span class="lbl2">${pred.manual?'shape':'becomes'}</span>${chips}${pred.manual?`<span class="chipS" data-pick="__auto" title="Let it decide">✨ auto</span>`:''}</div>${ghost}`;
-  pill.textContent=`${pred.manual?'':'✨ '}${ICON[cur]} ${TYPE_META[cur].l.toLowerCase()}${pred.manual?' (picked)':''}`;
+  pill.innerHTML=`${pred.manual?'':'✨ '}${TI(cur)} ${TYPE_META[cur].l.toLowerCase()}${pred.manual?' (picked)':''}`;
   queueLines();
 }
 function pickShape(c,type){
@@ -1305,16 +1331,34 @@ function describeMerge(res){
 // Two drop zones under (or over) another card: overlapping its edge COMBINES the cards; a little further away
 // SNAPS the card into a vertical list (the cards below make room). Hold ⌥ to do neither.
 const GAP=12;
-function chainBelow(x,y,h,skip){ // cards stacked directly under a rect, top to bottom
-  const out=[]; let bottom=y+h, cx=x; for(let n=0;n<200;n++){
-    const nxt=S().cards.find(c=>c.id!==skip && !c.locked && !out.includes(c.id) && Math.abs(c.x-cx)<=6 && c.y-bottom>=-2 && c.y-bottom<=GAP+10);
-    if(!nxt) break; const r=rectOf(nxt.id); if(!r) break; out.push(nxt.id); bottom=r.y+r.h; cx=nxt.x; }
+const yState = id => { const c=find(id); return c?c.y:0; };
+function chainBelow(x,y,h,skip,yOf=yState){ // ids stacked directly under a rect, top to bottom (yOf lets a plan use provisional positions)
+  const out=[]; let bottom=y+h, cx=x;
+  for(let n=0;n<200;n++){
+    const nxt=S().cards.find(c=>c.id!==skip && !c.locked && !out.includes(c.id) && Math.abs(c.x-cx)<=6 && yOf(c.id)-bottom>=-2 && yOf(c.id)-bottom<=GAP+10);
+    if(!nxt) break; const r=rectOf(nxt.id); if(!r) break; out.push(nxt.id); bottom=yOf(nxt.id)+r.h; cx=nxt.x; }
   return out;
 }
-function closeGap(d){ // dragging a card out of a list: the cards under it move up
-  const s0=d.start[0], el=cEl(d.id); if(!s0||!el) return; const h=el.offsetHeight;
-  const below=chainBelow(s0.x,s0.y,h,d.id); if(!below.length) return;
-  below.forEach(id=>{ const c=find(id); c.y-=h+GAP; const e=cEl(id); if(e) e.style.top=c.y+'px'; });
+function cardAbove(t,skip,yOf=yState){ const ty=yOf(t.id);
+  return S().cards.find(c=>{ if(c.id===skip||c.id===t.id||c.locked||Math.abs(c.x-t.x)>6) return false; const r=rectOf(c.id); if(!r) return false; const g=ty-(yOf(c.id)+r.h); return g>=-2 && g<=GAP+10; }); }
+// Everything a snap drop would change, computed once from state (not from the preview DOM), so the preview and the
+// drop agree and nothing moves twice: the slot the card came from closes, then the card lands and its new neighbours make room.
+function planSnap(d,target,mode){
+  const me=rectOf(d.id), o=d.origin; if(!me||!o) return null;
+  const y=new Map(), yOf=id=>y.has(id)?y.get(id):yState(id);
+  const oc=chainBelow(o.x,o.y,o.h,d.id); oc.forEach(id=>y.set(id,yOf(id)-(o.h+GAP)));
+  if(mode==='before' && oc[0]===target.id) return {x:o.x,y:o.y,moves:[]};            // dropped back where it came from
+  if(mode==='before'){ const ab=cardAbove(target,d.id,yOf); if(ab){ target=ab; mode='after'; } }   // above a mid-list card = after the one above
+  const tr=rectOf(target.id); if(!tr) return null; const ty=yOf(target.id); let land;
+  if(mode==='after'){ land={x:target.x,y:ty+tr.h+GAP}; chainBelow(target.x,ty,tr.h,d.id,yOf).forEach(id=>y.set(id,yOf(id)+me.h+GAP)); }
+  else land={x:target.x,y:ty-me.h-GAP};
+  return {...land, moves:[...y].filter(([id,v])=>v!==yState(id)).map(([id,v])=>({id,y:v}))};
+}
+function closeGap(d){ // a plain drop somewhere else: the list the card came from closes up
+  const o=d.origin, c=find(d.id); if(!o||!c) return;
+  const below=chainBelow(o.x,o.y,o.h,d.id), inList=below.length || cardAbove({id:d.id,x:o.x},d.id,id=>id===d.id?o.y:yState(id));
+  if(Math.abs(c.y-o.y)<o.h/2 && Math.abs(c.x-o.x)<(c.w||220)/2){ if(inList){ c.x=o.x; c.y=o.y; } return; }   // a nudge inside a list settles back into its slot
+  below.forEach(id=>{ const x=find(id); if(x) x.y-=o.h+GAP; });
 }
 function checkMerge(d){
   const me=rectOf(d.id); if(!me) return clearMerge(d);
@@ -1327,8 +1371,11 @@ function checkMerge(d){
     if(below>=MERGE && below<SNAP && (!snap||below<snap.g)) snap={c,r,mode:'after',g:below};
     if(above>=MERGE && above<SNAP && (!snap||above<snap.g)) snap={c,r,mode:'before',g:above}; }
   // inserting into a list means overlapping the member below the slot; aiming at its top half means "snap", not "combine"
-  let shift=null; if(snap){ const r=snap.r; shift = snap.mode==='after' ? chainBelow(r.x,r.y,r.h,d.id) : [snap.c.id, ...chainBelow(r.x,r.y,r.h,d.id)]; }
-  if(best && snap && shift.includes(best.c.id) && me.y < best.r.y+best.r.h/2) best=null;
+  const plan=snap?planSnap(d,snap.c,snap.mode):null; if(snap && !plan) snap=null;
+  if(best && snap && plan.moves.some(m=>m.id===best.c.id) && me.y < best.r.y+best.r.h/2) best=null;
+  // a card nudged a few pixels inside its own list must not combine with its neighbours; that needs a deliberate move
+  if(best && d.origin){ const o=d.origin, dy=me.y-o.y; const nb=chainBelow(o.x,o.y,o.h,d.id)[0], na=cardAbove({id:d.id,x:o.x},d.id,id=>id===d.id?o.y:yState(id));
+    if((best.c.id===nb && dy<o.h*.5) || (na && best.c.id===na.id && dy>-me.h*.5)) best=null; }
   if(best){ const src=find(d.id), res=mergeInfo(best.c,src,best.mode);
     if(res){ clearSnap(d);
       if(!d.merge || d.merge.tid!==best.c.id){ clearMerge(d); const te=cEl(best.c.id); if(te) te.classList.add('merge-target'); const me2=cEl(d.id); if(me2) me2.classList.add('merging'); }
@@ -1338,15 +1385,14 @@ function checkMerge(d){
       mergeBar.firstChild.textContent=describeMerge(res); return; } }
   clearMerge(d, true);
   if(!snap) return clearSnap(d);
-  const t=snap.c, r=snap.r, y = snap.mode==='after' ? r.y+r.h+GAP : r.y;
-  if(!d.snap || d.snap.tid!==t.id || d.snap.mode!==snap.mode){
-    clearSnap(d); d.snap={tid:t.id, mode:snap.mode, x:r.x, y, shift};
-    shift.forEach(id=>{ const c=find(id), e=cEl(id); if(e) e.style.top=(c.y+me.h+GAP)+'px'; });
-    snapSlot.style.cssText=`display:block;left:${r.x}px;top:${y}px;width:${me.w}px;height:${me.h}px`;
+  if(!d.snap || d.snap.tid!==snap.c.id || d.snap.mode!==snap.mode){
+    clearSnap(d); d.snap={tid:snap.c.id, mode:snap.mode, plan};
+    plan.moves.forEach(m=>{ const e=cEl(m.id); if(e) e.style.top=m.y+'px'; });
+    snapSlot.style.cssText=`display:block;left:${plan.x}px;top:${plan.y}px;width:${me.w}px;height:${me.h}px`;
   }
 }
 function clearSnap(d){
-  if(d && d.snap){ d.snap.shift.forEach(id=>{ const c=find(id), e=cEl(id); if(c && e) e.style.top=c.y+'px'; }); d.snap=null; }
+  if(d && d.snap){ d.snap.plan.moves.forEach(m=>{ const c=find(m.id), e=cEl(m.id); if(c && e) e.style.top=c.y+'px'; }); d.snap=null; }
   snapSlot.style.display='none';
 }
 function clearMerge(d, keepSnap){
@@ -1354,10 +1400,9 @@ function clearMerge(d, keepSnap){
   cardsEl.querySelectorAll('.merge-target,.merging').forEach(el=>el.classList.remove('merge-target','merging'));
 }
 function doSnap(d){
-  const sn_=d.snap, c=find(d.id), el=cEl(d.id); clearSnap(d); if(!sn_||!c) return render();
-  const h=el?el.offsetHeight:60;
-  sn_.shift.forEach(id=>{ const x=find(id); if(x) x.y+=h+GAP; });
-  c.x=sn_.x; c.y=sn_.y; render(); save(); toast('Snapped into the list — ⌘Z to undo');
+  const p=d.snap.plan, c=find(d.id); clearSnap(d); if(!p||!c) return render();
+  p.moves.forEach(m=>{ const x=find(m.id); if(x) x.y=m.y; });
+  c.x=p.x; c.y=p.y; render(); save(); if(p.moves.length || c.y!==d.origin.y) toast('Snapped into the list — ⌘Z to undo');
 }
 function doMerge(m,srcId){
   const sp=S(), t=find(m.tid), src=find(srcId); if(!t||!src) return render();
@@ -1640,9 +1685,9 @@ function cardMenu(id,x,y){
   const c=find(id); if(!c) return;
   const fits=rank(c.text).filter(r=>r.score>=.3).map(r=>r.type);
   const smartList=[...new Set([...fits.filter(t=>SMART.has(t)), ...enabledTypes().filter(t=>SMART.has(t)), ...(SMART.has(c.type)?[c.type]:[])])];
-  openPop(x,y,`<div class="ph">${ICON[c.type]} ${TYPE_META[c.type].l}${c.manual?'':' · auto'}<span class="meta">edited ${ago(c.updated||c.created)}</span></div>
-    <div class="row tight">${BASIC.map(t=>`<button class="chip ${c.type===t?'on':''}" data-act="type:${t}" title="${TYPE_META[t].l}">${ICON[t]}</button>`).join('')}<button class="chip ${c.manual?'':'on'}" data-act="auto" title="Auto-detect shape">✨</button></div>
-    <div class="row tight">${smartList.map(t=>`<button class="chip ${c.type===t?'on':''}" data-act="type:${t}" title="${TYPE_META[t].l}${fits.includes(t)?' — fits this text':''}" style="${fits.includes(t)&&c.type!==t?'border-color:var(--accent)!important':''}">${ICON[t]}</button>`).join('')}</div>
+  openPop(x,y,`<div class="ph">${TI(c.type)} ${TYPE_META[c.type].l}${c.manual?'':' · auto'}<span class="meta">edited ${ago(c.updated||c.created)}</span></div>
+    <div class="row tight">${BASIC.map(t=>`<button class="chip ${c.type===t?'on':''}" data-act="type:${t}" title="${TYPE_META[t].l}">${TI(t)}</button>`).join('')}<button class="chip ${c.manual?'':'on'}" data-act="auto" title="Auto-detect shape">✨</button></div>
+    <div class="row tight">${smartList.map(t=>`<button class="chip ${c.type===t?'on':''}" data-act="type:${t}" title="${TYPE_META[t].l}${fits.includes(t)?' — fits this text':''}" style="${fits.includes(t)&&c.type!==t?'border-color:var(--accent)!important':''}">${TI(t)}</button>`).join('')}</div>
     <div class="row">${swatches(c.color)}</div>
     <div class="row tight">${FRAMES.map(([f,i,n])=>`<button class="chip ${(c.frame||'')===f?'on':''}" data-act="frame:${f}" title="${n}">${i}</button>`).join('')}</div><hr>
     <button data-act="edit"><span class="ico">${I('edit')}</span>Edit<kbd>↵</kbd></button>
@@ -1777,7 +1822,7 @@ function spaceMenu(){
 function newSpacePrompt(){ const n=prompt('Space name','Untitled'); if(!n) return; const s=newSpace(n); db.spaces[s.id]=s; db.order.push(s.id); switchSpace(s.id); }
 function trashMenu(x,y){
   const t=S().trash;
-  openPop(x,y,`<div class="ph">Recently removed</div>`+(t.slice(0,40).map((it,i)=>`<button data-act="r:${i}"><span class="ico">${it.card.img?'🖼':ICON[it.card.type]||'¶'}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((it.card.text||'image').replace(/\s+/g,' ').slice(0,40))}</span><span class="desc">${ago(it.at)}</span></button>`).join('')||'<div class="empty">Nothing here</div>')+
+  openPop(x,y,`<div class="ph">Recently removed</div>`+(t.slice(0,40).map((it,i)=>`<button data-act="r:${i}"><span class="ico">${it.card.img?I('image'):TI(it.card.type)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((it.card.text||'image').replace(/\s+/g,' ').slice(0,40))}</span><span class="desc">${ago(it.at)}</span></button>`).join('')||'<div class="empty">Nothing here</div>')+
     (t.length?`<hr><button data-act="empty" class="danger"><span class="ico">✕</span>Empty permanently</button>`:''),
     act=>{ closePop(); if(act.startsWith('r:')){ restoreTrash(+act.slice(2)); toast('Restored'); } else if(act==='empty'){ S().trash=[]; save(); toast('Emptied'); } });
 }
@@ -1798,7 +1843,7 @@ function insertMenu(){
   const p=openPop(r.left-130,r.bottom+6,`<div class="urlrow"><input id="addUrl" placeholder="Paste a link or image URL…" autocomplete="off"><button data-act="url">Add</button></div>
     <div class="tiles">${tile('card','card','Card')}${tile('image','image','Image')}${tile('link','link','Link')}${tile('box','box','Box')}
       ${tile('shape','spark','Shape')}${tile('tpl','grid','Template')}${tile('draw','pen','Draw')}${tile('space','layers','Space')}</div>
-    <div class="ph">Shaped cards <span class="meta">type / in any card</span></div><div class="row tight">${enabledTypes().filter(t=>SMART.has(t)).map(t=>`<button class="chip" data-act="shape:${t}" title="${TYPE_META[t].l} — ${esc(TYPE_META[t].ex)}">${ICON[t]}</button>`).join('')}</div>
+    <div class="ph">Shaped cards <span class="meta">type / in any card</span></div><div class="shapes">${enabledTypes().filter(t=>SMART.has(t)).map(t=>`<button class="shape" data-act="shape:${t}" title="${esc(TYPE_META[t].ex)}">${TI(t)}<span>${TYPE_META[t].l}</span></button>`).join('')}</div>
     <div class="ph" style="text-transform:none;letter-spacing:0">Tip: drop or paste images and links straight onto the canvas.</div>`,
     act=>{
       if(act==='link'){ p.querySelector('#addUrl').focus(); return; }
@@ -1830,7 +1875,7 @@ function renderSelbar(){
   const ids=[...sel], first=find(ids[0]);
   selbar.hidden=false;
   selbar.innerHTML=`<span class="count">${ids.length} selected</span><span class="sep"></span>`+
-    BASIC.map(t=>`<button data-act="type:${t}" title="${TYPE_META[t].l}" style="${ids.every(i=>find(i)?.type===t)?'color:var(--accent);font-weight:600':''}">${ICON[t]}</button>`).join('')+
+    BASIC.map(t=>`<button data-act="type:${t}" title="${TYPE_META[t].l}" style="${ids.every(i=>find(i)?.type===t)?'color:var(--accent)':''}">${TI(t)}</button>`).join('')+
     `<button data-act="auto" title="Re-detect shapes">✨</button><span class="sep"></span>${swatches(ids.length===1&&first?first.color:null)}<span class="sep"></span>`+
     `<button data-act="align" title="Align & arrange">${I('align')} Arrange</button><button data-act="box" title="Box (B)">${I('box')}</button><button data-act="move" title="Move to space">${I('move')}</button>`+
     `<button data-act="lock" title="Lock (L)">${I('lock')}</button><button data-act="dup" title="Duplicate (⌘D)">${I('copy')}</button><button data-act="md" title="Copy as Markdown">${I('clip')}</button>`+
@@ -1992,7 +2037,7 @@ function onMove(e){
       if(drag.moved){ v.x+=e.clientX-drag.lx; v.y+=e.clientY-drag.ly; applyView(); }
       drag.lx=e.clientX; drag.ly=e.clientY; break;
     case 'card':
-      if(!drag.moved && far){ drag.moved=true; if(editingId) commitEdit(); pushUndo(); cardsEl.classList.add('dragging'); if(drag.start.length===1 && !e.altKey) closeGap(drag); }
+      if(!drag.moved && far){ drag.moved=true; if(editingId) commitEdit(); pushUndo(); cardsEl.classList.add('dragging'); const el0=cEl(drag.id); drag.origin={x:drag.start[0].x,y:drag.start[0].y,h:el0?el0.offsetHeight:60}; }
       if(drag.moved){
         for(const s of drag.start){ const c=find(s.id); if(!c) continue; c.x=sn(s.x+dx/v.z); c.y=sn(s.y+dy/v.z);
           const el=cEl(s.id); if(el){ el.style.left=c.x+'px'; el.style.top=c.y+'px'; } }
@@ -2050,7 +2095,7 @@ function onUp(e){
       if(d.merge){ const m=d.merge; clearMerge(d); doMerge(m,d.id); break; }
       if(d.snap){ doSnap(d); break; }
       clearMerge(d);
-      if(d.moved){ save(); queueMini(); break; }
+      if(d.moved){ if(d.start.length===1) closeGap(d); render(); save(); queueMini(); break; }
       if(d.shift || selectMode){ if(editingId) commitEdit(); sel.has(d.id)?sel.delete(d.id):sel.add(d.id); render(); break; }
       startEdit(d.id); break;
     case 'connect': {
@@ -2190,7 +2235,7 @@ function commands(){
     {icon:'🖼',label:'Change background image…',run:()=>$('#bgFile').click()},
     {icon:'⚙',label:'Settings',run:openSettings},
     {icon:'👋',label:'Intro & welcome tour',run:openIntro},
-    ...enabledTypes().filter(t=>SMART.has(t)).map(t=>({icon:ICON[t],label:`New ${TYPE_META[t].l} card`,sub:TYPE_META[t].ex,run:()=>{ const w=centerWorld(); const c=createCard(w.x-120,w.y-30); slashChoose(c,t); }})),
+    ...enabledTypes().filter(t=>SMART.has(t)).map(t=>({icon:TI(t),label:`New ${TYPE_META[t].l} card`,sub:TYPE_META[t].ex,run:()=>{ const w=centerWorld(); const c=createCard(w.x-120,w.y-30); slashChoose(c,t); }})),
     ...TEMPLATES.map(t=>({icon:'▦',label:'Template: '+t.name,sub:t.desc,run:()=>insertTemplate(t)})),
     ...db.templates.map(t=>({icon:'★',label:'Template: '+t.name,run:()=>insertTemplate(t)})),
   ];
@@ -2205,7 +2250,7 @@ function buildPal(){
   const allCards=[]; db.order.forEach(sid=>db.spaces[sid].cards.forEach(c=>allCards.push({sid,c})));
   let ghost='';
   if(q && !q.startsWith('#')){
-    const top=rank(q)[0].type, lab=`${ICON[top]} ${TYPE_META[top].l}`;
+    const top=rank(q)[0].type, lab=`${TI(top)} ${TYPE_META[top].l}`;
     groups.push(['Capture',[
       {icon:'📥',label:`Capture as <b>${lab}</b> → Inbox`,html:true,run:()=>captureToInbox(q)},
       {icon:'＋',label:`Add as <b>${lab}</b> to this space`,html:true,run:()=>{ const w=centerWorld(); createCard(w.x-120,w.y-30,q,false); }}]]);
@@ -2217,7 +2262,7 @@ function buildPal(){
   }
   const matches = q ? allCards.filter(({c})=>c.text.toLowerCase().includes(ql)) : [...allCards].sort((a,b)=>(b.c.updated||0)-(a.c.updated||0)).slice(0,6);
   matches.sort((a,b)=>(b.sid===db.current)-(a.sid===db.current) || (b.c.updated||0)-(a.c.updated||0));
-  if(matches.length) groups.push([q?'Cards':'Recent cards', matches.slice(0,25).map(({sid,c})=>({icon:c.img&&!c.text.trim()?'🖼':ICON[c.type],label:c.text.trim()?snippet(c.text,q?ql:''):'image',html:true,sub:db.spaces[sid].name,run:()=>jumpTo(sid,c.id)}))]);
+  if(matches.length) groups.push([q?'Cards':'Recent cards', matches.slice(0,25).map(({sid,c})=>({icon:c.img&&!c.text.trim()?I('image'):TI(c.type),label:c.text.trim()?snippet(c.text,q?ql:''):'image',html:true,sub:db.spaces[sid].name,run:()=>jumpTo(sid,c.id)}))]);
   const sps=db.order.filter(id=>!q||db.spaces[id].name.toLowerCase().includes(ql)).map(id=>({icon:db.spaces[id].kind==='inbox'?'📥':'◇',label:esc(db.spaces[id].name),html:true,sub:db.spaces[id].cards.length+' cards',run:()=>switchSpace(id)}));
   if(sps.length) groups.push(['Spaces',sps]);
   const cmds=commands().filter(c=>!q||c.label.toLowerCase().includes(ql));
@@ -2390,7 +2435,7 @@ function demoLoop(){
     const tick=()=>{ n++; txt.innerHTML=esc(phrase.slice(0,n))+'<span class="caret"></span>';
       if(n<phrase.length){ demoT=setTimeout(tick,38+Math.random()*40); return; }
       const type=rank(phrase)[0].type, tmp={...newCard(0,0,phrase),type,text:type==='todo'?transform('todo',phrase):phrase};
-      chip.textContent=`becomes ${ICON[type]} ${TYPE_META[type].l}`;
+      chip.innerHTML=`becomes ${TI(type)} ${TYPE_META[type].l}`;
       demoT=setTimeout(()=>{ let h=''; try{ h=contentHTML(tmp); }catch(e){} out.innerHTML=h; out.classList.remove('morph'); void out.offsetWidth; out.classList.add('morph');
         demoT=setTimeout(run,2600); },500); };
     demoT=setTimeout(tick,500); };
@@ -2430,7 +2475,7 @@ settingsEl.querySelector('[data-close]').onclick=closePanels;
 settingsEl.addEventListener('keydown',e=>e.stopPropagation());
 function renderTypeGrid(){
   const off=new Set(db.settings.disabled);
-  $('#typeGrid').innerHTML=TYPES.map(t=>`<label title="${esc(TYPE_META[t].d)}" style="padding:2px 0"><input type="checkbox" data-type="${t}" ${off.has(t)?'':'checked'} ${t==='note'?'disabled':''}> ${ICON[t]} <b>${TYPE_META[t].l}</b> <span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(TYPE_META[t].ex)}</span></label>`).join('');
+  $('#typeGrid').innerHTML=TYPES.map(t=>`<label title="${esc(TYPE_META[t].d)}" style="padding:2px 0"><input type="checkbox" data-type="${t}" ${off.has(t)?'':'checked'} ${t==='note'?'disabled':''}> ${TI(t)} <b>${TYPE_META[t].l}</b> <span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(TYPE_META[t].ex)}</span></label>`).join('');
   $('#typeCount').textContent=`${enabledTypes().length} of ${TYPES.length} on`;
 }
 $('#typeGrid').addEventListener('change',e=>{ const t=e.target.dataset.type; if(!t) return; const off=new Set(db.settings.disabled); e.target.checked?off.delete(t):off.add(t); db.settings.disabled=[...off]; save(); renderTypeGrid(); });
@@ -2446,7 +2491,7 @@ $('#optLive').onchange=e=>{ db.settings.live=e.target.checked; save(); };
 function probeOut(){
   const q=$('#probeIn').value.trim(), out=$('#probeOut'); if(!q){ out.innerHTML=''; return; }
   const t0=performance.now(), r=rank(q); const ms=(performance.now()-t0).toFixed(1);
-  out.innerHTML=r.slice(0,4).map((x,i)=>`<span class="chipS ${i?'':'on'}">${ICON[x.type]} ${TYPE_META[x.type].l} ${Math.round(x.score*100)}%</span>`).join(' ')+`<span class="small muted" style="margin-left:6px">${ms} ms</span>`;
+  out.innerHTML=r.slice(0,4).map((x,i)=>`<span class="chipS ${i?'':'on'}">${TI(x.type)}${TYPE_META[x.type].l} ${Math.round(x.score*100)}%</span>`).join(' ')+`<span class="small muted" style="margin-left:6px">${ms} ms</span>`;
 }
 $('#probeIn').addEventListener('input',probeOut);
 $('#introBtn').onclick=openIntro;
