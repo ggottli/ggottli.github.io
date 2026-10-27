@@ -2,9 +2,9 @@
 
 **A messy, spatial thinking canvas where every card shapeshifts into what you mean.**
 
-Sprawl is one self-contained HTML file (`sprawl.html`, ~2,900 lines, no build step, no dependencies, no server) that runs on any static host, such as GitHub Pages. Click anywhere and type. Your text becomes a card on an infinite canvas, and the card turns into the right shape automatically: a checklist, an event with a calendar button, a running timer, a poll, a bill split, a unit conversion, and more. You stay in charge of *where* things go and *how* they connect.
+Sprawl is three plain files (`index.html`, `sprawl.css` and `sprawl.js`, ~2,900 lines in all, no build step, no dependencies, no server) that run on any static host, such as GitHub Pages. Click anywhere and type. Your text becomes a card on an infinite canvas, and the card turns into the right shape automatically: a checklist, an event with a calendar button, a running timer, a poll, a bill split, a unit conversion, and more. You stay in charge of *where* things go and *how* they connect.
 
-> **TL;DR for agents:** Everything lives in `sprawl.html`. State is one JSON object in `localStorage['sprawl.v1']`. Card text is the source of truth, and every smart widget is re-derived from text by deterministic parsers at render time. Read [Architecture](#architecture) and [Invariants](#invariants--things-not-to-break) before editing.
+> **TL;DR for agents:** Markup is in `index.html`, styles in `sprawl.css`, and all logic in `sprawl.js`. State is one JSON object in `localStorage['sprawl.v1']`. Card text is the source of truth, and every smart widget is re-derived from text by deterministic parsers at render time. Read [Architecture](#architecture) and [Invariants](#invariants--things-not-to-break) before editing.
 
 ---
 
@@ -73,7 +73,7 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 
 ## Design principles
 
-1. **Zero infrastructure.** One HTML file, with no external scripts, fonts, CDNs or analytics. It works offline from `file://`.
+1. **Zero infrastructure.** Three static files, with no external scripts, fonts, CDNs or analytics. It works offline from `file://`.
 2. **Private by default.** Nothing typed leaves the device. The only network calls are user-initiated: optional GitHub Gist sync, and images/embeds/links the user adds.
 3. **Text is the source of truth.** Widgets are views over text. A card can always fall back to plain text without data loss.
 4. **Deterministic computing.** Engines pick shapes. Parsers compute values.
@@ -85,8 +85,8 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 
 ## Quick start
 
-- **Use it:** open `sprawl.html` in any modern browser. That's it.
-- **Host it:** commit `sprawl.html` to a static site (for example GitHub Pages) and link to it. Each visitor gets their own private, browser-local canvas.
+- **Use it:** open `index.html` in any modern browser (it loads `sprawl.css` and `sprawl.js` from the same folder). That's it.
+- **Host it:** commit the `sprawl/` folder to a static site (for example GitHub Pages) and link to it. Each visitor gets their own private, browser-local canvas.
 - **Back up:** ⚙ Settings → *Export all (JSON)*, or enable GitHub Gist sync to move between devices.
 - **Debug mode:** append `?debug=1` to the URL to see the classifier's confidence percentages on the shape chips while typing.
 
@@ -200,7 +200,7 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 
 ## Architecture
 
-Everything is in `sprawl.html`: a `<style>` block, static HTML for the chrome (toolbar, panels, palette), and one IIFE `<script>` in strict mode. Search for these section banners (`// ====` comments):
+The app is three files: `sprawl.css` (all styles), `index.html` (static HTML for the chrome: toolbar, panels, palette) and `sprawl.js` (one IIFE in strict mode, loaded at the end of the body). Search for these section banners (`// ====` comments):
 
 | Section | Responsibility |
 |---|---|
@@ -336,11 +336,11 @@ Add SVG path markup to `ICONS` (24×24 viewBox, stroke-based) and use `I('name')
 - **Undo before mutate:** call `pushUndo()` before changing the current space. Drags push once at the first move.
 - **Pointer events:** a new interactive element inside a card needs `data-w="action"` (widget) or explicit handling in `onDown` *before* the generic card-drag branch, or clicks will start drags/edits.
 - **Popover swatches:** `.pop .row button` sets `width:auto`. Swatches rely on the more specific `.pop .row button.sw` rule, so keep it, or swatches collapse to 0 width (a real bug fixed in v4).
-- **Keep it a single file** unless there's a strong reason. Portability is a feature.
+- **Keep it three dependency-free files** (`index.html`, `sprawl.css`, `sprawl.js`). No build step, no bundler, no external scripts. Portability is a feature.
 
 ## Testing
 
-There's no test framework in the repo. Development used **headless Chromium via Playwright (Python)** against `file:///…/sprawl.html`. Useful hooks:
+There's no test framework in the repo. Development used **headless Chromium via Playwright (Python)** against `file:///…/sprawl/index.html`. Useful hooks:
 
 - `window.__sprawl` exposes `db` and the parsers (`ruleRank`, `parseWhen`, `parseCalc`, `parseConvert`, `parseTZ`, `parseGoal`, `parsePoll`, `parseContact`, `parseExpense`, `parseSplit`, `parseCountdown`, `parseHabit`, `parseTimer`, `parseRandom`, `parseColor`).
 - To set up a scenario, mutate `__sprawl.db`, write it to `localStorage['sprawl.v1']`, and reload.
@@ -353,7 +353,7 @@ Suites used so far, worth recreating:
 5. **v4:** card resize on both axes + double-click reset, box resize + fit-reset, six combine scenarios (checklist, heading, poll option, image caption, prepend under title, ⌥ skip), Style looks/gradient/pattern/accent/font, Add menu URL → image/link, box emoji/color/style/rename.
 6. **Visual:** screenshots at 1400×900 and 390×844 (mobile).
 
-Quick syntax check: extract the `<script>` contents and run `node --check`.
+Quick syntax check: `node --check sprawl.js`.
 
 ## Known limitations & ideas
 
@@ -384,6 +384,7 @@ Quick syntax check: extract the `<script>` contents and run `node --check`.
 | **v3** | **ShapeShift fusion:** 15 new smart shapes (21 total) with deterministic parsers; live ghost preview, shape chips, Tab cycling, `/` picker, morph animation; agenda-style Today; presentation mode; JSON Canvas import/export; code blocks; Jev engine + Cloudflare proxy (later removed) |
 | **v3.1** | Enter finishes / Shift+Enter new line with list continuation; removed all server-based engines (Jev, Ollama), keeping rules + on-device Chrome model; **choose your own card shapes** |
 | **v4** | ◢ corner resize on both axes for cards & boxes + double-click reset; **drag-to-combine** with preview bar and smart merge rules; 🎨 Style panel (looks, colors, gradients, patterns, background images, fonts, accents, theme); redesigned ＋ Add menu with URL box and tiles; box emoji/style/inline rename; card image actions; drop overlay; SVG icon set; red/teal colors; dark/light background auto-contrast; fixed zero-width menu swatches |
+| **v4.1** | Split into `index.html` + `sprawl.css` + `sprawl.js`. Bug fixes: dates, phone numbers and "9-5" no longer become Calculate cards; a dated meeting with a duration is an Event, not a Timer; "spend 20 min" is not an Expense; year ranges are not Contacts; verb-first text with a phone number stays a task; "breakfast at 7:30" is AM; "thursday march 5" uses the explicit date; bare "sat/sun/wed" only count as weekdays with time context; habit names drop "every morning"; goals accept "$5000"; undo after *Move to space* no longer duplicates the card (multi-space snapshots); redo commits an open edit; one mouse-wheel notch no longer jumps to max zoom; ⌘K works while typing in a card; duplicated timers start fresh; date-sensitive cards re-render at midnight; the hint hides when a space only has boxes |
 
 ## Credits & sources
 
