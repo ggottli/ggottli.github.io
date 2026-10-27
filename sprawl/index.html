@@ -72,9 +72,8 @@
 
 <div class="ui panel" id="settings" hidden>
   <div class="ph"><b>Settings</b><button data-close title="Close">✕</button></div>
-  <h4>Card engine — what decides a card's shape</h4>
-  <p class="small muted" style="margin:0 0 6px">A tiny model that lives in this page (about 110 KB, trained on example phrases) votes together with hand-written rules. It only picks the shape; dates, math, units and money are always computed by code. Nothing you type leaves your device.</p>
-  <div class="row"><input type="text" id="probeIn" placeholder="Type something to see how it would be read…" autocomplete="off"></div>
+  <h4>Card engine</h4>
+  <div class="row"><input type="text" id="probeIn" placeholder="Type something to see which shape it gets…" autocomplete="off"></div>
   <div class="row" id="probeOut" style="min-height:22px"></div>
   <label class="small"><input type="checkbox" id="optLive"> Live preview while typing (ghost card + shape chips)</label>
   <div class="row"><button class="btn small" id="introBtn">Show the intro &amp; welcome tour</button></div>
@@ -112,23 +111,10 @@
     <kbd>[[Space]]</kbd><span>link to another space</span>
     <kbd>**b** *i* ~~s~~</kbd><span>bold, italic, strike · `code` · ``` block · [text](url)</span>
   </div>
-  <h4>Shortcuts</h4>
-  <div class="keys">
-    <kbd>⌘K or /</kbd><span>capture anywhere, search, commands</span>
-    <kbd>Tab</kbd><span>while typing: cycle the suggested shape</span>
-    <kbd>↵ · ⇧↵</kbd><span>finish the card · new line (keeps lists going)</span>
-    <kbd>⌥↵ · Esc</kbd><span>finish + new card below · finish</span>
-    <kbd>Shift+drag</kbd><span>paint select</span>
-    <kbd>drag ⤓ under</kbd><span>drop a card just under/over another to combine (hold ⌥ to skip)</span>
-    <kbd>◢ corner</kbd><span>drag to resize · double-click to reset</span>
-    <kbd>1–6</kbd><span>shape: note, checklist, heading, link, question, quote</span>
-    <kbd>N B D T P</kbd><span>new card · box · draw · today · present</span>
-    <kbd>F · M · .</kbd><span>zoom to fit · minimap · focus mode</span>
-    <kbd>L · arrows</kbd><span>lock · nudge selection (Shift = bigger)</span>
-    <kbd>⌘D · Del</kbd><span>duplicate · delete</span>
-    <kbd>⌘Z · ⇧⌘Z</kbd><span>undo · redo</span>
-    <kbd>right-click</kbd><span>menus everywhere (long-press on touch)</span>
-  </div>
+  <h4>Shortcuts<span class="n"><button class="btn small" id="keysReset" hidden>Reset to defaults</button></span></h4>
+  <p class="small muted" style="margin:0 0 6px">Click a key to change it, then press the new one.</p>
+  <div class="keys" id="keyGrid"></div>
+  <p class="small muted" style="margin:14px 0 0">Card shapes are picked by a tiny model inside this page. Nothing you type leaves your device.</p>
 </div>
 
 <script src="sprawl-features.js"></script>

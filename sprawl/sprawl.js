@@ -41,7 +41,11 @@ const PROMPTS = ["What would make today great?","What's on my mind right now?","
   "What am I avoiding?","What's one thing I'm grateful for?","What's the one thing that matters most today?","What drained me lately, and what energized me?"];
 const DOW = {sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,weds:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6};
 const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
-const DEFAULTS = {live:true, disabled:[], introSeen:false,
+const KEY_ACTIONS=[['palette','/','Capture, search & commands'],['newCard','n','New card'],['box','b','New box (or box the selection)'],['draw','d','Draw'],
+  ['today','t','Today panel'],['present','p','Present boxes as slides'],['fit','f','Zoom to fit'],['minimap','m','Toggle minimap'],['lock','l','Lock selected cards'],
+  ['focus','.','Focus mode'],['zoomReset','0','Zoom to 100%'],['zoomIn','=','Zoom in'],['zoomOut','-','Zoom out']];
+const KEYS_DEFAULT=Object.fromEntries(KEY_ACTIONS.map(([a,k])=>[a,k]));
+const DEFAULTS = {live:true, disabled:[], introSeen:false, keys:{...KEYS_DEFAULT},
   theme:'auto', snap:false, minimap:innerWidth>600, legend:true, gist:{token:'', id:'', auto:false, last:''}};
 const DEBUG = /[?&]debug=1/.test(location.search);
 const ICONS={
@@ -199,6 +203,7 @@ function migrate(d){
   d.settings.gist = Object.assign({}, DEFAULTS.gist, d.settings.gist||{});
   ['ai','ollamaUrl','ollamaModel','jevUrl','jevModel','jevKey'].forEach(k=>delete d.settings[k]);
   if(!Array.isArray(d.settings.disabled)) d.settings.disabled=[];
+  d.settings.keys=Object.assign({}, KEYS_DEFAULT, d.settings.keys||{});
   d.templates = d.templates || [];
   d.order = (d.order||[]).filter(id=>d.spaces[id]);
   for(const id of Object.keys(d.spaces)){
@@ -1694,7 +1699,7 @@ function cardMenu(id,x,y){
     <button data-act="img"><span class="ico">${I('image')}</span>${c.img?'Replace image…':'Add image…'}</button>${c.img?`<button data-act="noimg"><span class="ico">${I('x')}</span>Remove image</button>`:''}
     <button data-act="size"><span class="ico">${I('resize')}</span>Reset size</button>
     <button data-act="select"><span class="ico">${I('select2')}</span>${sel.has(id)?'Deselect':'Select'}</button>
-    <button data-act="lock"><span class="ico">${I(c.locked?'unlock':'lock')}</span>${c.locked?'Unlock':'Lock to background'}<kbd>L</kbd></button>
+    <button data-act="lock"><span class="ico">${I(c.locked?'unlock':'lock')}</span>${c.locked?'Unlock':'Lock to background'}<kbd>${keyLabel('lock')}</kbd></button>
     <button data-act="dup"><span class="ico">${I('copy')}</span>Duplicate<kbd>⌘D</kbd></button>
     <button data-act="move"><span class="ico">${I('move')}</span>Move to space…</button>
     <button data-act="md"><span class="ico">${I('clip')}</span>Copy as Markdown</button>
@@ -1773,11 +1778,11 @@ function bgMenu(sx,sy){
     <button data-act="box"><span class="ico">▢</span>New box here</button>
     <button data-act="img"><span class="ico">🖼</span>Image from file…</button>
     <button data-act="tpl"><span class="ico">▦</span>Template here…</button><hr>
-    <button data-act="draw"><span class="ico">✎</span>Draw<kbd>D</kbd></button>
+    <button data-act="draw"><span class="ico">✎</span>Draw<kbd>${keyLabel('draw')}</kbd></button>
     <button data-act="selmode"><span class="ico">⬚</span>${selectMode?'Exit select mode':'Select mode'}</button>
     <button data-act="all"><span class="ico">▣</span>Select all<kbd>⌘A</kbd></button>
-    <button data-act="fit"><span class="ico">⤢</span>Zoom to fit<kbd>F</kbd></button>
-    <button data-act="present"><span class="ico">▶</span>Present boxes<kbd>P</kbd></button>
+    <button data-act="fit"><span class="ico">⤢</span>Zoom to fit<kbd>${keyLabel('fit')}</kbd></button>
+    <button data-act="present"><span class="ico">▶</span>Present boxes<kbd>${keyLabel('present')}</kbd></button>
     <button data-act="search"><span class="ico">⌕</span>Search…<kbd>⌘K</kbd></button>`,
     act=>{ closePop();
       if(act==='card') createCard(w.x-16,w.y-16);
@@ -1878,7 +1883,7 @@ function renderSelbar(){
     BASIC.map(t=>`<button data-act="type:${t}" title="${TYPE_META[t].l}" style="${ids.every(i=>find(i)?.type===t)?'color:var(--accent)':''}">${TI(t)}</button>`).join('')+
     `<button data-act="auto" title="Re-detect shapes">✨</button><span class="sep"></span>${swatches(ids.length===1&&first?first.color:null)}<span class="sep"></span>`+
     `<button data-act="align" title="Align & arrange">${I('align')} Arrange</button><button data-act="box" title="Box (B)">${I('box')}</button><button data-act="move" title="Move to space">${I('move')}</button>`+
-    `<button data-act="lock" title="Lock (L)">${I('lock')}</button><button data-act="dup" title="Duplicate (⌘D)">${I('copy')}</button><button data-act="md" title="Copy as Markdown">${I('clip')}</button>`+
+    `<button data-act="lock" title="Lock (${keyLabel('lock')})">${I('lock')}</button><button data-act="dup" title="Duplicate (⌘D)">${I('copy')}</button><button data-act="md" title="Copy as Markdown">${I('clip')}</button>`+
     `<button data-act="tpl" title="Save as template">${I('star')}</button><button data-act="del" class="danger" title="Delete">${I('trash')}</button>`;
 }
 selbar.addEventListener('click',e=>{
@@ -2159,6 +2164,17 @@ $('#imgFile').onchange=async e=>{
 // =====================================================================
 // KEYBOARD + PASTE
 // =====================================================================
+const KEY_RUN={
+  palette:()=>openPalette(), newCard:()=>{ const w=centerWorld(); createCard(w.x-110,w.y-20); }, box:()=>sel.size?boxAround([...sel]):newBox(), draw:()=>toggleDraw(),
+  today:()=>todayEl.hidden?openToday():closePanels(), present:()=>startPresent(), fit:()=>zoomFit(sel.size>0), minimap:()=>toggleMini(), lock:()=>{ if(sel.size) toggleLock([...sel]); },
+  focus:()=>toggleZen(), zoomReset:()=>{ const v=V(); v.z=1; applyView(); }, zoomIn:()=>zoomAt(innerWidth/2,innerHeight/2,1.2), zoomOut:()=>zoomAt(innerWidth/2,innerHeight/2,1/1.2) };
+const keyOf = a => (db.settings.keys||KEYS_DEFAULT)[a]||'';
+function keyAction(key){ const k=key.length===1?key.toLowerCase():key; if(k==='+' && keyOf('zoomIn')==='=') return 'zoomIn'; for(const [a] of KEY_ACTIONS) if(keyOf(a)===k) return a; return null; }
+const keyLabel = a => { const k=keyOf(a); return k===' '?'Space':k.length===1?k.toUpperCase():k; };
+function applyKeyTitles(){
+  $('#todayBtn').title=`Today (${keyLabel('today')})`; $('#drawBtn').title=`Draw (${keyLabel('draw')})`; $('#zFit').title=`Zoom to fit (${keyLabel('fit')})`;
+  $('#zenExit').title=`Exit focus mode (${keyLabel('focus')})`; $('#searchBtn').title=`Capture, search & commands (⌘K or ${keyLabel('palette')})`;
+}
 function toggleSelectMode(){ selectMode=!selectMode; $('#selBtn').classList.toggle('on',selectMode); toast(selectMode?'Select mode: drag to paint-select, tap cards to add':'Select mode off'); }
 function toggleZen(){ document.body.classList.toggle('zen'); drawMinimap(); renderLegend(); if(document.body.classList.contains('zen')) toast('Focus mode — press . or ◐ to exit'); }
 function toggleMini(){ db.settings.minimap=!db.settings.minimap; save(); drawMinimap(); }
@@ -2182,19 +2198,8 @@ addEventListener('keydown',e=>{
     if(Date.now()-lastNudge>700) pushUndo(); lastNudge=Date.now();
     sel.forEach(id=>{ const c=find(id); if(c&&!c.locked){ c.x+=d[0]; c.y+=d[1]; const el=cEl(id); if(el){ el.style.left=c.x+'px'; el.style.top=c.y+'px'; } } }); queueLines(); save(); return; }
   if(/^[1-6]$/.test(e.key) && sel.size){ setType([...sel],BASIC[+e.key-1]); return; }
-  if(e.key==='/'){ e.preventDefault(); openPalette(); return; }
-  if(k==='n'){ e.preventDefault(); const w=centerWorld(); createCard(w.x-110,w.y-20); return; }
-  if(k==='b'){ e.preventDefault(); sel.size?boxAround([...sel]):newBox(); return; }
-  if(k==='d'){ e.preventDefault(); toggleDraw(); return; }
-  if(k==='t'){ e.preventDefault(); todayEl.hidden?openToday():closePanels(); return; }
-  if(k==='p'){ e.preventDefault(); startPresent(); return; }
-  if(k==='f'){ e.preventDefault(); zoomFit(sel.size>0); return; }
-  if(k==='m'){ toggleMini(); return; }
-  if(k==='l' && sel.size){ toggleLock([...sel]); return; }
-  if(e.key==='.'){ toggleZen(); return; }
-  if(k==='0'){ const v=V(); v.z=1; applyView(); return; }
-  if(e.key==='='||e.key==='+'){ zoomAt(innerWidth/2,innerHeight/2,1.2); return; }
-  if(e.key==='-'){ zoomAt(innerWidth/2,innerHeight/2,1/1.2); return; }
+  const act=keyAction(e.key); if(!act) return;
+  e.preventDefault(); KEY_RUN[act]();
 });
 document.addEventListener('paste',async e=>{
   const tg=e.target.tagName; if(tg==='INPUT'||tg==='TEXTAREA') return;
@@ -2213,17 +2218,17 @@ function openPalette(prefill=''){ if(editingId) commitEdit(); closePop(); closeP
 function closePalette(){ palette.hidden=true; palIn.blur(); }
 function commands(){
   return [
-    {icon:'＋',label:'New card',key:'N',run:()=>{ const w=centerWorld(); createCard(w.x-110,w.y-20); }},
+    {icon:'＋',label:'New card',key:keyLabel('newCard'),run:()=>{ const w=centerWorld(); createCard(w.x-110,w.y-20); }},
     {icon:'◇',label:'New space',run:newSpacePrompt},
-    {icon:'☀',label:'Today — agenda, todos, habits',key:'T',run:openToday},
+    {icon:'☀',label:'Today — agenda, todos, habits',key:keyLabel('today'),run:openToday},
     {icon:'📥',label:'Go to Inbox',run:()=>switchSpace(inbox().id)},
-    {icon:'▶',label:'Present (boxes as slides)',key:'P',run:()=>startPresent()},
-    {icon:'✎',label:'Draw',key:'D',run:()=>toggleDraw(true)},
-    {icon:'⤢',label:'Zoom to fit',key:'F',run:()=>zoomFit()},
-    {icon:'▢',label:'New box',key:'B',run:()=>newBox()},
+    {icon:'▶',label:'Present (boxes as slides)',key:keyLabel('present'),run:()=>startPresent()},
+    {icon:'✎',label:'Draw',key:keyLabel('draw'),run:()=>toggleDraw(true)},
+    {icon:'⤢',label:'Zoom to fit',key:keyLabel('fit'),run:()=>zoomFit()},
+    {icon:'▢',label:'New box',key:keyLabel('box'),run:()=>newBox()},
     {icon:'🖼',label:'Insert image from file…',run:()=>{ imgAt=null; $('#imgFile').click(); }},
-    {icon:'◐',label:'Focus mode (hide chrome)',key:'.',run:toggleZen},
-    {icon:'▣',label:'Toggle minimap',key:'M',run:toggleMini},
+    {icon:'◐',label:'Focus mode (hide chrome)',key:keyLabel('focus'),run:toggleZen},
+    {icon:'▣',label:'Toggle minimap',key:keyLabel('minimap'),run:toggleMini},
     {icon:'🗑',label:'Recently removed in this space',run:()=>trashMenu(innerWidth/2-150,100)},
     {icon:'⬇',label:'Export everything (JSON backup)',run:exportJson},
     {icon:'⬇',label:'Export this space as Markdown',run:exportMd},
@@ -2481,9 +2486,31 @@ function renderTypeGrid(){
 $('#typeGrid').addEventListener('change',e=>{ const t=e.target.dataset.type; if(!t) return; const off=new Set(db.settings.disabled); e.target.checked?off.delete(t):off.add(t); db.settings.disabled=[...off]; save(); renderTypeGrid(); });
 $('#typesAll').onclick=()=>{ db.settings.disabled=[]; save(); renderTypeGrid(); };
 $('#typesBasic').onclick=()=>{ db.settings.disabled=TYPES.filter(t=>SMART.has(t)); save(); renderTypeGrid(); };
+function renderKeys(){
+  const fixed=[['⌘K','capture anywhere, search, commands'],['Tab','while typing: cycle the suggested shape'],['↵ · ⇧↵','finish the card · new line (keeps lists going)'],['⌥↵ · Esc','finish + new card below · finish'],
+    ['1–6','with a selection: note, checklist, heading, link, question, quote'],['arrows','nudge the selection (Shift = bigger)'],['⌘D · Del','duplicate · delete'],['⌘Z · ⇧⌘Z','undo · redo'],['⌘A · ⌘C','select all · copy selection as Markdown'],
+    ['Shift+drag','paint select'],['right-click','menus everywhere (long-press on touch)']];
+  $('#keyGrid').innerHTML=KEY_ACTIONS.map(([a,,l])=>`<label title="Click, then press a key"><input class="keyin" data-key="${a}" value="${esc(keyLabel(a))}" readonly><span>${l}</span></label>`).join('')+
+    fixed.map(([k,l])=>`<kbd>${k}</kbd><span>${l}</span>`).join('');
+  const dirty=KEY_ACTIONS.some(([a,k])=>keyOf(a)!==k); $('#keysReset').hidden=!dirty;
+}
+$('#keyGrid').addEventListener('keydown',e=>{
+  const inp=e.target.closest('.keyin'); if(!inp) return; e.preventDefault(); e.stopPropagation();
+  if(e.key==='Escape'||e.key==='Tab'){ inp.blur(); return; }
+  if(e.metaKey||e.ctrlKey||e.altKey) return toast('Single keys only — ⌘ shortcuts are fixed');
+  let k=e.key; if(k.length!==1 && k!==' ') return toast('Pick a letter, digit or punctuation key');
+  k=k.toLowerCase(); if(k===' ') return toast('Space is used for presenting');
+  if(/^[1-6]$/.test(k)) return toast(`${k} switches a selected card's shape`);
+  const a=inp.dataset.key, used=KEY_ACTIONS.find(([b])=>b!==a && keyOf(b)===k);
+  if(used) return toast(`${k.toUpperCase()} already does “${used[2]}”`);
+  db.settings.keys[a]=k; save(); renderKeys(); applyKeyTitles(); inp.blur(); toast(`${KEY_ACTIONS.find(([b])=>b===a)[2]}: ${k.toUpperCase()}`);
+});
+$('#keyGrid').addEventListener('focusin',e=>{ const inp=e.target.closest('.keyin'); if(inp){ inp.dataset.was=inp.value; inp.value='…'; } });
+$('#keyGrid').addEventListener('focusout',e=>{ const inp=e.target.closest('.keyin'); if(inp && inp.value==='…') inp.value=inp.dataset.was||''; });
+$('#keysReset').onclick=()=>{ db.settings.keys={...KEYS_DEFAULT}; save(); renderKeys(); applyKeyTitles(); toast('Shortcuts reset'); };
 function syncSettings(){
   const st=db.settings, b=S().bg||{};
-  $('#optLive').checked=st.live; probeOut();
+  $('#optLive').checked=st.live; probeOut(); renderKeys();
   $('#optSnap').checked=st.snap; $('#optMini').checked=st.minimap; $('#optLegend').checked=st.legend;
   $('#ghToken').value=st.gist.token; $('#ghAuto').checked=st.gist.auto; syncStatus(); renderTypeGrid();
 }
@@ -2534,7 +2561,7 @@ document.querySelectorAll('i[data-i]').forEach(el=>{ el.outerHTML=I(el.dataset.i
   applyTheme();
   render();
   if(freshView) zoomFit(false,1,innerWidth<600?.7:.15);
-  showEngine();
+  showEngine(); applyKeyTitles();
   if(!db.settings.introSeen) openIntro();
   window.__sprawl = { get db(){ return db; }, ruleRank, rank, modelProbs, parseWhen, parseCalc, parseConvert, parseTZ, parseGoal, parsePoll, parseContact, parseExpense, parseSplit, parseCountdown, parseHabit, parseTimer, parseRandom, parseColor, storeImage, imgSrc };
 })();

@@ -189,6 +189,7 @@ Kinopio says "AI shouldn't arrange your thinking." ShapeShift says "software sho
 | N · B · D · T · P | New card · box · draw · Today · present |
 | F · M · . | Zoom to fit · minimap · focus mode |
 | 1–6 (with selection) | Note, checklist, heading, link, question, quote |
+| *(rebindable)* | Every single-key shortcut (N, B, D, T, P, F, M, L, `.`, `/`, `0`, `=`, `-`) can be changed in ⚙ Settings → Shortcuts: click a key and press the new one. ⌘ shortcuts, 1–6 and arrows are fixed |
 | L · arrows (with selection) | Lock · nudge (Shift = 24px) |
 | ⌘D · Delete · ⌘C | Duplicate · delete · copy as Markdown |
 | ⌘A · ⌘Z · ⇧⌘Z | Select all · undo · redo |
@@ -252,6 +253,7 @@ db = {
   settings: {
     live: true,                    // live preview while typing
     introSeen: true,               // the first-visit intro was dismissed
+    keys: { newCard:'n', box:'b', … }, // single-key shortcuts (see KEY_ACTIONS / KEYS_DEFAULT)
     disabled: ['timer', ...],      // card shapes turned off
     theme: 'auto'|'light'|'dark', accent: 0..7,
     snap, minimap, legend,
@@ -397,6 +399,7 @@ Useful hooks: `window.__sprawl` exposes `db`, `rank`, `ruleRank`, `modelProbs`, 
 | **v3** | **ShapeShift fusion:** 15 new smart shapes (21 total) with deterministic parsers; live ghost preview, shape chips, Tab cycling, `/` picker, morph animation; agenda-style Today; presentation mode; JSON Canvas import/export; code blocks; Jev engine + Cloudflare proxy (later removed) |
 | **v3.1** | Enter finishes / Shift+Enter new line with list continuation; removed all server-based engines (Jev, Ollama), keeping rules + on-device Chrome model; **choose your own card shapes** |
 | **v4** | ◢ corner resize on both axes for cards & boxes + double-click reset; **drag-to-combine** with preview bar and smart merge rules; 🎨 Style panel (looks, colors, gradients, patterns, background images, fonts, accents, theme); redesigned ＋ Add menu with URL box and tiles; box emoji/style/inline rename; card image actions; drop overlay; SVG icon set; red/teal colors; dark/light background auto-contrast; fixed zero-width menu swatches |
+| **v5.2** | Rebindable single-key shortcuts in Settings (conflict check, reset to defaults, button tooltips and palette hints follow); Settings trimmed to things you configure |
 | **v5.1** | Snap planner rewrite (no double shifts or jumps when snapping above a card or nudging inside a list); slash menu lists all 21 shapes in a wider, scrollable list that follows the arrow keys; SVG icons for every shape in the Add menu, chips, pills, menus and palette (emoji remain only in plain-text toasts and Markdown) |
 | **v5** | **On-device shape model** (113 KB logistic regression, blended with rules; Chrome Gemini removed); **snap into lists** by drag; **images in IndexedDB**; first-visit **intro** with a live typing demo and a **Welcome** space built from boxes; all example phrases are Sprawl's own; parser fixes for goals, tip math, long countdowns and weekday habits; `tests/run.py` regression sweep |
 | **v4.1** | Split into `index.html` + `sprawl.css` + `sprawl.js`. Bug fixes: dates, phone numbers and "9-5" no longer become Calculate cards; a dated meeting with a duration is an Event, not a Timer; "spend 20 min" is not an Expense; year ranges are not Contacts; verb-first text with a phone number stays a task; "breakfast at 7:30" is AM; "thursday march 5" uses the explicit date; bare "sat/sun/wed" only count as weekdays with time context; habit names drop "every morning"; goals accept "$5000"; undo after *Move to space* no longer duplicates the card (multi-space snapshots); redo commits an open edit; one mouse-wheel notch no longer jumps to max zoom; ⌘K works while typing in a card; duplicated timers start fresh; date-sensitive cards re-render at midnight; the hint hides when a space only has boxes |

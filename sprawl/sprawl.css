@@ -367,7 +367,11 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .sub-opts{margin-left:24px}
 .muted{color:var(--muted)} .small{font-size:12px}
 .panel code{font:11.5px ui-monospace,Menlo,monospace;background:rgba(127,127,127,.15);padding:1px 4px;border-radius:4px}
-.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px;align-items:center}
+.keys label{display:contents}
+.keys .keyin{width:44px;text-align:center;padding:2px 4px;font:11.5px ui-monospace,Menlo,monospace;background:rgba(127,127,127,.15);border:1px solid transparent;border-radius:5px;color:var(--ink);cursor:pointer}
+.keys .keyin:focus{outline:0;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.panel h4 .n .btn{padding:2px 7px;font-size:11px;text-transform:none;letter-spacing:0}
 .trow{display:flex;gap:8px;align-items:flex-start;padding:5px 2px;border-bottom:1px solid var(--panel-border)}
 .trow:last-child{border-bottom:0}
 .trow .ti{width:15px;text-align:center;flex:none;font-size:12px}
