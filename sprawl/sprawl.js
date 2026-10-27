@@ -96,7 +96,7 @@ const $ = s => document.querySelector(s);
 const viewport=$('#viewport'), world=$('#world'), cardsEl=$('#cards'), boxesEl=$('#boxes'), linesSvg=$('#lines'), inkSvg=$('#ink'),
       labelsEl=$('#labels'), tempSvg=$('#temp'), marquee=$('#marquee'), selbar=$('#selbar'), hint=$('#hint'), settingsEl=$('#settings'),
       todayEl=$('#today'), palette=$('#palette'), palIn=$('#palIn'), palList=$('#palList'), mm=$('#minimap'), legendEl=$('#legend'),
-      drawbar=$('#drawbar'), presbar=$('#presbar'), engineEl=$('#engine'), styleEl=$('#stylePanel'), mergeBar=$('#mergeBar');
+      drawbar=$('#drawbar'), presbar=$('#presbar'), engineEl=$('#engine'), styleEl=$('#stylePanel'), mergeBar=$('#mergeBar'), snapSlot=$('#snapSlot');
 const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-3);
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const r1 = n => Math.round(n*10)/10;
@@ -798,7 +798,7 @@ const SMART_RENDER = {
       <div class="acts">${W('vcf','Save contact')}${p.email?W('copy:'+p.email,'Copy email'):''}</div>`; },
 };
 function contentHTML(c){
-  let out = c.img ? `<img src="${esc(c.img)}" alt="" onerror="this.outerHTML='<div class=&quot;sub&quot; style=&quot;padding:18px 6px;text-align:center&quot;>🖼 Image couldn’t load — right-click → Replace image</div>'">` : '';
+  let out = c.img ? `<img src="${esc(imgSrc(c.img))}" alt="" onerror="this.outerHTML='<div class=&quot;sub&quot; style=&quot;padding:18px 6px;text-align:center&quot;>🖼 Image couldn’t load — right-click → Replace image</div>'">` : '';
   if(!c.text.trim()) return out;
   if(SMART_RENDER[c.type]){ try{ return out+SMART_RENDER[c.type](c); }catch(e){ console.warn(e); return out+fallback(c); } }
   const lines = c.text.split('\n');
@@ -861,7 +861,7 @@ function cardNode(c){
   if(c.frame==='sticky') el.style.setProperty('--rot', rotFor(c.id));
   el.innerHTML = `<div class="pill">${esc(pillText(c))}</div>`;
   if(editingId===c.id){
-    if(c.img) el.insertAdjacentHTML('beforeend',`<img src="${esc(c.img)}" alt="">`);
+    if(c.img) el.insertAdjacentHTML('beforeend',`<img src="${esc(imgSrc(c.img))}" alt="">`);
     const ta = document.createElement('textarea');
     ta.value = c.text; ta.rows = 1; ta.spellcheck = true;
     ta.placeholder = c.img ? 'Caption…' : 'Type anything… or / for shapes';
@@ -947,7 +947,7 @@ function bgLayers(){
   if(pat==='dots') L.push({img:'radial-gradient(var(--dot) 1.1px, transparent 1.3px)',g:24});
   if(pat==='grid'){ L.push({img:'linear-gradient(var(--dot) 1px, transparent 1px)',g:32}); L.push({img:'linear-gradient(90deg, var(--dot) 1px, transparent 1px)',g:32}); }
   if(pat==='lines') L.push({img:'linear-gradient(transparent calc(100% - 1px), var(--dot) 1px)',g:30});
-  if(b.image) L.push({img:`url("${b.image.replace(/"/g,'%22')}")`,base:true}); else if(b.grad) L.push({img:b.grad,base:true});
+  if(b.image) L.push({img:`url("${imgSrc(b.image).replace(/"/g,'%22')}")`,base:true}); else if(b.grad) L.push({img:b.grad,base:true});
   return L;
 }
 function hexLum(h){ const m=(h||'').match(/^#?([0-9a-f]{6})$/i); if(!m) return null; const n=parseInt(m[1],16); return (.2126*((n>>16)&255)+.7152*((n>>8)&255)+.0722*(n&255))/255; }
@@ -1288,25 +1288,62 @@ function describeMerge(res){
   if(res.img) d+=' + image';
   return 'Combine → '+d;
 }
+// Two drop zones under (or over) another card: overlapping its edge COMBINES the cards; a little further away
+// SNAPS the card into a vertical list (the cards below make room). Hold ⌥ to do neither.
+const GAP=12;
+function chainBelow(x,y,h,skip){ // cards stacked directly under a rect, top to bottom
+  const out=[]; let bottom=y+h, cx=x; for(let n=0;n<200;n++){
+    const nxt=S().cards.find(c=>c.id!==skip && !c.locked && !out.includes(c.id) && Math.abs(c.x-cx)<=6 && c.y-bottom>=-2 && c.y-bottom<=GAP+10);
+    if(!nxt) break; const r=rectOf(nxt.id); if(!r) break; out.push(nxt.id); bottom=r.y+r.h; cx=nxt.x; }
+  return out;
+}
+function closeGap(d){ // dragging a card out of a list: the cards under it move up
+  const s0=d.start[0], el=cEl(d.id); if(!s0||!el) return; const h=el.offsetHeight;
+  const below=chainBelow(s0.x,s0.y,h,d.id); if(!below.length) return;
+  below.forEach(id=>{ const c=find(id); c.y-=h+GAP; const e=cEl(id); if(e) e.style.top=c.y+'px'; });
+}
 function checkMerge(d){
   const me=rectOf(d.id); if(!me) return clearMerge(d);
-  const thr=38; let best=null;
+  const MERGE=10, SNAP=90; let best=null, snap=null;
   for(const c of S().cards){ if(c.id===d.id || c.locked) continue; const r=rectOf(c.id); if(!r) continue;
     const ov=Math.min(me.x+me.w,r.x+r.w)-Math.max(me.x,r.x); if(ov < Math.min(me.w,r.w)*.4) continue;
     const below=me.y-(r.y+r.h), above=r.y-(me.y+me.h);
-    if(below>-thr*.5 && below<thr && (!best||Math.abs(below)<best.g)) best={c,r,mode:'append',g:Math.abs(below)};
-    if(above>-thr*.5 && above<thr && (!best||Math.abs(above)<best.g)) best={c,r,mode:'prepend',g:Math.abs(above)}; }
-  if(!best) return clearMerge(d);
-  const src=find(d.id), res=mergeInfo(best.c,src,best.mode); if(!res) return clearMerge(d);
-  if(!d.merge || d.merge.tid!==best.c.id){ clearMerge(d); const te=cEl(best.c.id); if(te) te.classList.add('merge-target'); const me2=cEl(d.id); if(me2) me2.classList.add('merging'); }
-  d.merge={tid:best.c.id, mode:best.mode, res};
-  const r=best.r, y = best.mode==='append' ? (r.y+r.h+me.y)/2 : (me.y+me.h+r.y)/2;
-  mergeBar.style.cssText=`display:block;left:${r.x+10}px;top:${y-3}px;width:${Math.max(40,r.w-20)}px`;
-  mergeBar.firstChild.textContent=describeMerge(res);
+    if(below>-19 && below<MERGE && (!best||Math.abs(below)<best.g)) best={c,r,mode:'append',g:Math.abs(below)};
+    if(above>-19 && above<MERGE && (!best||Math.abs(above)<best.g)) best={c,r,mode:'prepend',g:Math.abs(above)};
+    if(below>=MERGE && below<SNAP && (!snap||below<snap.g)) snap={c,r,mode:'after',g:below};
+    if(above>=MERGE && above<SNAP && (!snap||above<snap.g)) snap={c,r,mode:'before',g:above}; }
+  // inserting into a list means overlapping the member below the slot; aiming at its top half means "snap", not "combine"
+  let shift=null; if(snap){ const r=snap.r; shift = snap.mode==='after' ? chainBelow(r.x,r.y,r.h,d.id) : [snap.c.id, ...chainBelow(r.x,r.y,r.h,d.id)]; }
+  if(best && snap && shift.includes(best.c.id) && me.y < best.r.y+best.r.h/2) best=null;
+  if(best){ const src=find(d.id), res=mergeInfo(best.c,src,best.mode);
+    if(res){ clearSnap(d);
+      if(!d.merge || d.merge.tid!==best.c.id){ clearMerge(d); const te=cEl(best.c.id); if(te) te.classList.add('merge-target'); const me2=cEl(d.id); if(me2) me2.classList.add('merging'); }
+      d.merge={tid:best.c.id, mode:best.mode, res};
+      const r=best.r, y = best.mode==='append' ? (r.y+r.h+me.y)/2 : (me.y+me.h+r.y)/2;
+      mergeBar.style.cssText=`display:block;left:${r.x+10}px;top:${y-3}px;width:${Math.max(40,r.w-20)}px`;
+      mergeBar.firstChild.textContent=describeMerge(res); return; } }
+  clearMerge(d, true);
+  if(!snap) return clearSnap(d);
+  const t=snap.c, r=snap.r, y = snap.mode==='after' ? r.y+r.h+GAP : r.y;
+  if(!d.snap || d.snap.tid!==t.id || d.snap.mode!==snap.mode){
+    clearSnap(d); d.snap={tid:t.id, mode:snap.mode, x:r.x, y, shift};
+    shift.forEach(id=>{ const c=find(id), e=cEl(id); if(e) e.style.top=(c.y+me.h+GAP)+'px'; });
+    snapSlot.style.cssText=`display:block;left:${r.x}px;top:${y}px;width:${me.w}px;height:${me.h}px`;
+  }
 }
-function clearMerge(d){
-  if(d) d.merge=null; mergeBar.style.display='none';
+function clearSnap(d){
+  if(d && d.snap){ d.snap.shift.forEach(id=>{ const c=find(id), e=cEl(id); if(c && e) e.style.top=c.y+'px'; }); d.snap=null; }
+  snapSlot.style.display='none';
+}
+function clearMerge(d, keepSnap){
+  if(d) d.merge=null; mergeBar.style.display='none'; if(!keepSnap) clearSnap(d);
   cardsEl.querySelectorAll('.merge-target,.merging').forEach(el=>el.classList.remove('merge-target','merging'));
+}
+function doSnap(d){
+  const sn_=d.snap, c=find(d.id), el=cEl(d.id); clearSnap(d); if(!sn_||!c) return render();
+  const h=el?el.offsetHeight:60;
+  sn_.shift.forEach(id=>{ const x=find(id); if(x) x.y+=h+GAP; });
+  c.x=sn_.x; c.y=sn_.y; render(); save(); toast('Snapped into the list — ⌘Z to undo');
 }
 function doMerge(m,srcId){
   const sp=S(), t=find(m.tid), src=find(srcId); if(!t||!src) return render();
@@ -1360,7 +1397,7 @@ function finishTimer(sp,c){
 }
 let tickN=0, tickDay=iso(noon());
 setInterval(()=>{
-  tickN++; let run=null;
+  if(!db) return; tickN++; let run=null;
   if(iso(noon())!==tickDay){ tickDay=iso(noon()); if(!editingId) render(); }
   db.order.forEach(sid=>{ db.spaces[sid].cards.forEach(c=>{ if(c.type!=='timer'||!c.data.endAt) return;
     const left=(c.data.endAt-Date.now())/1000; if(left<=0) return finishTimer(db.spaces[sid],c);
@@ -1370,6 +1407,34 @@ setInterval(()=>{
   if(tickN%30===0) S().cards.forEach(c=>{ if(['timezone','countdown','event','reminder'].includes(c.type) && c.id!==editingId) refreshCard(c.id); });
   if(tickN%30===0 && !todayEl.hidden) buildToday();
 },1000);
+
+// =====================================================================
+// IMAGE STORE — image bytes live in IndexedDB; cards hold an "idb:…" reference that resolves to an object URL.
+// localStorage only keeps the small JSON, so saves stay fast and the 5 MB text limit no longer applies to pictures.
+// =====================================================================
+const IDB={db:null, urls:new Map()};
+function idbOpen(){ return new Promise((res,rej)=>{ if(IDB.db) return res(IDB.db); if(!self.indexedDB) return rej(new Error('no idb'));
+  const r=indexedDB.open('sprawl-images',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>{ IDB.db=r.result; res(IDB.db); }; r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error('blocked')); }); }
+const idbTx=(mode,fn)=>idbOpen().then(db=>new Promise((res,rej)=>{ const t=db.transaction('img',mode), q=fn(t.objectStore('img')); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }));
+const isRef = u => typeof u==='string' && u.startsWith('idb:');
+function imgSrc(u){ return !u ? '' : isRef(u) ? (IDB.urls.get(u)||'') : u; }
+const blobToDataURL = b => new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(b); });
+async function storeImage(x){ // data URL or Blob → "idb:key" (falls back to the data URL when IndexedDB is unavailable)
+  try{ const blob = typeof x==='string' ? await (await fetch(x)).blob() : x; const key='idb:'+uid();
+    await idbTx('readwrite',st=>st.put(blob,key)); IDB.urls.set(key,URL.createObjectURL(blob)); return key; }
+  catch(e){ return typeof x==='string' ? x : await blobToDataURL(x); }
+}
+function imageHolders(d=db){ // every place an image reference can live: [object, key]
+  const out=[];
+  for(const sp of Object.values(d.spaces||{})){ sp.cards.forEach(c=>out.push([c,'img'])); (sp.trash||[]).forEach(t=>out.push([t.card,'img'])); if(sp.bg) out.push([sp.bg,'image']); }
+  (d.templates||[]).forEach(t=>((t.data||{}).cards||[]).forEach(c=>out.push([c,'img'])));
+  return out.filter(([o,k])=>o && o[k]);
+}
+async function migrateImages(d=db){ let changed=false; for(const [o,k] of imageHolders(d)){ if(o[k].startsWith('data:')){ const key=await storeImage(o[k]); if(key!==o[k]){ o[k]=key; changed=true; } } } return changed; }
+async function loadImages(d=db){ for(const [o,k] of imageHolders(d)){ const ref=o[k]; if(!isRef(ref)||IDB.urls.has(ref)) continue;
+  try{ const b=await idbTx('readonly',st=>st.get(ref)); IDB.urls.set(ref, b?URL.createObjectURL(b):''); }catch(e){ IDB.urls.set(ref,''); } } }
+async function inlineImages(d){ for(const [o,k] of imageHolders(d)){ if(!isRef(o[k])) continue; try{ const b=await idbTx('readonly',st=>st.get(o[k])); o[k]=b?await blobToDataURL(b):''; }catch(e){ o[k]=''; } } return d; }
+async function gcImages(){ try{ const used=new Set(imageHolders().map(([o,k])=>o[k])); const keys=await idbTx('readonly',st=>st.getAllKeys()); for(const k of keys||[]) if(!used.has(k)) await idbTx('readwrite',st=>st.delete(k)); }catch(e){} }
 
 // =====================================================================
 // IMAGES
@@ -1389,13 +1454,13 @@ function addUrl(u,at){
   if(!/^https?:\/\//i.test(u) && !/^data:image\//.test(u)){ if(/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(u)) u='https://'+u; else return toast('That doesn’t look like a link'); }
   const w=at||centerWorld();
   if(/^data:image\//.test(u) || /\.(png|jpe?g|gif|webp|svg|avif)(\?.*)?$/i.test(u) || /images\.unsplash\.com|i\.imgur\.com/.test(u)){
-    if(editingId) commitEdit(); pushUndo(); const c=newCard(w.x-130,w.y-90,''); c.img=u; c.w=260; S().cards.push(c); render(); save(); morph(c.id); toast('Image added');
+    (async()=>{ if(editingId) commitEdit(); pushUndo(); const c=newCard(w.x-130,w.y-90,''); c.img=/^data:/.test(u)?await storeImage(u):u; c.w=260; S().cards.push(c); render(); save(); morph(c.id); toast('Image added'); })();
   } else createCard(w.x-130,w.y-40,u,false);
 }
 async function addImages(files,wx,wy){
   const imgs=[...files].filter(f=>f.type && f.type.startsWith('image/')); if(!imgs.length) return false;
   if(editingId) commitEdit(); pushUndo(); let i=0;
-  for(const f of imgs){ try{ const url=await fileToDataURL(f); const c=newCard(wx+i*28,wy+i*28,''); c.img=url; c.w=260; S().cards.push(c); sel.add(c.id); i++; }catch(e){ toast('Couldn’t read '+f.name); } }
+  for(const f of imgs){ try{ const url=await storeImage(await fileToDataURL(f)); const c=newCard(wx+i*28,wy+i*28,''); c.img=url; c.w=260; S().cards.push(c); sel.add(c.id); i++; }catch(e){ toast('Couldn’t read '+f.name); } }
   render(); save(); return true;
 }
 
@@ -1503,7 +1568,7 @@ function mdOf(c){
   else if(c.type==='poll'){ const p=parsePoll(t); const v=c.data.votes||{}; o=p?`📊 ${p.title||'Poll'}\n`+p.opts.map(x=>`- ${x}: ${v[x]||0}`).join('\n'):t; }
   else if(c.type==='goal'){ const p=parseGoal(t); o=p?`🎯 ${p.title} — ${c.data.done??p.done}/${p.target}`:t; }
   else o=(SMART.has(c.type)?ICON[c.type]+' ':'')+t;
-  if(c.img) o=(c.img.startsWith('data:')?'*[image]*':`![](${c.img})`)+(o?'\n'+o:'');
+  if(c.img) o=((c.img.startsWith('data:')||isRef(c.img))?'*[image]*':`![](${c.img})`)+(o?'\n'+o:'');
   return o;
 }
 function spaceMarkdown(sp){
@@ -1913,7 +1978,7 @@ function onMove(e){
       if(drag.moved){ v.x+=e.clientX-drag.lx; v.y+=e.clientY-drag.ly; applyView(); }
       drag.lx=e.clientX; drag.ly=e.clientY; break;
     case 'card':
-      if(!drag.moved && far){ drag.moved=true; if(editingId) commitEdit(); pushUndo(); cardsEl.classList.add('dragging'); }
+      if(!drag.moved && far){ drag.moved=true; if(editingId) commitEdit(); pushUndo(); cardsEl.classList.add('dragging'); if(drag.start.length===1 && !e.altKey) closeGap(drag); }
       if(drag.moved){
         for(const s of drag.start){ const c=find(s.id); if(!c) continue; c.x=sn(s.x+dx/v.z); c.y=sn(s.y+dy/v.z);
           const el=cEl(s.id); if(el){ el.style.left=c.x+'px'; el.style.top=c.y+'px'; } }
@@ -1969,6 +2034,7 @@ function onUp(e){
     case 'card':
       cardsEl.classList.remove('dragging');
       if(d.merge){ const m=d.merge; clearMerge(d); doMerge(m,d.id); break; }
+      if(d.snap){ doSnap(d); break; }
       clearMerge(d);
       if(d.moved){ save(); queueMini(); break; }
       if(d.shift || selectMode){ if(editingId) commitEdit(); sel.has(d.id)?sel.delete(d.id):sel.add(d.id); render(); break; }
@@ -2028,7 +2094,7 @@ viewport.addEventListener('drop',async e=>{
 });
 $('#imgFile').onchange=async e=>{
   if(imgTarget){ const f=e.target.files[0], id=imgTarget; imgTarget=null; e.target.value=''; if(!f) return; const c=find(id); if(!c) return;
-    pushUndo(); c.img=await fileToDataURL(f); c.w=Math.max(c.w||220,260); c.h=null; refreshCard(id); morph(id); save(); return; }
+    pushUndo(); c.img=await storeImage(await fileToDataURL(f)); c.w=Math.max(c.w||220,260); c.h=null; refreshCard(id); morph(id); save(); return; }
   const w=imgAt||centerWorld(); await addImages(e.target.files,w.x-(imgAt?0:130),w.y-(imgAt?0:80)); e.target.value=''; imgAt=null; };
 
 // =====================================================================
@@ -2230,7 +2296,7 @@ function buildStyle(){
   <h4>Pattern</h4>
   <div class="seg">${[['dots','Dots'],['grid','Grid'],['lines','Lines'],['none','None']].map(([k,l])=>`<button class="${pat===k?'on':''}" data-st="pat:${k}">${l}</button>`).join('')}</div>
   <h4>Background image</h4>
-  <div class="row"><button class="btn small" data-st="upload">${I('upload')} Upload</button><input type="text" id="stUrl" placeholder="…or paste an image URL" value="${b.image&&!b.image.startsWith('data:')?esc(b.image):''}">${b.image?`<button class="btn small" data-st="noimg">Remove</button>`:''}</div>
+  <div class="row"><button class="btn small" data-st="upload">${I('upload')} Upload</button><input type="text" id="stUrl" placeholder="…or paste an image URL" value="${b.image&&!b.image.startsWith('data:')&&!isRef(b.image)?esc(b.image):''}">${b.image?`<button class="btn small" data-st="noimg">Remove</button>`:''}</div>
   <h4>Font <span class="n">this space</span></h4>
   <div class="fonts">${Object.entries(FONTS).map(([k,[l,f]])=>`<button class="${font===k?'on':''}" data-st="font:${k}"><b style="font-family:${f}">Aa</b><span>${l}</span></button>`).join('')}</div>
   <h4>Accent</h4>
@@ -2263,7 +2329,7 @@ $('#bgFile').onchange=async e=>{
   try{ const bmp=await createImageBitmap(f), max=1800, sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
     const cv=document.createElement('canvas'); cv.width=Math.round(bmp.width*sc); cv.height=Math.round(bmp.height*sc); const ctx=cv.getContext('2d'); ctx.drawImage(bmp,0,0,cv.width,cv.height);
     const t=document.createElement('canvas'); t.width=t.height=1; const tc=t.getContext('2d'); tc.drawImage(cv,0,0,1,1); const [r,g,bl]=tc.getImageData(0,0,1,1).data;
-    setBg({image:cv.toDataURL('image/jpeg',.8), dark:(.2126*r+.7152*g+.0722*bl)/255<.45, pattern:'none'}); toast('Background updated'); buildStyle();
+    setBg({image:await storeImage(cv.toDataURL('image/jpeg',.8)), dark:(.2126*r+.7152*g+.0722*bl)/255<.45, pattern:'none'}); toast('Background updated'); buildStyle();
   }catch(err){ toast('Couldn’t read that image'); }
 };
 
@@ -2276,10 +2342,10 @@ async function gh(method,path,body){
   if(!r.ok) throw new Error(`GitHub said ${r.status}${r.status===401?' — check the token':r.status===404?' — check the Gist ID':''}`);
   return r.json();
 }
-function exportData(){ const d=JSON.parse(JSON.stringify(db)); d.settings.gist={...d.settings.gist,token:''}; return d; }
+async function exportData(){ const d=JSON.parse(JSON.stringify(db)); d.settings.gist={...d.settings.gist,token:''}; return inlineImages(d); }
 async function syncPush(quiet){
   const g=db.settings.gist; try{ localStorage.setItem(LS, JSON.stringify(db)); }catch(e){}
-  const files={'sprawl.json':{content:JSON.stringify(exportData())}};
+  const files={'sprawl.json':{content:JSON.stringify(await exportData())}};
   const j = g.id ? await gh('PATCH','/gists/'+g.id,{files}) : await gh('POST','/gists',{description:'Sprawl canvas backup',public:false,files});
   g.id=j.id; g.last=new Date().toISOString(); try{ localStorage.setItem(LS, JSON.stringify(db)); }catch(e){}
   syncStatus(); if(!quiet) toast('Pushed to Gist ✓');
@@ -2291,6 +2357,7 @@ async function syncPull(){
   const d=JSON.parse(txt); if(!d.spaces) throw new Error('Gist content isn’t a Sprawl backup');
   if(!confirm('Replace this browser’s spaces with the Gist version? (Export a backup first if unsure.)')) return;
   const keep=g; if(editingId) commitEdit(); db=migrate(d); db.settings.gist={...keep,last:new Date().toISOString()};
+  await migrateImages(); await loadImages();
   undoStack=[]; redoStack=[]; sel.clear(); applyTheme(); render(); flush(); syncStatus(); toast('Pulled from Gist ✓');
 }
 function syncStatus(){ const g=db.settings.gist, el=$('#ghStatus'); if(el) el.textContent = g.last ? 'Last sync '+ago(Date.parse(g.last)) : ''; const gi=$('#ghGist'); if(gi && document.activeElement!==gi) gi.value=g.id||''; }
@@ -2345,7 +2412,7 @@ $('#ghGist').oninput=e=>{ db.settings.gist.id=e.target.value.trim().replace(/^.*
 $('#ghAuto').onchange=e=>{ db.settings.gist.auto=e.target.checked; save(); };
 $('#ghPush').onclick=()=>{ $('#ghStatus').textContent='Pushing…'; syncPush().catch(err=>{ $('#ghStatus').textContent='✕ '+err.message; }); };
 $('#ghPull').onclick=()=>{ $('#ghStatus').textContent='Pulling…'; syncPull().catch(err=>{ $('#ghStatus').textContent='✕ '+err.message; }); };
-function exportJson(){ flush(); download(`sprawl-backup-${iso(new Date())}.json`, JSON.stringify(exportData(),null,1), 'application/json'); }
+async function exportJson(){ flush(); download(`sprawl-backup-${iso(new Date())}.json`, JSON.stringify(await exportData(),null,1), 'application/json'); }
 function exportMd(){ download(`${S().name.replace(/[^\w-]+/g,'-')}.md`, spaceMarkdown(S()), 'text/markdown'); }
 function exportCanvas(){ download(`${S().name.replace(/[^\w-]+/g,'-')}.canvas`, JSON.stringify(toJsonCanvas(S()),null,1), 'application/json'); }
 $('#expJson').onclick=exportJson; $('#expMd').onclick=exportMd; $('#expCanvas').onclick=exportCanvas;
@@ -2356,7 +2423,7 @@ async function importFile(f){
     if(!d.spaces) throw 0;
     for(const [id,s] of Object.entries(d.spaces)){ db.spaces[id]=s; if(!db.order.includes(id)) db.order.push(id); }
     (d.templates||[]).forEach(t=>{ if(!db.templates.some(q=>q.id===t.id)) db.templates.push(t); });
-    migrate(db); save(); render(); toast(`Imported ${Object.keys(d.spaces).length} space(s)`);
+    migrate(db); await migrateImages(); await loadImages(); save(); render(); toast(`Imported ${Object.keys(d.spaces).length} space(s)`);
   }catch(err){ toast('That file isn’t a Sprawl backup or JSON Canvas'); }
 }
 $('#impFile').onchange=async e=>{ const f=e.target.files[0]; if(f) await importFile(f); e.target.value=''; };
@@ -2369,11 +2436,14 @@ addEventListener('resize',()=>queueMini());
 // GO
 // =====================================================================
 document.querySelectorAll('i[data-i]').forEach(el=>{ el.outerHTML=I(el.dataset.i); });
-db = migrate(load() || seed());
-const freshView=!S().view;
-applyTheme();
-render();
-if(freshView) zoomFit(false,1,innerWidth<600?.7:.15);
-showEngine();
-window.__sprawl = { get db(){ return db; }, ruleRank, rank, modelProbs, parseWhen, parseCalc, parseConvert, parseTZ, parseGoal, parsePoll, parseContact, parseExpense, parseSplit, parseCountdown, parseHabit, parseTimer, parseRandom, parseColor };
+(async()=>{
+  db = migrate(load() || seed());
+  try{ if(await migrateImages()) flush(); await loadImages(); gcImages(); }catch(e){}
+  const freshView=!S().view;
+  applyTheme();
+  render();
+  if(freshView) zoomFit(false,1,innerWidth<600?.7:.15);
+  showEngine();
+  window.__sprawl = { get db(){ return db; }, ruleRank, rank, modelProbs, parseWhen, parseCalc, parseConvert, parseTZ, parseGoal, parsePoll, parseContact, parseExpense, parseSplit, parseCountdown, parseHabit, parseTimer, parseRandom, parseColor, storeImage, imgSrc };
+})();
 })();

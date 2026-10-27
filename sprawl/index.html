@@ -15,6 +15,7 @@
     <div id="labels"></div>
     <div id="cards"></div>
     <div id="mergeBar"><span></span></div>
+    <div id="snapSlot"></div>
     <svg class="layer" id="temp"></svg>
   </div>
 </div>
@@ -79,7 +80,7 @@
   <label class="small"><input type="checkbox" id="ghAuto"> Auto-push after changes</label>
   <div class="row"><button class="btn small" id="ghPush">⇪ Push</button><button class="btn small" id="ghPull">⇩ Pull</button><span class="small muted" id="ghStatus"></span></div>
   <h4>Data</h4>
-  <p class="small muted" style="margin:0 0 6px">Everything lives in this browser (images too, ~5 MB limit). Back up often.</p>
+  <p class="small muted" style="margin:0 0 6px">Everything lives in this browser: text in local storage, images in IndexedDB. Back up often.</p>
   <div class="row">
     <button class="btn small" id="expJson">Export all (JSON)</button>
     <button class="btn small" id="impJson">Import JSON / .canvas</button>

@@ -221,6 +221,7 @@ body.drawing .hit{pointer-events:none}
 .box.s-dashed{border-style:dashed}
 .box.s-dashed::before{opacity:.12}
 .box-emo{font-size:15px;line-height:1}
+#snapSlot{position:absolute;display:none;border:2px dashed var(--accent);border-radius:9px;background:color-mix(in srgb,var(--accent) 8%,transparent);pointer-events:none;z-index:0;box-sizing:border-box}
 #mergeBar{position:absolute;height:6px;border-radius:3px;background:var(--accent);display:none;pointer-events:none;z-index:6;animation:mpulse 1s ease-in-out infinite}
 #mergeBar span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18)}
 @keyframes mpulse{0%,100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 10%,transparent)}}
