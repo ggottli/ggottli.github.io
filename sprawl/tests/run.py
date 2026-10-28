@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Sprawl regression sweep: runs index.html in headless Chromium (Python Playwright) and checks
-classification, typing flows, drag gestures, snapping/combining, the image store and the intro.
+classification, typing flows, drag gestures, snapping/combining, tables, dividers, line routing, the image store and the intro.
 
     python3 -I tests/run.py            # from sprawl/
     python3 -I tests/run.py --keep     # keep screenshots in tests/out/
@@ -98,6 +98,19 @@ with sync_playwright() as p:
         a = rect(0); pg.mouse.click(a['x'] + a['w'] / 2, a['y'] + a['h'] / 2); pg.wait_for_timeout(120); assert S("document.querySelector('.card.editing')!==null")
         pg.keyboard.press('Escape'); pg.wait_for_timeout(100); return 'click edits, esc commits'
     step('edit existing card', t_edit)
+    def t_table():
+        pg.mouse.click(300, 700); pg.keyboard.type('| task | owner |'); pg.keyboard.press('Shift+Enter'); pg.keyboard.type('| ship it | maya |'); pg.wait_for_timeout(150); pg.keyboard.press('Enter'); pg.wait_for_timeout(150)
+        c = cards()[-1]; cells = S(f"document.querySelectorAll(\"[data-id='{c['id']}'] .tbl td\").length"); assert c['type'] == 'table' and cells == 4, (c['type'], cells)
+        pg.click(f"[data-id='{c['id']}'] [data-w='trow']"); pg.wait_for_timeout(120); rows = S(f"document.querySelectorAll(\"[data-id='{c['id']}'] .tbl tr\").length"); assert rows == 3, rows; return 'pipe rows render, + Row works'
+    step('table from pipes', t_table)
+    def t_cells():
+        pg.click('#addBtn'); pg.wait_for_timeout(120); pg.click('.pop [data-act="table"]'); pg.wait_for_timeout(200)
+        c = cards()[-1]; assert c['type'] == 'table' and S("document.activeElement.isContentEditable"), (c['type'], 'first cell not focused')
+        for word, key in [('Task', 'Tab'), ('Owner', 'Tab'), ('Ship it', 'Tab'), ('Maya', 'Enter'), ('Review', 'Escape')]: pg.keyboard.type(word); pg.keyboard.press(key); pg.wait_for_timeout(60)
+        c = cards()[-1]; assert c['text'] == '| Task | Owner |\n|---|---|\n| Ship it | Maya |\n|  | Review |', c['text']
+        n = len(cards()); pg.click('#addBtn'); pg.wait_for_timeout(120); pg.click('.pop [data-act="table"]'); pg.wait_for_timeout(200); pg.keyboard.press('Escape'); pg.wait_for_timeout(150)
+        assert len(cards()) == n, 'empty fresh table should go away'; return 'click, type, Tab/Enter, Esc; empty one removed'
+    step('table cells edit in place', t_cells)
 
     # ---- gestures ----
     fresh_space(); type_card(300, 200, 'first item'); type_card(300, 600, 'second item'); type_card(900, 200, 'third item')
@@ -109,7 +122,7 @@ with sync_playwright() as p:
         drag((a['x'] + a['w'] - 0.5, a['y'] + a['h'] / 2), (b['x'] + b['w'] / 2, b['y'] + b['h'] / 2)); n = S('window.__sprawl.db.spaces[window.__sprawl.db.current].connections.length'); assert n == 1; return 'connected'
     step('handle connects', t_connect)
     def t_snap():
-        a, b = rect(0), rect(1); slot = drag((b['x'] + b['w'] / 2, b['y'] + b['h'] / 2), (a['x'] + b['w'] / 2, a['y'] + a['h'] + 40 + b['h'] / 2), lambda: S("getComputedStyle(document.querySelector('#snapSlot')).display"))
+        a, b = rect(0), rect(1); slot = drag((b['x'] + b['w'] / 2, b['y'] + b['h'] / 2), (a['x'] + b['w'] / 2, a['y'] + a['h'] + 30 + b['h'] / 2), lambda: S("getComputedStyle(document.querySelector('#snapSlot')).display"))
         a2, b2 = rect(0), rect(1); assert slot == 'block' and b2['cx'] == a2['cx'] and b2['cy'] == a2['cy'] + round(a['h']) + 12, (slot, a2, b2); return 'snapped under'
     step('snap into list', t_snap)
     def t_insert():
@@ -132,6 +145,26 @@ with sync_playwright() as p:
         pg.once('dialog', lambda d: d.accept('Other')); pg.click('.pop [data-act="new"]'); pg.wait_for_timeout(250); pg.keyboard.press('Meta+z'); pg.wait_for_timeout(150)
         where = S('cid=>Object.values(window.__sprawl.db.spaces).filter(s=>s.cards.some(c=>c.id===cid)).map(s=>s.name)', cid); assert where == ['Scratch'] or len(where) == 1, where; return f'after undo in {where}'
     step('move to space + undo', t_move_space)
+
+    # ---- dividers, line routing, close placement ----
+    fresh_space(); type_card(300, 300, 'left'); type_card(600, 300, 'middle'); type_card(900, 300, 'right')
+    def t_route():
+        a, b = rect(0), rect(2); pg.mouse.move(a['x'] + a['w'] / 2, a['y'] + a['h'] / 2); pg.wait_for_timeout(60)
+        drag((a['x'] + a['w'] - 0.5, a['y'] + a['h'] / 2), (b['x'] + b['w'] / 2, b['y'] + b['h'] / 2))
+        cross = S("""()=>{ const p=document.querySelector('#lines .ln'); if(!p) return 'noline'; const m=window.__sprawl.db.spaces[window.__sprawl.db.current].cards[1]; const el=document.querySelector(`[data-id='${m.id}']`);
+          const r={x:m.x,y:m.y,w:el.offsetWidth,h:el.offsetHeight}, L=p.getTotalLength(); for(let i=0;i<=40;i++){ const q=p.getPointAtLength(L*i/40); if(q.x>r.x&&q.x<r.x+r.w&&q.y>r.y&&q.y<r.y+r.h) return true; } return false; }""")
+        assert cross is False, cross; return 'line bends around the middle card'
+    step('connection avoids cards', t_route)
+    def t_divider():
+        n = len(cards()); S("window.__sprawl.newSep('h')"); pg.wait_for_timeout(100); c = cards()[-1]
+        el = S(f"(()=>{{const e=document.querySelector(\"[data-id='{c['id']}']\"); return [e.classList.contains('sep'), e.offsetHeight, e.offsetWidth]}})()")
+        assert len(cards()) == n + 1 and c['sep'] == 'h' and el[0] and el[1] <= 16 and el[2] == 320, (c, el); return 'horizontal divider, 320 wide'
+    step('divider', t_divider)
+    def t_near():
+        fresh_space(); type_card(300, 200, 'one'); type_card(300, 500, 'two'); a, b = rect(0), rect(1)
+        drag((b['x'] + b['w'] / 2, b['y'] + b['h'] / 2), (a['x'] + 70 + b['w'] / 2, a['y'] + a['h'] + 30 + b['h'] / 2)); a2, b2 = rect(0), rect(1)
+        assert abs(b2['cx'] - (a2['cx'] + 70)) <= 3 and abs(b2['cy'] - (a2['cy'] + round(a['h']) + 30)) <= 3, (a2, b2); return 'offset drop stays where it was put'
+    step('close placement without snap', t_near)
 
     # ---- palette, today, templates, present ----
     def t_capture():
@@ -158,7 +191,7 @@ with sync_playwright() as p:
         pg.click('#setBtn'); pg.wait_for_timeout(100)
         with pg.expect_download() as dl: pg.click('#expJson')
         d = json.load(open(dl.value.path())); imgs = [c['img'] for s in d['spaces'].values() for c in s['cards'] if c.get('img')]
-        assert d['settings']['gist']['token'] == '' and imgs and imgs[0].startswith('data:'); pg.keyboard.press('Escape'); return 'token stripped, images inlined'
+        assert 'gist' not in d['settings'] and imgs and imgs[0].startswith('data:'); pg.keyboard.press('Escape'); return 'no sync keys, images inlined'
     step('export backup', t_export)
 
     # ---- phone layout ----

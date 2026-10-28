@@ -60,7 +60,7 @@
     <div class="demo"><div class="card demo-card"><div class="demo-text"><span class="caret"></span></div><div class="demo-out content"></div></div><div class="demo-chip"></div></div>
     <ol class="intro-steps">
       <li><b>Type.</b> Click the canvas, write, press Enter.</li>
-      <li><b>It shapes itself.</b> 21 kinds of card, picked instantly on your device. Press Tab or type / to choose yourself.</li>
+      <li><b>It shapes itself.</b> 22 kinds of card, picked instantly on your device. Press Tab or type / to choose yourself.</li>
       <li><b>You arrange.</b> Drag, connect with the ● handle, group in boxes, drop one card onto another to combine or snap into a list.</li>
     </ol>
     <p class="small muted">Everything stays in this browser. No account, nothing is sent anywhere.</p>
@@ -72,29 +72,32 @@
 
 <div class="ui panel" id="settings" hidden>
   <div class="ph"><b>Settings</b><button data-close title="Close">✕</button></div>
-  <h4>Card engine</h4>
-  <div class="row"><input type="text" id="probeIn" placeholder="Type something to see which shape it gets…" autocomplete="off"></div>
-  <div class="row" id="probeOut" style="min-height:22px"></div>
-  <label class="small"><input type="checkbox" id="optLive"> Live preview while typing (ghost card + shape chips)</label>
-  <div class="row"><button class="btn small" id="introBtn">Show the intro &amp; welcome tour</button></div>
-  <h4>Your card shapes<span class="n" id="typeCount"></span></h4>
-  <p class="small muted" style="margin:0 0 6px">Untick any you don’t want — they’ll never be auto-detected or suggested. Existing cards keep their shape.</p>
-  <div class="row" style="margin:0 0 6px"><button class="btn small" id="typesAll">All</button><button class="btn small" id="typesBasic">Basics only</button></div>
-  <div class="typegrid" id="typeGrid"></div>
+  <h4>Connected apps</h4>
+  <div class="row"><label class="sel"><span>Calendar</span><select id="appCal"></select></label></div>
+  <div class="row"><label class="sel"><span>Tasks</span><select id="appTask"></select></label></div>
+  <div class="row"><label class="sel"><span>Notes</span><select id="appNote"></select></label></div>
+  <p class="small muted" id="appHint" style="margin:0"></p>
   <h4>Canvas</h4>
-  <label><input type="checkbox" id="optSnap"> Snap cards to grid while dragging</label>
+  <label><input type="checkbox" id="optLive"> Preview the shape while typing</label>
+  <label><input type="checkbox" id="optPrev"> Show link previews <span class="small muted">(from microlink.io)</span></label>
+  <label><input type="checkbox" id="optSnap"> Snap cards to a grid while dragging</label>
   <label><input type="checkbox" id="optMini"> Show minimap</label>
   <label><input type="checkbox" id="optLegend"> Show connection legend</label>
-  <h4>Look</h4>
-  <p class="small muted" style="margin:0">Backgrounds, colors, fonts and light/dark live in the <b>Style</b> panel in the toolbar.</p>
-  <h4>Sync across devices (GitHub Gist)</h4>
-  <p class="small muted" style="margin:0 0 4px">Create a token with only the <b>gist</b> scope at github.com/settings/tokens. It stays in this browser and is never written into backups.</p>
-  <div class="row"><input type="password" id="ghToken" placeholder="GitHub token"></div>
-  <div class="row"><input type="text" id="ghGist" placeholder="Gist ID (blank = create on first push)"></div>
-  <label class="small"><input type="checkbox" id="ghAuto"> Auto-push after changes</label>
-  <div class="row"><button class="btn small" id="ghPush">⇪ Push</button><button class="btn small" id="ghPull">⇩ Pull</button><span class="small muted" id="ghStatus"></span></div>
+  <h4>Card shapes<span class="n"><span class="muted" id="typeCount" style="text-transform:none;letter-spacing:0;margin-right:6px"></span><button class="btn small" id="typesAll">All</button> <button class="btn small" id="typesBasic">Basics only</button></span></h4>
+  <div class="typegrid" id="typeGrid"></div>
+  <h4>Writing in cards</h4>
+  <div class="keys">
+    <kbd>/</kbd><span>as the first character: pick any shape</span>
+    <kbd>[ ] task</kbd><span>checklist item</span>
+    <kbd>| a | b |</kbd><span>table row (or ＋ Add → Table and click the cells)</span>
+    <kbd>@tomorrow</kbd><span>due date — @today @fri @10/30 @nextweek</span>
+    <kbd>#tag</kbd><span>tag (click to spotlight)</span>
+    <kbd>[[Space]]</kbd><span>link to another space</span>
+    <kbd>**b** *i* ~~s~~</kbd><span>bold, italic, strike · `code` · ``` block · [text](url)</span>
+  </div>
+  <h4>Shortcuts<span class="n"><span class="muted" style="text-transform:none;letter-spacing:0">click a key to change it</span> <button class="btn small" id="keysReset" hidden>Reset</button></span></h4>
+  <div class="keys" id="keyGrid"></div>
   <h4>Data</h4>
-  <p class="small muted" style="margin:0 0 6px">Everything lives in this browser: text in local storage, images in IndexedDB. Back up often.</p>
   <div class="row">
     <button class="btn small" id="expJson">Export all (JSON)</button>
     <button class="btn small" id="impJson">Import JSON / .canvas</button>
@@ -102,19 +105,8 @@
     <button class="btn small" id="expCanvas">Space → JSON Canvas</button>
     <input type="file" id="impFile" accept=".json,.canvas,application/json" hidden>
   </div>
-  <h4>Writing in cards</h4>
-  <div class="keys">
-    <kbd>/</kbd><span>as the first character: pick any shape</span>
-    <kbd>[ ] task</kbd><span>checklist item</span>
-    <kbd>@tomorrow</kbd><span>due date — @today @fri @10/30 @nextweek</span>
-    <kbd>#tag</kbd><span>tag (click to spotlight)</span>
-    <kbd>[[Space]]</kbd><span>link to another space</span>
-    <kbd>**b** *i* ~~s~~</kbd><span>bold, italic, strike · `code` · ``` block · [text](url)</span>
-  </div>
-  <h4>Shortcuts<span class="n"><button class="btn small" id="keysReset" hidden>Reset to defaults</button></span></h4>
-  <p class="small muted" style="margin:0 0 6px">Click a key to change it, then press the new one.</p>
-  <div class="keys" id="keyGrid"></div>
-  <p class="small muted" style="margin:14px 0 0">Card shapes are picked by a tiny model inside this page. Nothing you type leaves your device.</p>
+  <h4>Help</h4>
+  <div class="row"><button class="btn small" id="introBtn">Show the intro &amp; welcome tour</button></div>
 </div>
 
 <script src="sprawl-features.js"></script>
